@@ -241,4 +241,5 @@ npm run build
 
 ## 📄 ライセンス
 
-本プロジェクトは [MIT License](LICENSE) の下で公開されています。
+本プロジェクトは [MIT License](LICENSE) の下で公開されています。  
+Copyright (c) 2026 sun-flat-yamada (Youhei Yamada)

@@ -4,7 +4,7 @@
   "description": "Enterprise-grade GitHub Copilot Usage and Billing Analytics Platform with 3-axis allocation and fork isolation",
   "private": true,
   "license": "MIT",
-  "author": "sun-flat-yamada",
+  "author": "sun-flat-yamada (Youhei Yamada)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sun-flat-yamada/github-copilot-dashboard.git"
