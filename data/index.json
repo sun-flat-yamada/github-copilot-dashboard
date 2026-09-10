@@ -1,0 +1,79 @@
+{
+  "repository": {
+    "owner": "sun-flat-yamada",
+    "name": "github-copilot-dashboard",
+    "is_fork": false
+  },
+  "generated_at": "2026-09-10T15:28:44.511Z",
+  "data_retention_days": 365,
+  "available_months": [
+    "2026-09"
+  ],
+  "available_days": [
+    "2026-09-10",
+    "2026-09-09",
+    "2026-09-08",
+    "2026-09-07",
+    "2026-09-06",
+    "2026-09-05",
+    "2026-09-04"
+  ],
+  "default_scopes": {
+    "latest_day": "2026-09-10",
+    "latest_month": "2026-09",
+    "latest_range": {
+      "start": "2026-08-12",
+      "end": "2026-09-10"
+    }
+  },
+  "summary": {
+    "total_seats": 85,
+    "active_seats_30d": 67,
+    "idle_seats_30d": 18,
+    "total_monthly_spend_usd": 2975,
+    "idle_waste_spend_usd": 602
+  },
+  "issues": [
+    {
+      "id": "issue-1789054124451-gh7g9",
+      "timestamp": "2026-09-10T15:28:44.451Z",
+      "severity": "warning",
+      "category": "rate_limit",
+      "target": "api:copilot/metrics",
+      "message": "GitHub REST API rate limit approaching threshold (Remaining: 120/5000 requests)",
+      "details": "X-RateLimit-Remaining: 120\nX-RateLimit-Reset: 1725960000\nResource: /enterprises/proud-corp/copilot/metrics\nRecommendation: Increase polling interval or utilize caching.",
+      "http_status": 200,
+      "affected_fields": [
+        "copilot_ide_chat"
+      ]
+    },
+    {
+      "id": "issue-1789054124451-c7g8g",
+      "timestamp": "2026-09-10T15:28:44.451Z",
+      "severity": "error",
+      "category": "api_auth",
+      "target": "org:proud-internal-sys",
+      "message": "HTTP 403 Forbidden: Missing admin read permissions for organization \"proud-internal-sys\"",
+      "details": "Status: 403 Forbidden\nEndpoint: GET https://api.github.com/orgs/proud-internal-sys/copilot/metrics\nResponse: {\"message\":\"Must have admin rights to Repository or Organization to view Copilot Metrics.\",\"documentation_url\":\"https://docs.github.com/rest/copilot/copilot-metrics\"}\nImpact: Metrics for proud-internal-sys were skipped and marked as unavailable.",
+      "http_status": 403,
+      "affected_fields": [
+        "copilot_ide_code_completions",
+        "copilot_ide_chat",
+        "top_languages"
+      ]
+    },
+    {
+      "id": "issue-1789054124455-ad732",
+      "timestamp": "2026-09-10T15:28:44.455Z",
+      "severity": "warning",
+      "category": "data_integrity",
+      "target": "api:billing/cost-centers/cc-ent-9009",
+      "message": "Cost Center \"cc-ent-9009\" (Enterprise-IT) contains 3 unmapped user assignments",
+      "details": "Warning: 3 users could not be resolved against active enterprise seats.\nCost Center ID: cc-ent-9009\nFallback: Assigned to Default-CostCenter.",
+      "http_status": 200,
+      "affected_fields": [
+        "cost_center"
+      ]
+    }
+  ]
+}

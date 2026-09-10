@@ -1,0 +1,49 @@
+{
+  "generated_at": "2026-09-10T15:28:44.473Z",
+  "total_issues": 3,
+  "errors_count": 1,
+  "warnings_count": 2,
+  "issues": [
+    {
+      "id": "issue-1789054124451-gh7g9",
+      "timestamp": "2026-09-10T15:28:44.451Z",
+      "severity": "warning",
+      "category": "rate_limit",
+      "target": "api:copilot/metrics",
+      "message": "GitHub REST API rate limit approaching threshold (Remaining: 120/5000 requests)",
+      "details": "X-RateLimit-Remaining: 120\nX-RateLimit-Reset: 1725960000\nResource: /enterprises/proud-corp/copilot/metrics\nRecommendation: Increase polling interval or utilize caching.",
+      "http_status": 200,
+      "affected_fields": [
+        "copilot_ide_chat"
+      ]
+    },
+    {
+      "id": "issue-1789054124451-c7g8g",
+      "timestamp": "2026-09-10T15:28:44.451Z",
+      "severity": "error",
+      "category": "api_auth",
+      "target": "org:proud-internal-sys",
+      "message": "HTTP 403 Forbidden: Missing admin read permissions for organization \"proud-internal-sys\"",
+      "details": "Status: 403 Forbidden\nEndpoint: GET https://api.github.com/orgs/proud-internal-sys/copilot/metrics\nResponse: {\"message\":\"Must have admin rights to Repository or Organization to view Copilot Metrics.\",\"documentation_url\":\"https://docs.github.com/rest/copilot/copilot-metrics\"}\nImpact: Metrics for proud-internal-sys were skipped and marked as unavailable.",
+      "http_status": 403,
+      "affected_fields": [
+        "copilot_ide_code_completions",
+        "copilot_ide_chat",
+        "top_languages"
+      ]
+    },
+    {
+      "id": "issue-1789054124455-ad732",
+      "timestamp": "2026-09-10T15:28:44.455Z",
+      "severity": "warning",
+      "category": "data_integrity",
+      "target": "api:billing/cost-centers/cc-ent-9009",
+      "message": "Cost Center \"cc-ent-9009\" (Enterprise-IT) contains 3 unmapped user assignments",
+      "details": "Warning: 3 users could not be resolved against active enterprise seats.\nCost Center ID: cc-ent-9009\nFallback: Assigned to Default-CostCenter.",
+      "http_status": 200,
+      "affected_fields": [
+        "cost_center"
+      ]
+    }
+  ]
+}
