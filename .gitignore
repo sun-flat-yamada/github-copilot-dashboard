@@ -1,0 +1,104 @@
+# =================================================================
+# Dependencies & Build Artifacts
+# =================================================================
+node_modules/
+dist/
+build/
+.cache/
+
+# =================================================================
+# 🔒 CRITICAL: Secrets, Credentials & Privacy Protection (OWASP / Gitleaks)
+# =================================================================
+# Environment files & Local Configs (NEVER commit tokens, user mappings or secrets)
+.env
+.env.*
+!.env.example
+*.env
+.envrc
+
+# Private Keys, Certificates & Cryptographic Credentials
+*.pem
+*.key
+*.priv
+*.pkcs12
+*.p12
+*.pfx
+*.asc
+id_rsa
+id_rsa.pub
+id_ecdsa
+id_ecdsa.pub
+id_ed25519
+id_ed25519.pub
+*.crt
+*.cer
+*.der
+*.keystore
+*.jks
+
+# Cloud Provider Credentials & API Secret Dumps
+credentials.json
+client_secret*.json
+service-account*.json
+.aws/
+.gcp/
+.azure/
+gcloud/
+*.ovpn
+
+# Developer Package & Registry Tokens
+.npmrc
+.yarnrc
+.pypirc
+.netrc
+.docker/config.json
+
+# Password Databases & Encrypted Vaults
+*.kdbx
+*.vault
+.vault-token
+secrets/
+credentials/
+secrets.json
+secrets.yml
+secrets.yaml
+
+# Kubernetes / Container Access Tokens
+kubeconfig
+kubeconfig.yaml
+admin.conf
+
+# User Attribute Mappings & Internal Org Dumps (Zero-Leakage Policy)
+user_mapping.json
+user_mapping.csv
+copilot_user_mapping*.json
+internal_org_chart.*
+
+# =================================================================
+# Data Storage (Stored in dedicated 'copilot-data' branch, NOT in main)
+# =================================================================
+data/
+dashboard/public/data/
+
+# =================================================================
+# Logs, Temp & OS / Editor Metadata
+# =================================================================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# AI Assistants Local Agent Brain & Session Logs
+.cursor/sessions/
+.gemini/
+.agents/scratch/

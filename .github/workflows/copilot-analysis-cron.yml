@@ -1,0 +1,125 @@
+name: Copilot Analytics Daily Sync & Pages Deploy
+
+on:
+  schedule:
+    # 毎日 UTC 00:00 (JST 09:00) に自動更新
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    inputs:
+      mock_mode:
+        description: 'Run with 2026.09 simulated mock data'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write      # copilot-data 独立ブランチへのデータ蓄積コミット用
+  pages: write         # GitHub Pages へのデプロイ用
+  id-token: write      # GitHub Pages OIDCトークン用
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
+
+jobs:
+  analyze-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main code branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Restore previous data from 'copilot-data' branch
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir -p data
+          if git ls-remote --exit-code --heads origin copilot-data; then
+            echo "Fetching existing copilot-data branch..."
+            git fetch origin copilot-data
+            # git archive を用いてインデックスや作業ツリーのブランチを一切変更せずに安全展開
+            git archive origin/copilot-data data | tar -x || true
+            echo "✅ Successfully restored existing data partitions from copilot-data."
+          else
+            echo "ℹ️ No copilot-data branch found on remote. Will initialize upon first sync."
+          fi
+
+      - name: Run Copilot Analytics Pipeline
+        env:
+          COPILOT_READ_TOKEN: ${{ secrets.COPILOT_READ_TOKEN }}
+          COPILOT_ENTERPRISE: ${{ vars.COPILOT_ENTERPRISE }}
+          COPILOT_ORGS: ${{ vars.COPILOT_ORGS }}
+          COPILOT_USER_MAPPING: ${{ vars.COPILOT_USER_MAPPING || secrets.COPILOT_USER_MAPPING }}
+          MOCK_MODE: ${{ inputs.mock_mode || vars.MOCK_MODE || 'false' }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          IS_FORK: ${{ github.event.repository.fork }}
+        run: npm run pipeline:run
+
+      - name: Commit and Push to 'copilot-data' branch (Fork-Safe Storage)
+        run: |
+          # コードブランチには一切触れず、独立した一時リポジトリディレクトリで copilot-data を操作
+          DATA_WORK_DIR=$(mktemp -d)
+          REPO_URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+
+          if git ls-remote --exit-code --heads origin copilot-data; then
+            echo "Cloning existing copilot-data branch into isolated work directory..."
+            git clone --branch copilot-data --single-branch --depth 1 "$REPO_URL" "$DATA_WORK_DIR"
+          else
+            echo "Initializing new orphan copilot-data branch in isolated work directory..."
+            git init "$DATA_WORK_DIR"
+            cd "$DATA_WORK_DIR"
+            git checkout --orphan copilot-data
+            git remote add origin "$REPO_URL"
+            cd "$GITHUB_WORKSPACE"
+          fi
+
+          # 最新の data/ を同期
+          mkdir -p "$DATA_WORK_DIR/data"
+          cp -r data/* "$DATA_WORK_DIR/data/"
+
+          cd "$DATA_WORK_DIR"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          if git status --porcelain | grep -q 'data/'; then
+            git commit -m "chore(data): record copilot analytics partitions $(date -u +'%Y-%m-%d %H:%M UTC') [skip ci]"
+            git push origin copilot-data
+            echo "✅ Successfully synced partitions to copilot-data branch."
+          else
+            echo "ℹ️ No changes in data partitions to commit."
+          fi
+
+          cd "$GITHUB_WORKSPACE"
+          rm -rf "$DATA_WORK_DIR"
+
+      - name: Build Dashboard SPA
+        env:
+          BASE_URL: './'
+        run: npm run build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

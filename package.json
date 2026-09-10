@@ -1,0 +1,57 @@
+{
+  "name": "github-copilot-dashboard",
+  "version": "1.0.0",
+  "description": "Enterprise-grade GitHub Copilot Usage and Billing Analytics Platform with 3-axis allocation and fork isolation",
+  "private": true,
+  "license": "MIT",
+  "author": "sun-flat-yamada",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sun-flat-yamada/github-copilot-dashboard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sun-flat-yamada/github-copilot-dashboard/issues"
+  },
+  "homepage": "https://github.com/sun-flat-yamada/github-copilot-dashboard#readme",
+  "keywords": [
+    "github-copilot",
+    "copilot-metrics",
+    "finops",
+    "billing",
+    "cost-center",
+    "github-pages",
+    "dashboard",
+    "analytics"
+  ],
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "pipeline:run": "tsx src/cli/run-pipeline.ts",
+    "pipeline:mock": "tsx src/cli/run-pipeline.ts --mock",
+    "test": "tsx --test src/tests/**/*.test.ts",
+    "secret-scan": "tsx scripts/scan-secrets.ts"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.16.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.15.0",
+    "tailwind-merge": "^3.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.1",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0"
+  }
+}
