@@ -11,6 +11,9 @@ import {
 
 interface GroupUsageRankingProps {
   data: ScopeAggregatedData;
+  grouping: GroupingDimension;
+  selectedGroup: string;
+  onGroupChange?: (group: string) => void;
   onSelectUserForTrend: (login: string) => void;
 }
 
@@ -18,10 +21,11 @@ type SortMetric = 'suggestions' | 'acceptances' | 'chats' | 'cost' | 'acceptance
 
 export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
   data,
+  grouping,
+  selectedGroup,
+  onGroupChange,
   onSelectUserForTrend,
 }) => {
-  const [currentDimension, setCurrentDimension] = useState<GroupingDimension>('department');
-  const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortMetric>('acceptances');
 
   const { user_profiles = [], scope_type, scope_key, date_range } = data;
@@ -30,20 +34,20 @@ export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
   const availableGroups = useMemo(() => {
     const set = new Set<string>();
     for (const p of user_profiles) {
-      if (currentDimension === 'department') set.add(p.department);
-      else if (currentDimension === 'cost_center') set.add(p.cost_center);
+      if (grouping === 'department') set.add(p.department);
+      else if (grouping === 'cost_center') set.add(p.cost_center);
       else set.add(p.organization);
     }
     return Array.from(set).sort();
-  }, [user_profiles, currentDimension]);
+  }, [user_profiles, grouping]);
 
   // グループおよびソートによるランキング一覧
   const rankedUsers = useMemo(() => {
     // 1. グループ絞り込み
     const filtered = user_profiles.filter((p) => {
       if (selectedGroup === 'all') return true;
-      if (currentDimension === 'department') return p.department === selectedGroup;
-      if (currentDimension === 'cost_center') return p.cost_center === selectedGroup;
+      if (grouping === 'department') return p.department === selectedGroup;
+      if (grouping === 'cost_center') return p.cost_center === selectedGroup;
       return p.organization === selectedGroup;
     });
 
@@ -64,14 +68,21 @@ export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
           return b.total_acceptances - a.total_acceptances;
       }
     });
-  }, [user_profiles, selectedGroup, currentDimension, sortBy]);
+  }, [user_profiles, selectedGroup, grouping, sortBy]);
 
   const dimensionLabel =
-    currentDimension === 'department'
+    grouping === 'department'
       ? '任意仕訳グループ (部署・PJ)'
-      : currentDimension === 'cost_center'
+      : grouping === 'cost_center'
       ? 'GitHub Cost Center'
       : 'GitHub Organization';
+
+  const DimensionIcon =
+    grouping === 'department'
+      ? Briefcase
+      : grouping === 'cost_center'
+      ? Landmark
+      : Building2;
 
   const scopeLabel =
     scope_type === 'daily'
@@ -93,56 +104,19 @@ export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            CostCenter、Organization、および任意仕訳グループの範囲内で、AI活用度・受諾数を比較・順位付けします。
+            ページ共通の集計軸（{dimensionLabel}）および選択グループの範囲内で、AI活用度・受諾数を比較・順位付けします。
           </p>
         </div>
 
-        {/* 軸の切り替えボタン */}
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <span className="text-xs text-slate-400 font-semibold">分析軸:</span>
-          <div className="inline-flex rounded-lg bg-slate-950 border border-slate-800 p-1">
-            <button
-              onClick={() => {
-                setCurrentDimension('department');
-                setSelectedGroup('all');
-              }}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                currentDimension === 'department'
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Briefcase className="w-3.5 h-3.5" />
-              <span>仕訳グループ</span>
-            </button>
-            <button
-              onClick={() => {
-                setCurrentDimension('cost_center');
-                setSelectedGroup('all');
-              }}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                currentDimension === 'cost_center'
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Landmark className="w-3.5 h-3.5" />
-              <span>Cost Center</span>
-            </button>
-            <button
-              onClick={() => {
-                setCurrentDimension('organization');
-                setSelectedGroup('all');
-              }}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                currentDimension === 'organization'
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Building2 className="w-3.5 h-3.5" />
-              <span>Organization</span>
-            </button>
+        {/* ページ全体と連動した集計単位の表示インジケーター */}
+        <div className="flex items-center space-x-2.5 shrink-0">
+          <span className="text-xs text-slate-400 font-semibold">集計単位:</span>
+          <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-purple-950/60 border border-purple-800/80 text-purple-200 text-xs font-semibold shadow-sm">
+            <DimensionIcon className="w-3.5 h-3.5 text-purple-400" />
+            <span>{dimensionLabel}</span>
+            <span className="text-[10px] text-purple-300 bg-purple-900/80 px-1.5 py-0.5 rounded font-normal">
+              ページ全体連動
+            </span>
           </div>
         </div>
       </div>
@@ -153,7 +127,7 @@ export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
           <span className="text-xs text-slate-400">範囲グループ選択:</span>
           <select
             value={selectedGroup}
-            onChange={(e) => setSelectedGroup(e.target.value)}
+            onChange={(e) => onGroupChange?.(e.target.value)}
             className="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="all">すべての {dimensionLabel}</option>
@@ -281,9 +255,9 @@ export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
                     </td>
 
                     <td className="px-4 py-3 font-medium text-slate-300">
-                      {currentDimension === 'department'
+                      {grouping === 'department'
                         ? u.department
-                        : currentDimension === 'cost_center'
+                        : grouping === 'cost_center'
                         ? u.cost_center
                         : u.organization}
                     </td>

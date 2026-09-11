@@ -52,6 +52,7 @@ export const App: React.FC = () => {
   const [scopeType, setScopeType] = useState<AnalysisScopeType>('monthly');
   const [selectedKey, setSelectedKey] = useState<string>('2026-09');
   const [currentGrouping, setCurrentGrouping] = useState<GroupingDimension>('department');
+  const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [userTableFilterStatus, setUserTableFilterStatus] = useState<UserSeatStatus | 'all'>('all');
   const [focusedUserLogin, setFocusedUserLogin] = useState<string>('');
@@ -191,6 +192,34 @@ export const App: React.FC = () => {
     setScopeType(type);
     setSelectedKey(key);
   };
+
+  const handleGroupingChange = (grouping: GroupingDimension) => {
+    setCurrentGrouping(grouping);
+    setSelectedGroup('all');
+  };
+
+  // 選択中の集計軸における利用可能グループ一覧
+  const availableGroups = useMemo(() => {
+    if (!currentData) return [];
+    const set = new Set<string>();
+    for (const p of currentData.user_profiles || []) {
+      if (currentGrouping === 'department' && p.department) set.add(p.department);
+      else if (currentGrouping === 'cost_center' && p.cost_center) set.add(p.cost_center);
+      else if (currentGrouping === 'organization' && p.organization) set.add(p.organization);
+    }
+    if (set.size === 0) {
+      const summaries =
+        currentGrouping === 'department'
+          ? currentData.by_department
+          : currentGrouping === 'cost_center'
+          ? currentData.by_cost_center
+          : currentData.by_organization;
+      for (const key of Object.keys(summaries || {})) {
+        if (key) set.add(key);
+      }
+    }
+    return Array.from(set).sort();
+  }, [currentData, currentGrouping]);
 
   const handleFilterIdle = () => {
     setUserTableFilterStatus('idle');
@@ -341,7 +370,10 @@ export const App: React.FC = () => {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800 pb-4">
               <GroupingSelector
                 currentGrouping={currentGrouping}
-                onGroupingChange={setCurrentGrouping}
+                onGroupingChange={handleGroupingChange}
+                selectedGroup={selectedGroup}
+                onGroupChange={setSelectedGroup}
+                availableGroups={availableGroups}
               />
 
               <div className="inline-flex flex-wrap rounded-lg bg-slate-900 border border-slate-800 p-1 self-start lg:self-auto gap-1">
@@ -479,6 +511,9 @@ export const App: React.FC = () => {
               <div className="flex flex-col space-y-6">
                 <GroupUsageRanking
                   data={currentData}
+                  grouping={currentGrouping}
+                  selectedGroup={selectedGroup}
+                  onGroupChange={setSelectedGroup}
                   onSelectUserForTrend={handleSelectUserForTrend}
                 />
               </div>
