@@ -1,0 +1,854 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+} from 'recharts';
+import {
+  BenchmarkDataset,
+  RadarAxisKey,
+} from '../../../src/types/model-benchmark';
+import {
+  Radar as RadarIcon,
+  Sparkles,
+  CheckCircle2,
+  AlertCircle,
+  ExternalLink,
+  Layers,
+  BrainCircuit,
+  Gauge,
+  Compass,
+  ArrowUpDown,
+  FileCode2,
+  Flame,
+  ShieldCheck,
+  RefreshCw,
+  Sliders,
+} from 'lucide-react';
+
+interface ModelRadarViewProps {
+  initialSelectedModelId?: string;
+  onNavigateToTrend?: (modelId: string) => void;
+}
+
+// プリセット定義
+const PRESETS = [
+  {
+    id: 'copilot-core',
+    name: 'Copilot 4大モデル',
+    description: 'Claude 3.7 / GPT-4o / o1 / Gemini 2.0 Flash',
+    modelIds: ['claude-3-7-sonnet', 'gpt-4o', 'o1', 'gemini-2-0-flash'],
+  },
+  {
+    id: 'reasoning-focus',
+    name: '思考推論 (Reasoning) 特化',
+    description: 'o1 / o3-mini / Claude 3.7 / DeepSeek R1',
+    modelIds: ['o1', 'o3-mini', 'claude-3-7-sonnet', 'deepseek-r1'],
+  },
+  {
+    id: 'speed-cost',
+    name: '高速・高コスパ日常開発',
+    description: 'Gemini 2.0 Flash / GPT-4o / Claude 3.5 Sonnet',
+    modelIds: ['gemini-2-0-flash', 'gpt-4o', 'claude-3-5-sonnet'],
+  },
+  {
+    id: 'frontier-top',
+    name: '最新最上位フラッグシップ',
+    description: 'Claude 3.7 Sonnet vs Gemini 2.5 Pro vs o1',
+    modelIds: ['claude-3-7-sonnet', 'gemini-2-5-pro', 'o1'],
+  },
+];
+
+export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
+  initialSelectedModelId,
+}) => {
+  const [dataset, setDataset] = useState<BenchmarkDataset | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // 選択中モデルIDのリスト (最大4モデル)
+  const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
+  // フォーカス中の特定モデルID (詳細カード用)
+  const [focusedModelId, setFocusedModelId] = useState<string>('');
+  // 生データテーブルのソート列
+  const [sortKey, setSortKey] = useState<'overall' | 'swe' | 'speed' | 'cost' | 'aime'>('overall');
+  const [sortAsc, setSortAsc] = useState<boolean>(false);
+
+  // 1. ベンチマークデータの取得
+  useEffect(() => {
+    async function loadDataset() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch('./data/model-benchmarks.json');
+        if (!res.ok) {
+          throw new Error(`Failed to load model-benchmarks.json: status ${res.status}`);
+        }
+        const data = (await res.json()) as BenchmarkDataset;
+        setDataset(data);
+
+        // 初期選択モデルの設定
+        if (initialSelectedModelId && data.models.some((m) => m.id === initialSelectedModelId)) {
+          setSelectedModelIds([initialSelectedModelId]);
+          setFocusedModelId(initialSelectedModelId);
+        } else {
+          // デフォルトは Copilot 4大モデル
+          const defaultIds = ['claude-3-7-sonnet', 'gpt-4o', 'o1', 'gemini-2-0-flash'];
+          setSelectedModelIds(defaultIds);
+          setFocusedModelId(defaultIds[0]);
+        }
+      } catch (e: any) {
+        console.error('Failed to load benchmark dataset:', e);
+        setError(e.message || 'データロードエラー');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadDataset();
+  }, [initialSelectedModelId]);
+
+  // 選択中モデルのプロファイル配列
+  const selectedModels = useMemo(() => {
+    if (!dataset) return [];
+    return dataset.models.filter((m) => selectedModelIds.includes(m.id));
+  }, [dataset, selectedModelIds]);
+
+  // フォーカス中モデルのプロファイル
+  const focusedModel = useMemo(() => {
+    if (!dataset) return null;
+    return (
+      dataset.models.find((m) => m.id === focusedModelId) ||
+      selectedModels[0] ||
+      dataset.models[0] ||
+      null
+    );
+  }, [dataset, focusedModelId, selectedModels]);
+
+  // レーダーチャート用データ整形
+  const radarChartData = useMemo(() => {
+    if (!dataset) return [];
+
+    return dataset.axis_definitions.map((axis) => {
+      const entry: Record<string, any> = {
+        subject: axis.shortLabel,
+        fullSubject: axis.label,
+        key: axis.key,
+        primaryMetric: axis.primaryMetric,
+      };
+
+      for (const model of selectedModels) {
+        entry[model.name] = model.radar_scores[axis.key as RadarAxisKey];
+      }
+
+      return entry;
+    });
+  }, [dataset, selectedModels]);
+
+  // テーブルソート済みモデルリスト
+  const sortedModels = useMemo(() => {
+    if (!dataset) return [];
+    const list = [...dataset.models];
+
+    list.sort((a, b) => {
+      let valA = 0;
+      let valB = 0;
+      if (sortKey === 'overall') {
+        valA = a.evaluation.overall_score;
+        valB = b.evaluation.overall_score;
+      } else if (sortKey === 'swe') {
+        valA = a.raw_metrics.swe_bench_verified;
+        valB = b.raw_metrics.swe_bench_verified;
+      } else if (sortKey === 'speed') {
+        valA = a.raw_metrics.output_speed_tps;
+        valB = b.raw_metrics.output_speed_tps;
+      } else if (sortKey === 'cost') {
+        // コストは安い方が上位
+        valA = a.radar_scores.cost_efficiency;
+        valB = b.radar_scores.cost_efficiency;
+      } else if (sortKey === 'aime') {
+        valA = a.raw_metrics.aime_2024;
+        valB = b.raw_metrics.aime_2024;
+      }
+      return sortAsc ? valA - valB : valB - valA;
+    });
+
+    return list;
+  }, [dataset, sortKey, sortAsc]);
+
+  // モデル選択トグル
+  const handleToggleModel = (id: string) => {
+    if (selectedModelIds.includes(id)) {
+      if (selectedModelIds.length > 1) {
+        setSelectedModelIds(selectedModelIds.filter((m) => m !== id));
+        if (focusedModelId === id) {
+          setFocusedModelId(selectedModelIds.find((m) => m !== id) || '');
+        }
+      }
+    } else {
+      if (selectedModelIds.length < 4) {
+        setSelectedModelIds([...selectedModelIds, id]);
+        setFocusedModelId(id);
+      } else {
+        // 最大4件制限: 先頭を外して追加
+        const updated = [...selectedModelIds.slice(1), id];
+        setSelectedModelIds(updated);
+        setFocusedModelId(id);
+      }
+    }
+  };
+
+  const handleApplyPreset = (modelIds: string[]) => {
+    setSelectedModelIds(modelIds);
+    setFocusedModelId(modelIds[0] || '');
+  };
+
+  const handleSort = (key: 'overall' | 'swe' | 'speed' | 'cost' | 'aime') => {
+    if (sortKey === key) {
+      setSortAsc(!sortAsc);
+    } else {
+      setSortKey(key);
+      setSortAsc(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-3">
+        <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
+        <p className="text-sm text-slate-400">著名ベンチマーク最新データをロード・解析中...</p>
+      </div>
+    );
+  }
+
+  if (error || !dataset) {
+    return (
+      <div className="p-6 bg-red-950/40 border border-red-800 rounded-xl text-red-200 text-sm">
+        <div className="flex items-center space-x-2 font-bold mb-2">
+          <AlertCircle className="w-5 h-5 text-red-400" />
+          <span>ベンチマークデータの読み込みに失敗しました</span>
+        </div>
+        <p className="text-xs font-mono">{error}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col space-y-6">
+      {/* 1. タイトル & ステータスヘッダー */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
+          <div className="flex items-start space-x-4">
+            <div className="p-3 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-600 text-white shadow-lg shadow-indigo-500/25">
+              <RadarIcon className="w-7 h-7" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2.5">
+                <h2 className="text-xl font-bold text-white tracking-tight">
+                  AIモデル特性レーダー & ベンチマーク評価
+                </h2>
+                <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-700/80 flex items-center space-x-1">
+                  <Sparkles className="w-3 h-3" />
+                  <span>v{dataset.version}</span>
+                </span>
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800/80 flex items-center space-x-1">
+                  <ShieldCheck className="w-3 h-3" />
+                  <span>最新ベンチマーク検証済</span>
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-1 max-w-3xl">
+                SWE-bench Verified、AIME 2024、LMSYS Chatbot Arena、Artificial Analysis 等の著名ベンチマーク最新実測値を多軸正規化。
+                GitHub Copilot で活用可能な各AIモデルの得意分野・推奨ユースケースを自動判定します。
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <div className="bg-slate-950/80 border border-slate-800 px-3 py-1.5 rounded-lg text-slate-400 flex items-center space-x-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>更新日: {new Date(dataset.last_updated).toLocaleDateString('ja-JP')}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 比較プリセットセレクタ */}
+        <div className="mt-6 pt-5 border-t border-slate-800/80 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-center space-x-2 text-xs text-slate-400">
+            <Sliders className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="font-semibold text-slate-300">比較プリセット:</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {PRESETS.map((p) => {
+              const isActive =
+                p.modelIds.length === selectedModelIds.length &&
+                p.modelIds.every((id) => selectedModelIds.includes(id));
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => handleApplyPreset(p.modelIds)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    isActive
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                      : 'bg-slate-800/70 hover:bg-slate-800 text-slate-300 border border-slate-700/60'
+                  }`}
+                  title={p.description}
+                >
+                  {p.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* モデル選択チップス (最大4つ) */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="text-xs text-slate-400 mr-1">モデル選択 (最大4件):</span>
+          {dataset.models.map((model) => {
+            const isSelected = selectedModelIds.includes(model.id);
+            const isFocused = focusedModelId === model.id;
+            return (
+              <button
+                key={model.id}
+                onClick={() => handleToggleModel(model.id)}
+                className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs transition-all border ${
+                  isSelected
+                    ? 'border-indigo-500/80 text-white shadow-sm'
+                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                } ${isFocused && isSelected ? 'ring-2 ring-indigo-400 ring-offset-2 ring-offset-slate-900' : ''}`}
+                style={{
+                  backgroundColor: isSelected ? `${model.color}25` : undefined,
+                }}
+              >
+                <span
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{ backgroundColor: model.color }}
+                />
+                <span className="font-medium">{model.name}</span>
+                {model.is_copilot_native && (
+                  <span className="text-[9px] px-1 py-0.2 rounded bg-indigo-950 text-indigo-300 font-mono">
+                    Copilot
+                  </span>
+                )}
+                {isSelected && (
+                  <span className="text-[10px] font-bold text-slate-300 ml-1">✓</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 2. レーダーチャート & フォーカスモデル判定カード */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* 左: レーダーチャート (7 cols) */}
+        <div className="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+              <div className="flex items-center space-x-2">
+                <Compass className="w-5 h-5 text-indigo-400" />
+                <h3 className="text-sm font-bold text-white">6軸多次元特性マップ (0 - 100)</h3>
+              </div>
+              <span className="text-[11px] text-slate-400">
+                選択中: <strong className="text-indigo-300">{selectedModels.length}</strong> / 4 モデル
+              </span>
+            </div>
+
+            {/* チャート描画領域 */}
+            <div className="w-full h-[400px] flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart data={radarChartData} outerRadius="75%">
+                  <PolarGrid stroke="#334155" strokeDasharray="3 3" />
+                  <PolarAngleAxis
+                    dataKey="subject"
+                    tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }}
+                  />
+                  <PolarRadiusAxis
+                    angle={30}
+                    domain={[0, 100]}
+                    stroke="#475569"
+                    tick={{ fill: '#64748b', fontSize: 10 }}
+                  />
+                  <Tooltip
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        const targetAxis = dataset.axis_definitions.find(
+                          (a) => a.shortLabel === label
+                        );
+                        return (
+                          <div className="bg-slate-950/95 border border-slate-800 p-3 rounded-xl shadow-2xl text-xs space-y-2 backdrop-blur max-w-xs">
+                            <p className="font-bold text-slate-200 border-b border-slate-800 pb-1">
+                              {targetAxis?.label || label}
+                            </p>
+                            <p className="text-[11px] text-slate-400">
+                              {targetAxis?.description}
+                            </p>
+                            <div className="space-y-1 pt-1">
+                              {payload.map((entry: any, index: number) => (
+                                <div
+                                  key={`item-${index}`}
+                                  className="flex items-center justify-between space-x-4"
+                                >
+                                  <div className="flex items-center space-x-1.5">
+                                    <span
+                                      className="w-2.5 h-2.5 rounded-full"
+                                      style={{ backgroundColor: entry.color }}
+                                    />
+                                    <span className="text-slate-300 font-medium truncate max-w-[130px]">
+                                      {entry.name}
+                                    </span>
+                                  </div>
+                                  <span className="font-mono font-bold text-white">
+                                    {entry.value} / 100
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Legend
+                    wrapperStyle={{ paddingTop: '10px' }}
+                    formatter={(val) => (
+                      <span className="text-xs text-slate-300 hover:text-white cursor-pointer">
+                        {val}
+                      </span>
+                    )}
+                  />
+                  {selectedModels.map((model) => (
+                    <Radar
+                      key={model.id}
+                      name={model.name}
+                      dataKey={model.name}
+                      stroke={model.color}
+                      fill={model.color}
+                      fillOpacity={selectedModels.length === 1 ? 0.35 : 0.18}
+                      strokeWidth={focusedModelId === model.id ? 3 : 2}
+                    />
+                  ))}
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 軸の凡例クイックリファレンス */}
+          <div className="mt-4 pt-3 border-t border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
+            {dataset.axis_definitions.map((axis) => (
+              <div
+                key={axis.key}
+                className="bg-slate-950/60 p-2 rounded-lg border border-slate-800/60"
+              >
+                <span className="font-semibold text-slate-300 block">{axis.shortLabel}</span>
+                <span className="text-slate-500 text-[10px]">{axis.primaryMetric}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 右: フォーカスモデルの特性判定カード (5 cols) */}
+        <div className="lg:col-span-5 flex flex-col space-y-4">
+          {focusedModel ? (
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex-1 flex flex-col justify-between">
+              <div>
+                {/* ヘッダー: モデル名・グレード */}
+                <div className="flex items-start justify-between gap-3 border-b border-slate-800 pb-4">
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <span
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: focusedModel.color }}
+                      />
+                      <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                        {focusedModel.vendor} • {focusedModel.model_family}
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-bold text-white mt-1">{focusedModel.name}</h3>
+                  </div>
+
+                  <div className="flex flex-col items-end">
+                    <div className="flex items-center space-x-1.5">
+                      <span className="text-xs text-slate-400">総合グレード</span>
+                      <span
+                        className="px-2.5 py-0.5 rounded-md font-black text-sm text-white shadow-lg"
+                        style={{ backgroundColor: focusedModel.color }}
+                      >
+                        {focusedModel.evaluation.grade}
+                      </span>
+                    </div>
+                    <span className="text-xs font-mono text-slate-400 mt-1">
+                      Score: <strong className="text-white">{focusedModel.evaluation.overall_score}</strong> / 100
+                    </span>
+                  </div>
+                </div>
+
+                {/* 特性タグバッジ */}
+                <div className="mt-4">
+                  <span className="text-xs font-semibold text-slate-400 block mb-2">判定特性タグ:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {focusedModel.evaluation.suitability_tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-950/80 text-indigo-300 border border-indigo-700/60 flex items-center space-x-1"
+                      >
+                        <Flame className="w-3 h-3 text-indigo-400" />
+                        <span>{tag}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 総合判定サマリー */}
+                <div className="mt-4 p-3.5 bg-slate-950/70 border border-slate-800 rounded-xl">
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    {focusedModel.evaluation.summary_verdict}
+                  </p>
+                </div>
+
+                {/* Copilot 推奨利用指針 */}
+                <div className="mt-4 p-3.5 bg-indigo-950/40 border border-indigo-800/60 rounded-xl">
+                  <div className="flex items-center space-x-1.5 text-xs font-bold text-indigo-300 mb-1">
+                    <BrainCircuit className="w-4 h-4 text-indigo-400" />
+                    <span>Copilot 実務活用ガイド</span>
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    {focusedModel.evaluation.copilot_usage_guidance}
+                  </p>
+                </div>
+
+                {/* 推奨ユースケース & 強み */}
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 bg-slate-950/50 rounded-xl border border-slate-800/70">
+                    <div className="flex items-center space-x-1 text-emerald-400 font-bold mb-2">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>推奨ユースケース</span>
+                    </div>
+                    <ul className="space-y-1.5 text-slate-300 text-[11px]">
+                      {focusedModel.evaluation.recommended_for.map((rec, i) => (
+                        <li key={i} className="flex items-start space-x-1.5">
+                          <span className="text-emerald-500 font-bold">•</span>
+                          <span>{rec}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="p-3 bg-slate-950/50 rounded-xl border border-slate-800/70">
+                    <div className="flex items-center space-x-1 text-sky-400 font-bold mb-2">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>顕著な強み (Strengths)</span>
+                    </div>
+                    <ul className="space-y-1.5 text-slate-300 text-[11px]">
+                      {focusedModel.evaluation.strengths.map((str, i) => (
+                        <li key={i} className="flex items-start space-x-1.5">
+                          <span className="text-sky-500 font-bold">•</span>
+                          <span>{str}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* 留意点 (Weaknesses) がある場合 */}
+                {focusedModel.evaluation.weaknesses.length > 0 && (
+                  <div className="mt-3 p-2.5 bg-amber-950/30 border border-amber-800/40 rounded-xl text-[11px] text-amber-200/90 flex items-start space-x-2">
+                    <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-semibold text-amber-300">利用時の留意点: </span>
+                      <span>{focusedModel.evaluation.weaknesses.join(' / ')}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* モデル切り替えクイックセレクタ */}
+              <div className="mt-5 pt-4 border-t border-slate-800 flex items-center justify-between text-xs">
+                <span className="text-slate-400">詳細カード切り替え:</span>
+                <div className="flex items-center space-x-1.5">
+                  {selectedModels.map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => setFocusedModelId(m.id)}
+                      className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                        focusedModelId === m.id
+                          ? 'bg-indigo-600 text-white shadow'
+                          : 'bg-slate-800 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {m.name.split(' ')[0]} {m.name.split(' ')[1] || ''}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center text-slate-500">
+              モデルを選択してください
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 3. 著名ベンチマーク生データ詳細比較テーブル */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-4">
+          <div>
+            <div className="flex items-center space-x-2">
+              <FileCode2 className="w-5 h-5 text-indigo-400" />
+              <h3 className="text-base font-bold text-white">著名ベンチマーク最新実測データ詳細テーブル</h3>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">
+              SWE-bench Verified、AIME 2024、LMSYS Arena Elo、TPS、入出力コスト、コンテキスト長の実測値一覧
+            </p>
+          </div>
+
+          <div className="flex items-center space-x-2 text-xs">
+            <span className="text-slate-400">ソート基準:</span>
+            <button
+              onClick={() => handleSort('overall')}
+              className={`px-2.5 py-1 rounded-md font-medium border ${
+                sortKey === 'overall'
+                  ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
+                  : 'bg-slate-800/60 border-slate-700 text-slate-400'
+              }`}
+            >
+              総合スコア
+            </button>
+            <button
+              onClick={() => handleSort('swe')}
+              className={`px-2.5 py-1 rounded-md font-medium border ${
+                sortKey === 'swe'
+                  ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
+                  : 'bg-slate-800/60 border-slate-700 text-slate-400'
+              }`}
+            >
+              SWE-bench
+            </button>
+            <button
+              onClick={() => handleSort('speed')}
+              className={`px-2.5 py-1 rounded-md font-medium border ${
+                sortKey === 'speed'
+                  ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
+                  : 'bg-slate-800/60 border-slate-700 text-slate-400'
+              }`}
+            >
+              出力速度
+            </button>
+            <button
+              onClick={() => handleSort('cost')}
+              className={`px-2.5 py-1 rounded-md font-medium border ${
+                sortKey === 'cost'
+                  ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
+                  : 'bg-slate-800/60 border-slate-700 text-slate-400'
+              }`}
+            >
+              コスト効率
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-slate-800 text-slate-400 font-semibold uppercase tracking-wider bg-slate-950/40">
+                <th className="py-3 px-3">モデル / ファミリー</th>
+                <th className="py-3 px-3 cursor-pointer" onClick={() => handleSort('overall')}>
+                  <div className="flex items-center space-x-1">
+                    <span>総合 Grade / 判定</span>
+                    <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
+                <th className="py-3 px-3 cursor-pointer" onClick={() => handleSort('swe')}>
+                  <div className="flex items-center space-x-1">
+                    <span>SWE-bench Verified</span>
+                    <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
+                <th className="py-3 px-3 cursor-pointer" onClick={() => handleSort('aime')}>
+                  <div className="flex items-center space-x-1">
+                    <span>AIME 2024 / GPQA</span>
+                    <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
+                <th className="py-3 px-3">Arena Coding Elo</th>
+                <th className="py-3 px-3 cursor-pointer" onClick={() => handleSort('speed')}>
+                  <div className="flex items-center space-x-1">
+                    <span>速度 (Tokens/s)</span>
+                    <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
+                <th className="py-3 px-3 cursor-pointer" onClick={() => handleSort('cost')}>
+                  <div className="flex items-center space-x-1">
+                    <span>単価 ($/1M Tok)</span>
+                    <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
+                <th className="py-3 px-3">Context 窓</th>
+                <th className="py-3 px-3 text-right">レーダー表示</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60">
+              {sortedModels.map((m) => {
+                const isSelected = selectedModelIds.includes(m.id);
+                const isFocused = focusedModelId === m.id;
+                return (
+                  <tr
+                    key={m.id}
+                    className={`hover:bg-slate-800/40 transition-colors ${
+                      isFocused ? 'bg-indigo-950/20' : ''
+                    }`}
+                  >
+                    <td className="py-3 px-3">
+                      <div className="flex items-center space-x-2.5">
+                        <span
+                          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: m.color }}
+                        />
+                        <div>
+                          <div className="flex items-center space-x-1.5">
+                            <span className="font-bold text-white">{m.name}</span>
+                            {m.is_copilot_native && (
+                              <span className="text-[9px] px-1 py-0.2 rounded bg-indigo-950 text-indigo-300 font-mono">
+                                Copilot
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] text-slate-500">
+                            {m.vendor} • {m.release_date}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="py-3 px-3">
+                      <div className="flex items-center space-x-2">
+                        <span
+                          className="px-2 py-0.5 rounded text-[11px] font-black text-white"
+                          style={{ backgroundColor: m.color }}
+                        >
+                          {m.evaluation.grade}
+                        </span>
+                        <span className="font-mono text-slate-300 font-bold">
+                          {m.evaluation.overall_score} pt
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="py-3 px-3 font-mono">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-200">
+                          {m.raw_metrics.swe_bench_verified}%
+                        </span>
+                        <span className="text-[10px] text-slate-500">
+                          HumanEval+: {m.raw_metrics.humaneval_plus}%
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="py-3 px-3 font-mono">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-200">
+                          AIME: {m.raw_metrics.aime_2024}%
+                        </span>
+                        <span className="text-[10px] text-slate-500">
+                          GPQA: {m.raw_metrics.gpqa_diamond}%
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="py-3 px-3 font-mono font-bold text-indigo-300">
+                      {m.raw_metrics.arena_coding_elo}
+                    </td>
+
+                    <td className="py-3 px-3 font-mono">
+                      <div className="flex items-center space-x-1.5">
+                        <Gauge className="w-3.5 h-3.5 text-cyan-400" />
+                        <span className="font-bold text-white">
+                          {m.raw_metrics.output_speed_tps} tps
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="py-3 px-3 font-mono text-slate-300">
+                      <div className="flex flex-col">
+                        <span>In: ${m.raw_metrics.input_cost_per_m}</span>
+                        <span className="text-[10px] text-slate-500">
+                          Out: ${m.raw_metrics.output_cost_per_m}
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="py-3 px-3 font-mono text-slate-300">
+                      {m.raw_metrics.context_window_k >= 1000
+                        ? `${m.raw_metrics.context_window_k / 1000}M Tok`
+                        : `${m.raw_metrics.context_window_k}K Tok`}
+                    </td>
+
+                    <td className="py-3 px-3 text-right">
+                      <button
+                        onClick={() => handleToggleModel(m.id)}
+                        className={`px-2.5 py-1 rounded text-xs font-semibold transition-all ${
+                          isSelected
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-slate-800 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {isSelected ? '選択解除' : 'レーダー追加'}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 4. ベンチマークデータソース & 判定基準情報 */}
+      <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-lg">
+        <div className="flex items-center space-x-2 text-sm font-bold text-white mb-3">
+          <Layers className="w-4 h-4 text-indigo-400" />
+          <span>著名ベンチマーク出典・評価メトリクス解説</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+          {dataset.sources.map((src) => (
+            <div
+              key={src.id}
+              className="p-3.5 bg-slate-950/60 rounded-xl border border-slate-800/80 flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-200">{src.name}</span>
+                  <a
+                    href={src.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-indigo-400 hover:text-indigo-300"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
+                  {src.description}
+                </p>
+              </div>
+              <span className="text-[10px] text-slate-500 font-mono mt-3">
+                最終取得: {new Date(src.last_fetched_at).toLocaleDateString('ja-JP')}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ModelRadarView;

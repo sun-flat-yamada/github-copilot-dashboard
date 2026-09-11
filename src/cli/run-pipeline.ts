@@ -1,7 +1,10 @@
+import * as fs from 'fs';
 import { GitHubCopilotClient } from '../collector/github-client.js';
 import { AttributeResolver } from '../collector/attribute-resolver.js';
+import { MockDataGenerator } from '../collector/mock-generator.js';
 import { BillingCalculator } from '../processor/billing-calculator.js';
 import { MetricsAggregator } from '../processor/metrics-aggregator.js';
+import { ReportParser } from '../processor/report-parser.js';
 import { ForkSafeStorage } from '../storage/fork-safe-storage.js';
 import { IndexMetadata } from '../types/copilot.js';
 
@@ -115,7 +118,46 @@ async function main() {
   );
   storage.saveProcessedScope(customData);
 
-  // 8. index.json メタデータの生成と保存
+  // 8. Monthly Usage Report (CSV) の検出・集計・保存
+  console.log('📑 Processing Monthly Usage Reports (CSV)...');
+  const reportParser = new ReportParser(resolver);
+
+  // モックモードの場合、モックレポートCSVを生成 (保存されていない場合)
+  if (isMock) {
+    const mockGen = new MockDataGenerator();
+    const mockMonths = ['2026-08', '2026-09'];
+    for (const m of mockMonths) {
+      const existingCsvs = storage.getRawReportFiles(m);
+      if (existingCsvs.length === 0) {
+        const mockCsv = mockGen.generateMonthlyUsageReportCSV(m);
+        storage.saveRawReportFile(m, `copilot_monthly_usage_${m}.csv`, mockCsv);
+      }
+    }
+  }
+
+  // 保持されている全レポート月のCSVを集計
+  const availableReportMonths = storage.getStoredReportMonths();
+  console.log(`📊 Found ${availableReportMonths.length} monthly usage report partition(s): ${availableReportMonths.join(', ')}`);
+
+  for (const repMonth of availableReportMonths) {
+    const csvFiles = storage.getRawReportFiles(repMonth);
+    for (const csvPath of csvFiles) {
+      try {
+        const csvContent = fs.readFileSync(csvPath, 'utf-8');
+        const fileName = csvPath.split(/[\\/]/).pop() || `${repMonth}.csv`;
+        const rawRecords = reportParser.parseRecords(csvContent);
+        if (rawRecords.length > 0) {
+          const aggregatedReport = reportParser.aggregate(rawRecords, repMonth, fileName, 'persisted');
+          storage.saveProcessedReport(aggregatedReport);
+          console.log(`✅ Aggregated monthly report for ${repMonth}: ${rawRecords.length} records, $${aggregatedReport.overview.total_net_spend_usd} total net spend.`);
+        }
+      } catch (err) {
+        console.warn(`⚠️ Warning: Failed to parse report CSV at ${csvPath}:`, err);
+      }
+    }
+  }
+
+  // 9. index.json メタデータの生成と保存
   const totalMonthlySpend = enrichedSeats.reduce((sum, u) => sum + u.monthly_cost_usd, 0);
   const idleSeats = enrichedSeats.filter((u) => u.status === 'idle' || u.status === 'never_used');
   const idleWasteSpend = idleSeats.reduce((sum, u) => sum + u.monthly_cost_usd, 0);
@@ -130,9 +172,11 @@ async function main() {
     data_retention_days: 365,
     available_months: [monthKey],
     available_days: availableDays.reverse(),
+    available_reports: availableReportMonths.length > 0 ? availableReportMonths : undefined,
     default_scopes: {
       latest_day: latestMetricDate,
       latest_month: monthKey,
+      latest_report: availableReportMonths[0],
       latest_range: {
         start: startDate,
         end: endDate,

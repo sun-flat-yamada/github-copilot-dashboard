@@ -30,9 +30,11 @@
 │   ├── data/
 │   │   ├── raw/YYYY/MM/copilot_metrics_YYYY-MM-DD.json
 │   │   ├── raw/YYYY/MM/copilot_seats_YYYY-MM-DD.json
+│   │   ├── reports/monthly/YYYY-MM/copilot_monthly_usage_YYYY-MM.csv (月次利用レポートCSV)
 │   │   ├── processed/daily/YYYY-MM-DD.json
 │   │   ├── processed/monthly/YYYY-MM.json
-│   │   └── index.json (利用可能な日付・月・スコープ一覧メタデータ)
+│   │   ├── processed/reports/YYYY-MM.json (月次レポート集計済みデータ)
+│   │   └── index.json (利用可能な日付・月・スコープ・レポート一覧メタデータ)
 │
 └── GitHub Pages (Direct Artifact Deploy)
     └── actions/deploy-pages による直接配信 (gh-pages ブランチへのコミット競合なし)
@@ -53,6 +55,12 @@ data/
 │       │   ├── 2026-09-01-seats.json
 │       │   ├── 2026-09-01-cost-centers.json
 │       │   └── ...
+├── reports/                          # GitHubからエクスポートされた月次利用レポートCSV
+│   └── monthly/
+│       ├── 2026-08/
+│       │   └── copilot_monthly_usage_2026-08.csv
+│       └── 2026-09/
+│           └── copilot_monthly_usage_2026-09.csv
 ├── processed/                        # 分析スコープごとに事前計算されたデータ
 │   ├── daily/
 │   │   ├── 2026-09-01.json           # 日次3軸集計・費用配賦済みデータ
@@ -60,9 +68,12 @@ data/
 │   ├── monthly/
 │   │   ├── 2026-08.json              # 月次集計データ
 │   │   └── 2026-09.json              # 当月累計データ
-│   └── custom/
-│       └── latest-30d.json           # 直近30日間の推移トレンドデータ
-└── index.json                        # 利用可能な期間メタデータ一覧
+│   ├── custom/
+│   │   └── latest-30d.json           # 直近30日間の推移トレンドデータ
+│   └── reports/
+│       ├── 2026-08.json              # 月次レポート集計済みデータ
+│       └── 2026-09.json              # 月次レポート集計済みデータ
+└── index.json                        # 利用可能な期間・レポートメタデータ一覧
 ```
 
 ---
@@ -86,9 +97,11 @@ data/
     "2026-09-08",
     "2026-09-07"
   ],
+  "available_reports": ["2026-09", "2026-08"],
   "default_scopes": {
     "latest_day": "2026-09-09",
     "latest_month": "2026-09",
+    "latest_report": "2026-08",
     "latest_range": {
       "start": "2026-08-11",
       "end": "2026-09-09"

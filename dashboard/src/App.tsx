@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   AnalysisScopeType,
+  DashboardAppMode,
   DataFetchIssue,
   GroupingDimension,
   IndexMetadata,
+  MonthlyReportAggregatedData,
   ScopeAggregatedData,
   UserSeatStatus,
 } from '../../src/types/copilot';
@@ -18,6 +20,10 @@ import { ErrorLogModal } from './components/ErrorLogModal';
 import { CostCenterBudgetCards } from './components/CostCenterBudgetCards';
 import { UserTrendViewer } from './components/UserTrendViewer';
 import { GroupUsageRanking } from './components/GroupUsageRanking';
+import { ModeSwitcher } from './components/ModeSwitcher';
+import { MonthlyReportView } from './components/MonthlyReportView';
+import { ReportDropzoneModal } from './components/ReportDropzoneModal';
+import { ModelRadarView } from './components/ModelRadarView';
 import {
   Sparkles,
   GitFork,
@@ -31,11 +37,15 @@ import {
   Trophy,
   Landmark,
   Bot,
+  Compass,
 } from 'lucide-react';
 
 type TabType = 'overview' | 'ranking' | 'trend' | 'budget' | 'usage' | 'users';
 
 export const App: React.FC = () => {
+  // アプリケーション表示モード (Live Metrics vs Monthly Usage Report)
+  const [appMode, setAppMode] = useState<DashboardAppMode>('live_metrics');
+
   const [indexMeta, setIndexMeta] = useState<IndexMetadata | null>(null);
   const [scopeType, setScopeType] = useState<AnalysisScopeType>('monthly');
   const [selectedKey, setSelectedKey] = useState<string>('2026-09');
@@ -43,13 +53,26 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [userTableFilterStatus, setUserTableFilterStatus] = useState<UserSeatStatus | 'all'>('all');
   const [focusedUserLogin, setFocusedUserLogin] = useState<string>('');
+  const [focusedRadarModelId, setFocusedRadarModelId] = useState<string>('claude-3-7-sonnet');
 
   const [currentData, setCurrentData] = useState<ScopeAggregatedData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Monthly Usage Report モード用ステート
+  const [selectedReportMonth, setSelectedReportMonth] = useState<string>('2026-08');
+  const [currentReportData, setCurrentReportData] = useState<MonthlyReportAggregatedData | null>(null);
+  const [reportLoading, setReportLoading] = useState<boolean>(false);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [isDropzoneModalOpen, setIsDropzoneModalOpen] = useState<boolean>(false);
+
   // 異常検出モーダルの開閉
   const [isErrorModalOpen, setIsErrorModalOpen] = useState<boolean>(false);
+
+  // 利用可能なレポート月一覧
+  const availableReports = useMemo(() => {
+    return indexMeta?.available_reports || ['2026-09', '2026-08'];
+  }, [indexMeta]);
 
   // 全体の異常一覧 (indexMeta と currentData から統合)
   const allIssues: DataFetchIssue[] = useMemo(() => {
@@ -78,6 +101,10 @@ export const App: React.FC = () => {
         const defaultMonth = meta.default_scopes.latest_month;
         setSelectedKey(defaultMonth);
         setScopeType('monthly');
+
+        // デフォルトレポート月の適用
+        const defaultReport = meta.default_scopes.latest_report || meta.available_reports?.[0] || '2026-08';
+        setSelectedReportMonth(defaultReport);
       } catch (e: any) {
         console.error('Error fetching index:', e);
         setError(e.message || 'Failed to initialize analytics index');
@@ -86,9 +113,9 @@ export const App: React.FC = () => {
     loadIndex();
   }, []);
 
-  // 2. 選択スコープのデータ取得
+  // 2. 選択スコープ (Live Metrics) のデータ取得
   useEffect(() => {
-    if (!selectedKey) return;
+    if (!selectedKey || appMode !== 'live_metrics') return;
 
     async function loadScopeData() {
       setLoading(true);
@@ -120,7 +147,43 @@ export const App: React.FC = () => {
     }
 
     loadScopeData();
-  }, [scopeType, selectedKey]);
+  }, [scopeType, selectedKey, appMode]);
+
+  // 3. Monthly Usage Report データの取得
+  useEffect(() => {
+    if (!selectedReportMonth) return;
+    // すでにローカルドロップの最新データがセットされており、同じ月なら再取得を避ける
+    if (currentReportData?.source_type === 'local_drop' && currentReportData.report_month === selectedReportMonth) {
+      return;
+    }
+
+    async function loadReportData() {
+      setReportLoading(true);
+      setReportError(null);
+      try {
+        const url = `./data/reports/${selectedReportMonth}.json`;
+        const res = await fetch(url);
+        if (!res.ok) {
+          throw new Error(`Monthly report for ${selectedReportMonth} not found at ${url}`);
+        }
+        const data = (await res.json()) as MonthlyReportAggregatedData;
+        setCurrentReportData(data);
+      } catch (e: any) {
+        console.error('Failed to load report data:', e);
+        setReportError(e.message);
+      } finally {
+        setReportLoading(false);
+      }
+    }
+
+    loadReportData();
+  }, [selectedReportMonth, appMode]);
+
+  const handleReportLoadedClientSide = (data: MonthlyReportAggregatedData) => {
+    setCurrentReportData(data);
+    setSelectedReportMonth(data.report_month);
+    setAppMode('monthly_report');
+  };
 
   const handleScopeChange = (type: AnalysisScopeType, key: string) => {
     setScopeType(type);
@@ -135,6 +198,13 @@ export const App: React.FC = () => {
   const handleSelectUserForTrend = (login: string) => {
     setFocusedUserLogin(login);
     setActiveTab('trend');
+  };
+
+  const handleOpenRadar = (modelId?: string) => {
+    if (modelId) {
+      setFocusedRadarModelId(modelId);
+    }
+    setAppMode('model_radar');
   };
 
   return (
@@ -162,12 +232,17 @@ export const App: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-3 text-xs">
+            {/* モード切替スイッチ */}
+            <ModeSwitcher
+              currentMode={appMode}
+              onModeChange={setAppMode}
+              reportCount={availableReports.length}
+            />
+
             {indexMeta && (
-              <div className="hidden md:flex items-center space-x-2 text-slate-400 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg">
+              <div className="hidden xl:flex items-center space-x-2 text-slate-400 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg">
                 <GitFork className="w-3.5 h-3.5 text-slate-500" />
                 <span>Repo: <strong className="text-slate-200">{indexMeta.repository.owner}/{indexMeta.repository.name}</strong></span>
-                <span className="text-slate-600">|</span>
-                <span>更新: <strong className="text-slate-300">{new Date(indexMeta.generated_at).toLocaleString('ja-JP')}</strong></span>
               </div>
             )}
 
@@ -205,119 +280,168 @@ export const App: React.FC = () => {
 
       {/* 2. メインコンテンツエリア */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col space-y-6 w-full">
-        {/* スコープ選択コントロール */}
-        <ScopeSelector
-          indexMeta={indexMeta}
-          scopeType={scopeType}
-          selectedKey={selectedKey}
-          onScopeChange={handleScopeChange}
-        />
+        {/* モード A: Monthly Usage Report モード */}
+        {appMode === 'monthly_report' && (
+          <>
+            {reportLoading && (
+              <div className="flex flex-col items-center justify-center py-20 space-y-3">
+                <RefreshCw className="w-8 h-8 text-emerald-500 animate-spin" />
+                <p className="text-sm text-slate-400">Monthly Usage Report を解析・ロード中...</p>
+              </div>
+            )}
 
-        {/* コントロールバー: グループ軸選択 & ナビゲーションタブ */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-          <GroupingSelector
-            currentGrouping={currentGrouping}
-            onGroupingChange={setCurrentGrouping}
-          />
+            {reportError && !reportLoading && (
+              <div className="p-4 bg-red-950/50 border border-red-800/80 rounded-xl text-red-200 text-xs flex items-center justify-between">
+                <div>
+                  <p className="font-semibold">レポートデータの読み込みに失敗しました:</p>
+                  <p className="mt-1 font-mono">{reportError}</p>
+                </div>
+                <button
+                  onClick={() => setIsDropzoneModalOpen(true)}
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold"
+                >
+                  手元の CSV をドロップ
+                </button>
+              </div>
+            )}
 
-          <div className="inline-flex flex-wrap rounded-lg bg-slate-900 border border-slate-800 p-1 self-start lg:self-auto gap-1">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                activeTab === 'overview'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <PieIcon className="w-3.5 h-3.5" />
-              <span>コスト配賦</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('ranking')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                activeTab === 'ranking'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Trophy className="w-3.5 h-3.5" />
-              <span>グループ内ランキング</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('trend')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                activeTab === 'trend'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Bot className="w-3.5 h-3.5" />
-              <span>ユーザー別モデル推移</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('budget')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                activeTab === 'budget'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Landmark className="w-3.5 h-3.5" />
-              <span>CostCenter予算</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('usage')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                activeTab === 'usage'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <BarChart3 className="w-3.5 h-3.5" />
-              <span>利用量・AI分析</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                activeTab === 'users'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Users2 className="w-3.5 h-3.5" />
-              <span>ユーザー明細</span>
-            </button>
-          </div>
-        </div>
-
-        {/* ローディング / エラー表示 */}
-        {loading && (
-          <div className="flex flex-col items-center justify-center py-20 space-y-3">
-            <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
-            <p className="text-sm text-slate-400">分析データをロード中...</p>
-          </div>
+            {!reportLoading && currentReportData && (
+              <MonthlyReportView
+                reportData={currentReportData}
+                availableReportMonths={availableReports}
+                selectedMonth={selectedReportMonth}
+                onSelectMonth={setSelectedReportMonth}
+                onOpenDropzone={() => setIsDropzoneModalOpen(true)}
+              />
+            )}
+          </>
         )}
 
-        {error && !loading && (
-          <div className="p-4 bg-red-950/50 border border-red-800/80 rounded-xl text-red-200 text-xs">
-            <p className="font-semibold">データの読み込みに失敗しました:</p>
-            <p className="mt-1 font-mono">{error}</p>
-          </div>
-        )}
+        {/* モード B: API 連携 Live Metrics モード */}
+        {appMode === 'live_metrics' && (
+          <>
+            {/* スコープ選択コントロール */}
+            <ScopeSelector
+              indexMeta={indexMeta}
+              scopeType={scopeType}
+              selectedKey={selectedKey}
+              onScopeChange={handleScopeChange}
+            />
 
-        {/* データ表示 */}
-        {!loading && currentData && (
-          <div className="flex flex-col space-y-6">
-            {/* KPI サマリー */}
-            <KpiSummaryCards data={currentData} />
+            {/* コントロールバー: グループ軸選択 & ナビゲーションタブ */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+              <GroupingSelector
+                currentGrouping={currentGrouping}
+                onGroupingChange={setCurrentGrouping}
+              />
 
-            {/* 遊休シート・コスト最適化アドバイザー */}
-            <IdleSeatAdvisor data={currentData} onFilterIdleUsers={handleFilterIdle} />
+              <div className="inline-flex flex-wrap rounded-lg bg-slate-900 border border-slate-800 p-1 self-start lg:self-auto gap-1">
+                <button
+                  onClick={() => setActiveTab('overview')}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    activeTab === 'overview'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <PieIcon className="w-3.5 h-3.5" />
+                  <span>コスト配賦</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('ranking')}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    activeTab === 'ranking'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Trophy className="w-3.5 h-3.5" />
+                  <span>グループ内ランキング</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('trend')}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    activeTab === 'trend'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Bot className="w-3.5 h-3.5" />
+                  <span>ユーザー別モデル推移</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('budget')}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    activeTab === 'budget'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Landmark className="w-3.5 h-3.5" />
+                  <span>CostCenter予算</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('usage')}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    activeTab === 'usage'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <BarChart3 className="w-3.5 h-3.5" />
+                  <span>利用量・AI分析</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('users')}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    activeTab === 'users'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Users2 className="w-3.5 h-3.5" />
+                  <span>ユーザー明細</span>
+                </button>
+
+                <button
+                  onClick={() => handleOpenRadar()}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-purple-300 hover:text-white bg-purple-950/40 hover:bg-purple-900/50 border border-purple-800/60 transition-all shadow-sm"
+                  title="著名ベンチマーク最新データに基づくAIモデル特性レーダーを開く"
+                >
+                  <Compass className="w-3.5 h-3.5 text-purple-400" />
+                  <span>モデル特性レーダー</span>
+                </button>
+              </div>
+            </div>
+
+            {/* ローディング / エラー表示 */}
+            {loading && (
+              <div className="flex flex-col items-center justify-center py-20 space-y-3">
+                <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
+                <p className="text-sm text-slate-400">分析データをロード中...</p>
+              </div>
+            )}
+
+            {error && !loading && (
+              <div className="p-4 bg-red-950/50 border border-red-800/80 rounded-xl text-red-200 text-xs">
+                <p className="font-semibold">データの読み込みに失敗しました:</p>
+                <p className="mt-1 font-mono">{error}</p>
+              </div>
+            )}
+
+            {/* データ表示 */}
+            {!loading && currentData && (
+              <div className="flex flex-col space-y-6">
+                {/* KPI サマリー */}
+                <KpiSummaryCards data={currentData} />
+
+                {/* 遊休シート・コスト最適化アドバイザー */}
+                <IdleSeatAdvisor data={currentData} onFilterIdleUsers={handleFilterIdle} />
 
             {/* タブに応じた表示 */}
             {activeTab === 'overview' && (
@@ -346,6 +470,7 @@ export const App: React.FC = () => {
                 <UserTrendViewer
                   profiles={currentData.user_profiles}
                   initialSelectedLogin={focusedUserLogin}
+                  onOpenRadar={handleOpenRadar}
                 />
               </div>
             )}
@@ -373,7 +498,16 @@ export const App: React.FC = () => {
                 />
               </div>
             )}
-          </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* モード C: AIモデル特性レーダー モード */}
+        {appMode === 'model_radar' && (
+          <ModelRadarView
+            initialSelectedModelId={focusedRadarModelId}
+          />
         )}
       </main>
 
@@ -383,6 +517,13 @@ export const App: React.FC = () => {
         onClose={() => setIsErrorModalOpen(false)}
         issues={allIssues}
         repoInfo={indexMeta?.repository}
+      />
+
+      {/* ローカル CSV ドロップゾーンモーダル */}
+      <ReportDropzoneModal
+        isOpen={isDropzoneModalOpen}
+        onClose={() => setIsDropzoneModalOpen(false)}
+        onReportLoaded={handleReportLoadedClientSide}
       />
     </div>
   );

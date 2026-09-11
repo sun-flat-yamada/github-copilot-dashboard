@@ -5,6 +5,7 @@ import {
   CopilotSeatAssignment,
   EnterpriseCostCenter,
   IndexMetadata,
+  MonthlyReportAggregatedData,
   ScopeAggregatedData,
 } from '../types/copilot.js';
 
@@ -151,4 +152,84 @@ export class ForkSafeStorage {
 
     return dates.sort().reverse();
   }
+
+  /**
+   * RawレポートCSVファイルを保存 (Append-Only)
+   */
+  public saveRawReportFile(monthStr: string, fileName: string, content: string): string {
+    const reportDir = path.join(this.baseDir, 'reports', 'monthly', monthStr);
+    this.ensureDirectory(reportDir);
+
+    const targetFile = path.join(reportDir, fileName);
+    fs.writeFileSync(targetFile, content, 'utf-8');
+    console.log(`💾 [ForkSafeStorage] Saved raw report CSV: ${targetFile}`);
+    return targetFile;
+  }
+
+  /**
+   * 集計済み月次レポートデータを保存
+   */
+  public saveProcessedReport(data: MonthlyReportAggregatedData): void {
+    const targetDir = path.join(this.baseDir, 'processed', 'reports');
+    this.ensureDirectory(targetDir);
+
+    const fileName = `${data.report_month}.json`;
+    const filePath = path.join(targetDir, fileName);
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+    console.log(`💾 [ForkSafeStorage] Saved processed report: ${filePath}`);
+
+    if (this.publicDir) {
+      const publicTargetDir = path.join(this.publicDir, 'reports');
+      this.ensureDirectory(publicTargetDir);
+      fs.writeFileSync(path.join(publicTargetDir, fileName), JSON.stringify(data, null, 2), 'utf-8');
+    }
+  }
+
+  /**
+   * 保持されているレポート月の一覧を取得 (降順)
+   */
+  public getStoredReportMonths(): string[] {
+    const months = new Set<string>();
+
+    // 1. Raw reports ディレクトリから探索
+    const rawReportsDir = path.join(this.baseDir, 'reports', 'monthly');
+    if (fs.existsSync(rawReportsDir)) {
+      const entries = fs.readdirSync(rawReportsDir);
+      for (const entry of entries) {
+        if (/^\d{4}-\d{2}$/.test(entry)) {
+          months.add(entry);
+        }
+      }
+    }
+
+    // 2. Processed reports ディレクトリから探索
+    const procReportsDir = path.join(this.baseDir, 'processed', 'reports');
+    if (fs.existsSync(procReportsDir)) {
+      const files = fs.readdirSync(procReportsDir);
+      for (const f of files) {
+        if (f.endsWith('.json')) {
+          const m = f.replace('.json', '');
+          if (/^\d{4}-\d{2}$/.test(m)) {
+            months.add(m);
+          }
+        }
+      }
+    }
+
+    return Array.from(months).sort().reverse();
+  }
+
+  /**
+   * 指定月のRawレポートCSVファイル一覧を取得
+   */
+  public getRawReportFiles(monthStr: string): string[] {
+    const reportDir = path.join(this.baseDir, 'reports', 'monthly', monthStr);
+    if (!fs.existsSync(reportDir)) return [];
+
+    return fs
+      .readdirSync(reportDir)
+      .filter((f) => f.endsWith('.csv'))
+      .map((f) => path.join(reportDir, f));
+  }
 }
+

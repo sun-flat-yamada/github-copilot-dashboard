@@ -485,4 +485,74 @@ export class MockDataGenerator {
 
     return profiles;
   }
+
+  /**
+   * 2026年仕様に準拠したリアルな月次利用レポート CSV (Detailed Usage Report) を生成
+   */
+  public generateMonthlyUsageReportCSV(monthStr: string = '2026-08'): string {
+    const lines: string[] = [
+      'date,username,product,sku,model,quantity,unit_type,applied_cost_per_quantity,gross_amount,discount_amount,net_amount,organization,cost_center_name',
+    ];
+
+    const models = [
+      { name: 'Claude 3.7 Sonnet', rate: 0.04 },
+      { name: 'GPT-4o', rate: 0.03 },
+      { name: 'o1', rate: 0.05 },
+      { name: 'Gemini 2.0 Flash', rate: 0.02 },
+    ];
+
+    const users = [
+      { login: 'kenji-sato', org: 'proud-fintech', cc: 'FinTech-Division' },
+      { login: 'yuki-tanaka', org: 'proud-fintech', cc: 'FinTech-Division' },
+      { login: 'daiki-suzuki', org: 'proud-internal-sys', cc: 'IT-Infrastructure' },
+      { login: 'sakura-watanabe', org: 'proud-internal-sys', cc: 'IT-Infrastructure' },
+      { login: 'ren-takahashi', org: 'proud-marketing', cc: 'Data-AI-Lab' },
+      { login: 'mei-ito', org: 'proud-marketing', cc: 'Data-AI-Lab' },
+      { login: 'kaito-nakamura', org: 'proud-core-api', cc: 'IT-Infrastructure' },
+      { login: 'aoi-kobayashi', org: 'proud-core-api', cc: 'IT-Infrastructure' },
+      { login: 'external-contractor-01', org: 'proud-fintech', cc: 'FinTech-Division' },
+      { login: 'external-contractor-02', org: 'proud-fintech', cc: 'FinTech-Division' },
+    ];
+
+    // 月の日数 (例: 2026-08 は 31日)
+    const [y, m] = monthStr.split('-').map(Number);
+    const daysInMonth = new Date(y, m, 0).getDate();
+
+    // 1. 各ユーザーの月額シート基本料金
+    for (const u of users) {
+      const isEnterprise = u.login.includes('sato') || u.login.includes('suzuki') || u.login.includes('takahashi');
+      const sku = isEnterprise ? 'copilot_enterprise' : 'copilot_business';
+      const cost = isEnterprise ? 39.0 : 19.0;
+      lines.push(
+        `${monthStr}-01,${u.login},copilot,${sku},,1,seats,${cost.toFixed(2)},${cost.toFixed(2)},0.00,${cost.toFixed(2)},${u.org},${u.cc}`
+      );
+    }
+
+    // 2. 日別のマルチモデル従量リクエスト
+    for (let day = 1; day <= Math.min(daysInMonth, 28); day++) {
+      const dateStr = `${monthStr}-${String(day).padStart(2, '0')}`;
+      // 土日スキップ判定
+      const dayOfWeek = new Date(`${dateStr}T00:00:00Z`).getUTCDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+
+      for (const u of users) {
+        // ユーザーごとにランダムにモデル利用レコードを追加
+        const rand = (day * 7 + u.login.length) % 10;
+        if (rand < 2) continue; // たまに使わない日
+
+        const modelChoice = models[(day + u.login.length) % models.length];
+        const reqCount = 5 + ((day * 3 + u.login.length * 2) % 25);
+        const gross = Number((reqCount * modelChoice.rate).toFixed(4));
+        const discount = day % 5 === 0 ? Number((gross * 0.1).toFixed(4)) : 0;
+        const net = Number((gross - discount).toFixed(4));
+
+        lines.push(
+          `${dateStr},${u.login},copilot,copilot_premium_request,"${modelChoice.name}",${reqCount},requests,${modelChoice.rate.toFixed(4)},${gross.toFixed(4)},${discount.toFixed(4)},${net.toFixed(4)},${u.org},${u.cc}`
+        );
+      }
+    }
+
+    return lines.join('\n');
+  }
 }
+

@@ -17,16 +17,19 @@ import {
   Code2,
   Briefcase,
   Building2,
+  Compass,
 } from 'lucide-react';
 
 interface UserTrendViewerProps {
   profiles?: UserUsageProfile[];
   initialSelectedLogin?: string;
+  onOpenRadar?: (modelId?: string) => void;
 }
 
 export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
   profiles = [],
   initialSelectedLogin,
+  onOpenRadar,
 }) => {
   const [selectedLogin, setSelectedLogin] = useState<string>(
     initialSelectedLogin || (profiles[0]?.login || '')
@@ -187,6 +190,17 @@ export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
               <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
               <span>Gemini 2.0</span>
             </span>
+
+            {onOpenRadar && (
+              <button
+                onClick={() => onOpenRadar('claude-3-7-sonnet')}
+                className="flex items-center space-x-1 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-purple-950/60 hover:bg-purple-900/80 text-purple-300 border border-purple-800/70 transition-all shadow-sm ml-2"
+                title="モデルの特性をレーダーチャートで比較"
+              >
+                <Compass className="w-3 h-3 text-purple-400" />
+                <span>モデル特性レーダーで比較</span>
+              </button>
+            )}
           </div>
         </div>
 

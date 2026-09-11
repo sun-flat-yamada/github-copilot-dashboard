@@ -264,6 +264,89 @@ export interface ScopeAggregatedData {
   user_profiles?: UserUsageProfile[];
 }
 
+// ==========================================
+// 4. Monthly Usage Report (CSV) Types (2026)
+// ==========================================
+
+export type DashboardAppMode = 'live_metrics' | 'monthly_report' | 'model_radar';
+
+export interface MonthlyUsageReportRawRecord {
+  date: string; // YYYY-MM-DD
+  username: string; // GitHub login
+  product?: string; // 'copilot'
+  sku?: string; // 'copilot_business' | 'copilot_enterprise' | 'copilot_premium_request' | 'copilot_ai_credit'
+  model?: string; // 'Claude 3.7 Sonnet', 'GPT-4o', 'o1', 'Gemini 2.0 Flash', etc.
+  quantity?: number; // requests or credits
+  unit_type?: string; // 'requests', 'ai_credits'
+  applied_cost_per_quantity?: number;
+  gross_amount?: number;
+  discount_amount?: number;
+  net_amount?: number;
+  organization?: string;
+  cost_center_name?: string;
+  last_activity_at?: string;
+  last_surface_used?: string;
+}
+
+export interface ReportModelBreakdown {
+  model_name: string;
+  total_requests: number;
+  total_spend_usd: number;
+  active_users: number;
+  percentage: number;
+}
+
+export interface ReportSkuBreakdown {
+  sku_name: string;
+  total_quantity: number;
+  unit_type: string;
+  total_spend_usd: number;
+  percentage: number;
+}
+
+export interface ReportDailyTrend {
+  date: string;
+  requests: number;
+  spend_usd: number;
+  active_users: number;
+}
+
+export interface ReportUserDetail {
+  login: string;
+  display_name: string;
+  department: string;
+  cost_center: string;
+  organization: string;
+  total_requests: number;
+  total_spend_usd: number;
+  primary_model: string;
+  last_activity_date?: string;
+  surface?: string;
+}
+
+export interface MonthlyReportAggregatedData {
+  report_month: string; // 'YYYY-MM'
+  source_type: 'persisted' | 'local_drop';
+  file_name: string;
+  parsed_at: string;
+  overview: {
+    total_net_spend_usd: number;
+    total_gross_spend_usd: number;
+    total_discount_usd: number;
+    total_requests: number;
+    total_active_users: number;
+    top_model: string;
+    top_sku: string;
+  };
+  by_department: Record<string, GroupSummary>;
+  by_cost_center: Record<string, GroupSummary>;
+  by_organization: Record<string, GroupSummary>;
+  model_breakdown: ReportModelBreakdown[];
+  sku_breakdown: ReportSkuBreakdown[];
+  daily_trends: ReportDailyTrend[];
+  user_details: ReportUserDetail[];
+}
+
 export interface IndexMetadata {
   repository: {
     owner: string;
@@ -274,9 +357,11 @@ export interface IndexMetadata {
   data_retention_days: number;
   available_months: string[];
   available_days: string[];
+  available_reports?: string[]; // e.g. ["2026-09", "2026-08"]
   default_scopes: {
     latest_day: string;
     latest_month: string;
+    latest_report?: string; // e.g. "2026-08"
     latest_range: {
       start: string;
       end: string;
