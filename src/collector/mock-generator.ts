@@ -423,11 +423,45 @@ export class MockDataGenerator {
           continue;
         }
 
-        const dayChats = Math.floor((5 + Math.random() * 25) * userActivityFactor);
-        const claudeChats = Math.floor(dayChats * (0.45 + Math.random() * 0.2));
-        const gpt4oChats = Math.floor((dayChats - claudeChats) * 0.5);
-        const o1Chats = Math.floor((dayChats - claudeChats - gpt4oChats) * 0.6);
-        const geminiChats = Math.max(0, dayChats - claudeChats - gpt4oChats - o1Chats);
+        let dayChats = Math.floor((5 + Math.random() * 25) * userActivityFactor);
+        let claudeChats = Math.floor(dayChats * (0.45 + Math.random() * 0.2));
+        let gpt4oChats = Math.floor((dayChats - claudeChats) * 0.5);
+        let o1Chats = Math.floor((dayChats - claudeChats - gpt4oChats) * 0.6);
+        let geminiChats = Math.max(0, dayChats - claudeChats - gpt4oChats - o1Chats);
+
+        let daySuggestions = Math.floor((40 + Math.random() * 120) * userActivityFactor);
+        let dayAcceptances = Math.floor(daySuggestions * (0.28 + Math.random() * 0.12));
+
+        // ペルソナ別の特徴付け (非効率AI利用診断のリアルな兆候シミュレーション)
+        if (login === 'kenji-sato') {
+          // ペルソナ1: 生成ガチャ・受け身垂れ流し型 (大量提案だが受諾率8〜12%と極低)
+          daySuggestions = Math.floor((90 + Math.random() * 60) * userActivityFactor);
+          dayAcceptances = Math.floor(daySuggestions * (0.07 + Math.random() * 0.05));
+        } else if (login === 'yuki-takahashi') {
+          // ペルソナ2: 超重量級モデル過剰依存型 (o1が70%〜85%を占め、Gemini Flashが0)
+          dayChats = Math.floor((12 + Math.random() * 15) * userActivityFactor);
+          o1Chats = Math.floor(dayChats * (0.7 + Math.random() * 0.15));
+          claudeChats = Math.floor((dayChats - o1Chats) * 0.8);
+          gpt4oChats = Math.max(0, dayChats - o1Chats - claudeChats);
+          geminiChats = 0;
+        } else if (login === 'mika-ito') {
+          // ペルソナ3: 文脈希薄・対話空回り型 (チャットが25〜35回と多いがコード受諾が僅少)
+          dayChats = Math.floor((24 + Math.random() * 12) * userActivityFactor);
+          claudeChats = Math.floor(dayChats * 0.5);
+          gpt4oChats = Math.floor(dayChats * 0.3);
+          o1Chats = Math.floor(dayChats * 0.1);
+          geminiChats = Math.max(0, dayChats - claudeChats - gpt4oChats - o1Chats);
+          daySuggestions = Math.floor((15 + Math.random() * 15) * userActivityFactor);
+          dayAcceptances = Math.floor(daySuggestions * 0.2);
+        } else if (login === 'taro-tanaka') {
+          // ペルソナ4: 模範的・健全型 (受諾率38%、Gemini Flashも積極活用)
+          daySuggestions = Math.floor((60 + Math.random() * 40) * userActivityFactor);
+          dayAcceptances = Math.floor(daySuggestions * (0.35 + Math.random() * 0.08));
+          geminiChats = Math.floor(dayChats * 0.35);
+          gpt4oChats = Math.floor(dayChats * 0.3);
+          claudeChats = Math.floor(dayChats * 0.25);
+          o1Chats = Math.max(0, dayChats - geminiChats - gpt4oChats - claudeChats);
+        }
 
         const modelBreakdown: Record<string, number> = {
           'claude-3-7-sonnet': claudeChats,
@@ -442,10 +476,7 @@ export class MockDataGenerator {
         modelTotals['gemini-2-0-flash'] += geminiChats;
         totalChats += dayChats;
 
-        const daySuggestions = Math.floor((40 + Math.random() * 120) * userActivityFactor);
-        const dayAcceptances = Math.floor(daySuggestions * (0.28 + Math.random() * 0.12));
         const dayRate = daySuggestions > 0 ? Number((dayAcceptances / daySuggestions).toFixed(4)) : 0;
-
         totalSuggestions += daySuggestions;
         totalAcceptances += dayAcceptances;
 

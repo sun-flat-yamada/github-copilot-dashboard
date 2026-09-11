@@ -268,7 +268,7 @@ export interface ScopeAggregatedData {
 // 4. Monthly Usage Report (CSV) Types (2026)
 // ==========================================
 
-export type DashboardAppMode = 'live_metrics' | 'monthly_report' | 'model_radar';
+export type DashboardAppMode = 'live_metrics' | 'monthly_report' | 'model_radar' | 'deep_analysis';
 
 export interface MonthlyUsageReportRawRecord {
   date: string; // YYYY-MM-DD

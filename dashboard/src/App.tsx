@@ -24,6 +24,7 @@ import { ModeSwitcher } from './components/ModeSwitcher';
 import { MonthlyReportView } from './components/MonthlyReportView';
 import { ReportDropzoneModal } from './components/ReportDropzoneModal';
 import { ModelRadarView } from './components/ModelRadarView';
+import { DeepAnalysisView } from './components/DeepAnalysisView';
 import {
   Sparkles,
   GitFork,
@@ -38,6 +39,7 @@ import {
   Landmark,
   Bot,
   Compass,
+  BrainCircuit,
 } from 'lucide-react';
 
 type TabType = 'overview' | 'ranking' | 'trend' | 'budget' | 'usage' | 'users';
@@ -205,6 +207,13 @@ export const App: React.FC = () => {
       setFocusedRadarModelId(modelId);
     }
     setAppMode('model_radar');
+  };
+
+  const handleOpenDeepAnalysis = (login?: string) => {
+    if (login) {
+      setFocusedUserLogin(login);
+    }
+    setAppMode('deep_analysis');
   };
 
   return (
@@ -416,6 +425,15 @@ export const App: React.FC = () => {
                   <Compass className="w-3.5 h-3.5 text-purple-400" />
                   <span>モデル特性レーダー</span>
                 </button>
+
+                <button
+                  onClick={() => handleOpenDeepAnalysis()}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-cyan-300 hover:text-white bg-cyan-950/40 hover:bg-cyan-900/50 border border-cyan-800/60 transition-all shadow-sm"
+                  title="個人の利用実績から非効率AI利用パターンの兆候を深掘り診断"
+                >
+                  <BrainCircuit className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>ディープ分析 (高度診断)</span>
+                </button>
               </div>
             </div>
 
@@ -452,6 +470,7 @@ export const App: React.FC = () => {
                   data={currentData}
                   filterStatus={userTableFilterStatus}
                   onSelectUserForTrend={handleSelectUserForTrend}
+                  onSelectUserForDeepAnalysis={handleOpenDeepAnalysis}
                 />
               </div>
             )}
@@ -471,6 +490,7 @@ export const App: React.FC = () => {
                   profiles={currentData.user_profiles}
                   initialSelectedLogin={focusedUserLogin}
                   onOpenRadar={handleOpenRadar}
+                  onOpenDeepAnalysis={handleOpenDeepAnalysis}
                 />
               </div>
             )}
@@ -495,6 +515,7 @@ export const App: React.FC = () => {
                   data={currentData}
                   filterStatus={userTableFilterStatus}
                   onSelectUserForTrend={handleSelectUserForTrend}
+                  onSelectUserForDeepAnalysis={handleOpenDeepAnalysis}
                 />
               </div>
             )}
@@ -508,6 +529,31 @@ export const App: React.FC = () => {
           <ModelRadarView
             initialSelectedModelId={focusedRadarModelId}
           />
+        )}
+
+        {/* モード D: ディープ分析 (高度診断) モード */}
+        {appMode === 'deep_analysis' && (
+          <>
+            {loading && (
+              <div className="flex flex-col items-center justify-center py-20 space-y-3">
+                <RefreshCw className="w-8 h-8 text-cyan-500 animate-spin" />
+                <p className="text-sm text-slate-400">ディープ分析用データをロード中...</p>
+              </div>
+            )}
+
+            {!loading && currentData && (
+              <DeepAnalysisView
+                aggregatedData={currentData}
+                initialSelectedLogin={focusedUserLogin}
+              />
+            )}
+
+            {!loading && !currentData && (
+              <div className="p-4 bg-red-950/50 border border-red-800/80 rounded-xl text-red-200 text-xs">
+                <p className="font-semibold">分析対象データの取得に失敗しました。</p>
+              </div>
+            )}
+          </>
         )}
       </main>
 

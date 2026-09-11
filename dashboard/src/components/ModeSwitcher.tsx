@@ -1,6 +1,6 @@
 import React from 'react';
 import { DashboardAppMode } from '../../../src/types/copilot';
-import { Activity, FileSpreadsheet, Compass } from 'lucide-react';
+import { Activity, FileSpreadsheet, Compass, BrainCircuit } from 'lucide-react';
 
 interface ModeSwitcherProps {
   currentMode: DashboardAppMode;
@@ -58,12 +58,24 @@ export const ModeSwitcher: React.FC<ModeSwitcherProps> = ({
       >
         <Compass className="w-3.5 h-3.5" />
         <span>AIモデル特性レーダー</span>
+      </button>
+
+      <button
+        onClick={() => onModeChange('deep_analysis')}
+        className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all relative ${
+          currentMode === 'deep_analysis'
+            ? 'bg-gradient-to-r from-cyan-600 via-indigo-600 to-purple-600 text-white shadow-md'
+            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+        }`}
+      >
+        <BrainCircuit className="w-3.5 h-3.5 text-cyan-400" />
+        <span>ディープ分析 (高度診断)</span>
         <span
           className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-            currentMode === 'model_radar' ? 'bg-purple-950 text-purple-200' : 'bg-slate-800 text-slate-300'
+            currentMode === 'deep_analysis' ? 'bg-indigo-950 text-indigo-200' : 'bg-slate-800 text-cyan-300'
           }`}
         >
-          New
+          Pro
         </span>
       </button>
     </div>

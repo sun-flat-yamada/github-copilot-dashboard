@@ -1,17 +1,19 @@
 import React, { useState, useMemo } from 'react';
 import { ScopeAggregatedData, UserSeatStatus } from '../../../src/types/copilot';
-import { Search, Download, UserCheck, AlertCircle, AlertTriangle, Clock, XCircle, LineChart } from 'lucide-react';
+import { Search, Download, UserCheck, AlertCircle, AlertTriangle, Clock, XCircle, LineChart, BrainCircuit } from 'lucide-react';
 
 interface UserDetailTableProps {
   data: ScopeAggregatedData;
   filterStatus?: UserSeatStatus | 'all';
   onSelectUserForTrend?: (login: string) => void;
+  onSelectUserForDeepAnalysis?: (login: string) => void;
 }
 
 export const UserDetailTable: React.FC<UserDetailTableProps> = ({
   data,
   filterStatus: initialStatus = 'all',
   onSelectUserForTrend,
+  onSelectUserForDeepAnalysis,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<UserSeatStatus | 'all'>(initialStatus);
@@ -267,16 +269,28 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                     ${(scope_type === 'daily' ? u.prorated_daily_cost_usd : u.monthly_cost_usd).toFixed(2)}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    {onSelectUserForTrend && (
-                      <button
-                        onClick={() => onSelectUserForTrend(u.login)}
-                        className="px-2 py-1 rounded bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 text-[10px] font-semibold flex items-center space-x-1 mx-auto transition-all"
-                        title="日次利用トレンド・モデル内訳を確認"
-                      >
-                        <LineChart className="w-3 h-3" />
-                        <span>トレンド</span>
-                      </button>
-                    )}
+                    <div className="flex items-center justify-center space-x-1.5">
+                      {onSelectUserForTrend && (
+                        <button
+                          onClick={() => onSelectUserForTrend(u.login)}
+                          className="px-2 py-1 rounded bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 text-[10px] font-semibold flex items-center space-x-1 transition-all"
+                          title="日次利用トレンド・モデル内訳を確認"
+                        >
+                          <LineChart className="w-3 h-3" />
+                          <span>トレンド</span>
+                        </button>
+                      )}
+                      {onSelectUserForDeepAnalysis && (
+                        <button
+                          onClick={() => onSelectUserForDeepAnalysis(u.login)}
+                          className="px-2 py-1 rounded bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 text-[10px] font-semibold flex items-center space-x-1 transition-all shadow-sm"
+                          title="非効率パターン診断・高度分析を実行"
+                        >
+                          <BrainCircuit className="w-3 h-3" />
+                          <span>診断</span>
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))

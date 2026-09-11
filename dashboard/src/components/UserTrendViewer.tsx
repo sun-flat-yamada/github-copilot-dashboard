@@ -18,18 +18,21 @@ import {
   Briefcase,
   Building2,
   Compass,
+  BrainCircuit,
 } from 'lucide-react';
 
 interface UserTrendViewerProps {
   profiles?: UserUsageProfile[];
   initialSelectedLogin?: string;
   onOpenRadar?: (modelId?: string) => void;
+  onOpenDeepAnalysis?: (login: string) => void;
 }
 
 export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
   profiles = [],
   initialSelectedLogin,
   onOpenRadar,
+  onOpenDeepAnalysis,
 }) => {
   const [selectedLogin, setSelectedLogin] = useState<string>(
     initialSelectedLogin || (profiles[0]?.login || '')
@@ -105,20 +108,33 @@ export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
           </div>
         </div>
 
-        {/* ユーザー選択セレクト */}
-        <div className="flex items-center space-x-2 shrink-0">
-          <span className="text-xs text-slate-400">ユーザー切替:</span>
-          <select
-            value={currentProfile.login}
-            onChange={(e) => setSelectedLogin(e.target.value)}
-            className="bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 max-w-xs"
-          >
-            {profiles.map((p) => (
-              <option key={p.login} value={p.login}>
-                {p.display_name} (@{p.login}) - {p.department}
-              </option>
-            ))}
-          </select>
+        {/* ユーザー選択セレクト & ディープ分析起動 */}
+        <div className="flex items-center space-x-3 shrink-0">
+          <div className="flex items-center space-x-2">
+            <span className="text-xs text-slate-400">ユーザー切替:</span>
+            <select
+              value={currentProfile.login}
+              onChange={(e) => setSelectedLogin(e.target.value)}
+              className="bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 max-w-xs"
+            >
+              {profiles.map((p) => (
+                <option key={p.login} value={p.login}>
+                  {p.display_name} (@{p.login}) - {p.department}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {onOpenDeepAnalysis && (
+            <button
+              onClick={() => onOpenDeepAnalysis(currentProfile.login)}
+              className="px-3 py-2 rounded-lg bg-gradient-to-r from-cyan-600/30 to-indigo-600/30 hover:from-cyan-600/50 hover:to-indigo-600/50 text-cyan-300 border border-cyan-500/40 text-xs font-semibold flex items-center space-x-1.5 transition-all shadow-sm"
+              title="このユーザーの非効率AI利用パターンをディープ分析"
+            >
+              <BrainCircuit className="w-4 h-4 text-cyan-400" />
+              <span>ディープ分析</span>
+            </button>
+          )}
         </div>
       </div>
 
