@@ -924,9 +924,18 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                 <Compass className="w-5 h-5 text-indigo-400" />
                 <h3 className="text-sm font-bold text-white">6軸多次元特性マップ (0 - 100)</h3>
               </div>
-              <span className="text-[11px] text-slate-400">
-                選択中: <strong className="text-indigo-300">{selectedModels.length}</strong> / {dataset.models.length} モデル
-              </span>
+              <div className="flex items-center space-x-3 text-[11px] text-slate-400">
+                <span className="hidden sm:inline-flex items-center space-x-1.5">
+                  <span className="inline-block w-3.5 h-0.5 bg-indigo-400 rounded" />
+                  <span className="text-slate-300 font-medium">実線(太): アクティブ</span>
+                  <span className="text-slate-600">|</span>
+                  <span className="inline-block w-4 border-b border-dashed border-slate-400" />
+                  <span>点線: 比較モデル</span>
+                </span>
+                <span>
+                  選択中: <strong className="text-indigo-300">{selectedModels.length}</strong> / {dataset.models.length} モデル
+                </span>
+              </div>
             </div>
 
             {/* チャート描画領域 */}
@@ -987,23 +996,54 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                   />
                   <Legend
                     wrapperStyle={{ paddingTop: '10px' }}
-                    formatter={(val) => (
-                      <span className="text-xs text-slate-300 hover:text-white cursor-pointer">
-                        {val}
-                      </span>
-                    )}
+                    onClick={(data: any) => {
+                      if (data?.value) {
+                        const target = selectedModels.find((m) => m.name === data.value);
+                        if (target) setFocusedModelId(target.id);
+                      }
+                    }}
+                    formatter={(val) => {
+                      const isTargetFocused = focusedModel?.name === val;
+                      return (
+                        <span
+                          className={`text-xs cursor-pointer transition-colors ${
+                            isTargetFocused
+                              ? 'text-white font-bold underline underline-offset-4 decoration-indigo-400'
+                              : 'text-slate-400 hover:text-slate-200'
+                          }`}
+                          title="クリックしてアクティブ（フォーカス）切り替え"
+                        >
+                          {val}
+                        </span>
+                      );
+                    }}
                   />
-                  {selectedModels.map((model) => (
-                    <Radar
-                      key={model.id}
-                      name={model.name}
-                      dataKey={model.name}
-                      stroke={model.color}
-                      fill={model.color}
-                      fillOpacity={selectedModels.length === 1 ? 0.35 : selectedModels.length > 4 ? 0.08 : 0.18}
-                      strokeWidth={focusedModelId === model.id ? 3 : 1.75}
-                    />
-                  ))}
+                  {selectedModels.map((model) => {
+                    const isFocused = (focusedModel?.id ?? focusedModelId) === model.id;
+                    return (
+                      <Radar
+                        key={model.id}
+                        name={model.name}
+                        dataKey={model.name}
+                        stroke={model.color}
+                        fill={model.color}
+                        fillOpacity={
+                          isFocused
+                            ? selectedModels.length === 1
+                              ? 0.35
+                              : selectedModels.length > 4
+                              ? 0.14
+                              : 0.22
+                            : selectedModels.length > 4
+                            ? 0.04
+                            : 0.08
+                        }
+                        strokeWidth={isFocused ? 3.5 : 1.75}
+                        strokeDasharray={isFocused ? undefined : '8 3'}
+                        strokeOpacity={isFocused ? 1 : 0.85}
+                      />
+                    );
+                  })}
                 </RadarChart>
               </ResponsiveContainer>
             </div>

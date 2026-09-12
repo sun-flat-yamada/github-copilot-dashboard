@@ -88,6 +88,16 @@ flowchart TD
 - **🟢 OpenAI Suite (`vendor-openai`)**: GPT-6 Astra / GPT-5.6 Sol / GPT-5.6 Terra / GPT-5.6 Luna
 - **🔵 Google Gemini 3.x (`vendor-google`)**: Gemini 3.8 Flash / Gemini 3.7 Flash / Gemini 3.6 Flash / Gemini 3.5 Flash
 
+### 2.6 Radar Chart Line Representation & Active Model Visual Hierarchy
+- **Active (Focused) Model Emphasis**:
+  - The currently active/focused model is rendered with a **Bold solid stroke (`strokeWidth: 3.5`, `strokeDasharray: undefined`)** to establish immediate visual prominence.
+  - An active indicator is also provided in the chart header and legend.
+- **Comparison Models Dashed Stroke & Legibility Preservation**:
+  - Secondary comparison models are rendered with a **dashed stroke (`strokeDasharray: "8 3"`, `strokeWidth: 1.75`)**.
+  - By maintaining a high line-to-gap ratio (~73% dash, 27% gap), polygon boundaries and radar vertices remain clearly legible while clearly denoting secondary status.
+- **Interactive Focus Switching**:
+  - Clicking on any entry in the chart legend or using the detail card quick navigator smoothly switches the active focus model.
+
 ---
 
 ## 3. Radar Chart 6-Axis Evaluation Metrics
