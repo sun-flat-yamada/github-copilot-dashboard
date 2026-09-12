@@ -91,10 +91,23 @@ export type ModelVendor =
   | 'OpenAI'
   | 'Google'
   | 'Microsoft'
+  | 'Microsoft (External)'
+  | 'DeepSeek'
   | 'xAI'
   | 'Moonshot AI'
-  | 'DeepSeek'
   | 'Other';
+
+export const CANONICAL_VENDOR_ORDER: readonly ModelVendor[] = [
+  'Anthropic',
+  'OpenAI',
+  'Google',
+  'Microsoft',
+  'Microsoft (External)',
+  'DeepSeek',
+  'xAI',
+  'Moonshot AI',
+  'Other',
+] as const;
 
 export type ModelReleaseStatus = 'GA' | 'Preview' | 'LTS' | 'Utility' | 'Retired';
 

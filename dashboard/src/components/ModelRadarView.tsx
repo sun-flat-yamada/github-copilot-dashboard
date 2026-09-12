@@ -12,6 +12,7 @@ import {
 import {
   BenchmarkDataset,
   RadarAxisKey,
+  CANONICAL_VENDOR_ORDER,
 } from '../../../src/types/model-benchmark';
 import {
   ScopeAggregatedData,
@@ -90,16 +91,16 @@ const PRESETS = [
     modelIds: ['gpt-5-6-luna', 'gemini-3-5-flash', 'mai-code-1-1-flash', 'gpt-5-4-mini'],
   },
   {
-    id: 'vendor-openai',
-    name: '🟢 OpenAI 主力',
-    description: 'GPT-6 Astra / GPT-5.6 Sol / GPT-5.6 Terra / GPT-5.6 Luna (OpenAI 2026最新ファミリ)',
-    modelIds: ['gpt-6-astra', 'gpt-5-6-sol', 'gpt-5-6-terra', 'gpt-5-6-luna'],
-  },
-  {
     id: 'vendor-anthropic',
     name: '🟠 Anthropic 主力',
     description: 'Claude Sonnet 5 / Claude Opus 5 / Claude Fable 5.1 / Claude Haiku 4.5 (Anthropic 2026最新)',
     modelIds: ['claude-sonnet-5', 'claude-opus-5', 'claude-fable-5-1', 'claude-haiku-4-5'],
+  },
+  {
+    id: 'vendor-openai',
+    name: '🟢 OpenAI 主力',
+    description: 'GPT-6 Astra / GPT-5.6 Sol / GPT-5.6 Terra / GPT-5.6 Luna (OpenAI 2026最新ファミリ)',
+    modelIds: ['gpt-6-astra', 'gpt-5-6-sol', 'gpt-5-6-terra', 'gpt-5-6-luna'],
   },
   {
     id: 'vendor-google',
@@ -305,7 +306,8 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
     // テーブル メーカー絞り込み
     if (tableVendorFilter !== 'all') {
       if (tableVendorFilter === 'Other') {
-        list = list.filter((m) => !['OpenAI', 'Anthropic', 'Google', 'Microsoft', 'xAI', 'Moonshot AI'].includes(m.vendor));
+        const standardVendors = (CANONICAL_VENDOR_ORDER as readonly string[]).filter((x) => x !== 'Other');
+        list = list.filter((m) => !standardVendors.includes(m.vendor));
       } else {
         list = list.filter((m) => m.vendor === tableVendorFilter);
       }
@@ -549,28 +551,33 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                 <Building2 className="w-3 h-3 text-indigo-400" />
                 <span>メーカー絞り込み:</span>
               </span>
-              {(['all', 'OpenAI', 'Anthropic', 'Google', 'Microsoft', 'xAI', 'Moonshot AI', 'Other'] as const).map((v) => {
-                const count = v === 'all'
-                  ? dataset.models.length
-                  : v === 'Other'
-                  ? dataset.models.filter((m) => !['OpenAI', 'Anthropic', 'Google', 'Microsoft', 'xAI', 'Moonshot AI'].includes(m.vendor)).length
-                  : dataset.models.filter((m) => m.vendor === v).length;
-                const label = v === 'all' ? 'すべて' : v === 'Other' ? 'その他' : v;
-                const isSelected = selectedVendorFilter === v;
-                return (
-                  <button
-                    key={v}
-                    onClick={() => setSelectedVendorFilter(v)}
-                    className={`px-2 py-0.5 rounded-full text-[11px] font-medium transition-all ${
-                      isSelected
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'bg-slate-950/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800'
-                    }`}
-                  >
-                    {label} ({count})
-                  </button>
-                );
-              })}
+              {(() => {
+                const standardVendors = (CANONICAL_VENDOR_ORDER as readonly string[]).filter((x) => x !== 'Other');
+                return (['all', ...CANONICAL_VENDOR_ORDER] as const)
+                  .filter((v) => v === 'all' || v === 'Other' || dataset.models.some((m) => m.vendor === v))
+                  .map((v) => {
+                    const count = v === 'all'
+                      ? dataset.models.length
+                      : v === 'Other'
+                      ? dataset.models.filter((m) => !standardVendors.includes(m.vendor)).length
+                      : dataset.models.filter((m) => m.vendor === v).length;
+                    const label = v === 'all' ? 'すべて' : v === 'Other' ? 'その他' : v;
+                    const isSelected = selectedVendorFilter === v;
+                    return (
+                      <button
+                        key={v}
+                        onClick={() => setSelectedVendorFilter(v)}
+                        className={`px-2 py-0.5 rounded-full text-[11px] font-medium transition-all ${
+                          isSelected
+                            ? 'bg-indigo-600 text-white shadow-sm'
+                            : 'bg-slate-950/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800'
+                        }`}
+                      >
+                        {label} ({count})
+                      </button>
+                    );
+                  });
+              })()}
             </div>
 
             {/* カテゴリ絞り込み */}
@@ -606,15 +613,16 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
           {/* モデル一覧グループ表示 (メーカー別 または カテゴリ別) */}
           <div className="space-y-3 pt-1">
             {(() => {
-              const vendorOrder = ['OpenAI', 'Anthropic', 'Google', 'Microsoft', 'xAI', 'Moonshot AI', 'DeepSeek', 'Other'];
+              const vendorOrder: readonly string[] = CANONICAL_VENDOR_ORDER;
               const vendorIcons: Record<string, string> = {
-                'OpenAI': '🟢',
                 'Anthropic': '🟠',
+                'OpenAI': '🟢',
                 'Google': '🔵',
                 'Microsoft': '🟣',
+                'Microsoft (External)': '🟣',
+                'DeepSeek': '🔍',
                 'xAI': '⚡',
                 'Moonshot AI': '🌙',
-                'DeepSeek': '🔍',
                 'Other': '📦',
               };
               const tierOrder = ['powerful', 'versatile', 'lightweight', '_none'] as const;
@@ -698,7 +706,8 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
               let filtered = dataset.models;
               if (selectedVendorFilter !== 'all') {
                 if (selectedVendorFilter === 'Other') {
-                  filtered = filtered.filter((m) => !['OpenAI', 'Anthropic', 'Google', 'Microsoft', 'xAI', 'Moonshot AI'].includes(m.vendor));
+                  const standardVendors = (CANONICAL_VENDOR_ORDER as readonly string[]).filter((x) => x !== 'Other');
+                  filtered = filtered.filter((m) => !standardVendors.includes(m.vendor));
                 } else {
                   filtered = filtered.filter((m) => m.vendor === selectedVendorFilter);
                 }
@@ -1542,23 +1551,25 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                 <Building2 className="w-3 h-3 text-indigo-400" />
                 <span>メーカー:</span>
               </span>
-              {(['all', 'OpenAI', 'Anthropic', 'Google', 'Microsoft', 'xAI', 'Moonshot AI', 'Other'] as const).map((v) => {
-                const label = v === 'all' ? 'すべて' : v === 'Other' ? 'その他' : v;
-                const isSelected = tableVendorFilter === v;
-                return (
-                  <button
-                    key={v}
-                    onClick={() => setTableVendorFilter(v)}
-                    className={`px-2 py-0.5 rounded-full text-[11px] font-medium transition-all ${
-                      isSelected
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'bg-slate-950/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
+              {(['all', ...CANONICAL_VENDOR_ORDER] as const)
+                .filter((v) => v === 'all' || v === 'Other' || dataset.models.some((m) => m.vendor === v))
+                .map((v) => {
+                  const label = v === 'all' ? 'すべて' : v === 'Other' ? 'その他' : v;
+                  const isSelected = tableVendorFilter === v;
+                  return (
+                    <button
+                      key={v}
+                      onClick={() => setTableVendorFilter(v)}
+                      className={`px-2 py-0.5 rounded-full text-[11px] font-medium transition-all ${
+                        isSelected
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'bg-slate-950/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
             </div>
 
             {/* カテゴリ絞り込み */}
@@ -2006,7 +2017,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                 </a>
               </div>
               <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">
-                GitHub Copilot のエージェントモード、コード補完、Chat で利用可能な各社（OpenAI, Anthropic, Google, Microsoft, xAI, Moonshot AI）の全モデル一覧と、Tier分類（Powerful, Versatile, Lightweight）、提供ステータス（GA, LTS, Preview）の公式リファレンスです。
+                GitHub Copilot のエージェントモード、コード補完、Chat で利用可能な各社（Anthropic, OpenAI, Google, Microsoft, DeepSeek, xAI, Moonshot AI）の全モデル一覧と、Tier分類（Powerful, Versatile, Lightweight）、提供ステータス（GA, LTS, Preview）の公式リファレンスです。
               </p>
             </div>
             <div className="pt-2 border-t border-slate-800/80 text-[11px] text-indigo-300/80 font-mono truncate">

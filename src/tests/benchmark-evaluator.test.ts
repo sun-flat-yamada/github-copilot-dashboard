@@ -8,7 +8,7 @@ import {
   RADAR_AXIS_DEFINITIONS,
   DEFAULT_BENCHMARK_SOURCES,
 } from '../processor/benchmark-evaluator';
-import { BenchmarkRawMetrics } from '../types/model-benchmark';
+import { BenchmarkRawMetrics, CANONICAL_VENDOR_ORDER } from '../types/model-benchmark';
 
 describe('AI Model Benchmark Evaluator Tests', () => {
   it('defines 6 radar axes and benchmark sources correctly', () => {
@@ -295,5 +295,31 @@ describe('AI Model Benchmark Evaluator Tests', () => {
     assert.strictEqual(profile.extended_capabilities?.supports_1m_context, true);
     assert.strictEqual(profile.raw_metrics.cached_input_cost_per_m, 2.5);
     assert.strictEqual(profile.raw_metrics.long_context_input_cost_per_m, 20.0);
+  });
+
+  it('enforces canonical vendor display order: Anthropic > OpenAI > Google > Microsoft > Microsoft (External) > DeepSeek > xAI', () => {
+    const expectedOrder = [
+      'Anthropic',
+      'OpenAI',
+      'Google',
+      'Microsoft',
+      'Microsoft (External)',
+      'DeepSeek',
+      'xAI',
+    ];
+
+    for (let i = 0; i < expectedOrder.length - 1; i++) {
+      const current = expectedOrder[i];
+      const next = expectedOrder[i + 1];
+      const currentIndex = CANONICAL_VENDOR_ORDER.indexOf(current as any);
+      const nextIndex = CANONICAL_VENDOR_ORDER.indexOf(next as any);
+
+      assert.ok(currentIndex !== -1, `${current} must exist in CANONICAL_VENDOR_ORDER`);
+      assert.ok(nextIndex !== -1, `${next} must exist in CANONICAL_VENDOR_ORDER`);
+      assert.ok(
+        currentIndex < nextIndex,
+        `Expected ${current} (idx: ${currentIndex}) to appear before ${next} (idx: ${nextIndex})`
+      );
+    }
   });
 });

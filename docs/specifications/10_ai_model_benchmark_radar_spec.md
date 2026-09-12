@@ -160,7 +160,7 @@ Claude 3.7 Sonnet, Claude 3.5 Sonnet, GPT-4o, GPT-4o mini, o1, o3-mini, Gemini 2
 大量のモデル（全38モデル）を直感的に選択・比較できるよう、モデル選択チップスおよび生データ詳細比較テーブルの両エリアにおいて、メーカー別およびカテゴリ別の体系的整理を提供する。
 1. **モデル選択パネルの整理構造**:
    - **表示モード切り替え (`groupingMode`)**:
-     - **メーカー別表示 (Vendor Grouping)**: OpenAI、Anthropic、Google、Microsoft、xAI、Moonshot AI、その他ごとにカードを分離し、カード内に Tier（Powerful / Versatile / Lightweight）のサブヘッダーを設けてスコア順にモデルチップを配置。
+     - **メーカー別表示 (Vendor Grouping)**: Anthropic > OpenAI > Google > Microsoft > Microsoft (External) > DeepSeek > xAI > Moonshot AI > その他の優先順位でカードを分離し、カード内に Tier（Powerful / Versatile / Lightweight）のサブヘッダーを設けてスコア順にモデルチップを配置。
      - **カテゴリ別表示 (Category/Tier Grouping)**: Powerful（最上位推論）、Versatile（実務バランス）、Lightweight（高速補完）ごとに大枠を分離し、内部で各メーカーごとに整理。
    - **双方向フィルタ**:
      - **メーカー絞り込み**: 特定メーカーのみを抽出表示（全選択/全解除ボタン付き）。
