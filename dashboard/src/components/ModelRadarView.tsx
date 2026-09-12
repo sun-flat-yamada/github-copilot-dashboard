@@ -36,31 +36,62 @@ interface ModelRadarViewProps {
   onNavigateToTrend?: (modelId: string) => void;
 }
 
-// プリセット定義
+// プリセット定義 (現時点でGitHub Copilotに提供されている全AIモデルを掲載)
 const PRESETS = [
   {
+    id: 'copilot-all',
+    name: '🌟 Copilot 公式全8モデル一括',
+    description: '現時点でGitHub Copilotに提供されている全AIモデル（Claude 3.7/3.5, GPT-4o/4o-mini, o1/o3-mini, Gemini 2.0/2.5）をまとめて比較',
+    modelIds: [
+      'claude-3-7-sonnet',
+      'claude-3-5-sonnet',
+      'gpt-4o',
+      'gpt-4o-mini',
+      'o1',
+      'o3-mini',
+      'gemini-2-0-flash',
+      'gemini-2-5-pro',
+    ],
+  },
+  {
     id: 'copilot-core',
-    name: 'Copilot 4大モデル',
-    description: 'Claude 3.7 / GPT-4o / o1 / Gemini 2.0 Flash',
+    name: 'Copilot 4大フラッグシップ',
+    description: 'Claude 3.7 Sonnet / GPT-4o / o1 / Gemini 2.0 Flash',
     modelIds: ['claude-3-7-sonnet', 'gpt-4o', 'o1', 'gemini-2-0-flash'],
   },
   {
     id: 'reasoning-focus',
-    name: '思考推論 (Reasoning) 特化',
-    description: 'o1 / o3-mini / Claude 3.7 / DeepSeek R1',
-    modelIds: ['o1', 'o3-mini', 'claude-3-7-sonnet', 'deepseek-r1'],
+    name: 'Copilot 推論 (Reasoning) 特化',
+    description: 'o1 / o3-mini / Claude 3.7 Sonnet (思考チェーン・推論モデル群)',
+    modelIds: ['o1', 'o3-mini', 'claude-3-7-sonnet'],
   },
   {
     id: 'speed-cost',
-    name: '高速・高コスパ日常開発',
-    description: 'Gemini 2.0 Flash / GPT-4o / Claude 3.5 Sonnet',
-    modelIds: ['gemini-2-0-flash', 'gpt-4o', 'claude-3-5-sonnet'],
+    name: 'Copilot 高速・低コスト日常補完',
+    description: 'Gemini 2.0 Flash / GPT-4o mini / GPT-4o / Claude 3.5 Sonnet',
+    modelIds: ['gemini-2-0-flash', 'gpt-4o-mini', 'gpt-4o', 'claude-3-5-sonnet'],
   },
   {
-    id: 'frontier-top',
-    name: '最新最上位フラッグシップ',
-    description: 'Claude 3.7 Sonnet vs Gemini 2.5 Pro vs o1',
-    modelIds: ['claude-3-7-sonnet', 'gemini-2-5-pro', 'o1'],
+    id: 'architecture-context',
+    name: 'Copilot 大規模設計・長文コンテキスト',
+    description: 'Claude 3.7 Sonnet / Gemini 2.5 Pro / Claude 3.5 Sonnet (設計・リファクタリング群)',
+    modelIds: ['claude-3-7-sonnet', 'gemini-2-5-pro', 'claude-3-5-sonnet'],
+  },
+  {
+    id: 'all-with-benchmark',
+    name: '全モデル + 外部対照 (DeepSeek R1)',
+    description: 'Copilot公式全モデル + 比較用オープンウェイト推論最高峰モデル',
+    modelIds: [
+      'claude-3-7-sonnet',
+      'claude-3-5-sonnet',
+      'gpt-4o',
+      'gpt-4o-mini',
+      'o1',
+      'o3-mini',
+      'gemini-2-0-flash',
+      'gemini-2-5-pro',
+      'deepseek-r1',
+    ],
   },
 ];
 
