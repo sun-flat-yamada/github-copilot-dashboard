@@ -563,6 +563,13 @@ export const App: React.FC = () => {
         {appMode === 'model_radar' && (
           <ModelRadarView
             initialSelectedModelId={focusedRadarModelId}
+            aggregatedData={currentData}
+            monthlyReportData={currentReportData}
+            onNavigateToTrend={(modelId) => {
+              setFocusedRadarModelId(modelId);
+              setActiveTab('trend');
+              setAppMode('live_metrics');
+            }}
           />
         )}
 

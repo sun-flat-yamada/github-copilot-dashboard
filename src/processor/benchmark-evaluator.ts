@@ -512,3 +512,20 @@ export function createModelProfile(
     evaluation,
   };
 }
+
+/**
+ * 外部データやログのモデル名表記揺れをナレッジモデルIDに正規化
+ */
+export function normalizeModelId(rawName: string): string {
+  const s = rawName.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (s.includes('claude37') || s.includes('claude37sonnet')) return 'claude-3-7-sonnet';
+  if (s.includes('claude35') || s.includes('claude35sonnet')) return 'claude-3-5-sonnet';
+  if (s.includes('gpt4omini') || s.includes('4omini')) return 'gpt-4o-mini';
+  if (s.includes('gpt4o') || s.includes('gpt4omni') || s.includes('4o')) return 'gpt-4o';
+  if (s.includes('o3mini') || s.includes('o3')) return 'o3-mini';
+  if (s.includes('o1') || s.includes('openaio1')) return 'o1';
+  if (s.includes('gemini25') || s.includes('gemini25pro')) return 'gemini-2-5-pro';
+  if (s.includes('gemini20') || s.includes('gemini20flash') || s.includes('geminiflash')) return 'gemini-2-0-flash';
+  if (s.includes('deepseek') || s.includes('r1')) return 'deepseek-r1';
+  return rawName.toLowerCase().trim();
+}

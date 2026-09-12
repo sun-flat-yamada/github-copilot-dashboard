@@ -14,6 +14,10 @@ import {
   RadarAxisKey,
 } from '../../../src/types/model-benchmark';
 import {
+  ScopeAggregatedData,
+  MonthlyReportAggregatedData,
+} from '../../../src/types/copilot';
+import {
   Radar as RadarIcon,
   Sparkles,
   CheckCircle2,
@@ -32,11 +36,23 @@ import {
   MessageSquareQuote,
   Target,
   Eye,
+  Building2,
 } from 'lucide-react';
+
+import { normalizeModelId } from '../../../src/processor/benchmark-evaluator';
+
+export interface ModelUsageStat {
+  modelId: string;
+  requests: number;
+  percentage: number;
+  hasUsage: boolean;
+}
 
 interface ModelRadarViewProps {
   initialSelectedModelId?: string;
   onNavigateToTrend?: (modelId: string) => void;
+  aggregatedData?: ScopeAggregatedData | null;
+  monthlyReportData?: MonthlyReportAggregatedData | null;
 }
 
 // プリセット定義 (現時点でGitHub Copilotに提供されている全AIモデルを掲載)
@@ -100,6 +116,9 @@ const PRESETS = [
 
 export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   initialSelectedModelId,
+  onNavigateToTrend,
+  aggregatedData,
+  monthlyReportData,
 }) => {
   const [dataset, setDataset] = useState<BenchmarkDataset | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -109,8 +128,8 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
   // フォーカス中の特定モデルID (詳細カード用)
   const [focusedModelId, setFocusedModelId] = useState<string>('');
-  // 生データテーブルのソート列
-  const [sortKey, setSortKey] = useState<'overall' | 'swe' | 'speed' | 'cost' | 'aime'>('overall');
+  // 生データテーブルのソート列 (社内利用シェア 'usage' も追加)
+  const [sortKey, setSortKey] = useState<'overall' | 'swe' | 'speed' | 'cost' | 'aime' | 'usage'>('overall');
   const [sortAsc, setSortAsc] = useState<boolean>(false);
 
   // 1. ベンチマークデータの取得
@@ -148,6 +167,52 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
     loadDataset();
   }, [initialSelectedModelId]);
 
+  // 組織内・分析対象データの実績集計 (未利用モデルも必ず 0% として保持ナレッジ全モデルを網羅)
+  const usageStats = useMemo<Record<string, ModelUsageStat>>(() => {
+    const rawCounts: Record<string, number> = {};
+    let totalRequests = 0;
+
+    // A. Live Metrics (aggregatedData) から集計
+    if (aggregatedData?.user_profiles && aggregatedData.user_profiles.length > 0) {
+      for (const p of aggregatedData.user_profiles) {
+        if (p.model_usage_totals) {
+          for (const [rawModel, count] of Object.entries(p.model_usage_totals)) {
+            const normId = normalizeModelId(rawModel);
+            rawCounts[normId] = (rawCounts[normId] || 0) + count;
+            totalRequests += count;
+          }
+        }
+      }
+    }
+
+    // B. Monthly Report (monthlyReportData) から集計 (Live Metricsが空または未連携の場合の補完)
+    if (totalRequests === 0 && monthlyReportData?.model_breakdown) {
+      for (const m of monthlyReportData.model_breakdown) {
+        const normId = normalizeModelId(m.model_name);
+        rawCounts[normId] = (rawCounts[normId] || 0) + m.total_requests;
+        totalRequests += m.total_requests;
+      }
+    }
+
+    const result: Record<string, ModelUsageStat> = {};
+    if (!dataset) return result;
+
+    // 保持しているナレッジとしての全モデル (dataset.models) を必ず網羅
+    // 利用がないモデルは requests: 0, percentage: 0, hasUsage: false となる
+    for (const model of dataset.models) {
+      const count = rawCounts[model.id] || 0;
+      const pct = totalRequests > 0 ? Number(((count / totalRequests) * 100).toFixed(1)) : 0;
+      result[model.id] = {
+        modelId: model.id,
+        requests: count,
+        percentage: pct,
+        hasUsage: count > 0,
+      };
+    }
+
+    return result;
+  }, [aggregatedData, monthlyReportData, dataset]);
+
   // 選択中モデルのプロファイル配列
   const selectedModels = useMemo(() => {
     if (!dataset) return [];
@@ -164,6 +229,19 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       null
     );
   }, [dataset, focusedModelId, selectedModels]);
+
+  // フォーカス中モデルの組織内利用実績
+  const focusedUsage = useMemo<ModelUsageStat | null>(() => {
+    if (!focusedModel) return null;
+    return (
+      usageStats[focusedModel.id] || {
+        modelId: focusedModel.id,
+        requests: 0,
+        percentage: 0,
+        hasUsage: false,
+      }
+    );
+  }, [focusedModel, usageStats]);
 
   // レーダーチャート用データ整形
   const radarChartData = useMemo(() => {
@@ -209,12 +287,15 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       } else if (sortKey === 'aime') {
         valA = a.raw_metrics.aime_2024;
         valB = b.raw_metrics.aime_2024;
+      } else if (sortKey === 'usage') {
+        valA = usageStats[a.id]?.percentage || 0;
+        valB = usageStats[b.id]?.percentage || 0;
       }
       return sortAsc ? valA - valB : valB - valA;
     });
 
     return list;
-  }, [dataset, sortKey, sortAsc]);
+  }, [dataset, sortKey, sortAsc, usageStats]);
 
   // モデル選択トグル (全モデル選択可能)
   const handleToggleModel = (id: string) => {
@@ -244,7 +325,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
     setFocusedModelId(modelIds[0] || '');
   };
 
-  const handleSort = (key: 'overall' | 'swe' | 'speed' | 'cost' | 'aime') => {
+  const handleSort = (key: 'overall' | 'swe' | 'speed' | 'cost' | 'aime' | 'usage') => {
     if (sortKey === key) {
       setSortAsc(!sortAsc);
     } else {
@@ -343,50 +424,70 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
           </div>
         </div>
 
-        {/* モデル選択チップス */}
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <div className="flex items-center space-x-2 mr-2">
-            <span className="text-xs text-slate-400">モデル選択:</span>
+        {/* モデル選択チップス (未利用モデルも必ず 0% として全ナレッジモデルを選択可能) */}
+        <div className="mt-4 flex flex-col space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center space-x-2">
+              <span className="text-xs font-semibold text-slate-300">モデル選択:</span>
+              <span className="text-[11px] text-slate-400">
+                （保持ナレッジ全 <strong className="text-indigo-300">{dataset.models.length}</strong> モデル表示 • 社内未利用は <span className="font-mono text-slate-400 bg-slate-950 px-1 py-0.2 rounded border border-slate-800">0%</span> として選択可能）
+              </span>
+            </div>
             <button
               onClick={handleSelectAllCopilot}
-              className="px-2 py-0.5 text-[11px] font-semibold rounded bg-indigo-950/70 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60 transition-all shadow-sm"
+              className="px-2.5 py-1 text-[11px] font-semibold rounded bg-indigo-950/70 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60 transition-all shadow-sm flex items-center space-x-1"
               title="GitHub Copilot公式提供の全モデルを一括選択"
             >
-              Copilot公式全選択
+              <span>Copilot公式全選択</span>
             </button>
           </div>
-          {dataset.models.map((model) => {
-            const isSelected = selectedModelIds.includes(model.id);
-            const isFocused = focusedModelId === model.id;
-            return (
-              <button
-                key={model.id}
-                onClick={() => handleToggleModel(model.id)}
-                className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs transition-all border ${
-                  isSelected
-                    ? 'border-indigo-500/80 text-white shadow-sm'
-                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-                } ${isFocused && isSelected ? 'ring-2 ring-indigo-400 ring-offset-2 ring-offset-slate-900' : ''}`}
-                style={{
-                  backgroundColor: isSelected ? `${model.color}25` : undefined,
-                }}
-              >
-                <span
-                  className="w-2.5 h-2.5 rounded-full"
-                  style={{ backgroundColor: model.color }}
-                />
-                <span className="font-medium">{model.name}</span>
-                {model.is_copilot_native && (
-                  <span className="text-[9px] px-1 py-0.2 rounded bg-indigo-950 text-indigo-300 font-mono">
-                    Copilot
+
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            {dataset.models.map((model) => {
+              const isSelected = selectedModelIds.includes(model.id);
+              const isFocused = focusedModelId === model.id;
+              const usage = usageStats[model.id] || { requests: 0, percentage: 0, hasUsage: false };
+              return (
+                <button
+                  key={model.id}
+                  onClick={() => handleToggleModel(model.id)}
+                  className={`inline-flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs transition-all border ${
+                    isSelected
+                      ? 'border-indigo-500/80 text-white shadow-sm'
+                      : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                  } ${isFocused && isSelected ? 'ring-2 ring-indigo-400 ring-offset-2 ring-offset-slate-900' : ''}`}
+                  style={{
+                    backgroundColor: isSelected ? `${model.color}25` : undefined,
+                  }}
+                  title={`社内利用シェア: ${usage.percentage}% (${usage.requests.toLocaleString()} 回)${usage.hasUsage ? '' : ' - 実績なし (ナレッジとして選択可能)'}`}
+                >
+                  <span
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: model.color }}
+                  />
+                  <span className="font-medium">{model.name}</span>
+                  {model.is_copilot_native && (
+                    <span className="text-[9px] px-1 py-0.2 rounded bg-indigo-950 text-indigo-300 font-mono">
+                      Copilot
+                    </span>
+                  )}
+                  {/* 社内利用シェア (0%も明示表示) */}
+                  <span
+                    className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${
+                      usage.hasUsage
+                        ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-700/60'
+                        : 'bg-slate-900/80 text-slate-500 border border-slate-800'
+                    }`}
+                  >
+                    {usage.percentage}%
                   </span>
-                )}
-                {isSelected && (
-                  <span className="text-[10px] font-bold text-slate-300 ml-1">✓</span>
-                )}
-              </button>
-            );
-          })}
+                  {isSelected && (
+                    <span className="text-[10px] font-bold text-slate-300 ml-0.5">✓</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -549,6 +650,64 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                       </span>
                     ))}
                   </div>
+                </div>
+
+                {/* 組織内・分析対象データの実績 (未利用モデルは 0% と明示しつつナレッジとして参照可能) */}
+                <div className="mt-4 p-3.5 bg-slate-950/70 border border-slate-800 rounded-xl">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-300">
+                      <Building2 className="w-4 h-4 text-indigo-400" />
+                      <span>組織内・分析対象スコープでの実利用状況</span>
+                    </div>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                        focusedUsage?.hasUsage
+                          ? 'bg-emerald-950 text-emerald-300 border-emerald-700/80'
+                          : 'bg-slate-900 text-slate-400 border-slate-700'
+                      }`}
+                    >
+                      {focusedUsage?.hasUsage ? '社内利用あり' : '社内利用なし (0%)'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-xs bg-slate-900/50 p-2.5 rounded-lg border border-slate-800/60">
+                    <div>
+                      <span className="text-[11px] text-slate-400 block">社内利用シェア:</span>
+                      <span
+                        className={`text-base font-mono font-black ${
+                          focusedUsage?.hasUsage ? 'text-emerald-400' : 'text-slate-400'
+                        }`}
+                      >
+                        {focusedUsage?.percentage || 0}%
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] text-slate-400 block">総リクエスト・対話数:</span>
+                      <span className="text-base font-mono font-bold text-slate-200">
+                        {(focusedUsage?.requests || 0).toLocaleString()} <span className="text-xs font-normal text-slate-400">回</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {onNavigateToTrend && (
+                    <div className="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+                      <span className="text-slate-400">
+                        {focusedUsage?.hasUsage ? '日次利用推移を確認:' : 'モデル別推移タブへ移動:'}
+                      </span>
+                      <button
+                        onClick={() => onNavigateToTrend(focusedModel.id)}
+                        className="text-indigo-400 hover:text-indigo-300 font-semibold underline underline-offset-2 transition-colors"
+                      >
+                        ユーザー別モデル推移を表示 ➔
+                      </button>
+                    </div>
+                  )}
+
+                  {!focusedUsage?.hasUsage && (
+                    <p className="text-[11px] text-slate-400 mt-2 leading-relaxed border-t border-slate-800/80 pt-1.5">
+                      ※ 現行の分析対象データに利用実績はありませんが、モデル特性レーダーのナレッジとしてベンチマーク性能・推奨ユースケース・エンジニアの評判を完全参照可能です。
+                    </p>
+                  )}
                 </div>
 
                 {/* 総合判定サマリー */}
@@ -747,6 +906,17 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
             >
               コスト効率
             </button>
+            <button
+              onClick={() => handleSort('usage')}
+              className={`px-2.5 py-1 rounded-md font-medium border flex items-center space-x-1 ${
+                sortKey === 'usage'
+                  ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
+                  : 'bg-slate-800/60 border-slate-700 text-slate-400'
+              }`}
+            >
+              <Building2 className="w-3 h-3 text-indigo-400" />
+              <span>社内利用シェア</span>
+            </button>
           </div>
         </div>
 
@@ -759,6 +929,12 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                   <div className="flex items-center space-x-1">
                     <span>総合 Grade / 判定</span>
                     <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
+                <th className="py-3 px-3 cursor-pointer" onClick={() => handleSort('usage')}>
+                  <div className="flex items-center space-x-1 text-slate-200 font-bold">
+                    <span>社内利用シェア</span>
+                    <ArrowUpDown className="w-3 h-3 text-indigo-400" />
                   </div>
                 </th>
                 <th className="py-3 px-3 cursor-pointer" onClick={() => handleSort('swe')}>
@@ -833,6 +1009,22 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                         </span>
                         <span className="font-mono text-slate-300 font-bold">
                           {m.evaluation.overall_score} pt
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* 社内利用シェア (実績なしモデルは 0% と明示) */}
+                    <td className="py-3 px-3 font-mono">
+                      <div className="flex items-center space-x-1.5">
+                        <span
+                          className={`font-bold ${
+                            usageStats[m.id]?.hasUsage ? 'text-emerald-400' : 'text-slate-500'
+                          }`}
+                        >
+                          {usageStats[m.id]?.percentage || 0}%
+                        </span>
+                        <span className="text-[10px] text-slate-500">
+                          ({(usageStats[m.id]?.requests || 0).toLocaleString()} req)
                         </span>
                       </div>
                     </td>

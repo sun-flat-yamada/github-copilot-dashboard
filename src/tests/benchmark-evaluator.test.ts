@@ -4,6 +4,7 @@ import {
   computeRadarScores,
   evaluateModel,
   createModelProfile,
+  normalizeModelId,
   RADAR_AXIS_DEFINITIONS,
   DEFAULT_BENCHMARK_SOURCES,
 } from '../processor/benchmark-evaluator';
@@ -154,5 +155,78 @@ describe('AI Model Benchmark Evaluator Tests', () => {
       evaluation.buzz.source_note.includes('※ SNS上のエンジニアの声'),
       'Buzz source_note must explicitly specify SNS rumor note'
     );
+  });
+
+  it('correctly normalizes diverse model name variants to knowledge model IDs', () => {
+    assert.strictEqual(normalizeModelId('Claude 3.7 Sonnet'), 'claude-3-7-sonnet');
+    assert.strictEqual(normalizeModelId('claude-3.7-sonnet'), 'claude-3-7-sonnet');
+    assert.strictEqual(normalizeModelId('GPT-4o'), 'gpt-4o');
+    assert.strictEqual(normalizeModelId('gpt4o'), 'gpt-4o');
+    assert.strictEqual(normalizeModelId('GPT-4o mini'), 'gpt-4o-mini');
+    assert.strictEqual(normalizeModelId('o1 (推論)'), 'o1');
+    assert.strictEqual(normalizeModelId('OpenAI o1'), 'o1');
+    assert.strictEqual(normalizeModelId('o3-mini'), 'o3-mini');
+    assert.strictEqual(normalizeModelId('Gemini 2.0 Flash'), 'gemini-2-0-flash');
+    assert.strictEqual(normalizeModelId('Gemini 2.5 Pro'), 'gemini-2-5-pro');
+    assert.strictEqual(normalizeModelId('DeepSeek R1'), 'deepseek-r1');
+  });
+
+  it('guarantees all knowledge models are selectable and defaults unused models to 0%', () => {
+    // 保持ナレッジモデル一覧 (9モデル)
+    const knowledgeModelIds = [
+      'claude-3-7-sonnet',
+      'claude-3-5-sonnet',
+      'gpt-4o',
+      'gpt-4o-mini',
+      'o1',
+      'o3-mini',
+      'gemini-2-0-flash',
+      'gemini-2-5-pro',
+      'deepseek-r1',
+    ];
+
+    // 分析対象データ内には Claude 3.7 と GPT-4o の2モデルしか利用実績がないケースをシミュレート
+    const rawUsageCounts: Record<string, number> = {
+      'claude-3-7-sonnet': 75,
+      'gpt-4o': 25,
+    };
+    const totalRequests = 100;
+
+    // 全ナレッジモデルに対する利用シェア判定
+    const stats: Record<string, { requests: number; percentage: number; hasUsage: boolean }> = {};
+    for (const id of knowledgeModelIds) {
+      const count = rawUsageCounts[id] || 0;
+      const pct = totalRequests > 0 ? Number(((count / totalRequests) * 100).toFixed(1)) : 0;
+      stats[id] = {
+        requests: count,
+        percentage: pct,
+        hasUsage: count > 0,
+      };
+    }
+
+    // 1. 全ナレッジモデルが除外されることなく保持されているか
+    assert.strictEqual(Object.keys(stats).length, 9);
+    for (const id of knowledgeModelIds) {
+      assert.ok(stats[id], `Model ${id} must exist in selectable list`);
+    }
+
+    // 2. 利用実績のあるモデルの検証
+    assert.strictEqual(stats['claude-3-7-sonnet'].percentage, 75.0);
+    assert.strictEqual(stats['claude-3-7-sonnet'].hasUsage, true);
+    assert.strictEqual(stats['gpt-4o'].percentage, 25.0);
+    assert.strictEqual(stats['gpt-4o'].hasUsage, true);
+
+    // 3. 利用実績がないモデル（o1, o3-mini, gemini-2-5-pro, deepseek-r1 等）は 0% かつ hasUsage: false
+    assert.strictEqual(stats['o1'].percentage, 0);
+    assert.strictEqual(stats['o1'].requests, 0);
+    assert.strictEqual(stats['o1'].hasUsage, false);
+
+    assert.strictEqual(stats['o3-mini'].percentage, 0);
+    assert.strictEqual(stats['o3-mini'].requests, 0);
+    assert.strictEqual(stats['o3-mini'].hasUsage, false);
+
+    assert.strictEqual(stats['deepseek-r1'].percentage, 0);
+    assert.strictEqual(stats['deepseek-r1'].requests, 0);
+    assert.strictEqual(stats['deepseek-r1'].hasUsage, false);
   });
 });
