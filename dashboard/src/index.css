@@ -1,6 +1,13 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-copilot-blue: #0969da;
+  --color-copilot-dark: #0d1117;
+  --color-copilot-card: #161b22;
+  --color-copilot-border: #30363d;
+  --color-copilot-accent: #238636;
+  --color-copilot-purple: #8957e5;
+}
 
 :root {
   color-scheme: dark;
