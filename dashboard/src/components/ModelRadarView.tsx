@@ -41,6 +41,10 @@ import {
   BookOpen,
   Boxes,
   Tag,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  Check,
 } from 'lucide-react';
 
 import { normalizeModelId } from '../../../src/processor/benchmark-evaluator';
@@ -119,6 +123,8 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
   // フォーカス中の特定モデルID (詳細カード用)
   const [focusedModelId, setFocusedModelId] = useState<string>('');
+  // 詳細カード上部プルダウンの開閉状態
+  const [isDetailCardDropdownOpen, setIsDetailCardDropdownOpen] = useState<boolean>(false);
   // 生データテーブルのソート列 (社内利用シェア 'usage'、コンテキスト長 'context' も追加)
   const [sortKey, setSortKey] = useState<'overall' | 'swe' | 'speed' | 'cost' | 'aime' | 'usage' | 'context'>('overall');
   const [sortAsc, setSortAsc] = useState<boolean>(false);
@@ -222,13 +228,41 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   // フォーカス中モデルのプロファイル
   const focusedModel = useMemo(() => {
     if (!dataset) return null;
+    // 選択中モデルに focusedModelId が含まれていればそれを最優先
+    if (selectedModelIds.includes(focusedModelId)) {
+      const found = dataset.models.find((m) => m.id === focusedModelId);
+      if (found) return found;
+    }
+    // 含まれていなければ選択中モデルの先頭、なければナレッジの先頭
     return (
-      dataset.models.find((m) => m.id === focusedModelId) ||
       selectedModels[0] ||
+      dataset.models.find((m) => m.id === focusedModelId) ||
       dataset.models[0] ||
       null
     );
-  }, [dataset, focusedModelId, selectedModels]);
+  }, [dataset, focusedModelId, selectedModelIds, selectedModels]);
+
+  // 詳細カード切り替え用: 選択中モデルリスト内での現在位置
+  const currentFocusedIndex = useMemo(() => {
+    if (!focusedModel || selectedModels.length === 0) return -1;
+    return selectedModels.findIndex((m) => m.id === focusedModel.id);
+  }, [focusedModel, selectedModels]);
+
+  // 左移動 (前のモデルへ)
+  const handlePrevModel = () => {
+    if (selectedModels.length <= 1) return;
+    const idx = currentFocusedIndex >= 0 ? currentFocusedIndex : 0;
+    const prevIdx = (idx - 1 + selectedModels.length) % selectedModels.length;
+    setFocusedModelId(selectedModels[prevIdx].id);
+  };
+
+  // 右移動 (次のモデルへ)
+  const handleNextModel = () => {
+    if (selectedModels.length <= 1) return;
+    const idx = currentFocusedIndex >= 0 ? currentFocusedIndex : 0;
+    const nextIdx = (idx + 1) % selectedModels.length;
+    setFocusedModelId(selectedModels[nextIdx].id);
+  };
 
   // フォーカス中モデルの組織内利用実績
   const focusedUsage = useMemo<ModelUsageStat | null>(() => {
@@ -973,8 +1007,176 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
         {/* 右: フォーカスモデルの特性判定カード (5 cols) */}
         <div className="lg:col-span-5 flex flex-col space-y-4">
           {focusedModel ? (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex-1 flex flex-col justify-between">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex-1 flex flex-col">
               <div>
+                {/* 1. 詳細カード切り替えバー (ウィジェット最上部) */}
+                <div className="mb-4 pb-3.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center space-x-1.5 text-xs text-slate-400">
+                    <Sliders className="w-3.5 h-3.5 text-indigo-400" />
+                    <span className="font-semibold text-slate-300">詳細カード切り替え:</span>
+                  </div>
+
+                  <div className="flex items-center space-x-1.5">
+                    {/* 左移動ボタン */}
+                    <button
+                      type="button"
+                      onClick={handlePrevModel}
+                      disabled={selectedModels.length <= 1}
+                      className={`p-1.5 rounded-lg border transition-all ${
+                        selectedModels.length > 1
+                          ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border-slate-700 active:scale-95 shadow-sm cursor-pointer'
+                          : 'bg-slate-900/60 text-slate-600 border-slate-800 cursor-not-allowed opacity-40'
+                      }`}
+                      title={
+                        selectedModels.length > 1
+                          ? `前のモデルへ (${
+                              selectedModels[
+                                (currentFocusedIndex - 1 + selectedModels.length) % selectedModels.length
+                              ]?.name || ''
+                            })`
+                          : '複数モデル選択時に左右移動可能'
+                      }
+                      aria-label="前のモデルへ移動"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+
+                    {/* モデル名表示部 (プルダウン切り替え) */}
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (selectedModels.length > 1) {
+                            setIsDetailCardDropdownOpen((prev) => !prev);
+                          }
+                        }}
+                        disabled={selectedModels.length <= 1}
+                        className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all max-w-[190px] sm:max-w-[240px] ${
+                          selectedModels.length > 1
+                            ? isDetailCardDropdownOpen
+                              ? 'bg-indigo-900/60 border-indigo-500 text-white shadow ring-2 ring-indigo-500/30'
+                              : 'bg-slate-800/90 hover:bg-slate-750 border-slate-700 text-white hover:border-slate-600 shadow-sm cursor-pointer'
+                            : 'bg-slate-900/60 border-slate-800 text-slate-300 cursor-default'
+                        }`}
+                        aria-expanded={isDetailCardDropdownOpen}
+                        aria-haspopup="listbox"
+                        title={selectedModels.length > 1 ? 'クリックしてモデルを選択 (プルダウン)' : focusedModel.name}
+                      >
+                        <span
+                          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: focusedModel.color }}
+                        />
+                        <span className="truncate font-bold">{focusedModel.name}</span>
+                        {selectedModels.length > 1 && (
+                          <ChevronDown
+                            className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 flex-shrink-0 ${
+                              isDetailCardDropdownOpen ? 'rotate-180 text-white' : ''
+                            }`}
+                          />
+                        )}
+                      </button>
+
+                      {/* プルダウンメニュー */}
+                      {isDetailCardDropdownOpen && selectedModels.length > 1 && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-40"
+                            onClick={() => setIsDetailCardDropdownOpen(false)}
+                            aria-hidden="true"
+                          />
+                          <div
+                            className="absolute right-0 top-full mt-2 w-72 sm:w-80 max-h-80 overflow-y-auto bg-slate-900/98 border border-slate-700/90 rounded-xl shadow-2xl z-50 backdrop-blur-md p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150"
+                            role="listbox"
+                          >
+                            <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800 flex items-center justify-between">
+                              <span>選択中のモデル一覧 ({selectedModels.length})</span>
+                              <span className="text-[10px] text-indigo-400 font-mono">
+                                {currentFocusedIndex >= 0 ? currentFocusedIndex + 1 : 1} / {selectedModels.length}
+                              </span>
+                            </div>
+                            {selectedModels.map((m) => {
+                              const isCurrent = focusedModel.id === m.id;
+                              return (
+                                <button
+                                  key={m.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setFocusedModelId(m.id);
+                                    setIsDetailCardDropdownOpen(false);
+                                  }}
+                                  className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left text-xs transition-all ${
+                                    isCurrent
+                                      ? 'bg-indigo-600/30 border border-indigo-500/60 text-white shadow-sm'
+                                      : 'hover:bg-slate-800 text-slate-300 hover:text-white border border-transparent'
+                                  }`}
+                                  role="option"
+                                  aria-selected={isCurrent}
+                                >
+                                  <div className="flex items-center space-x-2 min-w-0 pr-2">
+                                    <span
+                                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                      style={{ backgroundColor: m.color }}
+                                    />
+                                    <div className="truncate">
+                                      <div className="font-bold truncate text-slate-100">{m.name}</div>
+                                      <div className="text-[10px] text-slate-400 truncate">
+                                        {m.vendor} {m.extended_capabilities?.tier ? `• ${m.extended_capabilities.tier}` : ''}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center space-x-2 flex-shrink-0">
+                                    <span
+                                      className="px-1.5 py-0.5 rounded text-[10px] font-black text-white"
+                                      style={{ backgroundColor: m.color }}
+                                    >
+                                      {m.evaluation.grade}
+                                    </span>
+                                    {isCurrent && <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />}
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* 右移動ボタン */}
+                    <button
+                      type="button"
+                      onClick={handleNextModel}
+                      disabled={selectedModels.length <= 1}
+                      className={`p-1.5 rounded-lg border transition-all ${
+                        selectedModels.length > 1
+                          ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border-slate-700 active:scale-95 shadow-sm cursor-pointer'
+                          : 'bg-slate-900/60 text-slate-600 border-slate-800 cursor-not-allowed opacity-40'
+                      }`}
+                      title={
+                        selectedModels.length > 1
+                          ? `次のモデルへ (${
+                              selectedModels[
+                                (currentFocusedIndex + 1) % selectedModels.length
+                              ]?.name || ''
+                            })`
+                          : '複数モデル選択時に左右移動可能'
+                      }
+                      aria-label="次のモデルへ移動"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+
+                    {/* カウンター表示 (例: 2/4) */}
+                    {selectedModels.length > 1 && (
+                      <span className="text-[11px] font-mono text-slate-400 ml-1 select-none whitespace-nowrap">
+                        <strong className="text-indigo-400">
+                          {currentFocusedIndex >= 0 ? currentFocusedIndex + 1 : 1}
+                        </strong>
+                        /{selectedModels.length}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
                 {/* ヘッダー: モデル名・グレード */}
                 <div className="flex items-start justify-between gap-3 border-b border-slate-800 pb-4">
                   <div>
@@ -1300,26 +1502,6 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                     )}
                   </div>
                 )}
-              </div>
-
-              {/* モデル切り替えクイックセレクタ */}
-              <div className="mt-5 pt-4 border-t border-slate-800 flex items-center justify-between text-xs">
-                <span className="text-slate-400">詳細カード切り替え:</span>
-                <div className="flex items-center space-x-1.5">
-                  {selectedModels.map((m) => (
-                    <button
-                      key={m.id}
-                      onClick={() => setFocusedModelId(m.id)}
-                      className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
-                        focusedModelId === m.id
-                          ? 'bg-indigo-600 text-white shadow'
-                          : 'bg-slate-800 text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      {m.name.split(' ')[0]} {m.name.split(' ')[1] || ''}
-                    </button>
-                  ))}
-                </div>
               </div>
             </div>
           ) : (
