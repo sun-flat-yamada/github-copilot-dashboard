@@ -145,6 +145,20 @@ Claude 3.7 Sonnet, Claude 3.5 Sonnet, GPT-4o, GPT-4o mini, o1, o3-mini, Gemini 2
 - 📘 **GitHub Copilot サポートAIモデル一覧**: `https://docs.github.com/ja/copilot/reference/ai-models/supported-models`
 - 💳 **GitHub Copilot モデル別課金・単価表**: `https://docs.github.com/ja/copilot/reference/copilot-billing/models-and-pricing`
 
+### 4.4 モデル一覧表示・選択整理仕様（メーカー別・カテゴリ別）
+大量のモデル（全38モデル）を直感的に選択・比較できるよう、モデル選択チップスおよび生データ詳細比較テーブルの両エリアにおいて、メーカー別およびカテゴリ別の体系的整理を提供する。
+1. **モデル選択パネルの整理構造**:
+   - **表示モード切り替え (`groupingMode`)**:
+     - **メーカー別表示 (Vendor Grouping)**: OpenAI、Anthropic、Google、Microsoft、xAI、Moonshot AI、その他ごとにカードを分離し、カード内に Tier（Powerful / Versatile / Lightweight）のサブヘッダーを設けてスコア順にモデルチップを配置。
+     - **カテゴリ別表示 (Category/Tier Grouping)**: Powerful（最上位推論）、Versatile（実務バランス）、Lightweight（高速補完）ごとに大枠を分離し、内部で各メーカーごとに整理。
+   - **双方向フィルタ**:
+     - **メーカー絞り込み**: 特定メーカーのみを抽出表示（全選択/全解除ボタン付き）。
+     - **カテゴリ絞り込み**: 特定Tierのみを抽出表示。
+   - **実績シェア表示**: 社内実績がないモデルも保持ナレッジとして 0% で表示し、全モデル選択可能。
+2. **生データ比較テーブル（一覧表示部）の整理**:
+   - テーブルヘッダー直下に「メーカー絞り込み」と「カテゴリ絞り込み」のピルボタンを常設。
+   - ソート基準（総合スコア、SWE-bench、速度、コスト、Context窓、社内シェア）と連動し、絞り込まれた対象モデルを素早く多軸比較可能。
+
 ---
 
 ## 5. 出典メタデータとお題・現場での見え方・エンジニアの声 (※ SNSの噂)
