@@ -49,6 +49,7 @@ import {
 } from 'lucide-react';
 
 import { normalizeModelId } from '../../../src/processor/benchmark-evaluator';
+import { RadarTableOfContents } from './RadarTableOfContents';
 
 export interface ModelUsageStat {
   modelId: string;
@@ -412,9 +413,12 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   }
 
   return (
-    <div className="flex flex-col space-y-6">
+    <div className="flex flex-col space-y-6 relative">
+      {/* 右側固定: ページ内構成カテゴリ一覧 & スムーズジャンプ目次 (表示/非表示トグル可能) */}
+      <RadarTableOfContents />
+
       {/* 1. タイトル & ステータスヘッダー */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+      <div id="radar-overview" className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden scroll-mt-20">
         <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
 
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
@@ -907,7 +911,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       {/* 2. レーダーチャート & フォーカスモデル判定カード */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* 左: レーダーチャート (7 cols) */}
-        <div className="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+        <div id="radar-chart" className="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between scroll-mt-20">
           <div>
             <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
               <div className="flex items-center space-x-2">
@@ -1014,7 +1018,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
         </div>
 
         {/* 右: フォーカスモデルの特性判定カード (5 cols) */}
-        <div className="lg:col-span-5 flex flex-col space-y-4">
+        <div id="radar-detail" className="lg:col-span-5 flex flex-col space-y-4 scroll-mt-20">
           {focusedModel ? (
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex-1 flex flex-col">
               <div>
@@ -1522,7 +1526,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       </div>
 
       {/* 3. 著名ベンチマーク生データ詳細比較テーブル */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+      <div id="radar-table" className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl scroll-mt-20">
         <div className="flex flex-col space-y-3 border-b border-slate-800 pb-4 mb-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -1889,7 +1893,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       </div>
 
       {/* 4. ベンチマークデータソース & 判定基準情報 (お題設計・性能の見え方・SNSの噂) */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl">
+      <div id="radar-sources" className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl scroll-mt-20">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3 mb-4">
           <div className="flex items-center space-x-2 text-sm font-bold text-white">
             <Layers className="w-4 h-4 text-indigo-400" />
@@ -1985,7 +1989,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       </div>
 
       {/* 5. GitHub Copilot 公式ドキュメント・仕様リファレンス引用カード */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl">
+      <div id="radar-references" className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl scroll-mt-20">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3 mb-4">
           <div className="flex items-center space-x-2 text-sm font-bold text-white">
             <BookOpen className="w-4 h-4 text-indigo-400" />
