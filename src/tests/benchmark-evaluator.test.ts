@@ -118,4 +118,41 @@ describe('AI Model Benchmark Evaluator Tests', () => {
     assert.strictEqual(profile.id, 'mock-test');
     assert.ok(profile.evaluation.overall_score >= 0);
   });
+
+  it('provides target_problem, performance_view, and community_rumor for all benchmark sources', () => {
+    for (const src of DEFAULT_BENCHMARK_SOURCES) {
+      assert.ok(src.target_problem, `Benchmark source ${src.id} should have target_problem`);
+      assert.ok(src.performance_view, `Benchmark source ${src.id} should have performance_view`);
+      assert.ok(src.community_rumor, `Benchmark source ${src.id} should have community_rumor`);
+      assert.ok(
+        src.community_rumor.includes('※ SNSの噂'),
+        `Benchmark source ${src.id} community_rumor should include '※ SNSの噂' note`
+      );
+    }
+  });
+
+  it('generates real engineer buzz with SNS rumor annotation for evaluated models', () => {
+    const raw: BenchmarkRawMetrics = {
+      swe_bench_verified: 70.3,
+      humaneval_plus: 92.4,
+      aime_2024: 84.8,
+      gpqa_diamond: 67.2,
+      arena_coding_elo: 1435,
+      output_speed_tps: 68,
+      input_cost_per_m: 3.0,
+      output_cost_per_m: 15.0,
+      context_window_k: 200,
+    };
+    const radar = computeRadarScores(raw);
+    const evaluation = evaluateModel('claude-3-7-sonnet', raw, radar);
+
+    assert.ok(evaluation.buzz, 'Model evaluation must have buzz');
+    assert.ok(evaluation.buzz.headline.length > 5, 'Buzz headline must be descriptive');
+    assert.ok(evaluation.buzz.community_sentiments.length > 0, 'Buzz must have community sentiments');
+    assert.ok(evaluation.buzz.caution_rumor.length > 5, 'Buzz caution rumor must be present');
+    assert.ok(
+      evaluation.buzz.source_note.includes('※ SNS上のエンジニアの声'),
+      'Buzz source_note must explicitly specify SNS rumor note'
+    );
+  });
 });
