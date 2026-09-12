@@ -37,6 +37,8 @@ import {
   Target,
   Eye,
   Building2,
+  CreditCard,
+  BookOpen,
 } from 'lucide-react';
 
 import { normalizeModelId } from '../../../src/processor/benchmark-evaluator';
@@ -128,8 +130,8 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   const [selectedModelIds, setSelectedModelIds] = useState<string[]>([]);
   // フォーカス中の特定モデルID (詳細カード用)
   const [focusedModelId, setFocusedModelId] = useState<string>('');
-  // 生データテーブルのソート列 (社内利用シェア 'usage' も追加)
-  const [sortKey, setSortKey] = useState<'overall' | 'swe' | 'speed' | 'cost' | 'aime' | 'usage'>('overall');
+  // 生データテーブルのソート列 (社内利用シェア 'usage'、コンテキスト長 'context' も追加)
+  const [sortKey, setSortKey] = useState<'overall' | 'swe' | 'speed' | 'cost' | 'aime' | 'usage' | 'context'>('overall');
   const [sortAsc, setSortAsc] = useState<boolean>(false);
 
   // 1. ベンチマークデータの取得
@@ -290,6 +292,9 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       } else if (sortKey === 'usage') {
         valA = usageStats[a.id]?.percentage || 0;
         valB = usageStats[b.id]?.percentage || 0;
+      } else if (sortKey === 'context') {
+        valA = a.raw_metrics.context_window_k;
+        valB = b.raw_metrics.context_window_k;
       }
       return sortAsc ? valA - valB : valB - valA;
     });
@@ -325,7 +330,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
     setFocusedModelId(modelIds[0] || '');
   };
 
-  const handleSort = (key: 'overall' | 'swe' | 'speed' | 'cost' | 'aime' | 'usage') => {
+  const handleSort = (key: 'overall' | 'swe' | 'speed' | 'cost' | 'aime' | 'usage' | 'context') => {
     if (sortKey === key) {
       setSortAsc(!sortAsc);
     } else {
@@ -636,6 +641,115 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                   </div>
                 </div>
 
+                {/* GitHub Copilot 公式仕様・コスト単価 (Context Window & Pricing) */}
+                <div className="mt-4 p-3.5 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950/40 border border-slate-800 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                    <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-200">
+                      <CreditCard className="w-4 h-4 text-indigo-400" />
+                      <span>GitHub Copilot 公式仕様・コスト単価</span>
+                    </div>
+                    <div className="flex items-center space-x-1.5">
+                      {focusedModel.extended_capabilities?.tier && (
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                            focusedModel.extended_capabilities.tier === 'powerful'
+                              ? 'bg-purple-950/80 text-purple-300 border-purple-700/60'
+                              : focusedModel.extended_capabilities.tier === 'lightweight'
+                              ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60'
+                              : 'bg-sky-950/80 text-sky-300 border-sky-700/60'
+                          }`}
+                        >
+                          {focusedModel.extended_capabilities.tier.toUpperCase()} TIER
+                        </span>
+                      )}
+                      {focusedModel.extended_capabilities?.release_status && (
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                            focusedModel.extended_capabilities.release_status === 'ga'
+                              ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60'
+                              : focusedModel.extended_capabilities.release_status === 'lts'
+                              ? 'bg-cyan-950/80 text-cyan-300 border-cyan-700/60'
+                              : focusedModel.extended_capabilities.release_status === 'preview'
+                              ? 'bg-amber-950/80 text-amber-300 border-amber-700/60'
+                              : 'bg-slate-900 text-slate-400 border-slate-700'
+                          }`}
+                        >
+                          {focusedModel.extended_capabilities.release_status.toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                    {/* コンテキスト長 */}
+                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80 flex flex-col justify-between">
+                      <span className="text-[11px] text-slate-400 block">Context 窓容量</span>
+                      <span className="text-sm font-mono font-bold text-white mt-1">
+                        {focusedModel.raw_metrics.context_window_display || `${focusedModel.raw_metrics.context_window_k}K Tok`}
+                      </span>
+                      {focusedModel.extended_capabilities?.supports_1m_context ? (
+                        <span className="text-[9px] text-indigo-300 font-semibold mt-0.5">✨ 最大 1M Tok</span>
+                      ) : (
+                        <span className="text-[9px] text-slate-500 mt-0.5">標準ウィンドウ</span>
+                      )}
+                    </div>
+
+                    {/* Input 単価 */}
+                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80 flex flex-col justify-between">
+                      <span className="text-[11px] text-slate-400 block">Input 単価 (/1M)</span>
+                      <span className="text-sm font-mono font-bold text-emerald-400 mt-1">
+                        ${focusedModel.raw_metrics.input_cost_per_m}
+                      </span>
+                      <span className="text-[9px] text-slate-500 mt-0.5">Base prompt</span>
+                    </div>
+
+                    {/* Output 単価 */}
+                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80 flex flex-col justify-between">
+                      <span className="text-[11px] text-slate-400 block">Output 単価 (/1M)</span>
+                      <span className="text-sm font-mono font-bold text-indigo-300 mt-1">
+                        ${focusedModel.raw_metrics.output_cost_per_m}
+                      </span>
+                      <span className="text-[9px] text-slate-500 mt-0.5">Generation</span>
+                    </div>
+
+                    {/* キャッシュ読み取り単価 */}
+                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80 flex flex-col justify-between">
+                      <span className="text-[11px] text-slate-400 block">Cache 読取 (/1M)</span>
+                      <span className="text-sm font-mono font-bold text-cyan-300 mt-1">
+                        ${focusedModel.raw_metrics.cached_input_cost_per_m ?? (focusedModel.raw_metrics.input_cost_per_m * 0.1).toFixed(2)}
+                      </span>
+                      {focusedModel.raw_metrics.cache_write_cost_per_m ? (
+                        <span className="text-[9px] text-slate-400 mt-0.5">書込: ${focusedModel.raw_metrics.cache_write_cost_per_m}</span>
+                      ) : (
+                        <span className="text-[9px] text-cyan-500/80 mt-0.5">Prompt Caching</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Long Context 単価補足 (該当モデルのみ) */}
+                  {focusedModel.raw_metrics.long_context_input_cost_per_m !== undefined && (
+                    <div className="text-[11px] bg-indigo-950/30 border border-indigo-800/40 p-2 rounded-lg flex items-center justify-between text-indigo-200">
+                      <span>超長文 (Long Context &gt; 200K) 課金:</span>
+                      <span className="font-mono">
+                        In: <strong>${focusedModel.raw_metrics.long_context_input_cost_per_m}</strong> / Out: <strong>${focusedModel.raw_metrics.long_context_output_cost_per_m}</strong> (/1M Tok)
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-800/60">
+                    <span>※ 価格出典: GitHub Copilot 公式モデル価格表 (2026年最新)</span>
+                    <a
+                      href="https://docs.github.com/ja/copilot/reference/copilot-billing/models-and-pricing"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-indigo-400 hover:text-indigo-300 flex items-center space-x-1"
+                    >
+                      <span>公式価格表を確認</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                </div>
+
                 {/* 特性タグバッジ */}
                 <div className="mt-4">
                   <span className="text-xs font-semibold text-slate-400 block mb-2">判定特性タグ:</span>
@@ -907,6 +1021,16 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
               コスト効率
             </button>
             <button
+              onClick={() => handleSort('context')}
+              className={`px-2.5 py-1 rounded-md font-medium border ${
+                sortKey === 'context'
+                  ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
+                  : 'bg-slate-800/60 border-slate-700 text-slate-400'
+              }`}
+            >
+              Context 窓
+            </button>
+            <button
               onClick={() => handleSort('usage')}
               className={`px-2.5 py-1 rounded-md font-medium border flex items-center space-x-1 ${
                 sortKey === 'usage'
@@ -924,10 +1048,10 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-slate-800 text-slate-400 font-semibold uppercase tracking-wider bg-slate-950/40">
-                <th className="py-3 px-3">モデル / ファミリー</th>
+                <th className="py-3 px-3">モデル / 仕様・Tier</th>
                 <th className="py-3 px-3 cursor-pointer" onClick={() => handleSort('overall')}>
                   <div className="flex items-center space-x-1">
-                    <span>総合 Grade / 判定</span>
+                    <span>総合 Grade</span>
                     <ArrowUpDown className="w-3 h-3" />
                   </div>
                 </th>
@@ -952,7 +1076,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                 <th className="py-3 px-3">Arena Coding Elo</th>
                 <th className="py-3 px-3 cursor-pointer" onClick={() => handleSort('speed')}>
                   <div className="flex items-center space-x-1">
-                    <span>速度 (Tokens/s)</span>
+                    <span>速度 (TPS)</span>
                     <ArrowUpDown className="w-3 h-3" />
                   </div>
                 </th>
@@ -962,7 +1086,12 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                     <ArrowUpDown className="w-3 h-3" />
                   </div>
                 </th>
-                <th className="py-3 px-3">Context 窓</th>
+                <th className="py-3 px-3 cursor-pointer" onClick={() => handleSort('context')}>
+                  <div className="flex items-center space-x-1">
+                    <span>Context 窓</span>
+                    <ArrowUpDown className="w-3 h-3" />
+                  </div>
+                </th>
                 <th className="py-3 px-3 text-right">レーダー表示</th>
               </tr>
             </thead>
@@ -992,9 +1121,26 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                               </span>
                             )}
                           </div>
-                          <span className="text-[11px] text-slate-500">
-                            {m.vendor} • {m.release_date}
-                          </span>
+                          <div className="flex items-center space-x-1.5 text-[10px] text-slate-500 mt-0.5">
+                            <span>{m.vendor}</span>
+                            <span>•</span>
+                            {m.extended_capabilities?.tier && (
+                              <span className={`px-1 py-0.2 rounded text-[9px] font-mono ${
+                                m.extended_capabilities.tier === 'powerful'
+                                  ? 'bg-purple-950/80 text-purple-300'
+                                  : m.extended_capabilities.tier === 'lightweight'
+                                  ? 'bg-emerald-950/80 text-emerald-300'
+                                  : 'bg-sky-950/80 text-sky-300'
+                              }`}>
+                                {m.extended_capabilities.tier}
+                              </span>
+                            )}
+                            {m.extended_capabilities?.release_status && (
+                              <span className="text-[9px] text-slate-400 font-mono">
+                                {m.extended_capabilities.release_status.toUpperCase()}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -1066,17 +1212,32 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
 
                     <td className="py-3 px-3 font-mono text-slate-300">
                       <div className="flex flex-col">
-                        <span>In: ${m.raw_metrics.input_cost_per_m}</span>
+                        <div className="flex items-center space-x-1">
+                          <span className="text-emerald-400">In: ${m.raw_metrics.input_cost_per_m}</span>
+                          <span className="text-slate-600">/</span>
+                          <span className="text-indigo-300">Out: ${m.raw_metrics.output_cost_per_m}</span>
+                        </div>
                         <span className="text-[10px] text-slate-500">
-                          Out: ${m.raw_metrics.output_cost_per_m}
+                          Cache: ${m.raw_metrics.cached_input_cost_per_m ?? (m.raw_metrics.input_cost_per_m * 0.1).toFixed(2)}
                         </span>
                       </div>
                     </td>
 
                     <td className="py-3 px-3 font-mono text-slate-300">
-                      {m.raw_metrics.context_window_k >= 1000
-                        ? `${m.raw_metrics.context_window_k / 1000}M Tok`
-                        : `${m.raw_metrics.context_window_k}K Tok`}
+                      <div className="flex items-center space-x-1.5">
+                        <span>
+                          {m.raw_metrics.context_window_display || (
+                            m.raw_metrics.context_window_k >= 1000
+                              ? `${m.raw_metrics.context_window_k / 1000}M Tok`
+                              : `${m.raw_metrics.context_window_k}K Tok`
+                          )}
+                        </span>
+                        {m.extended_capabilities?.supports_1m_context && (
+                          <span className="text-[9px] px-1 py-0.2 rounded bg-indigo-950 text-indigo-300 border border-indigo-700/60 font-mono">
+                            1M
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     <td className="py-3 px-3 text-right">
@@ -1192,6 +1353,77 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* 5. GitHub Copilot 公式ドキュメント・仕様リファレンス引用カード */}
+      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3 mb-4">
+          <div className="flex items-center space-x-2 text-sm font-bold text-white">
+            <BookOpen className="w-4 h-4 text-indigo-400" />
+            <span>GitHub Copilot 公式ドキュメント・仕様リファレンス引用</span>
+          </div>
+          <span className="text-[11px] text-slate-400">
+            公式仕様・サポートモデル一覧・課金体系への直接リンク
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          {/* 引用1: サポートモデル一覧 */}
+          <div className="p-4 bg-slate-950/70 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3 hover:border-indigo-500/40 transition-colors">
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                  <h4 className="font-bold text-white text-sm">GitHub Copilot サポートAIモデル一覧</h4>
+                </div>
+                <a
+                  href="https://docs.github.com/ja/copilot/reference/ai-models/supported-models"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-indigo-600 text-indigo-400 hover:text-white transition-colors flex items-center space-x-1"
+                  title="公式ドキュメントを開く"
+                >
+                  <span className="text-[11px] font-semibold">公式Doc</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">
+                GitHub Copilot のエージェントモード、コード補完、Chat で利用可能な各社（OpenAI, Anthropic, Google, Microsoft, xAI, Moonshot AI）の全モデル一覧と、Tier分類（Powerful, Versatile, Lightweight）、提供ステータス（GA, LTS, Preview）の公式リファレンスです。
+              </p>
+            </div>
+            <div className="pt-2 border-t border-slate-800/80 text-[11px] text-indigo-300/80 font-mono truncate">
+              URL: https://docs.github.com/ja/copilot/reference/ai-models/supported-models
+            </div>
+          </div>
+
+          {/* 引用2: モデル別課金・単価表 */}
+          <div className="p-4 bg-slate-950/70 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3 hover:border-indigo-500/40 transition-colors">
+            <div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                  <h4 className="font-bold text-white text-sm">GitHub Copilot モデル別課金・単価表 (Models and Pricing)</h4>
+                </div>
+                <a
+                  href="https://docs.github.com/ja/copilot/reference/copilot-billing/models-and-pricing"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-indigo-600 text-indigo-400 hover:text-white transition-colors flex items-center space-x-1"
+                  title="公式価格表を開く"
+                >
+                  <span className="text-[11px] font-semibold">公式価格表</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">
+                各モデルの 100万トークン（1M tokens）あたりの Input / Output 課金単価、Prompt Caching（キャッシュ読み取り・書き込み）割引単価、超長文コンテキスト（Long Context &gt; 128K/200K）価格体系、およびコンテキスト窓容量（128K〜1M）の公式料金規定です。
+              </p>
+            </div>
+            <div className="pt-2 border-t border-slate-800/80 text-[11px] text-indigo-300/80 font-mono truncate">
+              URL: https://docs.github.com/ja/copilot/reference/copilot-billing/models-and-pricing
+            </div>
+          </div>
         </div>
       </div>
     </div>

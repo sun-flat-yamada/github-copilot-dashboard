@@ -114,6 +114,14 @@ export interface ModelBenchmarkProfile {
   release_date: string;
   release_status?: ModelReleaseStatus;
   capabilities?: ModelExtendedCapabilities;
+  extended_capabilities?: {
+    tier?: 'powerful' | 'versatile' | 'lightweight' | 'Powerful' | 'Versatile' | 'Lightweight';
+    release_status?: 'ga' | 'lts' | 'preview' | 'retired' | 'GA' | 'LTS' | 'Preview' | 'Retired';
+    max_context_window?: number;
+    supports_1m_context?: boolean;
+    supports_cache?: boolean;
+    supports_long_context?: boolean;
+  };
   raw_metrics: BenchmarkRawMetrics;
   radar_scores: RadarScores;
   evaluation: ModelEvaluation;

@@ -597,11 +597,30 @@ export function createModelProfile(
   is_copilot_native: boolean,
   release_date: string,
   raw: BenchmarkRawMetrics,
-  release_status: ModelReleaseStatus = 'GA',
-  capabilities?: ModelExtendedCapabilities
+  release_status_or_capabilities: ModelReleaseStatus | ModelBenchmarkProfile['extended_capabilities'] = 'GA',
+  capabilities?: ModelExtendedCapabilities,
+  extended_capabilities?: ModelBenchmarkProfile['extended_capabilities']
 ): ModelBenchmarkProfile {
   const radar_scores = computeRadarScores(raw);
   const evaluation = evaluateModel(id, raw, radar_scores);
+
+  let release_status: ModelReleaseStatus = 'GA';
+  let ext: ModelBenchmarkProfile['extended_capabilities'];
+
+  if (typeof release_status_or_capabilities === 'object' && release_status_or_capabilities !== null) {
+    ext = release_status_or_capabilities;
+    release_status = (ext.release_status?.toUpperCase() as ModelReleaseStatus) || 'GA';
+  } else {
+    release_status = release_status_or_capabilities || 'GA';
+    ext = extended_capabilities || {
+      tier: (capabilities?.tier?.toLowerCase() || 'versatile') as any,
+      release_status: (release_status?.toLowerCase() || 'ga') as any,
+      supports_1m_context: capabilities?.has_1m_context ?? (raw.context_window_k >= 1000),
+      supports_cache: raw.cached_input_cost_per_m !== undefined,
+      supports_long_context: raw.long_context_input_cost_per_m !== undefined,
+      max_context_window: raw.context_window_k * 1024,
+    };
+  }
 
   return {
     id,
@@ -613,6 +632,7 @@ export function createModelProfile(
     release_date,
     release_status,
     capabilities,
+    extended_capabilities: ext,
     raw_metrics: raw,
     radar_scores,
     evaluation,
@@ -638,16 +658,16 @@ export function normalizeModelId(rawName: string): string {
   if (s.includes('gpt5mini')) return 'gpt-5-mini';
 
   // 2026 最新 Anthropic
-  if (s.includes('claudefable51') || s.includes('fable51')) return 'claude-fable-5-1';
-  if (s.includes('claudefable5') || s.includes('fable5')) return 'claude-fable-5';
-  if (s.includes('claudeopus5') || (s.includes('opus5') && !s.includes('sonnet'))) return 'claude-opus-5';
-  if (s.includes('claudesonnet5') || s.includes('sonnet5')) return 'claude-sonnet-5';
+  if (s.includes('claudefable51') || s.includes('fable51') || s.includes('claude51fable')) return 'claude-fable-5-1';
+  if (s.includes('claudefable5') || s.includes('fable5') || s.includes('claude5fable')) return 'claude-fable-5';
+  if (s.includes('claudeopus5') || s.includes('claude5opus') || (s.includes('opus5') && !s.includes('sonnet'))) return 'claude-opus-5';
+  if (s.includes('claudesonnet5') || s.includes('claude5sonnet') || s.includes('sonnet5') || s.includes('claude5')) return 'claude-sonnet-5';
   if (s.includes('claudeopus48fast')) return 'claude-opus-4-8-fast';
   if (s.includes('claudeopus48') || s.includes('opus48')) return 'claude-opus-4-8';
   if (s.includes('claudeopus47') || s.includes('opus47')) return 'claude-opus-4-7';
   if (s.includes('claudesonnet46') || s.includes('sonnet46')) return 'claude-sonnet-4-6';
-  if (s.includes('claudesonnet4') || s.includes('sonnet4')) return 'claude-sonnet-4';
-  if (s.includes('claudehaiku45') || s.includes('haiku45')) return 'claude-haiku-4-5';
+  if (s.includes('claudesonnet4') || s.includes('claude4sonnet') || s.includes('sonnet4')) return 'claude-sonnet-4';
+  if (s.includes('claudehaiku45') || s.includes('claude45haiku') || s.includes('haiku45')) return 'claude-haiku-4-5';
 
   // 2026 最新 Google
   if (s.includes('gemini38') || s.includes('gemini38flash')) return 'gemini-3-8-flash';

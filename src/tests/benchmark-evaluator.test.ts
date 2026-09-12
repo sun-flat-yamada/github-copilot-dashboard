@@ -229,4 +229,71 @@ describe('AI Model Benchmark Evaluator Tests', () => {
     assert.strictEqual(stats['deepseek-r1'].requests, 0);
     assert.strictEqual(stats['deepseek-r1'].hasUsage, false);
   });
+
+  it('correctly normalizes 2026 next-gen models (GPT-6, Sonnet 5, GPT-5.6, Gemini 3.8, Kimi K3, MAI-Code)', () => {
+    assert.strictEqual(normalizeModelId('GPT-6 Astra'), 'gpt-6-astra');
+    assert.strictEqual(normalizeModelId('gpt-6'), 'gpt-6-astra');
+    assert.strictEqual(normalizeModelId('Claude Sonnet 5'), 'claude-sonnet-5');
+    assert.strictEqual(normalizeModelId('claude-5-sonnet'), 'claude-sonnet-5');
+    assert.strictEqual(normalizeModelId('Claude Opus 5'), 'claude-opus-5');
+    assert.strictEqual(normalizeModelId('GPT-5.6 Sol'), 'gpt-5-6-sol');
+    assert.strictEqual(normalizeModelId('GPT-5.6 Terra'), 'gpt-5-6-terra');
+    assert.strictEqual(normalizeModelId('GPT-5.6 Luna'), 'gpt-5-6-luna');
+    assert.strictEqual(normalizeModelId('Gemini 3.8 Flash'), 'gemini-3-8-flash');
+    assert.strictEqual(normalizeModelId('Gemini 3.7 Flash'), 'gemini-3-7-flash');
+    assert.strictEqual(normalizeModelId('Kimi K3 (Moonshot)'), 'kimi-k3');
+    assert.strictEqual(normalizeModelId('MAI-Code-1.1-Flash (Microsoft)'), 'mai-code-1-1-flash');
+    assert.strictEqual(normalizeModelId('Grok 4.6'), 'grok-4-6');
+  });
+
+  it('evaluates 2026 flagship models (GPT-6 Astra, Claude Sonnet 5) with extended pricing & context specs', () => {
+    const rawGpt6: BenchmarkRawMetrics = {
+      swe_bench_verified: 82.5,
+      humaneval_plus: 96.0,
+      aime_2024: 93.5,
+      gpqa_diamond: 84.0,
+      arena_coding_elo: 1510,
+      output_speed_tps: 85,
+      input_cost_per_m: 10.0,
+      output_cost_per_m: 50.0,
+      cached_input_cost_per_m: 2.5,
+      long_context_input_cost_per_m: 20.0,
+      long_context_output_cost_per_m: 80.0,
+      context_window_k: 272,
+      context_window_display: '272K Tok (1M Opt-in)',
+    };
+
+    const radar = computeRadarScores(rawGpt6);
+    const evalGpt6 = evaluateModel('gpt-6-astra', rawGpt6, radar);
+
+    assert.strictEqual(evalGpt6.grade, 'S+');
+    assert.ok(evalGpt6.overall_score >= 88);
+    assert.ok(evalGpt6.suitability_tags.includes('Agent & Multi-Turn'));
+    assert.ok(evalGpt6.copilot_usage_guidance.includes('アーキテクチャ設計'));
+
+    const profile = createModelProfile(
+      'gpt-6-astra',
+      'GPT-6 Astra',
+      'OpenAI',
+      'GPT-6',
+      '#10A37F',
+      true,
+      '2026-03-01',
+      rawGpt6,
+      {
+        tier: 'powerful',
+        release_status: 'ga',
+        max_context_window: 1048576,
+        supports_1m_context: true,
+        supports_cache: true,
+        supports_long_context: true,
+      }
+    );
+
+    assert.strictEqual(profile.extended_capabilities?.tier, 'powerful');
+    assert.strictEqual(profile.extended_capabilities?.release_status, 'ga');
+    assert.strictEqual(profile.extended_capabilities?.supports_1m_context, true);
+    assert.strictEqual(profile.raw_metrics.cached_input_cost_per_m, 2.5);
+    assert.strictEqual(profile.raw_metrics.long_context_input_cost_per_m, 20.0);
+  });
 });

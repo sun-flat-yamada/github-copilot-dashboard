@@ -2,9 +2,11 @@
 
 ## 1. 概要と目的
 
-GitHub Copilot Analytics Dashboard の副機能（サブシステム）として、利用可能な各 AI モデル（Claude 3.7 Sonnet, Claude 3.5 Sonnet, GPT-4o, o1, o3-mini, Gemini 2.0 Flash, Gemini 2.5 Pro, DeepSeek R1 等）の技術的特性・強みを 6 軸レーダーチャートで視覚化し、実務における最適モデルの選定や使い分けを支援する「**AIモデル特性レーダー (AI Model Radar & Benchmark)**」を規定する。
+GitHub Copilot Analytics Dashboard の副機能（サブシステム）として、利用可能な各 AI モデルの技術的特性・強みを 6 軸レーダーチャートで視覚化し、実務における最適モデルの選定や使い分けを支援する「**AIモデル特性レーダー (AI Model Radar & Benchmark)**」を規定する。
 
-著名な最新ベンチマーク指標（SWE-bench Verified, AIME 2024, LMSYS Chatbot Arena, Artificial Analysis 等）を取り込み、自動的に 0〜100 の正規化スコアおよび特性タグ・推奨ユースケース・利用指針を判定する。
+GitHub Copilot 公式ドキュメントに準拠し、公式サポートモデル（OpenAI, Anthropic, Google, Microsoft, xAI, Moonshot AI）を完全網羅するとともに、各モデルの **コンテキスト長（通常窓・1M対応）** および **コスト単価（Input / Output / Prompt Caching / Long Context 単価）** を掲載する。さらに公式ドキュメント（[supported-models](https://docs.github.com/ja/copilot/reference/ai-models/supported-models) および [models-and-pricing](https://docs.github.com/ja/copilot/reference/copilot-billing/models-and-pricing)）への引用リンクを参考情報として常時掲載する。
+
+著名な最新ベンチマーク指標（SWE-bench Verified, AIME 2024, LMSYS Chatbot Arena, Artificial Analysis 等）を取り込み、自動的に 0〜100 の正規化スコアおよび特性タグ・推奨ユースケース・利用指針・リアルなエンジニアの声（※ SNSの噂注釈付き）を判定・提示する。
 
 ---
 
@@ -86,42 +88,62 @@ flowchart TD
 - **`High-Precision Coding`**: `coding_swe >= 85`
 - **`Agent & Multi-Turn`**: `arena_elo >= 85`
 
-### 4.2 GitHub Copilot 提供全AIモデルの判定プロファイル
-1. **Claude 3.7 Sonnet (Hybrid Reasoning)**:
-   - Grade: **S** (Score: 86)
-   - 特性: SWE-bench Verified 70.3% の圧倒的実装力。ハイブリッド思考推論。
-   - 推奨: 大規模リファクタリング、複数ファイル改修、Agent モード開発。
-2. **Claude 3.5 Sonnet**:
-   - Grade: **A+** (Score: 80)
-   - 特性: 安定した高品質コード補完と高い指示追従性。
-   - 推奨: 日常的なコーディング、PR レビュー、堅実なアーキテクチャ設計。
-3. **OpenAI o1 (Full Reasoning)**:
-   - Grade: **A+** (Score: 81)
-   - 特性: AIME 2024 88.5%, GPQA 75.8% の究極推論力。
-   - 推奨: 難読バグ特定、並行・排他制御ロジック検証、複雑なアルゴリズム考案。
-4. **OpenAI o3-mini (Reasoning High)**:
-   - Grade: **S** (Score: 86)
-   - 特性: 高速レスポンス (78 tps) と強烈な数学・推論力を両立したコスパ最強推論モデル。
-   - 推奨: 日常開発での思考チェーン相談、難関例外・テストの自動設計。
-5. **GPT-4o (Omni)**:
-   - Grade: **A** (Score: 75)
-   - 特性: 速度・精度の万能バランス。
-   - 推奨: アプリケーション開発全般、README/仕様書作成、一般的な質疑応答。
-6. **GPT-4o mini**:
-   - Grade: **B+** (Score: 68)
-   - 特性: 超低コスト ($0.15/$0.60 per 1M) & 145 tps の超高速レスポンス。
-   - 推奨: インライン提案、定型コード補正、軽量テストケース量産。
-7. **Gemini 2.0 Flash**:
-   - Grade: **A+** (Score: 78)
-   - 特性: 185 tps の爆速レスポンス、1M コンテキスト、極めて高いコスト効率。
-   - 推奨: 高速インラインコード補完、大量テスト生成、全社定常利用。
-8. **Gemini 2.5 Pro (Ultra-Context)**:
-   - Grade: **S** (Score: 87)
-   - 特性: 2M 超長文コンテキスト、SWE-bench 66.8% の高精度。
-   - 推奨: リポジトリ丸ごと読み込みによる設計書からのコード書き起こし、大規模マイグレーション。
-9. **DeepSeek R1 (Open Reasoning / 外部対照)**:
-   - Grade: **S** (Score: 84)
-   - 特性: オープンウェイト最高峰の数学・論理推論力（比較対照用）。
+### 4.2 GitHub Copilot 公式サポートモデル体系 (2026年最新)
+
+GitHub Copilot 公式ドキュメント（[Supported models](https://docs.github.com/ja/copilot/reference/ai-models/supported-models) および [Models and pricing](https://docs.github.com/ja/copilot/reference/copilot-billing/models-and-pricing)）に準拠した全モデル（27モデル＋クラシック/外部対照）の仕様・単価体系を網羅。
+
+#### 1. OpenAI (10モデル)
+| モデルID | モデル名 | Tier | Status | Context | In単価 (/1M) | Out単価 (/1M) | キャッシュ単価 | 備考 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `gpt-6-astra` | GPT-6 Astra | Powerful | GA | 272K (1M) | $10.00 | $50.00 | $2.50 | 2026最上位推論・極限思考フラッグシップ |
+| `gpt-5-6-sol` | GPT-5.6 Sol | Powerful | GA | 272K | $4.00 | $20.00 | $1.00 | GPT-5.6世代のPowerful主力 |
+| `gpt-5-6-terra` | GPT-5.6 Terra | Versatile | GA | 128K | $2.00 | $12.00 | $0.50 | 高速万能モデル |
+| `gpt-5-6-luna` | GPT-5.6 Luna | Lightweight | GA | 128K | $0.20 | $1.20 | $0.05 | 超高速インライン補完・低コスト |
+| `gpt-5-5` | GPT-5.5 | Powerful | GA | 200K | $5.00 | $30.00 | $1.25 | フロンティア推論モデル |
+| `gpt-5-4` | GPT-5.4 | Versatile | GA | 128K | $2.50 | $15.00 | $0.62 | バランスモデル |
+| `gpt-5-4-mini` | GPT-5.4 mini | Versatile | GA | 128K | $0.75 | $4.50 | $0.18 | 高速・高コスパ |
+| `gpt-5-4-nano` | GPT-5.4 nano | Lightweight | GA | 128K | $0.20 | $1.25 | $0.05 | 超軽量インライン |
+| `gpt-5-3-codex` | GPT-5.3-Codex | Versatile | LTS | 128K | $1.75 | $14.00 | $0.43 | LTS長期安定提供コード特化 |
+| `gpt-5-mini` | GPT-5 mini | Lightweight | GA | 128K | $0.25 | $2.00 | $0.06 | 定番高速モデル |
+
+#### 2. Anthropic (10モデル)
+| モデルID | モデル名 | Tier | Status | Context | In単価 (/1M) | Out単価 (/1M) | キャッシュ読取/書込 | 備考 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `claude-sonnet-5` | Claude Sonnet 5 | Powerful | GA | 200K (1M) | $2.00 | $10.00 | $0.20 / $2.50 | 全社標準の次世代絶対的主力 |
+| `claude-opus-5` | Claude Opus 5 | Powerful | GA | 200K (1M) | $5.00 | $25.00 | $0.50 / $6.25 | 深層思考・極限アーキテクチャ設計 |
+| `claude-fable-5-1` | Claude Fable 5.1 | Powerful | GA | 200K (1M) | $10.00 | $50.00 | $1.00 / $12.50 | EFS/ZDR対応最高峰安全性モデル |
+| `claude-fable-5` | Claude Fable 5 | Powerful | GA | 200K (1M) | $10.00 | $50.00 | $1.00 / $12.50 | 超安全エンタープライズ推論 |
+| `claude-opus-4-8` | Claude Opus 4.8 | Powerful | GA | 200K | $5.00 | $25.00 | $0.50 / $6.25 | 重厚推論モデル |
+| `claude-opus-4-8-fast` | Claude Opus 4.8 Fast | Powerful | GA | 200K | $10.00 | $50.00 | $1.00 / $12.50 | Opus最高速版 |
+| `claude-opus-4-7` | Claude Opus 4.7 | Powerful | GA | 200K | $5.00 | $25.00 | $0.50 / $6.25 | 高度推論 |
+| `claude-sonnet-4-6` | Claude Sonnet 4.6 | Versatile | GA | 200K | $3.00 | $15.00 | $0.30 / $3.75 | 実務バランスモデル |
+| `claude-sonnet-4` | Claude Sonnet 4 | Versatile | GA | 200K | $3.00 | $15.00 | $0.30 / $3.75 | 安定コード補完 |
+| `claude-haiku-4-5` | Claude Haiku 4.5 | Lightweight | GA | 200K | $1.00 | $5.00 | $0.10 / $1.25 | 超軽量・高速 |
+
+#### 3. Google (4モデル)
+| モデルID | モデル名 | Tier | Status | Context | In単価 (/1M) | Out単価 (/1M) | 備考 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `gemini-3-8-flash` | Gemini 3.8 Flash | Versatile | GA | 1M Tok | $0.75 | $3.75 | 最新Flash (プロモ価格中) / 100万トークン |
+| `gemini-3-7-flash` | Gemini 3.7 Flash | Versatile | GA | 1M Tok | $0.75 | $3.75 | 思考CoT・高速コード生成 |
+| `gemini-3-6-flash` | Gemini 3.6 Flash | Versatile | GA | 1M Tok | $0.75 | $3.75 | 1M長文コンテキスト万能 |
+| `gemini-3-5-flash` | Gemini 3.5 Flash | Versatile | GA | 1M Tok | $1.50 | $9.00 | 定番Flash |
+
+#### 4. Microsoft / xAI / Moonshot AI (5モデル)
+| モデルID | モデル名 | 提供元 | Tier | Status | Context | In/Out 単価 (/1M) | 備考 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `mai-code-1-1-flash` | MAI-Code-1.1-Flash | Microsoft | Lightweight | GA | 128K | $0.20 / $1.20 | Microsoft謹製超高速コード特化 |
+| `grok-4-6` | Grok 4.6 | xAI | Versatile | GA | 200K | $2.00 / $6.00 | 最新Grok・高精度実務補完 |
+| `grok-4-5` | Grok 4.5 | xAI | Versatile | GA | 200K | $2.00 / $6.00 | 万能コード補完 |
+| `kimi-k3` | Kimi K3 | Moonshot AI | Powerful | GA | 1M | $3.00 / $15.00 | 長文コンテキスト推論特化 |
+| `kimi-k2-7-code` | Kimi K2.7 Code | Moonshot AI | Versatile | GA | 256K | $0.95 / $4.00 | 256Kコード特化・高コスパ |
+
+#### 5. クラシック・過去世代モデル & 外部対照
+Claude 3.7 Sonnet, Claude 3.5 Sonnet, GPT-4o, GPT-4o mini, o1, o3-mini, Gemini 2.0 Flash, Gemini 2.5 Pro, DeepSeek R1（過去分析データ対照用）。
+
+### 4.3 公式ドキュメント引用と参考情報
+ユーザー画面（ヘッダーバナー、フォーカス詳細カード、出典セクション）において、以下の公式ドキュメントへのリンクを参考情報として常時掲載する。
+- 📘 **GitHub Copilot サポートAIモデル一覧**: `https://docs.github.com/ja/copilot/reference/ai-models/supported-models`
+- 💳 **GitHub Copilot モデル別課金・単価表**: `https://docs.github.com/ja/copilot/reference/copilot-billing/models-and-pricing`
 
 ---
 
