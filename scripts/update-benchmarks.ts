@@ -14,6 +14,7 @@ import {
   DEFAULT_BENCHMARK_SOURCES,
   RADAR_AXIS_DEFINITIONS,
 } from '../src/processor/benchmark-evaluator';
+import { getNextRadarVersion } from '../src/processor/radar-version';
 import {
   BenchmarkDataset,
   BenchmarkRawMetrics,
@@ -1167,7 +1168,10 @@ const LATEST_BENCHMARK_RECORDS: RawModelEntry[] = [
   },
 ];
 
-export function generateBenchmarkDataset(): BenchmarkDataset {
+export function generateBenchmarkDataset(
+  existingVersion?: string,
+  date: Date = new Date()
+): BenchmarkDataset {
   const models: ModelBenchmarkProfile[] = LATEST_BENCHMARK_RECORDS.map((rec) =>
     createModelProfile(
       rec.id,
@@ -1183,8 +1187,10 @@ export function generateBenchmarkDataset(): BenchmarkDataset {
     )
   );
 
+  const version = getNextRadarVersion(existingVersion, date);
+
   return {
-    version: '2026.09.2',
+    version,
     last_updated: new Date().toISOString(),
     sources: DEFAULT_BENCHMARK_SOURCES,
     axis_definitions: RADAR_AXIS_DEFINITIONS,
@@ -1195,8 +1201,19 @@ export function generateBenchmarkDataset(): BenchmarkDataset {
 export function runBenchmarkUpdate(): void {
   console.log('🔄 Starting Notable AI Model Benchmark Ingestion & Evaluation...');
 
-  const dataset = generateBenchmarkDataset();
   const outputPath = path.resolve(__dirname, '../dashboard/public/data/model-benchmarks.json');
+  let existingVersion: string | undefined;
+
+  if (fs.existsSync(outputPath)) {
+    try {
+      const existingData = JSON.parse(fs.readFileSync(outputPath, 'utf-8'));
+      existingVersion = existingData.version;
+    } catch {
+      // Ignore parse failure and fall back to default
+    }
+  }
+
+  const dataset = generateBenchmarkDataset(existingVersion);
 
   // Ensure directory exists
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });

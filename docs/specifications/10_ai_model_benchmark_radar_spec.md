@@ -79,6 +79,29 @@ flowchart TD
 - **Dropdown Jump**: Clicking the model title reveals a full-width dropdown menu with theme colors, tiers, grades, and an active index counter.
 
 ### 2.5 Standard Comparison Presets (`PRESETS`)
+Provides instant, pre-configured 3-to-4 model comparisons. Recommended presets enforce an uncompromising quality standard while selecting the top 3 models across the cost-performance spectrum:
+
+#### Use-Case Recommended Presets (Top-Tier Standard with 3-Tier Cost Variation)
+- **🔍 Recommended for Code Review (`recommended-code-review`)**:
+  - **Rationale**: Strict quality gate (`swe_bench_verified >= 70.0%` and `reasoning_logic >= 95`) to prevent missing subtle PR diff regressions.
+  - **Top 3 Models**:
+    1. **High-End (Deep Review)**: `Claude Opus 5` (In: $5.0, Out: $25.0 / SWE 81.0, Logic 99)
+    2. **Balanced (Production Standard)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / SWE 78.5, Logic 99)
+    3. **High-Value (Cost-Effective Review)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / SWE 71.0, Logic 95)
+- **📂 Recommended for Codebase Analysis (`recommended-codebase-analysis`)**:
+  - **Rationale**: Strict quality gate (`context_window_k >= 1000` 1M tokens, `architecture_design >= 92`, `swe_bench_verified >= 70.0%`) for holistic multi-file understanding.
+  - **Top 3 Models**:
+    1. **High-End (1M Full-Repo Ingestion)**: `Claude Opus 5` (In: $5.0, Out: $25.0 / 1M ctx, Arch 99, SWE 81.0)
+    2. **Balanced (1M Standard Refactor)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / 1M ctx, Arch 99, SWE 78.5)
+    3. **High-Value (1M High-Volume Low-Cost)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / 1M ctx, Arch 93, SWE 71.0)
+- **🏛️ Recommended for Architecture & Design (`recommended-architecture`)**:
+  - **Rationale**: Strict quality gate (`reasoning_logic >= 95`, `architecture_design >= 90`, `swe_bench_verified >= 70.0%`) for complex trade-off analysis and domain modeling.
+  - **Top 3 Models**:
+    1. **High-End (Extreme Frontier Reasoning)**: `GPT-6 Astra` (In: $10.0, Out: $50.0 / Logic 99, Arch 96, SWE 82.4)
+    2. **Balanced (Modular Architecture)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / Logic 99, Arch 99, SWE 78.5)
+    3. **High-Value (Fast Brainstorming & Trade-offs)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / Logic 95, Arch 93, SWE 71.0)
+
+#### Category & Vendor Presets
 - **🌟 2026 Flagship 4 (`flagship-2026`)**: Claude Sonnet 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3
 - **💡 Practical High-Value (`practical-high-value`)**: Claude Sonnet 5 / Gemini 3.8 Flash / GPT-5.6 Luna / Kimi K2.7 Code
 - **⚡ Powerful Reasoning (`tier-powerful`)**: GPT-6 Astra / Claude Opus 5 / GPT-5.6 Sol / Kimi K3
@@ -195,13 +218,59 @@ All community observations, tips, and quirks featured in model detail cards must
 
 ---
 
-## 6. CLI Commands & Verification
+## 6. Individual Page Versioning Specification (`yyyy-mm-dd-0001`)
 
-- **Update Benchmarks**:
+The AI Model Radar dataset and UI display feature individual page version tracking with calendar dates and incremental sequence numbers for the same day.
+
+### 6.1 Format Standard
+$$\text{Version} = \text{yyyy-mm-dd-xxxx}$$
+- `yyyy-mm-dd`: Calendar date of generation (e.g., `2026-09-13`).
+- `xxxx`: 4-digit zero-padded incremental sequence (`0001`, `0002`, `0003`...).
+- Re-running `npm run benchmark:update` on the same date increments the sequence (`+1`).
+- Running on a subsequent date resets the sequence to `0001`.
+
+### 6.2 UI Presentation
+- Displayed prominently beside the page title as `v2026-09-13-0001`.
+- Tooltip hover provides clear context: "個別バージョン (日付・連番管理): {version}".
+
+---
+
+## 7. Update Pipeline Architecture (Agents & Skills Separation)
+
+The update lifecycle is structured into a primary orchestrator agent and specialized sub-task agents/skills:
+
+```mermaid
+flowchart TD
+    Trigger(["🚀 Ingestion Trigger"]) --> Master[".agents/model-radar-pipeline-agent.md<br>(Pipeline Orchestrator)"]
+    Master --> Ingest["1. benchmark-ingestion-agent<br>(skills/benchmark-ingestion)"]
+    Master --> Buzz["2. sns-buzz-agent<br>(skills/sns-buzz-harvester)"]
+    Master --> Preset["3. preset-curator-agent<br>(skills/preset-curator)"]
+    Master --> Version["4. radar-version-agent<br>(skills/radar-version-manager)"]
+    Version --> Gate{"Quality Gate<br>(typecheck + test + secret-scan + build)"}
+    Gate -- Passed --> Done(["✅ Release Ready (yyyy-mm-dd-xxxx)"])
+```
+
+### 7.1 Agents & Skills Division
+1. **Pipeline Orchestrator (`.agents/model-radar-pipeline-agent.md`)**:
+   - Master conductor orchestrating the end-to-end update lifecycle.
+2. **Benchmark Ingestion (`.agents/benchmark-ingestion-agent.md` / `skills/benchmark-ingestion`)**:
+   - Updates official pricing, context window sizes, and benchmark results.
+3. **SNS Buzz Harvester (`.agents/sns-buzz-agent.md` / `skills/sns-buzz-harvester`)**:
+   - Collects and distills authentic developer sentiment with explicit disclaimer notes.
+4. **Preset Curator (`.agents/preset-curator-agent.md` / `skills/preset-curator`)**:
+   - Filters candidate models against uncompromising quality gates and extracts 3-tier cost variations.
+5. **Version Manager (`.agents/radar-version-agent.md` / `skills/radar-version-manager`)**:
+   - Manages `yyyy-mm-dd-0001` incremental versioning and executes four-layer quality gate checks.
+
+---
+
+## 8. CLI Commands & Verification
+
+- **Update Benchmarks & Increment Version**:
   ```bash
   npm run benchmark:update
   ```
-- **Quality Gate**:
+- **Full Quality Gate**:
   ```bash
   npm run typecheck && npm test && npm run secret-scan && npm run build
   ```

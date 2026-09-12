@@ -86,7 +86,29 @@ flowchart TD
   - プルダウン内には各モデルのテーマカラー・モデル名・Tier・総合グレードおよび現在選択中のチェックマークを表示する。
 
 ### 2.5 比較プリセット仕様 (`PRESETS`)
-多様なモデルの中から目的や関心に応じて素早く4モデルを抽出し比較できるよう、以下の標準プリセットを提供する。
+多様なモデルの中から目的や関心に応じて素早く抽出・比較できるよう、標準プリセットを提供する。特に用途別推奨プリセット（コードレビュー、コードベース分析、設計）は、**「用途における最高水準のレベル（品質ゲート）は譲らず、コストパフォーマンスのバリエーションとして上位3つを選定する」** 方式で厳選されている。
+
+#### 用途別推奨プリセット (最高水準×コストバリエーション上位3選)
+- **🔍 コードレビュー利用に推奨 (`recommended-code-review`)**:
+  - **選定根拠**: PR差分における潜在バグ・エッジケースの見落としを防ぐため、`swe_bench_verified >= 70.0%` かつ `reasoning_logic >= 95` の最高水準を品質ゲートとして厳格適用。その中でコスト帯の異なる3モデルを選定。
+  - **構成モデル (3選)**:
+    1. **High-End (最上位深層レビュー)**: `Claude Opus 5` (In: $5.0, Out: $25.0 / SWE 81.0, Logic 99)
+    2. **Balanced (実務標準・高精度バランス)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / SWE 78.5, Logic 99)
+    3. **High-Value (高コスパ即時レビュー)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / SWE 71.0, Logic 95)
+- **📂 コードベース分析に推奨 (`recommended-codebase-analysis`)**:
+  - **選定根拠**: リポジトリ全体・複数ディレクトリの依存関係と設計を丸ごと把握するため、`context_window_k >= 1000` (100万トークン対応) かつ `architecture_design >= 92` かつ `swe_bench_verified >= 70.0%` を品質ゲートとして適用。
+  - **構成モデル (3選)**:
+    1. **High-End (1M超長文・最高峰解析)**: `Claude Opus 5` (In: $5.0, Out: $25.0 / 1M窓, Arch 99, SWE 81.0)
+    2. **Balanced (1M超長文・設計リファクタ標準)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / 1M窓, Arch 99, SWE 78.5)
+    3. **High-Value (1M超長文・大量コード低コスト一括解析)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / 1M窓, Arch 93, SWE 71.0)
+- **🏛️ 設計に推奨 (`recommended-architecture`)**:
+  - **選定根拠**: 高度なシステム設計、アーキテクチャ選定、データモデル策定、トレードオフ分析のため、`reasoning_logic >= 95` かつ `architecture_design >= 90` かつ `swe_bench_verified >= 70.0%` を品質ゲートとして適用。
+  - **構成モデル (3選)**:
+    1. **High-End (最上位極限推論・高難度アーキテクチャ)**: `GPT-6 Astra` (In: $10.0, Out: $50.0 / Logic 99, Arch 96, SWE 82.4)
+    2. **Balanced (実務アーキテクチャ・モジュール構造化)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / Logic 99, Arch 99, SWE 78.5)
+    3. **High-Value (高コスパ・高速設計壁打ち＆比較)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / Logic 95, Arch 93, SWE 71.0)
+
+#### カテゴリ・メーカー別標準プリセット
 - **🌟 2026 旗艦4選 (`flagship-2026`)**: 各社最前線フラッグシップ（Claude Sonnet 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3）
 - **💡 実用性能で高コスパ (`practical-high-value`)**: 実用コーディング性能と抜群の費用対効果を両立（Claude Sonnet 5 / Gemini 3.8 Flash / GPT-5.6 Luna / Kimi K2.7 Code）
 - **⚡ Powerful (最上位推論) (`tier-powerful`)**: 最高峰コーディング・推論群（GPT-6 Astra / Claude Opus 5 / GPT-5.6 Sol / Kimi K3）
@@ -218,9 +240,55 @@ Claude 3.7 Sonnet, Claude 3.5 Sonnet, GPT-4o, GPT-4o mini, o1, o3-mini, Gemini 2
 
 ---
 
-## 6. コマンドライン・運用仕様
+## 6. 個別バージョン管理仕様 (`yyyy-mm-dd-0001`)
 
-- **ベンチマーク更新・再評価**:
+AIモデル特性レーダーのデータセットおよび画面表示において、個別バージョンを日付および同日内のインクリメンタル連番で管理する。
+
+### 6.1 フォーマット定義
+$$\text{Version} = \text{yyyy-mm-dd-xxxx}$$
+- `yyyy-mm-dd`: 作成日・更新日のカレンダー日付（例: `2026-09-13`）。
+- `xxxx`: 同日付内での 4 桁ゼロパディングされたインクリメンタル連番（`0001`, `0002`, `0003`...）。
+- 同日付で再度ベンチマーク更新スクリプト（`npm run benchmark:update`）が実行された場合は連番が自動的に `+1` される。
+- 翌日以降の別日付で実行された場合は、自動的に新しい日付の `0001` から開始される。
+
+### 6.2 UI表示とツールチップ
+- タイトル右横のステータスバッジに `v2026-09-13-0001` の形式で個別バージョンを表示。
+- ホバー時のツールチップに「個別バージョン (日付・連番管理): {version}」を表示。
+
+---
+
+## 7. 更新作業パイプライン Agent & Skills 分割構成
+
+ベンチマーク情報の更新・比較用データ取り込み・SNS情報再収集・比較プリセット更新・個別バージョン採番の一連の作業は、起点となるマスターオーケストレーター Agent および 4 つの個別専門 Agent / Skills に分割して構成する。
+
+```mermaid
+flowchart TD
+    Trigger(["🚀 更新指示"]) --> Master[".agents/model-radar-pipeline-agent.md<br>(統括オーケストレーター)"]
+    Master --> Ingest["1. benchmark-ingestion-agent<br>(skills/benchmark-ingestion)"]
+    Master --> Buzz["2. sns-buzz-agent<br>(skills/sns-buzz-harvester)"]
+    Master --> Preset["3. preset-curator-agent<br>(skills/preset-curator)"]
+    Master --> Version["4. radar-version-agent<br>(skills/radar-version-manager)"]
+    Version --> Gate{"品質ゲート<br>(typecheck + test + secret-scan + build)"}
+    Gate -- 合格 --> Done(["✅ リリース準備完了 (yyyy-mm-dd-xxxx)"])
+```
+
+### 7.1 分割エージェント & スキル一覧
+1. **起点オーケストレーター (`.agents/model-radar-pipeline-agent.md`)**:
+   - 一連の更新作業全体の進行管理、依存ステップ制御、最終整合性確認。
+2. **ベンチマーク取り込み (`.agents/benchmark-ingestion-agent.md` / `skills/benchmark-ingestion`)**:
+   - GitHub Copilot公式ドキュメント（supported-models, models-and-pricing）、SWE-bench Verified、LMSYS Arena、Artificial Analysis からの最新指標・単価仕様の取り込み。
+3. **SNS評判再収集 (`.agents/sns-buzz-agent.md` / `skills/sns-buzz-harvester`)**:
+   - 現場エンジニアの実感・SNS評判・注意点（※ SNSの噂）の収集・要約・反映。
+4. **比較プリセット選定 (`.agents/preset-curator-agent.md` / `skills/preset-curator`)**:
+   - 「最高水準レベル（品質ゲート）は譲らず、コストバリエーション上位3選」アルゴリズムに基づくプリセット更新。
+5. **バージョン管理・検証 (`.agents/radar-version-agent.md` / `skills/radar-version-manager`)**:
+   - `yyyy-mm-dd-0001` インクリメンタル採番、データセット生成、4重品質ゲート検証。
+
+---
+
+## 8. コマンドライン・運用仕様
+
+- **ベンチマーク更新・個別バージョン採番**:
   ```bash
   npm run benchmark:update
   ```

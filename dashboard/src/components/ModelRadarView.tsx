@@ -80,6 +80,24 @@ export const PRESETS = [
     modelIds: ['claude-sonnet-5', 'gemini-3-8-flash', 'gpt-5-6-luna', 'kimi-k2-7-code'],
   },
   {
+    id: 'recommended-code-review',
+    name: '🔍 コードレビュー利用に推奨',
+    description: 'Claude Opus 5 / Claude Sonnet 5 / Gemini 3.8 Flash (最高水準の推論・SWE性能を維持したコスト別上位3選)',
+    modelIds: ['claude-opus-5', 'claude-sonnet-5', 'gemini-3-8-flash'],
+  },
+  {
+    id: 'recommended-codebase-analysis',
+    name: '📂 コードベース分析に推奨',
+    description: 'Claude Opus 5 / Claude Sonnet 5 / Gemini 3.8 Flash (1Mコンテキスト・大域的設計把握のコスト別上位3選)',
+    modelIds: ['claude-opus-5', 'claude-sonnet-5', 'gemini-3-8-flash'],
+  },
+  {
+    id: 'recommended-architecture',
+    name: '🏛️ 設計に推奨',
+    description: 'GPT-6 Astra / Claude Sonnet 5 / Gemini 3.8 Flash (極限論理推論・アーキテクチャ把握のコスト別上位3選)',
+    modelIds: ['gpt-6-astra', 'claude-sonnet-5', 'gemini-3-8-flash'],
+  },
+  {
     id: 'tier-powerful',
     name: '⚡ Powerful (最上位推論)',
     description: 'GPT-6 Astra / Claude Opus 5 / GPT-5.6 Sol / Kimi K3 (最高峰コーディング・推論群)',
@@ -450,7 +468,10 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                 <h2 className="text-xl font-bold text-white tracking-tight">
                   AIモデル特性レーダー & ベンチマーク評価
                 </h2>
-                <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-700/80 flex items-center space-x-1">
+                <span
+                  className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-700/80 flex items-center space-x-1"
+                  title={`個別バージョン (日付・連番管理): ${dataset.version}`}
+                >
                   <Sparkles className="w-3 h-3" />
                   <span>v{dataset.version}</span>
                 </span>

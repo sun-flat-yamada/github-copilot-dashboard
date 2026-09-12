@@ -24,6 +24,29 @@ test('AI Model Radar Comparison Presets Tests', async (t) => {
     assert.strictEqual(practicalPreset.modelIds.length, 4, 'Preset should contain 4 models');
   });
 
+  await t.test('includes the 3 new recommended presets (code review, codebase analysis, architecture) with top-3 cost variations', () => {
+    // 1. コードレビュー利用に推奨
+    const reviewPreset = PRESETS.find((p) => p.id === 'recommended-code-review');
+    assert.ok(reviewPreset, 'recommended-code-review preset must exist');
+    assert.match(reviewPreset.name, /コードレビュー利用に推奨/);
+    assert.strictEqual(reviewPreset.modelIds.length, 3, 'Must contain top 3 models');
+    assert.deepStrictEqual(reviewPreset.modelIds, ['claude-opus-5', 'claude-sonnet-5', 'gemini-3-8-flash']);
+
+    // 2. コードベース分析に推奨
+    const analysisPreset = PRESETS.find((p) => p.id === 'recommended-codebase-analysis');
+    assert.ok(analysisPreset, 'recommended-codebase-analysis preset must exist');
+    assert.match(analysisPreset.name, /コードベース分析に推奨/);
+    assert.strictEqual(analysisPreset.modelIds.length, 3, 'Must contain top 3 models');
+    assert.deepStrictEqual(analysisPreset.modelIds, ['claude-opus-5', 'claude-sonnet-5', 'gemini-3-8-flash']);
+
+    // 3. 設計に推奨
+    const archPreset = PRESETS.find((p) => p.id === 'recommended-architecture');
+    assert.ok(archPreset, 'recommended-architecture preset must exist');
+    assert.match(archPreset.name, /設計に推奨/);
+    assert.strictEqual(archPreset.modelIds.length, 3, 'Must contain top 3 models');
+    assert.deepStrictEqual(archPreset.modelIds, ['gpt-6-astra', 'claude-sonnet-5', 'gemini-3-8-flash']);
+  });
+
   await t.test('all presets have unique IDs and non-empty metadata', () => {
     const ids = PRESETS.map((p) => p.id);
     const uniqueIds = new Set(ids);
