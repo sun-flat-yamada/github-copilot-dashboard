@@ -222,3 +222,169 @@ test('Inefficiency Diagnostic: Graceful handling of empty history', () => {
   assert.strictEqual(result.metricsSummary.totalChats, 0);
   assert.strictEqual(result.drilldown.dailyActivity.length, 0);
 });
+
+test('Inefficiency Diagnostic: Smart Offload on Weekend (週末スマート・オフロード型は健全評価)', () => {
+  // 2026-09-05 (土), 2026-09-06 (日) に推論モデルへタスクを委託
+  const smartOffloaderProfile: UserUsageProfile = {
+    login: 'test-smart-offloader',
+    display_name: 'スマートオフロード実証',
+    avatar_url: '',
+    department: '基盤開発部',
+    cost_center: 'CC-INFRA',
+    organization: 'org-test',
+    plan_type: 'enterprise',
+    total_chats: 30,
+    total_suggestions: 200,
+    total_acceptances: 80,
+    acceptance_rate: 0.40,
+    total_cost_usd: 39,
+    model_usage_totals: {},
+    daily_history: [
+      // 平日: 軽微な開発
+      {
+        date: '2026-09-04', // 金
+        total_chats: 4,
+        model_breakdown: { 'gpt-4o': 4 },
+        suggestions: 30,
+        acceptances: 12,
+        lines_suggested: 150,
+        lines_accepted: 60,
+        acceptance_rate: 0.40,
+        daily_cost_usd: 1.3,
+      },
+      // 週末: o1 / Claude 3.7 による自律リファクタ・テスト生成 (週末比率 > 40%)
+      {
+        date: '2026-09-05', // 土
+        total_chats: 6,
+        model_breakdown: { 'o1': 4, 'claude-3-7-sonnet': 2 },
+        suggestions: 50,
+        acceptances: 22,
+        lines_suggested: 800,
+        lines_accepted: 350, // 1チャットあたり約58行受諾
+        acceptance_rate: 0.44,
+        daily_cost_usd: 2.5,
+      },
+      {
+        date: '2026-09-06', // 日
+        total_chats: 5,
+        model_breakdown: { 'claude-3-7-sonnet': 5 },
+        suggestions: 40,
+        acceptances: 18,
+        lines_suggested: 600,
+        lines_accepted: 280, // 1チャットあたり約56行受諾
+        acceptance_rate: 0.45,
+        daily_cost_usd: 2.0,
+      },
+    ],
+  };
+
+  const result = InefficiencyDiagnosticEngine.diagnoseUser(smartOffloaderProfile, '7d');
+  const offHoursPattern = result.patterns.find((p) => p.id === 'off_hours_workload_spike');
+  assert.ok(offHoursPattern);
+  // スマート・オフロードと認識され、リスク確率が 15% 以下で健全判定されること
+  assert.strictEqual(offHoursPattern.name, 'スマート・オフロード型 (高効率)');
+  assert.ok(offHoursPattern.tagline.includes('スマート・オフロード'));
+  assert.ok(offHoursPattern.probabilityPercent <= 15, `Expected prob <= 15, got ${offHoursPattern.probabilityPercent}`);
+  assert.strictEqual(offHoursPattern.riskLevel, 'healthy');
+  assert.ok(result.healthScore >= 80, `Expected healthScore >= 80, got ${result.healthScore}`);
+});
+
+test('Inefficiency Diagnostic: Weekend Firefighting Struggle (週末短時間連打・泥沼デバッグ型は高リスク警告)', () => {
+  // 2026-09-05 (土), 2026-09-06 (日) に軽量モデルでチャットを連打・受諾行数わずか
+  const strugglingProfile: UserUsageProfile = {
+    login: 'test-struggler',
+    display_name: '泥沼デバッグ実証',
+    avatar_url: '',
+    department: 'アプリ開発部',
+    cost_center: 'CC-APP',
+    organization: 'org-test',
+    plan_type: 'enterprise',
+    total_chats: 80,
+    total_suggestions: 100,
+    total_acceptances: 15,
+    acceptance_rate: 0.15,
+    total_cost_usd: 39,
+    model_usage_totals: {},
+    daily_history: [
+      {
+        date: '2026-09-04', // 金
+        total_chats: 5,
+        model_breakdown: { 'gpt-4o-mini': 5 },
+        suggestions: 20,
+        acceptances: 5,
+        lines_suggested: 80,
+        lines_accepted: 20,
+        acceptance_rate: 0.25,
+        daily_cost_usd: 0.5,
+      },
+      // 週末: チャット60回連打、受諾行数はわずか25行（手戻り多発）
+      {
+        date: '2026-09-05', // 土
+        total_chats: 35,
+        model_breakdown: { 'gpt-4o-mini': 35 },
+        suggestions: 30,
+        acceptances: 4,
+        lines_suggested: 120,
+        lines_accepted: 15,
+        acceptance_rate: 0.13,
+        daily_cost_usd: 1.0,
+      },
+      {
+        date: '2026-09-06', // 日
+        total_chats: 25,
+        model_breakdown: { 'gpt-4o-mini': 25 },
+        suggestions: 20,
+        acceptances: 3,
+        lines_suggested: 80,
+        lines_accepted: 10,
+        acceptance_rate: 0.15,
+        daily_cost_usd: 0.8,
+      },
+    ],
+  };
+
+  const result = InefficiencyDiagnosticEngine.diagnoseUser(strugglingProfile, '7d');
+  const offHoursPattern = result.patterns.find((p) => p.id === 'off_hours_workload_spike');
+  assert.ok(offHoursPattern);
+  assert.ok(offHoursPattern.tagline.includes('泥沼デバッグ'));
+  assert.ok(offHoursPattern.probabilityPercent >= 70, `Expected prob >= 70, got ${offHoursPattern.probabilityPercent}`);
+  assert.strictEqual(offHoursPattern.riskLevel, 'high');
+});
+
+test('Inefficiency Diagnostic: Granular Flow Pair Programming on Weekdays (平日の高成果コマ切れ対話は空回り判定から除外)', () => {
+  const pairProgrammerProfile: UserUsageProfile = {
+    login: 'test-flow-pair',
+    display_name: 'ペアプロ実証',
+    avatar_url: '',
+    department: 'Webフロント部',
+    cost_center: 'CC-FE',
+    organization: 'org-test',
+    plan_type: 'enterprise',
+    total_chats: 40,
+    total_suggestions: 300,
+    total_acceptances: 120,
+    acceptance_rate: 0.40,
+    total_cost_usd: 39,
+    model_usage_totals: {},
+    daily_history: Array.from({ length: 5 }).map((_, idx) => ({
+      date: `2026-09-0${idx + 1}`, // 平日 5日間
+      total_chats: 22, // 1日22回と多め
+      model_breakdown: { 'claude-3-5-sonnet': 22 },
+      suggestions: 60,
+      acceptances: 24,
+      lines_suggested: 800,
+      lines_accepted: 550, // 1チャットあたり25行受諾
+      acceptance_rate: 0.40,
+      daily_cost_usd: 1.5,
+    })),
+  };
+
+  const result = InefficiencyDiagnosticEngine.diagnoseUser(pairProgrammerProfile, '7d');
+  const chatChurnPattern = result.patterns.find((p) => p.id === 'context_blind_chat_churn');
+  assert.ok(chatChurnPattern);
+  // チャット回数が多くても、1チャットあたり受諾行数が大きく受諾率も高いため、空回り判定（High）にならないこと
+  assert.ok(
+    chatChurnPattern.probabilityPercent < 50,
+    `Expected churn prob < 50 for productive pair programmer, got ${chatChurnPattern.probabilityPercent}`
+  );
+});

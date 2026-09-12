@@ -75,6 +75,25 @@ const MODEL_ESTIMATED_CHAT_COST: Record<string, number> = {
   'gemini-2-0-flash': 0.004,
 };
 
+// 自律駆動時間（AEDP）の長い推論・エージェント型モデル群
+export const LONG_AUTONOMY_REASONING_MODELS = [
+  'o1',
+  'o3-mini',
+  'claude-3-7',
+  'gemini-2-5-pro',
+  'deepseek-r1',
+];
+
+export interface AutonomyAnalysisMetrics {
+  autonomyDepthScore: number; // 0 - 100
+  reasoningModelRatio: number; // 0.0 - 1.0
+  yieldLinesPerChat: number; // 1チャットあたりの受諾行数
+  chatsPerActiveDay: number; // 1日あたりの平均チャット数
+  longAutonomyRatioPercent: number; // 0 - 100%
+  shortAutonomyRatioPercent: number; // 0 - 100%
+  offloadStyle: 'smart_offload' | 'firefighting_struggle' | 'balanced_standard';
+}
+
 export class InefficiencyDiagnosticEngine {
   /**
    * 対象期間の絞り込み
@@ -206,7 +225,7 @@ export class InefficiencyDiagnosticEngine {
     // 5つの非効率パターンの判定
     const p1 = this.diagnoseTabSpamming(totalSuggestions, totalAcceptances, acceptanceRate, activeDays);
     const p2 = this.diagnoseOverkillModel(totalChats, modelTotals);
-    const p3 = this.diagnoseContextBlindChat(totalChats, totalAcceptances, activeDays);
+    const p3 = this.diagnoseContextBlindChat(totalChats, totalAcceptances, activeDays, filteredHistory);
     const p4 = this.diagnosePassiveSeat(periodInfo.totalDays, activeDays, totalSuggestions, totalChats);
     const p5 = this.diagnoseOffHoursWorkload(filteredHistory);
 
@@ -223,9 +242,14 @@ export class InefficiencyDiagnosticEngine {
       }
     }
 
-    // 健全利用ボーナス（受諾率が25%以上でアクティブなら維持）
+    // 健全利用ボーナス（受諾率が28%以上でアクティブなら維持）
     if (acceptanceRatePercent >= 28 && activeDays >= 3) {
       penalty = Math.max(0, penalty - 10);
+    }
+
+    // スマート・オフロード実践ボーナス（AI自律タスク委任を高効率に行っている場合）
+    if (p5.name.includes('スマート・オフロード')) {
+      penalty = Math.max(0, penalty - 5);
     }
 
     const healthScore = Math.max(0, Math.min(100, Math.round(100 - penalty)));
@@ -497,11 +521,13 @@ export class InefficiencyDiagnosticEngine {
 
   /**
    * 3. 文脈希薄・対話空回り型 (Context-Blind Prompting / Chat Churn)
+   * 自律駆動深度（指示あたりの受諾行数・成果）を加味し、コマ切れでも正当なペアプロであれば緩和
    */
   private static diagnoseContextBlindChat(
     totalChats: number,
     acceptances: number,
-    activeDays: number
+    activeDays: number,
+    history?: UserModelDailyUsage[]
   ): InefficiencyPatternResult {
     let prob = 0;
     const factors: ContributingFactor[] = [];
@@ -510,6 +536,10 @@ export class InefficiencyDiagnosticEngine {
     const dailyChats = activeDays > 0 ? totalChats / activeDays : totalChats;
     const chatToAcceptanceRatio = acceptances > 0 ? totalChats / acceptances : totalChats;
 
+    // 自律性・成果行数の算出
+    const autonomy = history ? this.calculateAutonomyMetrics(history) : null;
+    const yieldLines = autonomy ? autonomy.yieldLinesPerChat : 0;
+
     if (totalChats >= 15) {
       if (dailyChats >= 20 && chatToAcceptanceRatio >= 1.5) {
         prob = Math.min(95, Math.round(60 + (dailyChats - 20) * 1.5 + chatToAcceptanceRatio * 10));
@@ -517,6 +547,14 @@ export class InefficiencyDiagnosticEngine {
         prob = Math.min(65, Math.round(35 + (dailyChats - 12) * 2));
       } else {
         prob = Math.max(5, Math.round(20 * (dailyChats / 12)));
+      }
+
+      // 【高精度化補正】コマ切れ利用であっても、1チャットあたりの受諾行数（成果規模）が大きければ
+      // 「インライン・フローペアプロ型（正当なマイクロタスク支援）」として確率を大幅軽減
+      if (yieldLines >= 25 && acceptances >= 10) {
+        prob = Math.max(5, Math.round(prob * 0.4)); // 最大60%軽減
+      } else if (yieldLines >= 15 && acceptances >= 5) {
+        prob = Math.max(8, Math.round(prob * 0.65));
       }
     } else {
       prob = 8;
@@ -546,6 +584,21 @@ export class InefficiencyDiagnosticEngine {
           : 'チャットで得た知見やコードが順調に採用されています。',
       severity: chatToAcceptanceRatio >= 1.2 ? 'danger' : 'good',
     });
+
+    if (autonomy) {
+      factors.push({
+        metricName: '指示あたり受諾コード規模 (Yield)',
+        currentValueFormatted: `${yieldLines.toFixed(1)} 行 / チャット`,
+        recommendedThresholdFormatted: '≥ 15.0 行 (成果コード)',
+        description:
+          yieldLines >= 20
+            ? 'コマ切れ対話であっても十分なコード行数が受諾されており、実効的なペアプログラミングが行われています。'
+            : yieldLines < 8 && totalChats >= 15
+            ? '1指示あたりのコード受諾規模が極端に小さく、対話の手戻りやAI介護が発生している疑いがあります。'
+            : '標準的な対話成果規模です。',
+        severity: yieldLines >= 20 ? 'good' : yieldLines < 8 && totalChats >= 15 ? 'warning' : 'neutral',
+      });
+    }
 
     if (prob >= 60) {
       recommendations.push(
@@ -659,7 +712,9 @@ export class InefficiencyDiagnosticEngine {
   }
 
   /**
-   * 5. 時間外・集中負荷過多型 (Off-Hours / Weekend Workload Spike)
+   * 5. 時間外・集中負荷過多型 (Off-Hours Workload Spike vs Smart Offload)
+   * 自律駆動深度（AEDP）と週末利用率の2軸マトリクス評価
+   * 適切にタスクをオフロードしている場合は「🌟 スマート・オフロード型 (Healthy)」として正当評価
    */
   private static diagnoseOffHoursWorkload(
     history: UserModelDailyUsage[]
@@ -670,6 +725,7 @@ export class InefficiencyDiagnosticEngine {
 
     let weekendActions = 0;
     let totalActions = 0;
+    const weekendHistory: UserModelDailyUsage[] = [];
 
     for (const h of history) {
       const dayOfWeek = new Date(h.date).getDay();
@@ -678,64 +734,212 @@ export class InefficiencyDiagnosticEngine {
       totalActions += acts;
       if (isWeekend) {
         weekendActions += acts;
+        if (acts > 0) {
+          weekendHistory.push(h);
+        }
       }
     }
 
     const weekendRatio = totalActions > 0 ? weekendActions / totalActions : 0;
+    const weekendAutonomy = this.calculateAutonomyMetrics(weekendHistory);
 
-    if (totalActions >= 50) {
-      if (weekendRatio >= 0.35) {
-        prob = Math.min(90, Math.round(55 + (weekendRatio - 0.35) * 120));
-      } else if (weekendRatio >= 0.2) {
-        prob = Math.round(25 + (weekendRatio - 0.2) * 100);
+    let isSmartOffload = false;
+    let isFirefightingStruggle = false;
+
+    if (totalActions >= 30 && weekendRatio >= 0.20) {
+      // 週末の利用割合が高い場合の2軸分岐:
+      // 「自律駆動深度 (Autonomy Depth)」が高いか、短時間連打・低受諾か
+      if (
+        weekendAutonomy.offloadStyle === 'smart_offload' ||
+        weekendAutonomy.autonomyDepthScore >= 50
+      ) {
+        // 【第1象限: スマート・オフロード型】
+        // 週末に推論モデルへタスクを委任し、自律実行させている高効率利用
+        isSmartOffload = true;
+        prob = Math.max(3, Math.min(10, Math.round(weekendRatio * 15))); // Healthy (<= 10%)
+      } else if (
+        weekendAutonomy.offloadStyle === 'firefighting_struggle' ||
+        (weekendRatio >= 0.35 && weekendAutonomy.autonomyDepthScore < 40)
+      ) {
+        // 【第2象限: 緊急火消し・泥沼デバッグ型】
+        // 短時間指示を連打して手戻り格闘している真の過負荷
+        isFirefightingStruggle = true;
+        prob = Math.min(
+          95,
+          Math.round(65 + (weekendRatio - 0.35) * 80 + (40 - weekendAutonomy.autonomyDepthScore) * 0.5)
+        );
       } else {
-        prob = Math.max(2, Math.round(10 * (weekendRatio / 0.2)));
+        // 中程度
+        prob = Math.round(20 + (weekendRatio - 0.2) * 80);
       }
+    } else if (totalActions >= 50 && weekendRatio >= 0.35) {
+      prob = Math.min(85, Math.round(55 + (weekendRatio - 0.35) * 100));
     } else {
-      prob = 5;
+      prob = Math.max(2, Math.round(15 * (weekendRatio / 0.2)));
     }
 
     prob = Math.max(0, Math.min(95, prob));
     const riskLevel = this.getRiskLevel(prob);
 
+    // 要因 1: 週末アクティビティ比率
     factors.push({
       metricName: '週末・休日アクティビティ比率',
       currentValueFormatted: `${(weekendRatio * 100).toFixed(1)}% (${weekendActions} / ${totalActions} 件)`,
       recommendedThresholdFormatted: '< 20.0%',
-      description:
-        weekendRatio >= 0.35
-          ? '休日の利用割合が非常に高く、業務外での過負荷や特定個人への属人化が疑われます。'
-          : weekendRatio >= 0.2
-          ? '休日の利用が散見されます。'
-          : '平日の通常業務時間内に集中して健全に利用されています。',
-      severity: weekendRatio >= 0.35 ? 'warning' : 'good',
+      description: isSmartOffload
+        ? '休日利用比率は高めですが、AIへの自律タスク委任（スマート・オフロード）が確認されています。'
+        : weekendRatio >= 0.35
+        ? '休日の利用割合が非常に高く、特定個人への業務過負荷や緊急対応が疑われます。'
+        : weekendRatio >= 0.2
+        ? '休日の利用が散見されます。'
+        : '平日の通常業務時間内に集中して健全に利用されています。',
+      severity: isSmartOffload ? 'good' : weekendRatio >= 0.35 ? 'warning' : 'good',
     });
 
-    if (prob >= 60) {
+    // 要因 2: AI自律駆動深度 (Autonomy Depth)
+    factors.push({
+      metricName: '時間外 AI自律駆動深度 (Autonomy Depth)',
+      currentValueFormatted: `${weekendAutonomy.autonomyDepthScore} pt / 100 pt (推論モデル率: ${(weekendAutonomy.reasoningModelRatio * 100).toFixed(0)}%)`,
+      recommendedThresholdFormatted: '≥ 50 pt (自律委任型)',
+      description: isSmartOffload
+        ? '推論モデル（o1/Claude 3.7等）による長時間の自律推論が活用されており、人間の拘束時間は極小です。'
+        : weekendAutonomy.autonomyDepthScore < 40
+        ? '1指示あたりの自律駆動時間が短く、人間がプロンプトを連打して小刻みに修正を繰り返している兆候があります。'
+        : '標準的な自律稼働バランスです。',
+      severity: isSmartOffload ? 'good' : weekendAutonomy.autonomyDepthScore < 40 ? 'danger' : 'neutral',
+    });
+
+    // 要因 3: 1指示あたり受諾コード規模
+    factors.push({
+      metricName: '指示あたり受諾コード規模 (Yield)',
+      currentValueFormatted: `${weekendAutonomy.yieldLinesPerChat.toFixed(1)} 行 / チャット`,
+      recommendedThresholdFormatted: '≥ 20.0 行 (ファイル単位の差分)',
+      description:
+        weekendAutonomy.yieldLinesPerChat >= 20
+          ? '1回のプロンプトでまとまった規模の実装が自律生成・採用されています。'
+          : '1指示あたりの受諾行数が少なく、細かい手戻り修正が多発している可能性があります。',
+      severity: weekendAutonomy.yieldLinesPerChat >= 20 ? 'good' : 'warning',
+    });
+
+    // レコメンデーション & サマリーの分岐
+    let tagline: string;
+    let summary: string;
+
+    if (isSmartOffload) {
+      tagline = '🌟 スマート・オフロード型（AIへの高度なタスク委任・自律駆動）';
+      summary =
+        '休日にAIを利用していますが、推論・自律型モデルへ的確にタスクをオフロードしており、人間の拘束時間を最小化しながら高い成果を得ています。先進的で極めて効率的なAI活用です。';
       recommendations.push(
-        '【タスク負荷分散のレビュー】特定プロジェクトの納期逼迫やタスクの属人化がないか、1on1での状況確認を推奨します。',
+        '【模範的なオフロード活用】人間の手を動かし続けるのではなく、AIに長時間の自律推論・実装を任せる理想的な運用ができています。',
+        '【チームへの知見共有】タスクの切り出し方やプロンプト設計のベストプラクティスを、ぜひチーム内に展開してください。'
+      );
+    } else if (isFirefightingStruggle || prob >= 70) {
+      tagline = '⚠️ 緊急火消し・泥沼デバッグ型（休日の短時間指示連打・過負荷）';
+      summary =
+        '休日に短いプロンプトを頻繁に連打してAIと格闘している兆候があります。特定障害の火消しやデバッグの難航による時間外労働・属人化の強いリスクが疑われます。';
+      recommendations.push(
+        '【タスク負荷分散と障害振り返り】休日に急ぎで対応せざるを得なかった背景や、デバッグ難航の原因について1on1で確認してください。',
+        '【自律型推論モデルの活用】小刻みな修正を人間が繰り返すのではなく、Claude 3.7やo1等の推論モデルにエラーログ全体を渡して自己修正させるプロンプト設計への見直しを推奨します。'
+      );
+    } else if (prob >= 40) {
+      tagline = '週末や休日にAI利用が集中し特定個人への負荷偏重が発生している兆候';
+      summary = '休日の利用が散見されます。定常タスクの平日化と平準化を推奨します。';
+      recommendations.push(
         '【平日業務内でのAI自動化推進】平日の定常開発フローにCopilot PR SummaryやCLI活用を組み込み、時間外の作業負担を軽減してください。'
       );
     } else {
+      tagline = '平日の通常業務時間内に安定してAIを活用中';
+      summary = '稼働時間帯のバランスは良好です。平日に安定して利用されています。';
       recommendations.push('稼働時間帯のバランスは良好です。');
     }
 
     return {
       id: 'off_hours_workload_spike',
-      name: '時間外・集中負荷過多型',
-      nameEn: 'Off-Hours / Weekend Workload Spike',
+      name: isSmartOffload ? 'スマート・オフロード型 (高効率)' : '時間外・集中負荷過多型',
+      nameEn: isSmartOffload ? 'Smart Offload / Autonomous Delegation' : 'Off-Hours / Weekend Workload Spike',
       probabilityPercent: prob,
       riskLevel,
-      tagline: '週末や休日にAI利用が集中し特定個人への負荷偏重が発生している兆候',
-      summary:
-        prob >= 70
-          ? '強い兆候を検出しました。休日の利用比率が35%を超えており、過重労働やデバッグの難航による時間外対応の疑いがあります。'
-          : prob >= 40
-          ? '軽度の休日利用が確認されています。'
-          : '兆候は検出されませんでした。平日に安定して利用されています。',
+      tagline,
+      summary,
       contributingFactors: factors,
       recommendations,
-      isExpandedDefault: prob >= 60,
+      isExpandedDefault: prob >= 60 || isSmartOffload,
+    };
+  }
+
+  /**
+   * 指示1回あたりのAI自律駆動深度とオフロード効率の算出 (AEDP Proxy)
+   * 人間の指示1回あたりでAIがどれだけ自律駆動（推論・コード生成・探索）できたかを評価
+   */
+  public static calculateAutonomyMetrics(
+    history: UserModelDailyUsage[]
+  ): AutonomyAnalysisMetrics {
+    let totalChats = 0;
+    let reasoningChats = 0;
+    let totalLinesAccepted = 0;
+    let activeDays = 0;
+
+    for (const h of history) {
+      if (h.total_chats > 0 || h.suggestions > 0) {
+        activeDays++;
+      }
+      totalChats += h.total_chats;
+      totalLinesAccepted += h.lines_accepted;
+
+      if (h.model_breakdown) {
+        for (const [modelName, count] of Object.entries(h.model_breakdown)) {
+          const isReasoning = LONG_AUTONOMY_REASONING_MODELS.some((m) =>
+            modelName.toLowerCase().includes(m)
+          );
+          if (isReasoning) {
+            reasoningChats += count;
+          }
+        }
+      }
+    }
+
+    const reasoningModelRatio = totalChats > 0 ? reasoningChats / totalChats : 0;
+    const yieldLinesPerChat = totalChats > 0 ? totalLinesAccepted / totalChats : 0;
+    const chatsPerActiveDay = activeDays > 0 ? totalChats / activeDays : 0;
+
+    // 長時間自律駆動（Long Autonomy）と短時間（Short Micro-burst）の比率推定
+    // 推論モデル利用、または1指示あたり30行以上の大きな差分生成を長時間自律と推計
+    const longRatio = Math.min(
+      1.0,
+      reasoningModelRatio * 0.7 + Math.min(0.5, yieldLinesPerChat / 60) * 0.6
+    );
+    const longAutonomyRatioPercent = Math.round(longRatio * 100);
+    const shortAutonomyRatioPercent = 100 - longAutonomyRatioPercent;
+
+    // 自律駆動深度スコア (0 - 100)
+    // 推論モデル比率(40%) + 1指示受諾行数(40%) + プロンプト連打の抑制度/スパース性(20%)
+    const reasoningPart = reasoningModelRatio * 40;
+    const linesPart = Math.min(40, (yieldLinesPerChat / 40) * 40);
+    const sparsityPart =
+      chatsPerActiveDay <= 10 ? 20 : Math.max(0, 20 - (chatsPerActiveDay - 10) * 0.8);
+    const autonomyDepthScore = Math.min(
+      100,
+      Math.round(reasoningPart + linesPart + sparsityPart)
+    );
+
+    // オフロードスタイルの判定
+    let offloadStyle: 'smart_offload' | 'firefighting_struggle' | 'balanced_standard';
+    if (autonomyDepthScore >= 50 || (reasoningModelRatio >= 0.4 && yieldLinesPerChat >= 20)) {
+      offloadStyle = 'smart_offload';
+    } else if (autonomyDepthScore < 35 && chatsPerActiveDay >= 15 && yieldLinesPerChat < 12) {
+      offloadStyle = 'firefighting_struggle';
+    } else {
+      offloadStyle = 'balanced_standard';
+    }
+
+    return {
+      autonomyDepthScore,
+      reasoningModelRatio,
+      yieldLinesPerChat,
+      chatsPerActiveDay,
+      longAutonomyRatioPercent,
+      shortAutonomyRatioPercent,
+      offloadStyle,
     };
   }
 

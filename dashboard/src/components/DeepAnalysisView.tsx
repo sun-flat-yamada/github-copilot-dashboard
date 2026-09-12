@@ -588,7 +588,9 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
                   <div className="flex items-center justify-between mb-2">
                     <span
                       className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md ${
-                        pattern.riskLevel === 'high'
+                        pattern.name.includes('スマート・オフロード')
+                          ? 'bg-emerald-950 text-emerald-300 border border-emerald-500 shadow-sm'
+                          : pattern.riskLevel === 'high'
                           ? 'bg-rose-950 text-rose-300 border border-rose-800 animate-pulse'
                           : pattern.riskLevel === 'medium'
                           ? 'bg-amber-950 text-amber-300 border border-amber-800'
@@ -597,7 +599,9 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
                           : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
                       }`}
                     >
-                      {pattern.riskLevel === 'high'
+                      {pattern.name.includes('スマート・オフロード')
+                        ? '🌟 スマート・オフロード'
+                        : pattern.riskLevel === 'high'
                         ? '高リスク (兆候あり)'
                         : pattern.riskLevel === 'medium'
                         ? '中リスク (注意)'
