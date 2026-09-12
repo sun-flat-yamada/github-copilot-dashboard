@@ -123,13 +123,14 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
         const data = (await res.json()) as BenchmarkDataset;
         setDataset(data);
 
-        // 初期選択モデルの設定
+        // 初期選択モデルの設定: デフォルトは Copilot 提供全モデル
         if (initialSelectedModelId && data.models.some((m) => m.id === initialSelectedModelId)) {
           setSelectedModelIds([initialSelectedModelId]);
           setFocusedModelId(initialSelectedModelId);
         } else {
-          // デフォルトは Copilot 4大モデル
-          const defaultIds = ['claude-3-7-sonnet', 'gpt-4o', 'o1', 'gemini-2-0-flash'];
+          // Copilot 公式提供モデルをすべて初期選択
+          const copilotModelIds = data.models.filter((m) => m.is_copilot_native).map((m) => m.id);
+          const defaultIds = copilotModelIds.length > 0 ? copilotModelIds : data.models.map((m) => m.id);
           setSelectedModelIds(defaultIds);
           setFocusedModelId(defaultIds[0]);
         }
@@ -212,7 +213,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
     return list;
   }, [dataset, sortKey, sortAsc]);
 
-  // モデル選択トグル
+  // モデル選択トグル (全モデル選択可能)
   const handleToggleModel = (id: string) => {
     if (selectedModelIds.includes(id)) {
       if (selectedModelIds.length > 1) {
@@ -222,16 +223,17 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
         }
       }
     } else {
-      if (selectedModelIds.length < 4) {
-        setSelectedModelIds([...selectedModelIds, id]);
-        setFocusedModelId(id);
-      } else {
-        // 最大4件制限: 先頭を外して追加
-        const updated = [...selectedModelIds.slice(1), id];
-        setSelectedModelIds(updated);
-        setFocusedModelId(id);
-      }
+      setSelectedModelIds([...selectedModelIds, id]);
+      setFocusedModelId(id);
     }
+  };
+
+  // 全Copilotモデル一括選択
+  const handleSelectAllCopilot = () => {
+    if (!dataset) return;
+    const copilotIds = dataset.models.filter((m) => m.is_copilot_native).map((m) => m.id);
+    setSelectedModelIds(copilotIds);
+    setFocusedModelId(copilotIds[0] || '');
   };
 
   const handleApplyPreset = (modelIds: string[]) => {
