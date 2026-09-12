@@ -88,15 +88,15 @@ export const ModeSwitcher: React.FC<ModeSwitcherProps> = ({
 
   return (
     <>
-      {/* 1. 幅が十分広い場合 (xl 以上): 4つのモードを横並びでフル表示 */}
-      <div className="hidden xl:inline-flex items-center p-1 bg-slate-900/90 border border-slate-800 rounded-xl shadow-inner">
+      {/* 1. 幅が十分広い場合 (2xl 以上 / 1536px〜): 4つのモードを横並びでフル表示 */}
+      <div className="hidden 2xl:inline-flex items-center p-1 bg-slate-900/90 border border-slate-800 rounded-xl shadow-inner flex-shrink-0">
         {modes.map((mode) => {
           const isActive = currentMode === mode.id;
           return (
             <button
               key={mode.id}
               onClick={() => onModeChange(mode.id)}
-              className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all relative ${
+              className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all relative whitespace-nowrap ${
                 isActive
                   ? mode.activeClass
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
@@ -110,8 +110,8 @@ export const ModeSwitcher: React.FC<ModeSwitcherProps> = ({
         })}
       </div>
 
-      {/* 2. 幅が不足する場合 (xl 未満): 現在アクティブなモードのみを表示し、クリック展開で切り替え */}
-      <div className="relative xl:hidden">
+      {/* 2. 幅が不足する場合 (2xl 未満): 現在アクティブなモードのみを表示し、クリック展開で切り替え */}
+      <div className="relative 2xl:hidden flex-shrink-0">
         <button
           onClick={() => setIsOpen((prev) => !prev)}
           className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-md ${
@@ -123,9 +123,9 @@ export const ModeSwitcher: React.FC<ModeSwitcherProps> = ({
           aria-haspopup="listbox"
           title="クリックしてモードを切り替え"
         >
-          <span className="flex items-center space-x-1.5 truncate max-w-[150px] sm:max-w-none">
+          <span className="flex items-center space-x-1.5 truncate max-w-[130px] sm:max-w-[190px] md:max-w-[240px]">
             {activeModeItem.icon}
-            <span className="truncate">{activeModeItem.label}</span>
+            <span className="truncate whitespace-nowrap">{activeModeItem.label}</span>
           </span>
           {activeModeItem.badge}
           <ChevronDown
