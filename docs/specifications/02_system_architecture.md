@@ -1,15 +1,19 @@
-# SDD-02: システムアーキテクチャ設計書 (System Architecture)
-
-- **文書番号**: SPEC-COPILOT-002
-- **ステータス**: Approved / Active
-- **対象バージョン**: 2026.09-LTS
-- **作成日**: 2026-09-10
+[English](02_system_architecture.md) | [日本語](02_system_architecture.ja.md)
 
 ---
 
-## 1. 全体アーキテクチャ概要
+# SDD-02: System Architecture Specification
 
-本システムは、外部のRDBやクラウドサーバーを一切持たない**「サーバーレス・GitHubネイティブ型」**アーキテクチャを採用する。データ収集、加工・集計、永続化、およびダッシュボード配信をすべてGitHubのエコシステム（Actions, Variables, GitHub Pages）内で完結させる。
+- **Document ID**: SPEC-COPILOT-002
+- **Status**: Approved / Active
+- **Target Version**: 2026.09-LTS
+- **Date**: 2026-09-10
+
+---
+
+## 1. Overall Architectural Overview
+
+This system implements a **"Serverless, GitHub-Native"** architecture requiring zero external databases (RDBs) or cloud servers. Data collection, transformation, aggregation, persistence, and dashboard distribution are executed completely within the GitHub ecosystem (Actions, Variables, and GitHub Pages).
 
 ```mermaid
 flowchart TB
@@ -20,39 +24,39 @@ flowchart TB
     end
 
     subgraph GitHub_Variables["GitHub Secrets & Variables"]
-        VAR_Mapping["COPILOT_USER_MAPPING\n(非公開: 表示名・仕訳グループ対応表)"]
+        VAR_Mapping["COPILOT_USER_MAPPING\n(Zero-leakage: Display Name & Group Mapping)"]
         SEC_Token["COPILOT_READ_TOKEN\n(Enterprise / Org PAT)"]
     end
 
     subgraph GitHub_Actions["GitHub Actions Pipeline (Cron / Dispatch)"]
         subgraph Step1["1. Collector Engine"]
             Collector["API Fetcher & Mock Loader"]
-            Resolver["Attribute Resolver (VARS注入)"]
+            Resolver["Attribute Resolver (VARS Injection)"]
         end
         subgraph Step2["2. Processor Engine"]
-            Aggregator["多次元集計エンジン\n(日 / 月 / カスタム期間)"]
-            BillingEngine["費用配賦 & 遊休シート判定\n(Org / CostCenter / 仕訳グループ)"]
+            Aggregator["Multidimensional Aggregation Engine\n(Daily / Monthly / Custom Range)"]
+            BillingEngine["Cost Allocation & Idle Seat Detection\n(Org / CostCenter / Custom Group)"]
         end
         subgraph Step3["3. Fork-Safe Storage Engine"]
-            Storage["日付別パーティショニング出力\n(Append-Only)"]
-            BranchSync["orphanブランチ 'copilot-data' へのコミット"]
+            Storage["Date Partitioning Output\n(Append-Only)"]
+            BranchSync["Commit to orphan branch 'copilot-data'"]
         end
         subgraph Step4["4. Dashboard Builder"]
-            Builder["Vite + React SPA ビルド"]
+            Builder["Vite + React SPA Build"]
             Deploy["actions/deploy-pages\n(Pages Artifact)"]
         end
     end
 
-    subgraph Storage_Branch["データ永続化層 (copilot-data branch)"]
-        RawData["data/raw/YYYY/MM/*.json\n(日次生データ)"]
-        AggData["data/processed/*.json\n(集計インデックス & スコープデータ)"]
+    subgraph Storage_Branch["Data Persistence Layer (copilot-data branch)"]
+        RawData["data/raw/YYYY/MM/*.json\n(Daily Raw Data)"]
+        AggData["data/processed/*.json\n(Index & Scope Precomputations)"]
     end
 
-    subgraph GitHub_Pages["ホスティング層 (GitHub Pages)"]
-        Dashboard["分析ダッシュボード (SPA)\n- 日/月/指定期間スコープ切替\n- Org/CostCenter/仕訳グループ切替\n- ユーザー明細 & CSVエクスポート"]
+    subgraph GitHub_Pages["Hosting Layer (GitHub Pages)"]
+        Dashboard["Analytics Dashboard (SPA)\n- Daily / Monthly / Custom Range Scope\n- Org / CostCenter / Custom Group Switcher\n- User Details & CSV Export"]
     end
 
-    %% データフロー
+    %% Data Flow
     API_Metrics --> Collector
     API_Seats --> Collector
     API_CostCenter --> Collector
@@ -73,48 +77,48 @@ flowchart TB
 
 ---
 
-## 2. コンポーネント詳細
+## 2. Component Details
 
-### 2.1 データ収集エンジン (Collector Engine)
-- **役割**: GitHub REST API（EnterpriseまたはOrganizationスコープ）から、メトリクス・シート情報・Cost Center情報を取得する。
-- **耐障害性**: レートリミット（429/403）時の指数バックオフと再試行、ページネーションの自動追従。
-- **モックモード**: 環境変数 `MOCK_MODE=true` 時は、実APIを呼び出さずに2026年仕様準拠の擬似データを生成（ローカル開発・テスト・デモ環境用）。
+### 2.1 Collector Engine
+- **Role**: Retrieves metrics, seat assignments, and Cost Center metadata from GitHub REST APIs (Enterprise or Organization scope).
+- **Resilience**: Implements exponential backoff and retry for rate limits (429/403), with automatic pagination handling.
+- **Mock Mode**: When `MOCK_MODE=true`, generates realistic 2026-spec simulation data without calling external APIs (for local development, CI testing, and demos).
 
-### 2.2 属性解決エンジン (Attribute Resolver)
-- **役割**: GitHub Actions Variable `COPILOT_USER_MAPPING` からJSON/CSVを安全に読み込み、ユーザーのGitHubログインIDを元に `display_name`, `department (仕訳グループ)`, `cost_center_override` などを動的解決する。
-- **情報漏洩防止**: マッピングデータはGitリポジトリの履歴（コミット）に絶対に書き出さず、集計処理中のメモリ内でのみ結合（Join）する。
+### 2.2 Attribute Resolver
+- **Role**: Safely parses JSON/CSV mapping data from GitHub Actions Variable `COPILOT_USER_MAPPING`, dynamically resolving `display_name`, `department` (custom allocation group), and `cost_center_override` using GitHub login IDs.
+- **Information Leak Prevention**: Mapping records are never written to Git commits; they are joined exclusively in-memory during aggregation.
 
-### 2.3 多次元集計・費用配賦エンジン (Aggregator & Billing Engine)
-- **役割**:
-  1. シート割当情報とメトリクス情報を突合し、各ユーザーの利用ステータス（Active / Inactive）を判定。
-  2. 3軸（Organization, Cost Center, 任意仕訳グループ）での多次元集計を実行。
-  3. 日次・月次・任意期間における按分費用（Business: \$19/月、Enterprise: \$39/月）を計算。
-  4. 14日/30日以上未利用の「遊休シート」を検出し、削減可能コストを算出。
+### 2.3 Aggregator & Billing Engine
+- **Role**:
+  1. Correlates seat assignments with metrics to determine active vs. inactive user status.
+  2. Executes multidimensional aggregation across 3 axes (Organization, Cost Center, Arbitrary User Group).
+  3. Calculates prorated and monthly expenses (Business: \$19/month, Enterprise: \$39/month).
+  4. Identifies seats inactive for 14 or 30+ days as "Idle Seats" and computes reducible costs.
 
-### 2.4 Fork非競合ストレージエンジン (Fork-Safe Storage Engine)
-- **役割**:
-  - `main` ブランチを汚染せず、独立した orphan ブランチ（`copilot-data`）にのみ集計成果物を保存。
-  - 日付単位（`YYYY/MM/DD`）のイミュータブル・パーティショニングによる追記型永続化。
-  - リポジトリ識別メタデータ（`repository_id`, `schema_version`）を付与。
+### 2.4 Fork-Safe Storage Engine
+- **Role**:
+  - Keeps the `main` branch 100% clean by isolating data persistence to a dedicated orphan branch (`copilot-data`).
+  - Employs append-only date-partitioned storage (`YYYY/MM/DD`).
+  - Injects repository identification metadata (`repository_id`, `schema_version`).
 
-### 2.5 GitHub Pages ダッシュボード (SPA)
-- **役割**:
-  - ブラウザ上で完全動作する高速SPA。
-  - 集計済みJSON（日次・月次・期間インデックス）をFetchしてレンダリング。
-  - 期間スコープセレクタ（日 / 月 / 指定期間）、グループセレクタ（Org / Cost Center / 任意仕訳グループ）、フィルター、CSVダウンロード機能を提供。
+### 2.5 GitHub Pages Dashboard (SPA)
+- **Role**:
+  - Ultra-fast client-side SPA executed entirely in modern web browsers.
+  - Fetches and renders precomputed JSON files (daily, monthly, custom ranges, indices).
+  - Provides responsive scope switchers, group selectors, multi-model trend charts, anomaly modals, and CSV downloads.
 
 ---
 
-## 3. ディレクトリ構成仕様
+## 3. Directory Layout Specification
 
 ```
 .
 ├── .github/
 │   └── workflows/
-│       ├── copilot-analysis-cron.yml   # 日次定期実行・Pagesデプロイ
-│       └── test-and-preview.yml        # CIビルド・テスト検証
+│       ├── copilot-analysis-cron.yml   # Scheduled daily batch & Pages deploy
+│       └── test-and-preview.yml        # CI build & test suite
 ├── docs/
-│   └── specifications/                 # SDD仕様書群
+│   └── specifications/                 # SDD Specifications
 │       ├── 01_requirements_specification.md
 │       ├── 02_system_architecture.md
 │       ├── 03_github_copilot_api_spec_2026.md
@@ -122,31 +126,27 @@ flowchart TB
 │       ├── 05_data_storage_and_fork_isolation_spec.md
 │       ├── 06_aggregation_and_billing_logic_spec.md
 │       ├── 07_dashboard_ui_ux_spec.md
-│       └── 08_automation_workflow_spec.md
+│       ├── 08_automation_workflow_spec.md
+│       ├── 09_monthly_usage_report_mode_spec.md
+│       ├── 10_ai_model_benchmark_radar_spec.md
+│       └── 11_deep_analysis_view_spec.md
 ├── src/
-│   ├── types/                          # 型定義 (API, Metrics, Mapping, Aggregation)
+│   ├── types/                          # Type definitions (API, Metrics, Mapping, Aggregation)
 │   │   └── copilot.ts
-│   ├── collector/                      # API収集・モック生成・属性リゾルバ
+│   ├── collector/                      # API collection, mock generator, attribute resolver
 │   │   ├── github-client.ts
 │   │   ├── mock-generator.ts
 │   │   └── attribute-resolver.ts
-│   ├── processor/                      # 費用計算・多次元集計エンジン
+│   ├── processor/                      # Cost calculation & multi-axis aggregation
 │   │   ├── billing-calculator.ts
 │   │   └── metrics-aggregator.ts
-│   ├── storage/                        # Fork安全ストレージ・インデックス生成
+│   ├── storage/                        # Fork-safe storage & index generation
 │   │   └── fork-safe-storage.ts
-│   └── cli/                            # CLI実行エントリポイント
+│   └── cli/                            # CLI pipeline entrypoint
 │       └── run-pipeline.ts
 ├── dashboard/                          # GitHub Pages SPA (Vite + React + Tailwind)
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── ScopeSelector.tsx
-│   │   │   ├── GroupingSelector.tsx
-│   │   │   ├── KpiSummaryCards.tsx
-│   │   │   ├── CostAllocationCharts.tsx
-│   │   │   ├── UsageMetricsCharts.tsx
-│   │   │   ├── UserDetailTable.tsx
-│   │   │   └── IdleSeatAdvisor.tsx
 │   │   ├── App.tsx
 │   │   └── main.tsx
 │   ├── index.html

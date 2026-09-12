@@ -1,90 +1,94 @@
-# SDD-04: ユーザー属性情報マッピング & 秘匿化仕様書 (User Attribute Mapping)
-
-- **文書番号**: SPEC-COPILOT-004
-- **ステータス**: Approved / Active
-- **対象バージョン**: 2026.09-LTS
-- **作成日**: 2026-09-10
+[English](04_user_attribute_mapping_spec.md) | [日本語](04_user_attribute_mapping_spec.ja.md)
 
 ---
 
-## 1. 目的とセキュリティ原則
+# SDD-04: User Attribute Mapping & Zero-Leakage Privacy Specification
 
-GitHub Copilotの利用者を「部署」「プロジェクト」「仕訳コード」「表示名」に紐付けて分析する際、個人の氏名や社内組織図などのプライベート情報を**公開Gitコミットに一切残さない（Zero Leakage in Git History）**ことを絶対条件とする。
-
----
-
-## 2. 注入メカニズム (GitHub Actions Variables / Secrets)
-
-本システムは、リポジトリまたはOrganization単位で設定される以下の環境変数を自動認識する：
-
-1. **優先度 1: `COPILOT_USER_MAPPING` (GitHub Secret または Variable)**
-   - GitHub Actions 設定の `Variables` または `Secrets` に設定されたJSON文字列またはCSV文字列。
-2. **優先度 2: `COPILOT_USER_MAPPING_BASE64` (オプション)**
-   - 改行や特殊文字による破損を防ぐためのBase64エンコード済み文字列。
-3. **優先度 3: 未設定時のフォールバック**
-   - マッピングが存在しないユーザーは、GitHub login名をそのまま表示名とし、仕訳グループは「未分類 (Unassigned)」とする。
+- **Document ID**: SPEC-COPILOT-004
+- **Status**: Approved / Active
+- **Target Version**: 2026.09-LTS
+- **Date**: 2026-09-10
 
 ---
 
-## 3. マッピングデータスキーマ
+## 1. Objectives & Security Principles
 
-### 3.1 JSON形式 (推奨)
+When associating GitHub Copilot users with internal "Departments", "Projects", "Cost Groups", or human-readable "Display Names", guaranteeing **Zero Leakage in Git History** of personal identities and internal org charts is an absolute requirement.
+
+---
+
+## 2. Runtime Injection Mechanism (GitHub Actions Variables / Secrets)
+
+The system automatically recognizes the following configuration sources configured at the Repository or Organization level:
+
+1. **Priority 1: `COPILOT_USER_MAPPING` (GitHub Secret or Variable)**
+   - JSON string or CSV string configured in GitHub Actions `Variables` or `Secrets`.
+2. **Priority 2: `COPILOT_USER_MAPPING_BASE64` (Optional)**
+   - Base64-encoded string to avoid formatting corruptions caused by newlines or special characters.
+3. **Priority 3: Fallback when unconfigured**
+   - Users without custom mapping default to their GitHub login handle as display name, with their custom accounting group set to `"Unassigned"`.
+
+---
+
+## 3. Mapping Data Schema
+
+### 3.1 JSON Format (Recommended)
 
 ```json
 [
   {
     "github_user": "tanaka-taro",
-    "display_name": "田中 太郎",
-    "department": "決済プラットフォーム部",
+    "display_name": "Taro Tanaka",
+    "department": "Core Platform Division",
     "cost_center_override": "Platform-Engineering",
-    "notes": "リードエンジニア / 正社員"
+    "notes": "Tech Lead / Full-time"
   },
   {
     "github_user": "sato-hanako",
-    "display_name": "佐藤 花子",
-    "department": "データサイエンス推進部",
+    "display_name": "Hanako Sato",
+    "department": "Data Science Promotion Dept",
     "cost_center_override": "AI-and-Data-Platform",
-    "notes": "MLエンジニア"
+    "notes": "ML Engineer"
   },
   {
     "github_user": "suzuki-ken",
-    "display_name": "鈴木 健 (パートナー)",
-    "department": "フロントエンド基盤G",
+    "display_name": "Ken Suzuki (Partner)",
+    "department": "Frontend Platform Group",
     "cost_center_override": "Platform-Engineering",
-    "notes": "業務委託"
+    "notes": "Contractor"
   }
 ]
 ```
 
-### 3.2 CSV形式 (簡易設定用)
+### 3.2 CSV Format (Simplified Setup)
 
-ヘッダー行付きのCSV形式も自動判別してパースする：
+CSVs with standard header rows are also automatically detected and parsed:
 
 ```csv
 github_user,display_name,department,cost_center_override,notes
-tanaka-taro,田中 太郎,決済プラットフォーム部,Platform-Engineering,正社員
-sato-hanako,佐藤 花子,データサイエンス推進部,AI-and-Data-Platform,MLエンジニア
+tanaka-taro,Taro Tanaka,Core Platform Division,Platform-Engineering,Full-time
+sato-hanako,Hanako Sato,Data Science Promotion Dept,AI-and-Data-Platform,ML Engineer
 ```
 
 ---
 
-## 4. フィールド定義
+## 4. Field Definitions
 
-| フィールド名 | 型 | 必須 | 説明 | デフォルト値 |
+| Field Name | Type | Required | Description | Default Value |
 |---|---|---|---|---|
-| `github_user` | string | ○ | GitHubのログインID (case-insensitive) | - |
-| `display_name` | string | - | ダッシュボード上に表示する氏名・表記 | `github_user` と同一 |
-| `department` | string | - | 任意指定の仕訳グループ名・部署名・プロジェクト名 | `"未分類 (Unassigned)"` |
-| `cost_center_override` | string | - | GitHub APIのCost Centerを上書き指定する場合に設定 | API取得値を優先、無ければ `"デフォルトCostCenter"` |
-| `notes` | string | - | 雇用形態やメモ情報 | `""` |
+| `github_user` | string | Yes | GitHub login handle (case-insensitive) | - |
+| `display_name` | string | No | Display name rendered in dashboard | Same as `github_user` |
+| `department` | string | No | Custom allocation group, department, or project code | `"Unassigned"` |
+| `cost_center_override` | string | No | Custom override for GitHub API Cost Center | API Cost Center if present; else `"Default-Cost-Center"` |
+| `notes` | string | No | Employment type, contract status, or notes | `""` |
 
 ---
 
-## 5. プライバシー保護・マスキング機能 (Anonymization Mode)
+## 5. Anonymization & Privacy Preservation Mode
 
-社外公開用GitHub Pagesや広範な閲覧権限を持つ環境向けに、環境変数 `ANONYMIZE_USERS=true` を設定することで、個人情報保護（PIIマスキング）を有効化できる：
-- `github_user`: ハッシュ化（例: `user_a1b2c3`）
-- `display_name`: イニシャル化（例: `T. T.`）
-- `department`: そのまま保持、またはグループコードへの置換
+For publicly deployed GitHub Pages or environments with broad viewer access, enabling `ANONYMIZE_USERS=true` triggers privacy-preserving transformations:
+- `github_user`: Salted hash (e.g., `user_a1b2c3`)
+- `display_name`: Initialized string (e.g., `T. T.`)
+- `department`: Retained as-is or replaced with group codes
 
-これにより、GitHub Pagesが万が一パブリックに公開された場合でも個人の特定を防止する。
+This prevents the identification of individual employees even if the dashboard is accidentally accessed beyond intended boundaries.

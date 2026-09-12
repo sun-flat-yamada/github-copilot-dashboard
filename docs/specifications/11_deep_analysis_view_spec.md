@@ -1,123 +1,127 @@
-# SDD-11: 深い分析専用ビュー (Deep Analytics View) 仕様書
-
-- **文書番号**: SPEC-COPILOT-011
-- **ステータス**: Approved / Active
-- **対象バージョン**: 2026.09-LTS
-- **作成日**: 2026-09-12
+[English](11_deep_analysis_view_spec.md) | [日本語](11_deep_analysis_view_spec.ja.md)
 
 ---
 
-## 1. 概要と設計思想
+# SDD-11: Deep Analytics View Specification
 
-GitHub Copilot の利用実態をより多角的に深掘りし、組織の開発生産性向上や利用効率化を強力に後押しするため、「深い分析を行う専用ビュー（Deep Analytics View）」を提供する。
-
-### 1.1 背景と目的
-従来のダッシュボード（Live Metrics / Monthly Report / Model Radar）は組織全体・コストセンター・モデル単位のマクロな集計や利用推移が中心であった。本専用ビューは以下の課題を解決する：
-- **ミクロな利用実態の診断**: 特定の1ユーザーが、AIの利便性を活かせずに時間を浪費していないか、あるいは非効率な操作アンチパターンに陥っていないかを早期に発見する。
-- **継続的な分析機能の拡張性**: 今後、プロンプト品質診断、モデル選定コスト効率マトリクス、チーム開発生産性相関など、多種多様な分析エンジン（Method / Engine）を段階的に拡充できるよう、プラグイン/レジストリ型のアーキテクチャを採用する。
+- **Document ID**: SPEC-COPILOT-011
+- **Status**: Approved / Active
+- **Target Version**: 2026.09-LTS
+- **Date**: 2026-09-12
 
 ---
 
-## 2. 機能の配置と起動方法 (UI / UX Architecture)
+## 1. Overview & Design Philosophy
 
-### 2.1 グローバルナビゲーション (ModeSwitcher)
-- トップヘッダーの `ModeSwitcher` に第4のモードとして **「ディープ分析 (高度診断)」** (`deep_analysis`) を追加。
-- アイコン: `BrainCircuit`。ワンクリックで全社横断のディープアナリティクスハブへ遷移。
+To delve deeper into GitHub Copilot utilization patterns and empower organizational productivity and optimization, this specification defines the dedicated **Deep Analytics View**.
 
-### 2.2 コンテキスト起動 (Contextual Deep-Link)
-- **ユーザー明細テーブル (`UserDetailTable`)**: 各行のアクション列に「ディープ分析」ボタンを設置。クリックすると対象ユーザーが自動選択された状態で専用ビューが起動。
-- **ユーザーモデル推移 (`UserTrendViewer`)**: プロファイルヘッダーに「このユーザーをディープ分析」ボタンを設置。
-- **グループランキング (`GroupUsageRanking`)**: 行アクションまたはクリックからディープ分析へダイレクト遷移。
-
-### 2.3 分析方式セレクター (Analysis Method Selector)
-専用ビューの最上部に、分析方式を選択・切り替える拡張可能セレクターを配置：
-1. **AI活用非効率パターン診断 (Inefficient AI Pattern Diagnostic)** [Active / 今回提供]
-2. **モデル適性・コスト対効果マトリクス (Model Cost-Efficiency Matrix)** [Coming Soon]
-3. **プロンプト反復・手戻り検知 (Prompt Churn & Iteration Loop)** [Coming Soon]
-4. **組織・同僚比較ギャップベンチマーク (Peer Gap Benchmark)** [Coming Soon]
+### 1.1 Background & Purpose
+Standard dashboard views (Live Metrics, Monthly Report, Model Radar) focus on macro-level summaries across organizations, cost centers, and models. The Deep Analytics View addresses micro-level challenges:
+- **Micro-Level Behavioral Diagnostics**: Early detection of anti-patterns where individual developers struggle to benefit from AI assistance or waste engineering time.
+- **Continuous Analytical Extensibility**: A pluggable, registry-based architecture accommodating modular diagnostic engines (e.g., prompt churn, model efficiency matrices, peer gap benchmarks).
 
 ---
 
-## 3. 最初の分析方式: AI活用非効率パターン診断
+## 2. Feature Placement & Invocation (UI / UX Architecture)
 
-### 3.1 診断の対象と区間指定
-- **対象**: 選択された1ユーザーの利用実績（`UserUsageProfile.daily_history`）。
-- **対象区間の切り替え**:
-  - `[前1カ月間]` (デフォルト: 直近30日間)
-  - `[当日]` (直近1日)
-  - `[1週間前まで]` (直近7日間)
-  - `[期間指定 (カスタム)]`: 任意の開始日（Start Date）および終了日（End Date）を `<input type="date">` で入力し「適用」をクリックすることで、該当日付範囲のデータを動的フィルタリング。
+### 2.1 Global Navigation (`ModeSwitcher`)
+- Adds the 4th mode **"Deep Analytics"** (`deep_analysis`) to the header `ModeSwitcher`.
+- Icon: `BrainCircuit`. One-click transition to the deep analytics hub.
 
-### 3.2 典型的な非効率AI利用パターンの定義と確率計算
+### 2.2 Contextual Deep-Links
+- **User Detail Table (`UserDetailTable`)**: "Deep Analysis" action button in each user row opens the view with that user preselected.
+- **User Trend Viewer (`UserTrendViewer`)**: "Deep Analyze this User" button in the profile header.
+- **Group Usage Rankings (`GroupUsageRanking`)**: Row click or direct action link transitions straight to deep diagnostics.
 
-AIコーディング現場で頻発する以下の5つのアンチパターンを判定する：
+### 2.3 Analysis Method Selector
+A modular selector at the top switches between diagnostic engines:
+1. **Inefficient AI Pattern Diagnostic** [Active / Current Release]
+2. **Model Cost-Efficiency Matrix** [Coming Soon]
+3. **Prompt Churn & Iteration Loop** [Coming Soon]
+4. **Peer Gap Benchmark** [Coming Soon]
 
-| パターンID | パターン名称 | 兆候指標と判定根拠 | リスク判定閾値 |
+---
+
+## 3. Initial Diagnostic Engine: Inefficient AI Pattern Diagnostic
+
+### 3.1 Scope & Date Filtering
+- **Target**: Selected user usage records (`UserUsageProfile.daily_history`).
+- **Date Filter Presets**:
+  - `[Past Month]` (Default: rolling 30 days)
+  - `[Today]` (Most recent day)
+  - `[Past Week]` (Rolling 7 days)
+  - `[Custom Date Range]`: Arbitrary start and end dates via `<input type="date">` inputs.
+
+### 3.2 Anti-Pattern Definitions & Probability Models
+
+Evaluates 5 prevalent AI coding anti-patterns:
+
+| Pattern ID | Pattern Name | Indicators & Evaluation Rationale | Risk Thresholds |
 | :--- | :--- | :--- | :--- |
-| `tab_spamming_roulette` | **生成ガチャ・受け身垂れ流し型** | 提案数が多い（1日あたり平均40件超）が、受諾率が極端に低い（<15%）。Tabキーの乱打や再生成を繰り返している兆候。 | 確率 ≥ 70%: High<br>40-69%: Medium |
-| `overkill_model_addiction` | **超重量級モデル過剰依存型** | 定常作業において高コスト推論モデル（o1等）の利用比率が 70% 超過。軽量モデル（Gemini Flash等）を併用していない。 | 確率 ≥ 70%: High<br>40-69%: Medium |
-| `context_blind_chat_churn` | **文脈希薄・対話空回り型** | チャット回数が過剰（1日15件超）かつコード反映が極少。ただし1指示あたりの受諾行数が十分（≥20行）な「インライン・フローペアプロ型」は除外。 | 確率 ≥ 70%: High<br>40-69%: Medium |
-| `passive_seat_disengaged` | **低関与・放置シート予備軍型** | 期間内の実稼働日率が 20% 未満、または総利用量が極めて僅少で定着していない。 | 確率 ≥ 70%: High<br>40-69%: Medium |
-| `off_hours_workload_spike` | **時間外・集中負荷過多型 / スマート・オフロード型** | 週末・休日比率 ≥ 20% を「AI自律駆動深度 (Autonomy Depth)」とクロス判定。推論モデルへタスクを自律委託している場合は**「🌟 スマート・オフロード型 (Healthy)」**と評価。短時間連打格闘時のみ「泥沼デバッグ (High)」警告。 | 泥沼連打時: ≥70% (High)<br>スマート委託時: ≤15% (Healthy) |
+| `tab_spamming_roulette` | **Generation Roulette / Passive Tab Spamming** | High suggestion volume (>40/day) paired with extremely low acceptance (<15%). Indicates repetitive regeneration and blind tab-spamming. | Prob $\ge 70\%$: High<br>40–69%: Medium |
+| `overkill_model_addiction` | **Overkill Heavy Model Addiction** | Heavy reasoning models (e.g., o1) exceed 70% of routine interactions without utilizing lightweight models (e.g., Gemini Flash). | Prob $\ge 70\%$: High<br>40–69%: Medium |
+| `context_blind_chat_churn` | **Context-Blind Chat Churn** | Excessive chat turns (>15/day) with negligible code adoption. Excludes high-yield inline pair-programming ($\ge 20$ lines/prompt). | Prob $\ge 70\%$: High<br>40–69%: Medium |
+| `passive_seat_disengaged` | **Disengaged / Abandoned Seat Candidate** | Active days under 20% of the period, or nominal usage indicating lack of workflow onboarding. | Prob $\ge 70\%$: High<br>40–69%: Medium |
+| `off_hours_workload_spike` | **Off-Hours Overload / Smart Offload** | Cross-references weekend/holiday activity ($\ge 20\%$) with Autonomy Depth. Autonomous delegation to reasoning models qualifies as **"🌟 Smart Offload (Healthy)"**. Only repetitive manual bursts flag "Firefighting Struggle (High)". | Firefighting: $\ge 70\%$ (High)<br>Smart Offload: $\le 15\%$ (Healthy) |
 
-### 3.3 自律駆動深度 (Autonomy Depth) と「時間帯 × 自律性」2軸マトリクス評価
+### 3.3 Autonomy Depth & the "Time Window $\times$ Autonomy" Matrix
 
-AIコーディングが「一行補完」から「自律エージェント（Autopilot）」へ進化した実態を反映し、**「人間の指示1回あたりでAIがどれだけ自律駆動したか（Autonomous Execution Duration per Prompt: AEDP）」** を多面的に評価する。
+Reflecting the evolution of AI coding from line completions to autonomous agents, the engine computes **Autonomous Execution Duration per Prompt (AEDP)**.
 
 ```
-                     【AI自律駆動時間 (指示1回あたり)】
-                                  長 (Long Autonomy)
-                                      ▲
-                                      │
-            ③ バックグラウンド非同期協調型 │ ① スマート・オフロード型
-            ─────────────────────────┼─────────────────────────
-            ・業務時間内にAIへ重タスク委任   │ ・夜間/休日にAIを自律稼働
-            ・人間は別タスクやレビューに集中 │ ・人間の拘束時間は極小
-            ・【判定: 模範的・最高効率】    │ ・【判定: 超高効率・推奨 (Healthy)】
-                                      │
-  業務時間内 (On-Hours) ──────────────┼────────────── 時間外・休日 (Off-Hours)
-                                      │
-            ④ インライン・フローペアプロ型 │ ② 緊急火消し・泥沼デバッグ型
-            ─────────────────────────┼─────────────────────────
-            ・日常的な補完・小規模関数実装   │ ・休日に画面前で小刻みにプロンプト連打
-            ・思考フローを止めない正当利用   │ ・手戻り・ハルシネーションとの格闘
-            ・【判定: 健全・日常利用】      │ ・【判定: 危険・真の過負荷 (High Risk)】
-                                      ▼
-                                  短 (Short Micro-burst)
+                  【Autonomous Execution Duration per Prompt (AEDP)】
+                                  Long Autonomy
+                                       ▲
+                                       │
+           ③ Background Async Worker   │ ① Smart Offload (Weekend Agent)
+           ────────────────────────────┼────────────────────────────
+           - Heavy tasks delegated     │ - Agent executes tasks overnight/weekend
+             during business hours     │ - Human engagement is minimal
+           - Human focuses on reviews  │ - [Rating: High-efficiency, Healthy]
+           - [Rating: Exemplary model] │
+                                       │
+On-Hours ──────────────────────────────┼────────────────────────────── Off-Hours
+                                       │
+           ④ Inline Flow Pair-Prog     │ ② Weekend Firefighting Struggle
+           ────────────────────────────┼────────────────────────────
+           - Routine inline completion │ - Repetitive manual prompts on weekend
+           - High concentration flow   │ - Battling hallucinations/regressions
+           - [Rating: Healthy routine] │ - [Rating: High Risk Overload]
+                                       ▼
+                             Short Micro-bursts
 ```
 
-#### 自律駆動深度スコア (Autonomy Depth Score: 0〜100) の算出要素:
-1. **推論モデル重力 (Reasoning Model Gravity)**: o1, o3-mini, Claude 3.7 (Thinking), Gemini 2.5 Pro 等の長時間推論モデルの利用比率。
-2. **指示あたり受諾コード規模 (Yield per Prompt)**: 1チャットあたりの受諾行数（`lines_accepted / total_chats`）。ファイル単位（25行以上）の生成は長時間自律と判定。
-3. **指示密度・スパース性 (Prompt Sparsity)**: 1日のチャット数が少数集中（タスク委託型）か、大量連打（手動AI介護型）か。
+#### Autonomy Depth Score (0–100) Factors:
+1. **Reasoning Model Gravity**: Share of deep reasoning models (o1, o3-mini, Claude 3.7 Thinking, Gemini 2.5 Pro).
+2. **Yield per Prompt**: Accepted lines per chat (`lines_accepted / total_chats`). File-level generation ($\ge 25$ lines) qualifies as extended autonomy.
+3. **Prompt Sparsity**: Concentrated delegation vs. rapid-fire manual prompt micro-bursts.
 
-#### 診断結果の分岐:
-- **スマート・オフロード型**: 週末利用率が高くても自律駆動深度 ≥ 50 pt なら、過負荷判定を行わず「🌟 スマート・オフロード型（健全・推奨）」として健全度ボーナス（+5pt）を付与。
-- **緊急火消し・泥沼デバッグ型**: 週末利用率が高く自律駆動深度 < 40 pt（軽量モデル連打・受諾僅少）の場合は真の過重労働リスクとして「⚠️ 緊急火消し・泥沼デバッグ型（High Risk）」を警告。
-- **平日インライン・フローペアプロ型**: 業務時間内にコマ切れチャットを行っていても受諾行数が十分であれば「文脈希薄・対話空回り型」のリスク確率を最大60%軽減。
+#### Diagnostic Branching:
+- **Smart Offload**: Users with high weekend activity but Autonomy Depth $\ge 50$ pt receive zero overload penalties, plus a +5 pt health bonus.
+- **Firefighting Struggle**: High weekend activity with Autonomy Depth $< 40$ pt flags a "High Risk Overload" warning.
+- **Inline Flow Pair-Programming**: Frequent on-hours chats with adequate code yield reduce Context-Blind Churn probability by up to 60%.
 
 ---
 
-### 3.4 視覚的表示仕様
-1. **総合健全度スコアメーター (AI Usage Health Score)**: 0〜100点（健全: 80点以上 [緑]、注意: 60〜79点 [黄]、要改善: 59点以下 [赤]）。
-2. **パターン別兆候診断カード**:
-   - 兆候確率（%）を大きく強調表示。
-   - リスクレベルバッジ（High / Medium / Low / Healthy）。
-   - プログレスバー表示（色分け）。
-   - 検出要因（Contributing Factors: 実際の計測値と推奨閾値の対比）。
-   - ドリルダウン展開ボタン。
-3. **ドリルダウン深掘り分析パネル**:
-   - **日次アクティビティ推移チャート**: 日別の提案数・受諾数・受諾率・チャット数の時系列グラフ。
-   - **モデル別利用バランス & コスト内訳**: 各モデルの利用割合と推計コスト。
-   - **組織平均ベンチマーク比較**: 組織・部署の平均値との乖離（例: 受諾率 -18.2% pt）。
-   - **パーソナライズ改善処方箋**: ワンクリックでコピー可能な、明日から実践できる現場向けアドバイス。
+## 4. Visual Layout Specifications
+1. **AI Usage Health Score Meter**: 0–100 scale (Healthy: 80+ [green], Caution: 60–79 [yellow], Needs Improvement: $\le 59$ [red]).
+2. **Anti-Pattern Diagnostic Cards**:
+   - Prominent probability percentage display.
+   - Risk level badges (High / Medium / Low / Healthy).
+   - Contributing factor comparisons against baseline thresholds.
+   - Expandable drill-down panels.
+3. **Drill-Down Analytics Panels**:
+   - **Daily Activity Trends**: Chronological suggestions, acceptances, rates, and chats.
+   - **Model Balance & Cost Breakdown**: Consumption split and estimated costs.
+   - **Peer Benchmarking**: Variances from organization/department averages.
+   - **Personalized Prescriptions**: Actionable engineering tips copyable in one click.
 
 ---
 
-## 4. 拡張性仕様 (Extensibility Architecture)
+## 5. Extensibility Architecture
 
-新方式を追加する手順：
-1. `src/types/deep-analysis.ts` に新方式のIDと入出力型を定義。
-2. `src/processor/` に分析ロジックを実装。
-3. `ANALYSIS_METHODS_REGISTRY` に方式定義オブジェクトを1行登録。
-4. UIセレクターに自動反映され、専用コンポーネントが動的にレンダリングされる。
+To register a new diagnostic method:
+1. Define method ID and I/O contracts in `src/types/deep-analysis.ts`.
+2. Implement computational logic in `src/processor/`.
+3. Register the definition object in `ANALYSIS_METHODS_REGISTRY`.
+4. The UI selector automatically includes the new method, dynamically rendering its custom component.

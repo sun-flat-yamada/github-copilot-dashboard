@@ -1,99 +1,98 @@
-# SDD-07: ダッシュボード UI/UX 仕様書 (Dashboard Specification)
-
-- **文書番号**: SPEC-COPILOT-007
-- **ステータス**: Approved / Active
-- **対象バージョン**: 2026.09-LTS
-- **作成日**: 2026-09-10
+[English](07_dashboard_ui_ux_spec.md) | [日本語](07_dashboard_ui_ux_spec.ja.md)
 
 ---
 
-## 1. UI全体レイアウト
+# SDD-07: Dashboard UI/UX Specification
 
-ダッシュボードは、GitHub Pages上で快適に動作するレスポンシブなSingle Page Application (SPA) とする。
+- **Document ID**: SPEC-COPILOT-007
+- **Status**: Approved / Active
+- **Target Version**: 2026.09-LTS
+- **Date**: 2026-09-10
+
+---
+
+## 1. Overall Layout
+
+The dashboard is designed as a responsive Single Page Application (SPA) optimized for execution on GitHub Pages.
 
 ```
 +-----------------------------------------------------------------------------------------------+
-|  GitHub Copilot Analytics [ℹ️ About]   [Mode: API 連携 ▼ (Responsive)]   [🔗 Repo: owner/name] [⚠️] |
+|  GitHub Copilot Analytics [ℹ️ About]   [Mode: Live Metrics ▼ (Responsive)]   [🔗 Repo: owner/name] [⚠️] |
 +-----------------------------------------------------------------------------------------------+
-| [1. 分析スコープ選択]                                                                         |
-|  (●) 日次: [2026-09-09 ▼]   ( ) 月次: [2026-09 ▼]   ( ) 指定期間: [開始〜終了]                 |
+| [1. Analysis Scope Selection]                                                                 |
+|  (●) Daily: [2026-09-09 ▼]   ( ) Monthly: [2026-09 ▼]   ( ) Custom Range: [Start to End]      |
 +-----------------------------------------------------------------------------------------------+
-| [2. 集計・仕訳軸 & 対象グループ選択 (セット配置)]                               |
-|  [● 任意仕訳グループ (部署・PJ)] [Cost Center] [Organization]  [選択: 開発本部 ▼] |
-+-------------------------------------------------------------------------------+
-| [3. KPI サマリーカード]                                                       |
-|  +--------------+  +--------------+  +--------------+  +--------------+       |
-|  | 総費用 (USD) |  | シート総数   |  | アクティブ率 |  | 受諾率       |       |
-|  |  $6,240.00   |  |  160 seats   |  |  86.2% (138) |  |  32.8%        |       |
-|  +--------------+  +--------------+  +--------------+  +--------------+       |
-+-------------------------------------------------------------------------------+
-| [4. コスト最適化アドバイザー (Idle Seat Alert)]                               |
-|  ⚠️ 22席の遊休シート（30日以上未利用）が検出されました (削減可能: $858.00/月)  |
-|  [遊休シート一覧を表示] [対象者CSVエクスポート]                               |
-+-------------------------------------------------------------------------------+
-| [5. チャートエリア (2カラム)]                                                 |
-|  [ 左: グループ別 コスト配賦グラフ ]     [ 右: 利用量・受諾率推移トレンド ]   |
-+-------------------------------------------------------------------------------+
-| [6. ユーザー別利用明細テーブル]                                               |
-|  [検索: _______] [ステータス: すべて▼] [仕訳グループ: すべて▼] [CSVダウンロード] |
-|  - ユーザー名 | 表示名 | 仕訳グループ | Cost Center | Org | 最終利用 | 推計費用 |
-+-------------------------------------------------------------------------------+
+| [2. Aggregation Axis & Target Group Selection (Paired Controls)]                              |
+|  [● Custom Group (Dept/PJ)] [Cost Center] [Organization]  [Selected: Engineering HQ ▼]        |
++-----------------------------------------------------------------------------------------------+
+| [3. KPI Summary Cards]                                                                        |
+|  +--------------+  +--------------+  +--------------+  +--------------+                       |
+|  | Total Spend  |  | Total Seats  |  | Active Rate  |  | Acceptance % |                       |
+|  |  $6,240.00   |  |  160 seats   |  |  86.2% (138) |  |  32.8%        |                       |
+|  +--------------+  +--------------+  +--------------+  +--------------+                       |
++-----------------------------------------------------------------------------------------------+
+| [4. Cost Optimization Advisor (Idle Seat Alert)]                                              |
+|  ⚠️ 22 idle seats detected (inactive 30+ days) (Potential Savings: $858.00/mo)                |
+|  [View Idle Seats] [Export Candidate CSV]                                                     |
++-----------------------------------------------------------------------------------------------+
+| [5. Visual Analytics Grid (2 Columns)]                                                        |
+|  [ Left: Group Cost Allocation Charts ]    [ Right: Usage & Acceptance Trends ]               |
++-----------------------------------------------------------------------------------------------+
+| [6. Per-User Usage Details Table]                                                             |
+|  [Search: _______] [Status: All ▼] [Department: All ▼] [Export CSV]                          |
+|  - Username | Display Name | Dept | Cost Center | Org | Last Active | Estimated Cost          |
++-----------------------------------------------------------------------------------------------+
 ```
 
 ---
 
-## 2. インタラクション仕様
+## 2. Interaction Specifications
 
-### 2.1 分析スコープ切り替え
-- **日次 (Daily)**: 指定した1日のアクティビティ、日割りライセンス費用を表示。
-- **月次 (Monthly)**: 選択月の月間累計費用、MAU、月間コード提案/受諾行数。
-- **指定期間 (Custom Range)**: 過去7日、30日、90日、またはカレンダー指定期間のトレンド。
+### 2.1 Analysis Scope Switching
+- **Daily**: Details activity metrics and prorated daily seat costs for a specific date.
+- **Monthly**: Cumulative monthly expenses, monthly active users (MAU), and suggested/accepted code volume.
+- **Custom Range**: 7-day, 30-day, 90-day, or arbitrary start-and-end calendar range trends.
 
-### 2.2 集計・仕訳軸切り替え (3軸) および対象グループ選択のセット操作
-ページ冒頭のコントロールバーにて、集計軸ボタングループのすぐ近くに対象グループセレクタをセット配置し、表示中のページ全体で集計単位を連動・一本化する：
-1. **任意仕訳グループ (Department / Project Group)**: ユーザー属性テーブルで設定された組織区分。選択ボタンのすぐ隣に対象グループ（すべての任意仕訳グループ、または個別部署・PJ名）のドロップダウンを表示・操作可能。
-2. **GitHub Cost Center**: Enterprise BillingのCost Center別。
-3. **GitHub Organization**: Org別。
-- **ページ全体連動**: ページ冒頭で選択された軸およびグループは、ランキングウィジェットをはじめとする各コンポーネントにシームレスに同期される。
+### 2.2 Aggregation Axis & Target Group Selection (Paired Control Set)
+A paired control bar at the top unifies aggregation across the entire page:
+1. **Custom Allocation Group (Department / Project Group)**: Internal groups configured via user mapping. The target group dropdown sits immediately adjacent to the axis toggle buttons.
+2. **GitHub Cost Center**: Based on GitHub Enterprise Billing Cost Centers.
+3. **GitHub Organization**: Based on GitHub Organization.
+- **Page-Wide Synchronization**: Selections immediately synchronize all child widgets, including the rankings widget and detail tables.
 
-### 2.4 異常検出・エラーハンドリング仕様 (Error & Warning Detection)
-データ取得時（APIレートリミット、権限不足 403、Org/Cost Center API障害等）に異常が検出された場合のUI仕様：
-1. **Header Error/Warning アイコン**:
-   - ヘッダー右側にシンプルな Error（赤色パルス）または Warning（黄色）アイコンと件数バッジを表示。
-   - クリックで「異常検出ログモーダル」をオーバーレイ表示。
-2. **異常検出モーダル (ErrorLogModal)**:
-   - **ウィンドウサイズ**: 画面幅 80% (`w-[80vw]`)、画面高さ 80% (`h-[80vh]`)。
-   - **カードレイアウト**: 1画面に概ね3件程度が視認できるゆったりとしたカード設計。表示件数が多い場合は内部スクロール可能。
-   - **3行省略 & 展開表示**: メッセージは1件あたり最大3行（`line-clamp-3`）で省略表示。「詳細を展開」ボタンをクリックすることで完全なスタックトレースやAPIレスポンスJSONを表示。
-   - **ErrorLog エクスポート**: 「Export Log」ボタンをクリックすると、タイムスタンプ付きの `copilot_error_log_YYYYMMDD-HHmmss.json` をブラウザから即座にダウンロード。
-### 2.5 ユーザー別日次利用トレンド・モデル別内訳ビュー (User Trend Viewer)
-- **ユーザー選択**: ドロップダウンによる検索・選択、およびユーザー明細/ランキングテーブルからのダイレクト遷移。
-- **モデル種類別積み上げ推移 (Stacked Bar + Line)**:
-  - 2026年最新マルチモデル（`Claude 3.7 Sonnet`, `GPT-4o`, `o1`, `Gemini 2.0 Flash`）の日次対話数を積み上げグラフで表示。
-  - モデル利用の全体合計値（Total Chats）の折れ線グラフを重ねて描画。
-- **開発効率指標**: 日次コード提案数・受諾数および受諾率（%）の推移。
+### 2.4 Anomaly Detection & Error Handling (Error & Warning Detection)
+Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint disruptions):
+1. **Header Error/Warning Icon**:
+   - Displays a pulsing red (error) or yellow (warning) badge with count in the header.
+   - Clicking opens the anomaly diagnostics overlay.
+2. **Anomaly Diagnostics Modal (`ErrorLogModal`)**:
+   - **Window Dimensions**: 80% viewport width (`w-[80vw]`), 80% viewport height (`h-[80vh]`).
+   - **Card Layout**: Spacious layout displaying approximately 3 cards per screen, with internal scroll.
+   - **3-Line Truncation & Expansion**: Truncates messages to 3 lines (`line-clamp-3`), with a "Show Details" button for full stack traces and API JSON responses.
+   - **ErrorLog Export**: An "Export Log" button downloads a timestamped `copilot_error_log_YYYYMMDD-HHmmss.json`.
 
-### 2.6 グループ内 使用量ランキング (Group Usage Ranking)
-- **ページ全体連動**: ページ冒頭の集計・仕訳軸および選択グループに完全連動（ウィジェット独自の軸切り替えボタンを排し、画面全体の集計単位を統一）。
-- **ステータス表示**: ウィジェット上部に現在連動している集計軸名と「ページ全体連動」バッジを明示。
-- **3軸対応**: Cost Center、Organization、および任意仕訳グループそれぞれの範囲内で所属メンバーをランキング化。
-- **期間スコープ連動**: 日次指定、月次指定、期間指定の選択スコープに完全連動。
-- **指標ソート**: コード受諾採用数、提案数、AIチャット回数、受諾率、利用料金をワンクリックで切り替え。
+### 2.5 Per-User Daily Trends & Model Breakdown View (`UserTrendViewer`)
+- **User Selection**: Searchable dropdown or direct transition from rankings/details tables.
+- **Stacked Bar & Trend Line by AI Model**:
+  - Daily interaction counts for 2026 frontier models (`Claude 3.7 Sonnet`, `GPT-4o`, `o1`, `Gemini 2.0 Flash`).
+  - Total chat turns overlaid as a line graph.
+- **Productivity Indicators**: Daily suggestions, acceptances, and acceptance rate (%) trends.
 
-### 2.7 Cost Center 予算管理 (Cost Center Budget Cards)
-- 各Cost Centerの「上限Budget額」「無料Budget額」「現在使用済みBudget額」「残余枠」をプログレスバー付きでカード表示。
-- 80%超過で注意（黄色）、100%超過で警告（赤色アニメーション）。全社合計サマリーバーを提供。
+### 2.6 Intra-Group Usage Rankings (`GroupUsageRanking`)
+- **Page-Wide Synchronization**: Synchronizes automatically with the active axis and target group selected at the top.
+- **Active Axis Indication**: Explicitly displays the current axis name and a "Synchronized" indicator badge.
+- **3-Axis Support**: Displays member rankings within the active Cost Center, Organization, or Custom Allocation Group.
+- **Metric Sorting**: One-click sorting by acceptances, suggestions, chat turns, acceptance rate, or incurred cost.
 
-### 2.8 レスポンシブトップヘッダー・生成元リポジトリリンク・Aboutモーダル仕様 (Responsive Header & About Modal)
-1. **生成元 GitHub リポジトリリンク (Fork-Safe)**:
-   - ヘッダー右側に配置された、生成元 GitHub リポジトリへの外部リンク（`<a>` タグ）。
-   - コード内に固定 URL をハードコードせず、実行時生成メタデータ (`indexMeta.repository`) またはアクセス元ホスト名 (`<owner>.github.io/<repo>/`) から動的に URL を解決。フォーク先で `Sync Fork` してもマージ競合が一切生じない。
-   - 大画面では `owner/name`、小画面ではリポジトリ名またはコンパクトアイコンを表示。
-2. **レスポンシブ・モード切替 (Responsive ModeSwitcher)**:
-   - **画面幅が十分広い場合 (`2xl` 以上 / 1536px〜)**: 4 つのモード（API連携、Monthly Usage Report、AIモデル特性レーダー、ディープ分析）をすべて横並びでセグメント表示。
-   - **画面幅が不足する場合 (`2xl` 未満)**: タイトル表示の幅を優先確保するため、現在アクティブなモードのみを表示するコンパクトなセレクタボタンとして配置。ボタンクリックで 4 モードのドロップダウンメニューがオーバーレイ展開し、ワンクリックで他モードへ切り替え可能。
-3. **About モーダル & 作成日時表示**:
-   - `Fork-Safe Storage` バッジは廃止・削除。
-   - `2026.09 LTS` バッジをヘッダータイトル横から削除し、About アイコン（`Info` アイコン）に置き換え。
-   - About アイコンをクリックするとモーダルが展開し、分析ページ作成日時を `yyyy-mm-dd hh:MM:ss` 形式で強調表示。仕様バージョン（2026.09 LTS）、生成元リポジトリ（Fork 属性付き）、データ保持期間、管理座席数などのシステムメタデータを集約表示。
+### 2.7 Cost Center Budget Cards
+- Displays budget limit, free allowance, current expenditure, and remaining capacity with color-coded progress bars.
+- 80% threshold surfaces warning (amber); 100% surfaces alert (animated red), accompanied by a company-wide summary bar.
 
+### 2.8 Responsive Header, Fork-Safe Repository Links, & About Modal
+1. **Fork-Safe Repository Link**:
+   - External link in the header dynamically resolves repository URLs via runtime metadata (`indexMeta.repository`) or host origin (`<owner>.github.io/<repo>/`). Zero hardcoded URLs; guaranteed conflict-free for downstream forks.
+2. **Responsive ModeSwitcher**:
+   - **Wide Screens (`2xl` / 1536px+)**: Displays all 4 modes side-by-side in segmented tabs.
+   - **Narrow Screens (< `2xl`)**: Renders a compact dropdown button showing only the active mode, expanding a menu overlay upon click.
+3. **About Modal & Metadata**:
+   - Info icon (`Info`) in the header opens a modal displaying the exact generation timestamp (`yyyy-mm-dd hh:MM:ss`), specification version (2026.09 LTS), source repository details (with fork attributes), data retention limits, and managed seat totals.

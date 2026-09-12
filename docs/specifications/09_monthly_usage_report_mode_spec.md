@@ -1,35 +1,39 @@
-# SDD-09: GitHub Copilot Monthly Usage Report 分析モード仕様書 (Monthly Usage Report Mode Spec)
-
-- **文書番号**: SPEC-COPILOT-009
-- **ステータス**: Approved / Active
-- **対象バージョン**: 2026.09-LTS
-- **作成日**: 2026-09-11
+[English](09_monthly_usage_report_mode_spec.md) | [日本語](09_monthly_usage_report_mode_spec.ja.md)
 
 ---
 
-## 1. 目的と背景
+# SDD-09: GitHub Copilot Monthly Usage Report Mode Specification
 
-GitHub Copilot のエンタープライズ導入組織において、以下のユースケースが存在する：
-1. **GitHub Enterprise Billing からダウンロードした月次詳細レポートの活用**:
-   GitHub Enterprise / Organization の「Billing & licensing」または「Copilot Access」からエクスポートされる Monthly Usage Report (CSV) には、API では直接取得しづらい日別・ユーザー別の従量課金明細（SKU、消費 AI クレジット、利用モデル、適用割引額など）が含まれる。
-2. **API 権限がない管理者・現場リーダーの分析支援**:
-   Fine-grained PAT や Enterprise Owner 権限を持たない部門管理者でも、手元の CSV ファイルをダッシュボードに投入するだけで、社内仕訳グループごとの利用状況や費用按分を可視化したい。
-3. **Fork 環境における完全無競合なファイル保持**:
-   本リポジトリを社内で Fork して運用する際、蓄積する月次レポートファイルが Upstream（本家）との `Sync Fork` や PR に一切コンフリクト（競合）を起こさないようにする。
+- **Document ID**: SPEC-COPILOT-009
+- **Status**: Approved / Active
+- **Target Version**: 2026.09-LTS
+- **Date**: 2026-09-11
 
 ---
 
-## 2. Fork-Safe ファイル保持アーキテクチャ
+## 1. Purpose & Background
 
-### 2.1 3層ハイブリッド保持方針
-`RULE[GEMINI.md]` および `SDD-05` に完全準拠し、以下の構造でファイルを保持・運用する：
+In enterprise organizations adopting GitHub Copilot, several crucial operational use cases arise:
+1. **Leveraging Detailed Monthly Usage Reports Downloaded from GitHub Enterprise Billing**:
+   The Monthly Usage Report (CSV) exported from GitHub Enterprise / Organization "Billing & licensing" or "Copilot Access" contains granular per-user and per-day metered records (SKUs, consumed AI credits, selected models, discounts) that are difficult to access directly via standard REST APIs.
+2. **Analysis for Team Leads Lacking Organization-Wide API Credentials**:
+   Department leads and team managers without Enterprise Owner privileges or Fine-grained PATs need to visualize cost allocations and usage simply by uploading CSV files.
+3. **Zero-Conflict File Persistence in Forked Environments**:
+   Ensures stored historical report CSVs never conflict with upstream updates during `Sync Fork` or Pull Requests.
+
+---
+
+## 2. Fork-Safe File Architecture
+
+### 2.1 Three-Tier Hybrid Architecture
+In strict compliance with `RULE[GEMINI.md]` and `SDD-05`:
 
 ```
 [Repository Branch Architecture]
 ├── main (Code Only Branch)
 │   ├── src/
 │   ├── dashboard/
-│   └── (※ CSVレポートやデータファイルは一切コミットしない)
+│   └── (Zero CSV reports or data files committed)
 │
 ├── copilot-data (Dedicated Orphan Data Branch)
 │   └── data/
@@ -41,66 +45,64 @@ GitHub Copilot のエンタープライズ導入組織において、以下の�
 │       │   └── reports/
 │       │       ├── 2026-08.json
 │       │       └── 2026-09.json
-│       └── index.json (available_reports メタデータ更新)
+│       └── index.json (available_reports metadata update)
 │
 └── Browser In-Memory (Zero-Commit Direct Dropzone)
-    └── ダッシュボード上で手元の CSV をドラッグ＆ドロップして即時パース・可視化
+    └── Drag-and-drop client-side CSV files for instant in-memory parsing & visualization
 ```
 
-### 2.2 永続ストレージ (`copilot-data` ブランチ)
-- **配置ディレクトリ**: `data/reports/monthly/YYYY-MM/`
-- **配置ファイル名**: `copilot_monthly_usage_YYYY-MM.csv` (または `YYYY-MM.csv`)
-- **イミュータブル運用**: 過去月のレポートは追記型（Append-Only）で保存され、上書きや過去履歴の改変を行わない。
-- **Fork 安全性**: `main` ブランチにはデータが一切含まれないため、下流 Fork リポジトリでの「Sync Fork」や本家への PR でマージコンフリクトが 0% となる。
+### 2.2 Persistent Storage (`copilot-data` Branch)
+- **Directory Path**: `data/reports/monthly/YYYY-MM/`
+- **Filename Convention**: `copilot_monthly_usage_YYYY-MM.csv` (or `YYYY-MM.csv`)
+- **Immutable Operations**: Historical reports are append-only; past files are never overwritten.
+- **Fork Safety**: With `main` remaining 100% free of data files, downstream forks encounter 0% merge conflicts when syncing upstream.
 
-### 2.3 ローカル登録 CLI (`scripts/import-report.ts`)
-管理者・開発者が手元の月次レポート CSV を `copilot-data` ブランチに安全に格納するためのコマンドを提供：
+### 2.3 Local Ingestion CLI (`scripts/import-report.ts`)
+Provides administrators with an automated command to store CSV reports into `copilot-data`:
 ```bash
 npm run report:import -- ./path/to/copilot-report.csv 2026-08
 ```
-このコマンドは一時ディレクトリで `copilot-data` を操作し、作業ブランチ（`main`）に一切差分を残さずにリモートへプッシュする。
+Operates within an isolated temporary directory, cleanly pushing to remote `copilot-data` without leaving staging diffs on `main`.
 
-### 2.4 クライアント直接解析 (Local Dropzone)
-- ダッシュボード SPA 上で手元の CSV ファイルをドラッグ＆ドロップすることで、Web ブラウザの JavaScript メモリ上で即時パース・3軸集計を実施。
-- リポジトリやサーバーへのデータ送信は一切発生しないため、社外秘データや PII の完全なローカル保護（Zero Leakage）を実現。
+### 2.4 Direct Client-Side Parsing (Local Dropzone)
+- Dragging and dropping CSV files directly onto the web dashboard parses and aggregates records in browser JavaScript memory.
+- No network transmission to servers or repositories occurs, ensuring complete zero-leakage protection for proprietary internal data.
 
 ---
 
-## 3. 入力 CSV フォーマット対応仕様 (Smart Header Detection)
+## 3. CSV Format Compatibility & Smart Header Detection
 
-パーサーは、GitHub が提供する代表的なフォーマットを自動認識（Smart Header Detection）してパースする：
+The parser automatically detects and normalizes major GitHub report formats:
 
 ### 3.1 GitHub Enterprise Detailed Usage Report (Metered Usage)
-- `date`: 利用日付 (YYYY-MM-DD)
-- `username` / `login`: GitHub ユーザー名
-- `product`: 製品名 (`copilot`)
-- `sku`: 課金 SKU (`copilot_business`, `copilot_enterprise`, `copilot_premium_request`, `copilot_ai_credit`)
-- `model`: 利用モデル名 (`Claude 3.7 Sonnet`, `GPT-4o`, `o1`, `Gemini 2.0 Flash` 等)
-- `quantity`: 数量（リクエスト数、トークン数等）
-- `unit_type`: 単位 (`requests`, `ai_credits`)
-- `applied_cost_per_quantity`: 単価 (USD)
-- `gross_amount`: 割引前総額 (USD)
-- `discount_amount`: 割引額 (USD)
-- `net_amount`: 請求実額 (USD)
-- `organization`: 所属 Organization 名
-- `cost_center_name`: 紐付く Cost Center 名
+- `date`: Usage date (YYYY-MM-DD)
+- `username` / `login`: GitHub username
+- `product`: Product name (`copilot`)
+- `sku`: Billing SKU (`copilot_business`, `copilot_enterprise`, `copilot_premium_request`, `copilot_ai_credit`)
+- `model`: Model name (`Claude 3.7 Sonnet`, `GPT-4o`, `o1`, `Gemini 2.0 Flash`, etc.)
+- `quantity`: Consumed volume (requests, tokens)
+- `unit_type`: Unit (`requests`, `ai_credits`)
+- `applied_cost_per_quantity`: Unit cost (USD)
+- `gross_amount`: Gross total before discounts (USD)
+- `discount_amount`: Discount total (USD)
+- `net_amount`: Net billed amount (USD)
+- `organization`: Organization name
+- `cost_center_name`: Mapped Cost Center
 
 ### 3.2 Copilot Activity Report
-- `report_time`: レポート生成日時
-- `login`: GitHub ユーザー名
-- `last_authenticated_at`: 最終認証日時
-- `last_activity_at`: 最終アクティビティ日時
-- `last_surface_used`: 最終利用エディタ / サーフェス名
+- `report_time`: Report generation timestamp
+- `login`: GitHub username
+- `last_authenticated_at`: Last authentication timestamp
+- `last_activity_at`: Last activity timestamp
+- `last_surface_used`: Last editor or client surface used
 
-### 3.3 フォールバック & エラーハンドリング
-- 未知の列が存在してもスキップして処理を継続。
-- 必須列（ユーザー名、日付または数量/金額）が欠損している行は警告ログを記録し、可能な限り復旧。
+### 3.3 Fallback & Error Handling
+- Unrecognized columns are gracefully ignored.
+- Rows missing critical keys (username, date, quantity/amount) trigger diagnostic warnings while salvaging valid records.
 
 ---
 
-## 4. 集計データ構造 (`MonthlyReportAggregatedData`)
-
-集計エンジンは、パースされたレコードを以下の構造に集約する：
+## 4. Aggregated Data Structure (`MonthlyReportAggregatedData`)
 
 ```typescript
 export interface MonthlyReportAggregatedData {
@@ -155,17 +157,17 @@ export interface MonthlyReportAggregatedData {
 
 ---
 
-## 5. ダッシュボード UI/UX 仕様
+## 5. Dashboard UI/UX Specifications
 
-1. **ヘッダーモード切り替え (`ModeSwitcher`)**:
-   - `API連携モード (Live Metrics)`: 既存のリアルタイム日次/月次/30日ダッシュボード
-   - `Monthly Usage Report モード (Report Analytics)`: 月次レポート専用ダッシュボード
-2. **レポート選択 & インポートバー**:
-   - 過去の利用可能月（`2026-08`, `2026-09` 等）を即座に切り替え。
-   - 「ローカル CSV インポート」ボタンにより、ドラッグ＆ドロップモーダルを表示。
-3. **5つの分析セクション**:
-   - ① **KPI カード**: 総費用、総リクエスト、アクティブ人数、トップモデル
-   - ② **3軸費用・リクエスト配賦**: 部署 / Cost Center / 組織別の円グラフ・バーグラフ
-   - ③ **モデル別 & SKU別分析**: モデルごとのリクエストシェア・費用比率
-   - ④ **日別推移チャート**: 月内の消費ペースとピーク日
-   - ⑤ **ユーザー別利用明細テーブル**: 検索、フィルタ、並び替え、CSVエクスポート
+1. **Header Mode Switcher (`ModeSwitcher`)**:
+   - `Live Metrics`: Real-time daily, monthly, and custom range API dashboard.
+   - `Monthly Usage Report`: Dedicated view for monthly billing CSV analysis.
+2. **Report Selector & Import Bar**:
+   - Switch rapidly between past reported months (`2026-08`, `2026-09`, etc.).
+   - "Import Local CSV" button opens client-side dropzone modal.
+3. **Five Analytics Sections**:
+   - 1. **KPI Cards**: Net spend, gross spend, total requests, active users, top model.
+   - 2. **3-Axis Allocation**: Donut and bar charts grouped by department, cost center, and organization.
+   - 3. **Model & SKU Breakdown**: Request shares and expenditure percentages.
+   - 4. **Daily Trends Chart**: Spending cadence and peak consumption days across the month.
+   - 5. **Per-User Usage Details Table**: Searchable, filterable, sortable table with CSV export.

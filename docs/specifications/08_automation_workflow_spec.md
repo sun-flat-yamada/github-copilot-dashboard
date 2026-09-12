@@ -1,59 +1,63 @@
-# SDD-08: 自動化ワークフロー仕様書 (Automation & CI/CD)
-
-- **文書番号**: SPEC-COPILOT-008
-- **ステータス**: Approved / Active
-- **対象バージョン**: 2026.09-LTS
-- **作成日**: 2026-09-10
+[English](08_automation_workflow_spec.md) | [日本語](08_automation_workflow_spec.ja.md)
 
 ---
 
-## 1. ワークフロー一覧
+# SDD-08: Automation & CI/CD Workflow Specification
 
-| ワークフロー名 | トリガー | 主な責務 |
+- **Document ID**: SPEC-COPILOT-008
+- **Status**: Approved / Active
+- **Target Version**: 2026.09-LTS
+- **Date**: 2026-09-10
+
+---
+
+## 1. Workflow Definitions
+
+| Workflow Name | Trigger | Core Responsibilities |
 |---|---|---|
-| `copilot-analysis-cron.yml` | 定期実行 (毎日 UTC 00:00) / 手動実行 (`workflow_dispatch`) | 1. APIから最新データ収集<br>2. 属性リゾルバでマッピング注入<br>3. 多次元集計・費用配賦<br>4. `copilot-data` ブランチへ追記コミット<br>5. ダッシュボードビルド & GitHub Pagesデプロイ |
-| `test-and-preview.yml` | Pull Request / `main` へのPush | TypeScript型検査、単体テスト、モックデータによるビルド動作検証 |
+| `copilot-analysis-cron.yml` | Scheduled (Daily UTC 00:00) / Manual (`workflow_dispatch`) | 1. Fetch latest API data<br>2. Inject mapping via Attribute Resolver<br>3. Multidimensional aggregation & billing calculation<br>4. Append commit to `copilot-data` branch<br>5. Build SPA and deploy to GitHub Pages |
+| `test-and-preview.yml` | Pull Request / Push to `main` | TypeScript typecheck, unit tests, and build verification using mock datasets |
 
 ---
 
-## 2. 必要な GitHub Actions Secrets / Variables
+## 2. Required GitHub Actions Secrets & Variables
 
 ### 2.1 Secrets
 - `COPILOT_READ_TOKEN`:
-  - GitHub Enterprise または対象Orgの管理者権限を持つPersonal Access Token (PAT) または GitHub App Private Key。
-  - 必要権限:
-    - Enterprise / Org: `Manage Copilot` (読み取り)
-    - Enterprise: `Billing` (読み取り)
-    - Org: `Members` (読み取り)
-  - ※ モックモード (`MOCK_MODE=true`) 実行時は未設定でも動作可能。
+  - Personal Access Token (PAT) or GitHub App Private Key with administrative read permissions for GitHub Enterprise or target Organizations.
+  - Required Scopes:
+    - Enterprise / Org: `Manage Copilot` (read)
+    - Enterprise: `Billing` (read)
+    - Org: `Members` (read)
+  - *Note*: Optional when running in mock mode (`MOCK_MODE=true`).
 
 ### 2.2 Variables
 - `COPILOT_USER_MAPPING`:
-  - ユーザー名、表示名、仕訳グループ、Cost Center上書き情報のJSON配列文字列。
-  - 公開コミットには一切含めず、GitHubのリポジトリ設定（Settings > Secrets and variables > Actions > Variables）で登録。
-- `COPILOT_ENTERPRISE`: 対象のEnterpriseスラッグ（Enterprise一括集計時）。
-- `COPILOT_ORGS`: 対象のOrganizationスラッグ（カンマ区切り、複数Org対応）。
-- `MOCK_MODE`: 実APIトークンなしでデモ・テスト運用する場合は `true` を指定。
+  - JSON array string defining usernames, display names, departments, and cost center overrides.
+  - Never committed to Git; configured via repository settings (**Settings** > **Secrets and variables** > **Actions** > **Variables**).
+- `COPILOT_ENTERPRISE`: Enterprise slug (for enterprise-wide aggregation).
+- `COPILOT_ORGS`: Comma-separated list of organization slugs (for multi-org setups).
+- `MOCK_MODE`: Set to `true` to run pipelines using simulation data without live API tokens.
 
 ---
 
-## 3. 自動デプロイと権限設定 (GitHub Pages)
+## 3. Automated Deployment & Permission Configuration (GitHub Pages)
 
-リポジトリ設定において、GitHub Pagesの Source を **「GitHub Actions」** に設定する。
+In repository settings, configure GitHub Pages deployment source to **"GitHub Actions"**.
 
 ```yaml
 permissions:
-  contents: write      # copilot-data ブランチへのデータコミット用
-  pages: write         # GitHub Pages へのデプロイ用
-  id-token: write      # GitHub Pages OIDCトークン用
+  contents: write      # Required for committing data to copilot-data branch
+  pages: write         # Required for deploying to GitHub Pages
+  id-token: write      # Required for GitHub Pages OIDC authentication
 ```
 
-### ステップフロー:
-1. チェックアウト (`main`)
-2. Node.js 20 セットアップ & 依存関係インストール (`npm ci`)
-3. `copilot-data` ブランチの履歴取得
-4. データ収集・集計スクリプト実行 (`npm run pipeline:run`)
-5. 新規データファイルを `copilot-data` ブランチへPush
-6. SPAダッシュボードのビルド (`npm run build`)
-7. `actions/upload-pages-artifact@v3` で静的アーティファクトをアップロード
-8. `actions/deploy-pages@v4` でGitHub Pagesへ公開
+### Execution Steps:
+1. Checkout repository (`main`).
+2. Setup Node.js 20 & install dependencies (`npm ci`).
+3. Fetch `copilot-data` branch history.
+4. Execute data pipeline runner (`npm run pipeline:run`).
+5. Push newly generated data files to `copilot-data` branch.
+6. Build SPA dashboard (`npm run build`).
+7. Upload static deployment artifact via `actions/upload-pages-artifact@v3`.
+8. Publish to GitHub Pages via `actions/deploy-pages@v4`.

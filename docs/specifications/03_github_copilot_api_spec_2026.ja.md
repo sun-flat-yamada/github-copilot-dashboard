@@ -2,31 +2,31 @@
 
 ---
 
-# SDD-03: GitHub Copilot API & Data Model Specification (September 2026 Edition)
+# SDD-03: GitHub Copilot API & データモデル仕様書 (2026年9月最新版)
 
-- **Document ID**: SPEC-COPILOT-003
-- **Status**: Approved / Active
-- **Target Version**: 2026.09-LTS
-- **Date**: 2026-09-10
+- **文書番号**: SPEC-COPILOT-003
+- **ステータス**: Approved / Active
+- **対象バージョン**: 2026.09-LTS
+- **作成日**: 2026-09-10
 
 ---
 
-## 1. Overview of GitHub APIs (as of 2026)
+## 1. 2026年時点のGitHub API概要
 
-Defines the official GitHub REST API specifications for GitHub Copilot and Enterprise Billing available as of September 2026.
+2026年9月時点で利用可能なGitHub Copilot関連の公式REST API仕様を定義する。
 
 ---
 
 ## 2. Copilot Metrics API
 
-Retrieves daily aggregated usage metrics (code completion, chat, PR summaries, CLI, etc.) across an entire Enterprise or Organization.
+組織またはEnterprise全体の日次利用メトリクス（コード補完、チャット、PRサマリー、CLI等）を取得する。
 
-### 2.1 Endpoints
+### 2.1 エンドポイント
 - Enterprise: `GET /enterprises/{enterprise}/copilot/metrics`
 - Organization: `GET /orgs/{org}/copilot/metrics`
-- Query Parameters: `since` (ISO 8601 YYYY-MM-DD), `until` (ISO 8601 YYYY-MM-DD)
+- クエリパラメータ: `since` (ISO 8601 YYYY-MM-DD), `until` (ISO 8601 YYYY-MM-DD)
 
-### 2.2 Response Schema (Daily Array)
+### 2.2 レスポンススキーマ (日次配列)
 
 ```json
 [
@@ -88,16 +88,16 @@ Retrieves daily aggregated usage metrics (code completion, chat, PR summaries, C
 
 ---
 
-## 3. Copilot Seats API (Seat Assignments)
+## 3. Copilot Seats API (シート割当)
 
-Retrieves all users assigned a Copilot seat, assignment timestamps, and last activity timestamps.
+シートを付与されているユーザー一覧、付与日、最終アクティビティ日を取得する。
 
-### 3.1 Endpoints
+### 3.1 エンドポイント
 - Enterprise: `GET /enterprises/{enterprise}/copilot/billing/seats`
 - Organization: `GET /orgs/{org}/copilot/billing/seats`
-- Pagination: `per_page=100`, `page=1, 2, ...`
+- ページネーション: `per_page=100`, `page=1, 2, ...`
 
-### 3.2 Response Schema
+### 3.2 レスポンススキーマ
 
 ```json
 {
@@ -127,7 +127,7 @@ Retrieves all users assigned a Copilot seat, assignment timestamps, and last act
         "id": 901
       }
     }
-  ]
+  }
 }
 ```
 
@@ -135,13 +135,13 @@ Retrieves all users assigned a Copilot seat, assignment timestamps, and last act
 
 ## 4. GitHub Enterprise Cost Centers API
 
-Retrieves Cost Centers defined in GitHub Enterprise Billing and their mapped resources.
+GitHub EnterpriseのBilling機能である「Cost Center」一覧とリソース紐付けを取得する。
 
-### 4.1 Endpoints
+### 4.1 エンドポイント
 - `GET /enterprises/{enterprise}/settings/billing/cost-centers`
 - `GET /enterprises/{enterprise}/settings/billing/cost-centers/{cost_center_id}`
 
-### 4.2 Response Schema
+### 4.2 レスポンススキーマ
 
 ```json
 {
@@ -169,10 +169,10 @@ Retrieves Cost Centers defined in GitHub Enterprise Billing and their mapped res
 
 ---
 
-## 5. Billing Model & Pricing Table (September 2026 Baseline)
+## 5. 課金モデル & 料金テーブル (2026年9月基準)
 
-| Plan / Feature | Monthly Price (USD) | Prorated Daily Rate (USD / day) | Notes |
+| プラン / 機能 | 月額単価 (USD) | 日割り計算基準 (USD / 日) | 備考 |
 |---|---|---|---|
-| **Copilot Business** | \$19.00 / seat | \$19.00 / calendar days (e.g., \$0.633 in a 30-day month) | Standard IDE completion & Chat |
-| **Copilot Enterprise** | \$39.00 / seat | \$39.00 / calendar days (e.g., \$1.300 in a 30-day month) | Internal knowledge base, PR summaries, CLI, etc. |
-| **Idle Seat** | Full plan price | Same as above | Contract fees incurred even when inactive for 14/30+ days |
+| **Copilot Business** | \$19.00 / seat | \$19.00 / 暦日数 (例: 30日の月は \$0.633) | 基本IDE補完・チャット |
+| **Copilot Enterprise** | \$39.00 / seat | \$39.00 / 暦日数 (例: 30日の月は \$1.300) | 社内ナレッジ連携、PRサマリー、CLI等 |
+| **遊休シート (Idle Seat)** | 各プランの満額 | 同上 | 過去14日/30日以上未利用でも契約費用が発生 |

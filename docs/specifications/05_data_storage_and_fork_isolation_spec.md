@@ -1,22 +1,26 @@
-# SDD-05: データ永続化 & Fork非競合ストレージ仕様書 (Data Storage & Fork Isolation)
-
-- **文書番号**: SPEC-COPILOT-005
-- **ステータス**: Approved / Active
-- **対象バージョン**: 2026.09-LTS
-- **作成日**: 2026-09-10
+[English](05_data_storage_and_fork_isolation_spec.md) | [日本語](05_data_storage_and_fork_isolation_spec.ja.md)
 
 ---
 
-## 1. Fork競合問題の本質と解決アプローチ
+# SDD-05: Data Storage & Fork Isolation Specification
 
-### 1.1 発生する課題 (The Fork Conflict Problem)
-多くのオープンソースや企業内テンプレートでは、自動化ボット（GitHub Actions）がコミットしたデータファイルが原因で以下の致命的な問題が生じる：
-1. **本家更新の取り込み不能**:
-   Fork先リポジトリで日々の集計データが `main` ブランチにコミットされると、本家（Upstream）のコード更新を取り込む `git merge upstream/main` やGitHub UIの「Sync Fork」ボタンで激しいマージコンフリクトが発生し、同期が失敗する。
-2. **PR時のデータ混入**:
-   Fork先から本家にバグ修正や機能追加のPull Requestを作成する際、蓄積されたデータファイルの差分がPRに含まれてしまい、レビューやマージを妨げる。
+- **Document ID**: SPEC-COPILOT-005
+- **Status**: Approved / Active
+- **Target Version**: 2026.09-LTS
+- **Date**: 2026-09-10
 
-### 1.2 本システムの3層分離アーキテクチャ (Three-Tier Isolation)
+---
+
+## 1. The Fork Conflict Problem & Solution Architecture
+
+### 1.1 The Fork Conflict Problem
+In many open-source projects and enterprise template repositories, automated bots (GitHub Actions) commit generated data files directly to the codebase branch, leading to two severe failures:
+1. **Inability to Pull Upstream Updates**:
+   When downstream forks commit daily analytics data directly to `main`, attempting to merge upstream updates (`git merge upstream/main` or clicking the GitHub UI "Sync Fork" button) triggers extensive merge conflicts, preventing updates.
+2. **Data Pollution in Pull Requests**:
+   When contributing bug fixes or feature additions back to upstream via Pull Request, years or months of accumulated data file diffs are bundled into the PR, rendering code review and merging impossible.
+
+### 1.2 Three-Tier Isolation Architecture
 
 ```
 [Repository Branch Architecture]
@@ -24,63 +28,63 @@
 │   ├── src/
 │   ├── dashboard/
 │   └── .github/workflows/
-│       (※ データファイルは一切コミットしない)
+│       (Zero data files committed)
 │
 ├── copilot-data (Dedicated Orphan Data Branch)
 │   ├── data/
 │   │   ├── raw/YYYY/MM/copilot_metrics_YYYY-MM-DD.json
 │   │   ├── raw/YYYY/MM/copilot_seats_YYYY-MM-DD.json
-│   │   ├── reports/monthly/YYYY-MM/copilot_monthly_usage_YYYY-MM.csv (月次利用レポートCSV)
+│   │   ├── reports/monthly/YYYY-MM/copilot_monthly_usage_YYYY-MM.csv (Monthly Usage Report CSV)
 │   │   ├── processed/daily/YYYY-MM-DD.json
 │   │   ├── processed/monthly/YYYY-MM.json
-│   │   ├── processed/reports/YYYY-MM.json (月次レポート集計済みデータ)
-│   │   └── index.json (利用可能な日付・月・スコープ・レポート一覧メタデータ)
+│   │   ├── processed/reports/YYYY-MM.json (Monthly report precomputed aggregates)
+│   │   └── index.json (Available dates, months, scopes, and report metadata)
 │
 └── GitHub Pages (Direct Artifact Deploy)
-    └── actions/deploy-pages による直接配信 (gh-pages ブランチへのコミット競合なし)
+    └── Direct distribution via actions/deploy-pages (Zero branch conflicts with gh-pages)
 ```
 
 ---
 
-## 2. ストレージディレクトリ構造 & パーティショニング
+## 2. Storage Directory Structure & Partitioning
 
-データはすべて日毎・月毎にイミュータブル（不変・追記型）に配置される。
+All data files are arranged immutably using append-only daily and monthly partitions:
 
 ```
 data/
-├── raw/                              # APIから取得した未加工Rawデータ
+├── raw/                              # Unprocessed raw API responses
 │   └── 2026/
 │       ├── 09/
 │       │   ├── 2026-09-01-metrics.json
 │       │   ├── 2026-09-01-seats.json
 │       │   ├── 2026-09-01-cost-centers.json
 │       │   └── ...
-├── reports/                          # GitHubからエクスポートされた月次利用レポートCSV
+├── reports/                          # Exported GitHub Monthly Usage Report CSVs
 │   └── monthly/
 │       ├── 2026-08/
 │       │   └── copilot_monthly_usage_2026-08.csv
 │       └── 2026-09/
 │           └── copilot_monthly_usage_2026-09.csv
-├── processed/                        # 分析スコープごとに事前計算されたデータ
+├── processed/                        # Precomputed data for dashboard scopes
 │   ├── daily/
-│   │   ├── 2026-09-01.json           # 日次3軸集計・費用配賦済みデータ
+│   │   ├── 2026-09-01.json           # Daily 3-axis aggregated & allocated data
 │   │   └── ...
 │   ├── monthly/
-│   │   ├── 2026-08.json              # 月次集計データ
-│   │   └── 2026-09.json              # 当月累計データ
+│   │   ├── 2026-08.json              # Monthly aggregated data
+│   │   └── 2026-09.json              # Current month-to-date aggregated data
 │   ├── custom/
-│   │   └── latest-30d.json           # 直近30日間の推移トレンドデータ
+│   │   └── latest-30d.json           # Rolling 30-day trend data
 │   └── reports/
-│       ├── 2026-08.json              # 月次レポート集計済みデータ
-│       └── 2026-09.json              # 月次レポート集計済みデータ
-└── index.json                        # 利用可能な期間・レポートメタデータ一覧
+│       ├── 2026-08.json              # Monthly report precomputed data
+│       └── 2026-09.json              # Monthly report precomputed data
+└── index.json                        # Metadata index of available periods and summaries
 ```
 
 ---
 
-## 3. インデックスメタデータ (`index.json`) 仕様
+## 3. Metadata Index (`index.json`) Specification
 
-ダッシュボードSPAが起動時に最初に読み込み、利用可能な「日」「月」「期間」の選択肢を提供するメタデータ。
+The entry metadata file loaded first by the dashboard SPA to provide available dates, months, and default scope parameters:
 
 ```json
 {
@@ -119,18 +123,18 @@ data/
 
 ---
 
-## 4. Gitワークフローと同期プロトコル (Zero Fork Conflict Protocol)
+## 4. Git Workflow & Synchronization (Zero Fork Conflict Protocol)
 
-1. **データ復元フェーズ (`git archive` 抽出)**:
-   - ワークフロー内で `git fetch origin copilot-data` を実行。
-   - 作業ブランチ（`main` 等）のインデックスや HEAD を一切変更しないよう、`git archive origin/copilot-data data | tar -x` によりデータファイルのみを安全に展開。
-   - `main` ブランチの Git ステージング領域へのデータ混入を物理的に 0% に抑制。
-2. **データ保存フェーズ (完全隔離一時リポジトリ方式)**:
-   - メイン作業ツリー（`$GITHUB_WORKSPACE`）のブランチ切り替え（`git checkout`）は一切行わない。
-   - `mktemp -d` で生成した完全独立の一時ディレクトリ（`DATA_WORK_DIR`）にのみ `copilot-data` をクローン/初期化。
-   - 一時ディレクトリ内でコミット & プッシュを完結させた後、一時ディレクトリを破棄。
-   - これにより、ブランチ名のハードコード（`main` / `master` の差異）に起因する障害や、エラー中断時に HEAD が取り残される事故を根絶。
-3. **Fork運用時の無競合保証**:
-   - **Sync Fork 時**: Fork 先の `main` ブランチにはデータファイルが一切存在しないため、Upstream（本家）のコード更新を「Sync Fork」ボタンで 100% Fast-Forward / クリーンマージ可能。
-   - **Pull Request 時**: Fork 先から本家 `main` への PR にデータ差分が 1 行たりとも混入せず、純粋なコード変更のみを提出可能。
-   - **GitHub Pages デプロイ時**: `gh-pages` ブランチへのコミットを行わず `actions/deploy-pages`（Direct Artifact Deployment）を採用しているため、Pages デプロイに伴うブランチ競合も一切生じない。
+1. **Data Restoration Phase (`git archive` Extraction)**:
+   - Run `git fetch origin copilot-data` within the Actions workflow.
+   - Extract exclusively data files via `git archive origin/copilot-data data | tar -x` without touching the working branch (`main`) index or HEAD.
+   - Physically suppresses 0% of data leakage into the `main` branch Git staging area.
+2. **Data Persistence Phase (Isolated Temporary Working Directory)**:
+   - Never execute branch checkout (`git checkout`) in the primary working tree (`$GITHUB_WORKSPACE`).
+   - Clone or initialize `copilot-data` exclusively in a temporary directory (`DATA_WORK_DIR`) created via `mktemp -d`.
+   - Complete commits and pushes within the isolated temporary folder, then discard the directory.
+   - Eliminates crashes caused by hardcoded branch names (`main` vs `master`) and avoids leaving detached HEAD states upon job cancellation.
+3. **Guarantees for Fork Operations**:
+   - **Sync Fork**: Because `main` contains zero data files in downstream forks, clicking "Sync Fork" performs a 100% clean fast-forward merge without conflict.
+   - **Pull Requests**: PRs from forks back to upstream `main` contain only code changes without a single line of data diff.
+   - **GitHub Pages Deployment**: Direct artifact deployment (`actions/deploy-pages`) is used instead of pushing commits to a `gh-pages` branch, eliminating branch collision.
