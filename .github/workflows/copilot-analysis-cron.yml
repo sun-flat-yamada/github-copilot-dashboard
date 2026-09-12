@@ -4,13 +4,15 @@ on:
   schedule:
     # 毎日 UTC 00:00 (JST 09:00) に自動更新
     - cron: '0 0 * * *'
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       mock_mode:
         description: 'Run with 2026.09 simulated mock data'
         required: false
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: write      # copilot-data 独立ブランチへのデータ蓄積コミット用
@@ -64,7 +66,7 @@ jobs:
           COPILOT_ENTERPRISE: ${{ vars.COPILOT_ENTERPRISE }}
           COPILOT_ORGS: ${{ vars.COPILOT_ORGS }}
           COPILOT_USER_MAPPING: ${{ vars.COPILOT_USER_MAPPING || secrets.COPILOT_USER_MAPPING }}
-          MOCK_MODE: ${{ inputs.mock_mode || vars.MOCK_MODE || 'false' }}
+          MOCK_MODE: ${{ inputs.mock_mode || vars.MOCK_MODE || (secrets.COPILOT_READ_TOKEN == '' && 'true' || 'false') }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
           IS_FORK: ${{ github.event.repository.fork }}
@@ -106,6 +108,9 @@ jobs:
 
           cd "$GITHUB_WORKSPACE"
           rm -rf "$DATA_WORK_DIR"
+
+      - name: Update AI Model Benchmarks Dataset
+        run: npm run benchmark:update
 
       - name: Build Dashboard SPA
         env:
