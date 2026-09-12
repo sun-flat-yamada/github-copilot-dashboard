@@ -97,6 +97,26 @@ const LATEST_BENCHMARK_RECORDS: RawModelEntry[] = [
     },
   },
   {
+    id: 'gpt-4o-mini',
+    name: 'GPT-4o mini',
+    vendor: 'OpenAI',
+    model_family: 'GPT-4',
+    color: '#14b8a6', // Teal
+    is_copilot_native: true,
+    release_date: '2024-07-18',
+    raw_metrics: {
+      swe_bench_verified: 41.2,
+      humaneval_plus: 85.4,
+      aime_2024: 63.5,
+      gpqa_diamond: 52.0,
+      arena_coding_elo: 1315,
+      output_speed_tps: 145,
+      input_cost_per_m: 0.15,
+      output_cost_per_m: 0.60,
+      context_window_k: 128,
+    },
+  },
+  {
     id: 'o1',
     name: 'OpenAI o1 (Full Reasoning)',
     vendor: 'OpenAI',

@@ -317,6 +317,16 @@ export function evaluateModel(
       'オープンアーキテクチャながら o1 に迫る数学・論理推論力を実証した最先端推論モデル。';
     copilot_usage_guidance =
       '【参考比較】プロプライエタリモデル（o1/Claude 3.7）との性能比較・ベンチマーク対照用。高難度ロジックでの推論性能が際立っています。';
+  } else if (modelId.includes('gpt-4o-mini')) {
+    recommended_for.push(
+      '軽量・高速なインライン補完・単体テスト生成',
+      'シンプルな関数実装や定型コードの自動補正',
+      '低コスト・大量バッチ処理や日常的なサジェスト'
+    );
+    summary_verdict =
+      'GPT-4o の基本精度を維持しながら超低価格・高スループットを実現した軽量高速モデル。';
+    copilot_usage_guidance =
+      '【推奨シーン】頻繁なインライン提案や手軽なコード説明、トークン消費を抑えたい社内定常業務に最適。';
   } else {
     // GPT-4o / General
     recommended_for.push(
