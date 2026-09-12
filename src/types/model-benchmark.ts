@@ -41,6 +41,12 @@ export interface BenchmarkRawMetrics {
   input_cost_per_m: number; // USD per 1M input tokens
   output_cost_per_m: number; // USD per 1M output tokens
   context_window_k: number; // Context Window (in K tokens, e.g. 128, 200, 1000, 2000)
+  context_window_display?: string; // 人間可読表記 (例: "272K (Max 1M)", "1M", "128K")
+  cached_input_cost_per_m?: number; // キャッシュ入力単価 (USD / 1M tokens)
+  cache_write_cost_per_m?: number; // キャッシュ書き込み単価 (USD / 1M tokens)
+  long_context_threshold_k?: number; // 長文コンテキストしきい値 (例: 200, 272)
+  long_context_input_cost_per_m?: number; // 長文コンテキスト入力単価 (USD / 1M tokens)
+  long_context_output_cost_per_m?: number; // 長文コンテキスト出力単価 (USD / 1M tokens)
 }
 
 export interface RadarScores {
@@ -80,14 +86,34 @@ export interface ModelEvaluation {
   buzz?: EngineerBuzz;
 }
 
+export type ModelVendor =
+  | 'Anthropic'
+  | 'OpenAI'
+  | 'Google'
+  | 'Microsoft'
+  | 'xAI'
+  | 'Moonshot AI'
+  | 'DeepSeek'
+  | 'Other';
+
+export type ModelReleaseStatus = 'GA' | 'Preview' | 'LTS' | 'Utility' | 'Retired';
+
+export interface ModelExtendedCapabilities {
+  has_1m_context: boolean; // 100万トークンコンテキストウィンドウ対応
+  has_configurable_reasoning: boolean; // 構成可能推論レベル対応
+  tier?: 'Lightweight' | 'Versatile' | 'Powerful'; // Copilot 公式カテゴリ
+}
+
 export interface ModelBenchmarkProfile {
-  id: string; // e.g. 'claude-3-7-sonnet', 'gpt-4o', 'o1'
-  name: string; // 'Claude 3.7 Sonnet'
-  vendor: 'Anthropic' | 'OpenAI' | 'Google' | 'DeepSeek' | 'Other';
-  model_family: string; // 'Claude 3.7', 'GPT-4', 'o-series', 'Gemini 2.x'
+  id: string; // e.g. 'claude-sonnet-5', 'gpt-5-6-sol', 'gpt-4o'
+  name: string; // 'Claude Sonnet 5', 'GPT-5.6 Sol'
+  vendor: ModelVendor;
+  model_family: string; // 'Claude 5', 'GPT-5.6', 'Gemini 3.x'
   color: string; // Hex color code for radar & charts
   is_copilot_native: boolean; // GitHub Copilot公式対応モデルかどうか
   release_date: string;
+  release_status?: ModelReleaseStatus;
+  capabilities?: ModelExtendedCapabilities;
   raw_metrics: BenchmarkRawMetrics;
   radar_scores: RadarScores;
   evaluation: ModelEvaluation;

@@ -4,7 +4,10 @@ import {
   EngineerBuzz,
   ModelBenchmarkProfile,
   ModelEvaluation,
+  ModelExtendedCapabilities,
+  ModelReleaseStatus,
   ModelSuitabilityTag,
+  ModelVendor,
   RadarAxisMeta,
   RadarScores,
 } from '../types/model-benchmark';
@@ -292,16 +295,126 @@ export function evaluateModel(
   }
 
   // Model-specific tailored guidance
-  if (modelId.includes('claude-3-7') || modelId.includes('claude-3-5')) {
+  if (modelId.includes('gpt-6') || modelId.includes('astra')) {
+    recommended_for.push(
+      '超難関アルゴリズム・未知のアーキテクチャ設計・自動定理証明',
+      '全社規模の大規模モノレポ横断リファクタリング',
+      '人間のシニアエンジニアでも難解な極限バグの根本原因究明'
+    );
+    summary_verdict =
+      'OpenAIの次世代最高峰フロンティアモデル。極限の推論チェーンとSWE-bench新記録を誇り、最重要タスクで比類なき威力を発揮。';
+    copilot_usage_guidance =
+      '【推奨シーン】難関プロジェクトのアーキテクチャ設計、極めて複雑なデッドロックやメモリ破壊の究明。コストが高いため、通常の日常補完ではなく高難度勝負どころで投入するのがベストです。';
+  } else if (modelId.includes('claude-sonnet-5') || modelId.includes('claude-5-sonnet')) {
+    recommended_for.push(
+      '全社標準の次世代IDEペアプログラミング・Agent自律改修',
+      '複数ファイルにまたがるTypeScript/Pythonの設計整合性レビュー',
+      'テスト駆動開発（TDD）での精密テストコード・実装一括生成'
+    );
+    summary_verdict =
+      '驚異的なSWE-benchスコアと$2.00/$10.00という圧倒的低価格を両立した次世代の絶対的主力モデル。1Mトークン窓と構成可能推論に完全対応。';
+    copilot_usage_guidance =
+      '【推奨シーン】日常のIDE ChatからAgentモードでの大規模改修まで、全社デフォルトとして最も費用対効果が高い推奨フラッグシップです。';
+  } else if (modelId.includes('claude-opus-5') || modelId.includes('claude-fable')) {
+    recommended_for.push(
+      'エンタープライズ領域の厳格なセキュリティ・コンプライアンス検証',
+      'クリティカルなインフラ・金融・基幹システムのコード設計',
+      '長大な仕様書・要件定義からのフルスタック自動実装'
+    );
+    summary_verdict =
+      'Anthropicが誇る超重厚推論モデル。安全性基準と深層コンテキスト理解において業界最高水準の堅牢性を実現。';
+    copilot_usage_guidance =
+      '【推奨シーン】セキュリティ監査、ミッションクリティカルな基幹システム改修。FableはEnterprise Frontier Safeguards（EFS）対応の最高位モデルです。';
+  } else if (modelId.includes('gpt-5-6-sol') || modelId.includes('sol')) {
+    recommended_for.push(
+      'OpenAIエコシステムにおける最上位コーディング＆推論タスク',
+      '並行処理・非同期イベント駆動アーキテクチャの厳密な型付け',
+      '複数ステップに及ぶ自律エージェントのゴール遂行'
+    );
+    summary_verdict =
+      'OpenAI GPT-5.6世代のPowerful主力。深い思考力と高速なコード生成スピードを高度に融合。';
+    copilot_usage_guidance =
+      '【推奨シーン】VS Code Copilotでの複雑な機能実装、CLIでの自律タスク実行。長文コンテキスト（>272K）にもシームレスに対応。';
+  } else if (modelId.includes('gpt-5-6-terra') || modelId.includes('terra')) {
+    recommended_for.push(
+      '日々のWebアプリ・API・データベース処理の総合的開発',
+      'リファクタリングとプルリクエスト差分の自動要約・解説',
+      '手軽な仕様相談とペアプログラミング'
+    );
+    summary_verdict =
+      'GPT-5.6世代のVersatileバランス型。高品質なコード生成と親切な解説をリーズナブルな単価で両立。';
+    copilot_usage_guidance =
+      '【推奨シーン】開発チーム全体の常用モデルとして最適。スピードと精度のバランスに優れます。';
+  } else if (modelId.includes('gpt-5-6-luna') || modelId.includes('luna') || modelId.includes('gpt-5-4-nano')) {
+    recommended_for.push(
+      'インラインの爆速コード提案（Next Edit Suggestion）',
+      '定型関数の生成、コメント・JSDoc・型アノテーションの自動補正',
+      '大量ドキュメントの即時校正・軽量要約'
+    );
+    summary_verdict =
+      '$0.20/$1.20という極限の低コストと超高速レスポンスを誇る超軽量モデル。日常的なタイピングを邪魔しません。';
+    copilot_usage_guidance =
+      '【推奨シーン】インライン補完や即時サジェスト、バックグラウンド処理。コストを全く気にせず常時稼働させられます。';
+  } else if (modelId.includes('gpt-5-3-codex') || modelId.includes('codex')) {
+    recommended_for.push(
+      'GitHub Copilotの長期サポート（LTS）基準での安定運用',
+      '既存コードベースの破壊的変更を避けた安全なバグ修正',
+      'ポリシー統括されたエンタープライズ開発環境'
+    );
+    summary_verdict =
+      'GitHub Copilotのフォールバック・LTSモデルとして認定された確固たる実績を持つコーディング特化モデル。';
+    copilot_usage_guidance =
+      '【推奨シーン】他モデルが利用制限された際のフォールバック先、および長期間変更されない安定した動作が要求されるCI/CDエージェント。';
+  } else if (modelId.includes('gemini-3') || modelId.includes('gemini-3-8') || modelId.includes('gemini-3-7') || modelId.includes('gemini-3-6')) {
+    recommended_for.push(
+      '100万トークンを活かしたリポジトリ全体・ドキュメント全体の丸ごと分析',
+      '超高速レスポンスによるリアルタイム・ペアプログラミング',
+      'プロモーション価格（$0.75/$3.75）を活かした大量バッチ・全社日常利用'
+    );
+    summary_verdict =
+      '1Mトークン極大コンテキストと電光石火のTPSを兼ね備えた、現在最もコストパフォーマンスが高いVersatileモデル群。';
+    copilot_usage_guidance =
+      '【推奨シーン】巨大なプロジェクト全体のソースコードを一網打尽にしてマイグレーションやリグレッション調査を行う場面で最強の威力を発揮します。';
+  } else if (modelId.includes('mai-code')) {
+    recommended_for.push(
+      'Microsoft Azure・C#・.NET・TypeScriptエコシステムの開発',
+      '軽量・高速なインライン提案と定型コード補正',
+      '低コストでの日常的なコードスニペット生成'
+    );
+    summary_verdict =
+      'マイクロソフトが開発した軽量・高効率なコーディング特化Flashモデル。';
+    copilot_usage_guidance =
+      '【推奨シーン】Microsoftスタックを中心とする開発チームでの日常的なインラインコードサジェストに最適です。';
+  } else if (modelId.includes('grok')) {
+    recommended_for.push(
+      '率直で歯切れの良い技術的アドバイスとペアプロ',
+      '最新トレンドやエッジケースに対する率直な意見交換',
+      'Python/Rust等のスクリプト実装と最適化'
+    );
+    summary_verdict =
+      'xAIによる高知能モデル。最新知識の取り込みと論理的で飾らない回答スタイルが特徴。';
+    copilot_usage_guidance =
+      '【推奨シーン】技術選定のブレインストーミングや、回りくどい解説を省いて要点だけ即座に知りたい場合に向いています。';
+  } else if (modelId.includes('kimi')) {
+    recommended_for.push(
+      '長文プログラミングコンテキストの把握と複数ファイル探索',
+      '数学的アルゴリズム・競技プログラミングの難問解法',
+      '多言語（特にアジア圏言語・英語）の混在コードベース解析'
+    );
+    summary_verdict =
+      'Moonshot AIによる高推論・長文対応モデル。K3は1Mコンテキストと高難度推論を両立。';
+    copilot_usage_guidance =
+      '【推奨シーン】推論能力と長文コンテキストの両方が求められる複合タスクに有効です。';
+  } else if (modelId.includes('claude-3-7') || modelId.includes('claude-3-5') || modelId.includes('claude-sonnet-4')) {
     recommended_for.push(
       'アーキテクチャ設計・大規模リファクタリング',
       '複数ファイルにまたがる複雑な依存関係の解消',
       'GitHub Pull Requestの精密コードレビュー'
     );
     summary_verdict =
-      'コーディング精度・SWE-benchにおいて業界屈指の実績を誇る最上位開発アシスタント。ハイブリッド推論により難解な不具合原因を深掘り特定可能。';
+      'コーディング精度・SWE-benchにおいて業界屈指の実績を誇る定番開発アシスタント。安定感抜群の実績機。';
     copilot_usage_guidance =
-      '【推奨シーン】IDE Chatでの複雑な機能実装、Agentモードでの複数ファイル改修。単なる一行補完よりも設計相談・精密リファクタリングで最大の真価を発揮します。';
+      '【推奨シーン】IDE Chatでの複雑な機能実装、Agentモードでの複数ファイル改修。';
   } else if (modelId.includes('o1') || modelId.includes('o3-mini')) {
     recommended_for.push(
       '競技プログラミング・難関数学・アルゴリズム設計',
@@ -311,64 +424,100 @@ export function evaluateModel(
     summary_verdict =
       'Reasoning（思考チェーン）に特化した超高精度推論モデル。アルゴリズムや数学的証明で圧倒的な強みを発揮。';
     copilot_usage_guidance =
-      '【推奨シーン】難解なバグ調査、アルゴリズムの正当性検証。応答速度より正解率を極限まで追求したい場面で Copilot Chat モデルとして選択してください。';
-  } else if (modelId.includes('gemini-2-0-flash') || modelId.includes('gemini-flash')) {
-    recommended_for.push(
-      '高速なインラインコード補完・関数実装',
-      '巨大ドキュメントやリポジトリ全体の横断検索と要約',
-      '日常的な定型タスク・テストコード大量自動生成'
-    );
-    summary_verdict =
-      '圧倒的なレスポンス速度と1M超のコンテキスト長を両立したコスト効率最強モデル。作業フローを途切れさせない快適性が特徴。';
-    copilot_usage_guidance =
-      '【推奨シーン】タイピングと同期する高速コード補完、大量のテストケース作成、全社デフォルトとしての日常的利用。コスト抑制と開発効率向上を両立できます。';
-  } else if (modelId.includes('gemini-2-5-pro') || modelId.includes('gemini-1-5-pro')) {
-    recommended_for.push(
-      'リポジトリ全体をまるごと読み込んだ巨大コードベース解析',
-      'マルチモーダル設計書・UI仕様書からのコード書き起こし',
-      '多言語マイグレーションと大規模リグレッション調査'
-    );
-    summary_verdict =
-      '最大2Mトークンの極大コンテキストと卓越した推論力を兼ね備えるマルチモーダル特化フロンティアモデル。';
-    copilot_usage_guidance =
-      '【推奨シーン】プロジェクト全体のソースコードや設計書を一括で読み込ませて分析・マイグレーションを行うユースケース。';
-  } else if (modelId.includes('deepseek-r1')) {
-    recommended_for.push(
-      '高度な論理推論・アルゴリズム検証（オープンウェイト最高峰）',
-      'オンプレミス・プライベート環境での自己ホスト推論検討',
-      '数学・競プロ・高難度ロジックの解法探索'
-    );
-    summary_verdict =
-      'オープンアーキテクチャながら o1 に迫る数学・論理推論力を実証した最先端推論モデル。';
-    copilot_usage_guidance =
-      '【参考比較】プロプライエタリモデル（o1/Claude 3.7）との性能比較・ベンチマーク対照用。高難度ロジックでの推論性能が際立っています。';
-  } else if (modelId.includes('gpt-4o-mini')) {
-    recommended_for.push(
-      '軽量・高速なインライン補完・単体テスト生成',
-      'シンプルな関数実装や定型コードの自動補正',
-      '低コスト・大量バッチ処理や日常的なサジェスト'
-    );
-    summary_verdict =
-      'GPT-4o の基本精度を維持しながら超低価格・高スループットを実現した軽量高速モデル。';
-    copilot_usage_guidance =
-      '【推奨シーン】頻繁なインライン提案や手軽なコード説明、トークン消費を抑えたい社内定常業務に最適。';
+      '【推奨シーン】難解なバグ調査、アルゴリズムの正当性検証。応答速度より正解率を極限まで追求したい場面で選択してください。';
   } else {
-    // GPT-4o / General
+    // General / GPT-4o / Other
     recommended_for.push(
       '日常的なアプリケーション開発・API実装',
       'MarkdownドキュメントやREADME、仕様書の自動作成',
       '日常的なペアプログラミングと一般的な質疑応答'
     );
     summary_verdict =
-      '速度・品質・マルチモーダル対応のバランスが極めて優れた標準的フロンティアモデル。幅広いタスクで安定した性能を発揮。';
+      '速度・品質・マルチモーダル対応のバランスが優れた標準的モデル。幅広いタスクで安定した性能を発揮。';
     copilot_usage_guidance =
-      '【推奨シーン】IDEでの汎用コーディング支援、日常的なチャット相談。あらゆる開発言語に対して堅実で安定したサポートを提供します。';
+      '【推奨シーン】IDEでの汎用コーディング支援、日常的なチャット相談。あらゆる開発言語に対して堅実なサポートを提供します。';
   }
 
   // エンジニアコミュニティでの生の声・SNSの噂
   let buzz: EngineerBuzz;
 
-  if (modelId.includes('claude-3-7')) {
+  if (modelId.includes('gpt-6') || modelId.includes('astra')) {
+    buzz = {
+      headline: '知能指数の天井を突き破った究極兵器。難攻不落のバグが一瞬で解ける衝撃',
+      community_sentiments: [
+        '他のどのモデルも解けなかった複雑な非同期レースコンディションを1回の推論で言い当てた',
+        '数学オリンピックレベルの難問や独自プロトコル実装を一切のハルシネーションなく完遂する',
+        'SWE-bench 80%超えは伊達じゃない。人間のプリンシパルエンジニアと議論している感覚',
+      ],
+      caution_rumor: 'クレジット消費が圧倒的。日常の些細な質問で乱用すると月末に上長から呼び出されるという噂。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+    };
+  } else if (modelId.includes('claude-sonnet-5') || modelId.includes('claude-5-sonnet')) {
+    buzz = {
+      headline: 'コスパと精度の完全勝利。全社デフォルトにしない理由が見当たらない神モデル',
+      community_sentiments: [
+        'Claude 3.7の賢さを完全に受け継ぎつつ、価格が下がってレスポンスが格段に軽快になった',
+        'TypeScriptの型パズルやReactコンポーネント設計の綺麗さは相変わらず業界最高峰',
+        '100万トークン対応なので、巨大リポジトリ全体をAgentに投げても破綻しない',
+      ],
+      caution_rumor: '便利すぎてこれ以外のモデルを使う気にならなくなる「Sonnet 5依存症」が多発中との噂。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+    };
+  } else if (modelId.includes('gpt-5-6-sol') || modelId.includes('sol')) {
+    buzz = {
+      headline: 'OpenAIの真骨頂。Agentモードでコードを自律生成させるときの安心感が抜群',
+      community_sentiments: [
+        'VS CodeのAgentモードでファイル横断改修させるときの成功率が跳ね上がった',
+        'テストの実行結果を見て自律的にリトライ・修正するループの粘り強さが素晴らしい',
+        '推論速度と正答率のバランスが非常によくチューニングされている',
+      ],
+      caution_rumor: 'キャッシュ書き込みコストがあるため、同じセッションを上手に再利用しないとコスト効率が落ちるという噂。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+    };
+  } else if (modelId.includes('gpt-5-6-terra') || modelId.includes('terra')) {
+    buzz = {
+      headline: '日常開発の絶対的ワークホース。どんな指示もそつなくこなす万能優等生',
+      community_sentiments: [
+        '入力$2.00/出力$12.00でこの精度は破格。日々の開発相談ならこれ1本で十分',
+        '冗長すぎず簡潔で分かりやすいコード解説をしてくれるので読みやすい',
+        '新機能追加時のボイラープレート作成やCRUD実装が爆速で終わる',
+      ],
+      caution_rumor: '超難関アルゴリズムや数学的証明ではSolやAstraに一歩譲るので使い分けが必要との噂。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+    };
+  } else if (modelId.includes('gpt-5-6-luna') || modelId.includes('luna')) {
+    buzz = {
+      headline: '空気のように動く超光速補完。入力した瞬間に次の行がそこにある快感',
+      community_sentiments: [
+        'とにかく速い。キーボードを打つリズムを1ミリも阻害しないリアルタイム感',
+        '100万トークンあたり20セントというタダ同然の価格設定がありがたい',
+        '定型コードやテストのパターン埋めならこれで十分すぎるほど正確',
+      ],
+      caution_rumor: '少しでも複雑なビジネスロジックを任せると凡ミスが増えるので、設計相談には向かないという噂。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+    };
+  } else if (modelId.includes('gemini-3') || modelId.includes('gemini-3-8') || modelId.includes('gemini-3-7') || modelId.includes('gemini-3-6')) {
+    buzz = {
+      headline: '1Mコンテキストの超高速モンスター。プロモ価格（$0.75/$3.75）で業界を席巻',
+      community_sentiments: [
+        'プロジェクトの全コードとドキュメントを丸ごと食わせても一瞬で返事が返ってくる',
+        'プロモ価格が安すぎてチーム全員でガンガン長文プロンプトを投げられる',
+        'コーディング性能が世代を追うごとに着実に底上げされている',
+      ],
+      caution_rumor: 'たまにライブラリのバージョン差異を混同することがあるので、インポート文は目視確認が必要との噂。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+    };
+  } else if (modelId.includes('kimi-k3') || modelId.includes('kimi')) {
+    buzz = {
+      headline: 'オープン＆パワフルな新興勢力。数学・競プロ・長文解析で頭角を現す',
+      community_sentiments: [
+        '1Mコンテキストに対応しており、複雑なアルゴリズムの思考がかなり深い',
+        'コストパフォーマンスが高く、プロプライエタリ大手に匹敵する推論力',
+      ],
+      caution_rumor: '英語や中国語のコードベースに比べて日本語コメントのニュアンスに若干のクセがあるという噂。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+    };
+  } else if (modelId.includes('claude-3-7')) {
     buzz = {
       headline: 'リファクタリングの神。ただしThinking全開時はトークン消費と回答長に注意',
       community_sentiments: [
@@ -376,7 +525,7 @@ export function evaluateModel(
         'TypeScriptの複雑な型パズルやジェネリクスを迷いなく一発で綺麗に解決する',
         'テストが失敗した原因を自己反省（CoT）しながら修正してくれる頼もしさが異常',
       ],
-      caution_rumor: '思考が深すぎて回答が長大になりがち。調子に乗って使いまくるとCopilotのクォータ上限が一瞬で溶けるという噂。',
+      caution_rumor: '思考が深すぎて回答が長大になりがち。調子に乗って使いまくるとクォータ上限が一瞬で溶けるという噂。',
       source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
     };
   } else if (modelId.includes('claude-3-5')) {
@@ -396,76 +545,29 @@ export function evaluateModel(
       community_sentiments: [
         '何時間も悩んだ並行処理のデッドロックやメモリリーク原因を一発で見抜いた',
         'アルゴリズムの正当性検証やエッジケースの指摘では他の追随を許さない',
-        'アーキテクチャの境界線やドメイン設計の壁打ち相手として最も頼れる',
       ],
-      caution_rumor: '最初の1文字が出るまで20〜40秒平気で待たされる。インライン補完感覚で呼び出すとフリーズしたかと錯覚する。',
+      caution_rumor: '最初の1文字が出るまで20〜40秒待たされる。インライン補完感覚で呼ぶとフリーズしたかと錯覚する。',
       source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
     };
   } else if (modelId.includes('o3-mini')) {
     buzz = {
-      headline: 'o1の頭脳を高速・低価格化。実務で常用できる推論モデルの最高傑作',
+      headline: 'o1の頭脳を高速・低価格化。実務で常用できる推論モデルの傑作',
       community_sentiments: [
         'o1並みの鋭い思考チェーンを展開するのに待たされ感が劇的に少なくサクサク動く',
-        '単価が安いため、チーム内で推論機能を気軽にガンガン使わせやすい',
         '競プロレベルの難問やエッジケースのテストケース出しで鬼のように活躍する',
       ],
       caution_rumor: 'Reasoning Effort を High にするとたまに考えすぎて長文の推論迷路に入るという噂。',
       source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
     };
-  } else if (modelId.includes('gemini-2-0-flash')) {
-    buzz = {
-      headline: '光速のレスポンスと1M窓。開発者のタイプ速度を置き去りにする爆速補完',
-      community_sentiments: [
-        'とにかくレスポンスが速すぎて脳の思考速度と同じスピードでコードが出てくる',
-        '1Mトークンのコンテキストが使えるので、設計書とログファイルを丸ごと放り込める',
-        '大量のユニットテストを一気に自動生成させるときのスピード感が快感',
-      ],
-      caution_rumor: 'たまに実在しないメソッドや非推奨APIを平然とした顔で書いてくるので確認必須という噂。',
-      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
-    };
-  } else if (modelId.includes('gemini-2-5-pro')) {
-    buzz = {
-      headline: '2Mコンテキストの超巨大胃袋。プロジェクト全体の過去ログも丸ごと記憶',
-      community_sentiments: [
-        '200万トークンはもはや異次元。リポジトリの全コードと過去のIssue履歴を全部読んで回答してくれる',
-        '手書きのシステム構成図やFigmaからコードを起こすマルチモーダル精度が高い',
-        'SWE-benchスコアも急上昇しており、長文解析とコーディングがハイレベルで融合',
-      ],
-      caution_rumor: '巨大プロンプトを投げるとコンテキスト処理にやや時間がかかるため、短文タスクにはFlashの方が快適。',
-      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
-    };
-  } else if (modelId.includes('deepseek-r1')) {
-    buzz = {
-      headline: 'オープンウェイト界の革命児。o1級の推論力を自前ホストできる衝撃',
-      community_sentiments: [
-        'オープンウェイトなのに数学・推論が本当にo1とタメを張るレベルで強い',
-        '思考プロセス（<think>タグ）が丸見えなので、AIがどう悩んで結論を出したか観察できる',
-        '推論コストの常識を破壊し、各社の価格競争の引き金を引いた立役者',
-      ],
-      caution_rumor: '思考の途中で中国語が混ざったり、エージェント的なツール呼び出し（Function calling）がたまに不安定という噂。',
-      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
-    };
-  } else if (modelId.includes('gpt-4o-mini')) {
-    buzz = {
-      headline: '爆安・爆速の超軽量ギア。単純作業やインライン提案をノーコスト感覚で回す',
-      community_sentiments: [
-        '単価が圧倒的に安く、大量の定型ファイル生成やログ解析スクリプト作成に最適',
-        'インラインサジェストの反応が機敏で引っかかりがない',
-        '軽い質問やタイポ修正ならこれで一瞬で片付く',
-      ],
-      caution_rumor: '複雑なロジックを頼むと途端に雑な実装になったり知らんライブラリを hallucinate しがちという噂。',
-      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
-    };
   } else {
     // GPT-4o / General
     buzz = {
-      headline: '頼れる社内標準オールラウンダー。速度とバランスの良さで日常を支える',
+      headline: '頼れる標準オールラウンダー。速度とバランスの良さで日常を支える',
       community_sentiments: [
         'Markdownドキュメントの整理やAPI仕様書の作成、日常スクリプトならこれで十分',
         'レスポンスが早くてテンポ良く対話できるためペアプロのテンポが崩れない',
-        '画像（UIモックやエラー画面のスクショ）を貼り付けての質問に対する理解力が高い',
       ],
-      caution_rumor: '最近の超難関コーディングタスクではClaude 3.7やo1と比べるとややあっさりした実装になりがちとの噂。',
+      caution_rumor: '最新世代モデルと比べると複雑なコードベースでの自律解決力に差が出始めているとの噂。',
       source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
     };
   }
@@ -489,12 +591,14 @@ export function evaluateModel(
 export function createModelProfile(
   id: string,
   name: string,
-  vendor: 'Anthropic' | 'OpenAI' | 'Google' | 'DeepSeek' | 'Other',
+  vendor: ModelVendor,
   model_family: string,
   color: string,
   is_copilot_native: boolean,
   release_date: string,
-  raw: BenchmarkRawMetrics
+  raw: BenchmarkRawMetrics,
+  release_status: ModelReleaseStatus = 'GA',
+  capabilities?: ModelExtendedCapabilities
 ): ModelBenchmarkProfile {
   const radar_scores = computeRadarScores(raw);
   const evaluation = evaluateModel(id, raw, radar_scores);
@@ -507,6 +611,8 @@ export function createModelProfile(
     color,
     is_copilot_native,
     release_date,
+    release_status,
+    capabilities,
     raw_metrics: raw,
     radar_scores,
     evaluation,
@@ -518,6 +624,45 @@ export function createModelProfile(
  */
 export function normalizeModelId(rawName: string): string {
   const s = rawName.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  // 2026 最新 OpenAI
+  if (s.includes('gpt6') || s.includes('astra')) return 'gpt-6-astra';
+  if (s.includes('gpt56sol') || (s.includes('gpt56') && s.includes('sol'))) return 'gpt-5-6-sol';
+  if (s.includes('gpt56terra') || (s.includes('gpt56') && s.includes('terra'))) return 'gpt-5-6-terra';
+  if (s.includes('gpt56luna') || (s.includes('gpt56') && s.includes('luna'))) return 'gpt-5-6-luna';
+  if (s.includes('gpt55')) return 'gpt-5-5';
+  if (s.includes('gpt54nano')) return 'gpt-5-4-nano';
+  if (s.includes('gpt54mini')) return 'gpt-5-4-mini';
+  if (s.includes('gpt54')) return 'gpt-5-4';
+  if (s.includes('gpt53codex') || (s.includes('gpt53') && s.includes('codex'))) return 'gpt-5-3-codex';
+  if (s.includes('gpt5mini')) return 'gpt-5-mini';
+
+  // 2026 最新 Anthropic
+  if (s.includes('claudefable51') || s.includes('fable51')) return 'claude-fable-5-1';
+  if (s.includes('claudefable5') || s.includes('fable5')) return 'claude-fable-5';
+  if (s.includes('claudeopus5') || (s.includes('opus5') && !s.includes('sonnet'))) return 'claude-opus-5';
+  if (s.includes('claudesonnet5') || s.includes('sonnet5')) return 'claude-sonnet-5';
+  if (s.includes('claudeopus48fast')) return 'claude-opus-4-8-fast';
+  if (s.includes('claudeopus48') || s.includes('opus48')) return 'claude-opus-4-8';
+  if (s.includes('claudeopus47') || s.includes('opus47')) return 'claude-opus-4-7';
+  if (s.includes('claudesonnet46') || s.includes('sonnet46')) return 'claude-sonnet-4-6';
+  if (s.includes('claudesonnet4') || s.includes('sonnet4')) return 'claude-sonnet-4';
+  if (s.includes('claudehaiku45') || s.includes('haiku45')) return 'claude-haiku-4-5';
+
+  // 2026 最新 Google
+  if (s.includes('gemini38') || s.includes('gemini38flash')) return 'gemini-3-8-flash';
+  if (s.includes('gemini37') || s.includes('gemini37flash')) return 'gemini-3-7-flash';
+  if (s.includes('gemini36') || s.includes('gemini36flash')) return 'gemini-3-6-flash';
+  if (s.includes('gemini35') || s.includes('gemini35flash')) return 'gemini-3-5-flash';
+
+  // Microsoft / xAI / Moonshot
+  if (s.includes('maicode11') || s.includes('maicode')) return 'mai-code-1-1-flash';
+  if (s.includes('grok46')) return 'grok-4-6';
+  if (s.includes('grok45') || s.includes('grok')) return 'grok-4-5';
+  if (s.includes('kimik3') || (s.includes('kimi') && s.includes('k3'))) return 'kimi-k3';
+  if (s.includes('kimik27') || s.includes('kimicode')) return 'kimi-k2-7-code';
+
+  // クラシック / 過去世代
   if (s.includes('claude37') || s.includes('claude37sonnet')) return 'claude-3-7-sonnet';
   if (s.includes('claude35') || s.includes('claude35sonnet')) return 'claude-3-5-sonnet';
   if (s.includes('gpt4omini') || s.includes('4omini')) return 'gpt-4o-mini';
@@ -527,5 +672,6 @@ export function normalizeModelId(rawName: string): string {
   if (s.includes('gemini25') || s.includes('gemini25pro')) return 'gemini-2-5-pro';
   if (s.includes('gemini20') || s.includes('gemini20flash') || s.includes('geminiflash')) return 'gemini-2-0-flash';
   if (s.includes('deepseek') || s.includes('r1')) return 'deepseek-r1';
+
   return rawName.toLowerCase().trim();
 }
