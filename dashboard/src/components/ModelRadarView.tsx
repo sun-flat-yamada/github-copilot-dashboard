@@ -31,7 +31,7 @@ import {
   ArrowUpDown,
   FileCode2,
   Flame,
-  ShieldCheck,
+  Clock,
   RefreshCw,
   Sliders,
   MessageSquareQuote,
@@ -226,6 +226,19 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
 
     return result;
   }, [aggregatedData, monthlyReportData, dataset]);
+
+  // 最終ベンチマーク確認日のフォーマット (yyyy-mm-dd)
+  const lastBenchmarkConfirmDate = useMemo(() => {
+    if (!dataset?.last_updated) return '';
+    const d = new Date(dataset.last_updated);
+    if (isNaN(d.getTime())) {
+      return dataset.last_updated.slice(0, 10);
+    }
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }, [dataset?.last_updated]);
 
   // 選択中モデルのプロファイル配列
   const selectedModels = useMemo(() => {
@@ -441,14 +454,13 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                   <Sparkles className="w-3 h-3" />
                   <span>v{dataset.version}</span>
                 </span>
-                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800/80 flex items-center space-x-1">
-                  <ShieldCheck className="w-3 h-3" />
-                  <span>最新ベンチマーク検証済</span>
+                <span className="text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700/80 flex items-center space-x-1.5">
+                  <Clock className="w-3 h-3 text-slate-400" />
+                  <span>最終ベンチマーク確認: {lastBenchmarkConfirmDate}</span>
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-1 max-w-3xl">
-                SWE-bench Verified、AIME 2024、LMSYS Chatbot Arena、Artificial Analysis 等の著名ベンチマーク最新実測値を多軸正規化。
-                GitHub Copilot で活用可能な各AIモデルの得意分野・推奨ユースケースを自動判定します。
+              <p className="text-xs text-slate-400 mt-1 max-w-3xl leading-relaxed">
+                SWE-bench Verified、AIME 2024、LMSYS Chatbot Arena、Artificial Analysis 等の著名ベンチマーク実測値をまとめて正規化したものです。各AIモデルの得意分野・推奨ユースケースの情報とセットで整理することで、エンジニアのモデル選択を助ける情報を提供します。
               </p>
             </div>
           </div>
@@ -995,28 +1007,76 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                     }}
                   />
                   <Legend
-                    wrapperStyle={{ paddingTop: '10px' }}
-                    onClick={(data: any) => {
-                      if (data?.value) {
-                        const target = selectedModels.find((m) => m.name === data.value);
-                        if (target) setFocusedModelId(target.id);
-                      }
-                    }}
-                    formatter={(val) => {
-                      const isTargetFocused = focusedModel?.name === val;
-                      return (
-                        <span
-                          className={`text-xs cursor-pointer transition-colors ${
-                            isTargetFocused
-                              ? 'text-white font-bold underline underline-offset-4 decoration-indigo-400'
-                              : 'text-slate-400 hover:text-slate-200'
-                          }`}
-                          title="クリックしてアクティブ（フォーカス）切り替え"
-                        >
-                          {val}
-                        </span>
-                      );
-                    }}
+                    content={() => (
+                      <div className="flex flex-wrap items-center justify-center gap-1.5 pt-3">
+                        {selectedModels.map((model) => {
+                          const isFocused = (focusedModel?.id ?? focusedModelId) === model.id;
+                          return (
+                            <button
+                              key={model.id}
+                              type="button"
+                              onClick={() => setFocusedModelId(model.id)}
+                              className={`group inline-flex items-center space-x-2 px-2.5 py-1 rounded-lg text-xs transition-all border cursor-pointer select-none ${
+                                isFocused
+                                  ? 'bg-slate-800 text-white font-bold border-indigo-500/70 shadow-sm ring-1 ring-indigo-500/40'
+                                  : 'bg-slate-950/40 text-slate-400 hover:text-slate-200 border-slate-800 hover:border-slate-700 hover:bg-slate-900/60'
+                              }`}
+                              title={`クリックして「${model.name}」を詳細カードに表示（アクティブ切替）`}
+                            >
+                              {/* 色ブロック (現在の色ブロック表示を維持) */}
+                              <span
+                                className="w-2.5 h-2.5 rounded-sm flex-shrink-0 shadow-sm transition-transform group-hover:scale-110"
+                                style={{ backgroundColor: model.color }}
+                                aria-hidden="true"
+                              />
+
+                              {/* 線/点線の状態表示 (スマートなミニチュアインジケータ) */}
+                              <span
+                                className="inline-flex items-center flex-shrink-0"
+                                aria-label={isFocused ? '実線(アクティブ)' : '点線(比較対象)'}
+                              >
+                                {isFocused ? (
+                                  <svg width="18" height="6" className="overflow-visible" aria-hidden="true">
+                                    <line
+                                      x1="0"
+                                      y1="3"
+                                      x2="18"
+                                      y2="3"
+                                      stroke={model.color}
+                                      strokeWidth="3"
+                                      strokeLinecap="round"
+                                    />
+                                  </svg>
+                                ) : (
+                                  <svg width="18" height="6" className="overflow-visible" aria-hidden="true">
+                                    <line
+                                      x1="0"
+                                      y1="3"
+                                      x2="18"
+                                      y2="3"
+                                      stroke={model.color}
+                                      strokeWidth="1.75"
+                                      strokeDasharray="5 2"
+                                      strokeOpacity="0.85"
+                                    />
+                                  </svg>
+                                )}
+                              </span>
+
+                              {/* モデル名 */}
+                              <span className="truncate max-w-[130px] sm:max-w-none">{model.name}</span>
+
+                              {/* アクティブ時のスマートバッジ */}
+                              {isFocused && (
+                                <span className="text-[9px] font-semibold px-1 py-0.2 bg-indigo-500/25 text-indigo-300 rounded border border-indigo-500/30 leading-none">
+                                  選択中
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   />
                   {selectedModels.map((model) => {
                     const isFocused = (focusedModel?.id ?? focusedModelId) === model.id;
@@ -1041,6 +1101,8 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                         strokeWidth={isFocused ? 3.5 : 1.75}
                         strokeDasharray={isFocused ? undefined : '8 3'}
                         strokeOpacity={isFocused ? 1 : 0.85}
+                        className="cursor-pointer"
+                        onClick={() => setFocusedModelId(model.id)}
                       />
                     );
                   })}

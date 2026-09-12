@@ -91,12 +91,14 @@ flowchart TD
 ### 2.6 Radar Chart Line Representation & Active Model Visual Hierarchy
 - **Active (Focused) Model Emphasis**:
   - The currently active/focused model is rendered with a **Bold solid stroke (`strokeWidth: 3.5`, `strokeDasharray: undefined`)** to establish immediate visual prominence.
-  - An active indicator is also provided in the chart header and legend.
+  - An active indicator badge is also provided in the chart header and legend.
 - **Comparison Models Dashed Stroke & Legibility Preservation**:
   - Secondary comparison models are rendered with a **dashed stroke (`strokeDasharray: "8 3"`, `strokeWidth: 1.75`)**.
   - By maintaining a high line-to-gap ratio (~73% dash, 27% gap), polygon boundaries and radar vertices remain clearly legible while clearly denoting secondary status.
-- **Interactive Focus Switching**:
-  - Clicking on any entry in the chart legend or using the detail card quick navigator smoothly switches the active focus model.
+- **Smart Legend Indicator (Color Block + Line State)**:
+  - The chart legend retains the model's signature colored swatch, immediately followed by an inline miniature **solid or dashed line indicator** for seamless visual reference.
+- **Bi-directional Focus Synchronization with Detail Card**:
+  - Clicking any model entry in the chart legend (or its polygon in the radar chart) immediately synchronizes the active focus state, updating the right-hand "Model Diagnostics & Guidance" detail card in lockstep.
 
 ---
 
