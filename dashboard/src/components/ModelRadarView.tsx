@@ -66,12 +66,18 @@ interface ModelRadarViewProps {
 }
 
 // プリセット定義 (2026年 GitHub Copilot公式モデル・カテゴリ別・メーカー別)
-const PRESETS = [
+export const PRESETS = [
   {
     id: 'flagship-2026',
     name: '🌟 2026 旗艦4選',
     description: 'Claude Sonnet 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3 (各社最前線フラッグシップ)',
     modelIds: ['claude-sonnet-5', 'gpt-6-astra', 'gemini-3-8-flash', 'kimi-k3'],
+  },
+  {
+    id: 'practical-high-value',
+    name: '💡 実用性能で高コスパ',
+    description: 'Claude Sonnet 5 / Gemini 3.8 Flash / GPT-5.6 Luna / Kimi K2.7 Code (実用コーディング性能と抜群の費用対効果を両立)',
+    modelIds: ['claude-sonnet-5', 'gemini-3-8-flash', 'gpt-5-6-luna', 'kimi-k2-7-code'],
   },
   {
     id: 'tier-powerful',

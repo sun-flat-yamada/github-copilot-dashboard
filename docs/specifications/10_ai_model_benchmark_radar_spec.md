@@ -45,7 +45,7 @@ flowchart TD
         Chart["Recharts レーダーチャート (最大4モデル重畳)"]
         Cards["モデル特性判定カード & ガイダンス"]
         Table["ベンチマーク生データ詳細テーブル (ソート対応)"]
-        Preset["比較プリセット (Copilot 4大 / 推論特化 / 高速等)"]
+        Preset["比較プリセット (Copilot 4大 / 実用高コスパ / 推論特化 / 高速等)"]
     end
 
     Sources --> Evaluator
@@ -72,6 +72,17 @@ flowchart TD
   - モデル名表示部をクリックすることで、現在選択中のモデル一覧をドロップダウン（プルダウン）で展開し、任意のモデルへワンクリックでジャンプ可能とする。
   - プルダウン内には各モデルのテーマカラー・モデル名・Tier・総合グレードおよび現在選択中のチェックマークを表示する。
   - 現在位置が視覚的に把握できるようインデックスカウンター（例: `1 / 4`）を併記する。
+
+### 2.5 比較プリセット仕様 (`PRESETS`)
+多様なモデルの中から目的や関心に応じて素早く4モデルを抽出し比較できるよう、以下の標準プリセットを提供する。
+- **🌟 2026 旗艦4選 (`flagship-2026`)**: 各社最前線フラッグシップ（Claude Sonnet 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3）
+- **💡 実用性能で高コスパ (`practical-high-value`)**: 実用コーディング性能と抜群の費用対効果を両立（Claude Sonnet 5 / Gemini 3.8 Flash / GPT-5.6 Luna / Kimi K2.7 Code）
+- **⚡ Powerful (最上位推論) (`tier-powerful`)**: 最高峰コーディング・推論群（GPT-6 Astra / Claude Opus 5 / GPT-5.6 Sol / Kimi K3）
+- **🛠️ Versatile (実務バランス) (`tier-versatile`)**: 標準実務・俊敏性重視（Claude Sonnet 5 / GPT-5.6 Terra / Gemini 3.8 Flash / Grok 4.6）
+- **🚀 Lightweight (超高速・低コスト) (`tier-lightweight`)**: 日常インライン・超高速補完（GPT-5.6 Luna / Gemini 3.5 Flash / MAI-Code-1.1-Flash / GPT-5.4 mini）
+- **🟠 Anthropic 主力 (`vendor-anthropic`)**: Anthropic 2026最新（Claude Sonnet 5 / Claude Opus 5 / Claude Fable 5.1 / Claude Haiku 4.5）
+- **🟢 OpenAI 主力 (`vendor-openai`)**: OpenAI 2026最新ファミリ（GPT-6 Astra / GPT-5.6 Sol / GPT-5.6 Terra / GPT-5.6 Luna）
+- **🔵 Google Gemini 3.x (`vendor-google`)**: Google 最新1Mコンテキスト（Gemini 3.8 Flash / Gemini 3.7 Flash / Gemini 3.6 Flash / Gemini 3.5 Flash）
 
 ---
 
