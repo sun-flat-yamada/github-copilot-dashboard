@@ -340,9 +340,18 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
           </div>
         </div>
 
-        {/* モデル選択チップス (最大4つ) */}
+        {/* モデル選択チップス */}
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="text-xs text-slate-400 mr-1">モデル選択 (最大4件):</span>
+          <div className="flex items-center space-x-2 mr-2">
+            <span className="text-xs text-slate-400">モデル選択:</span>
+            <button
+              onClick={handleSelectAllCopilot}
+              className="px-2 py-0.5 text-[11px] font-semibold rounded bg-indigo-950/70 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60 transition-all shadow-sm"
+              title="GitHub Copilot公式提供の全モデルを一括選択"
+            >
+              Copilot公式全選択
+            </button>
+          </div>
           {dataset.models.map((model) => {
             const isSelected = selectedModelIds.includes(model.id);
             const isFocused = focusedModelId === model.id;
@@ -389,7 +398,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                 <h3 className="text-sm font-bold text-white">6軸多次元特性マップ (0 - 100)</h3>
               </div>
               <span className="text-[11px] text-slate-400">
-                選択中: <strong className="text-indigo-300">{selectedModels.length}</strong> / 4 モデル
+                選択中: <strong className="text-indigo-300">{selectedModels.length}</strong> / {dataset.models.length} モデル
               </span>
             </div>
 
@@ -464,8 +473,8 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                       dataKey={model.name}
                       stroke={model.color}
                       fill={model.color}
-                      fillOpacity={selectedModels.length === 1 ? 0.35 : 0.18}
-                      strokeWidth={focusedModelId === model.id ? 3 : 2}
+                      fillOpacity={selectedModels.length === 1 ? 0.35 : selectedModels.length > 4 ? 0.08 : 0.18}
+                      strokeWidth={focusedModelId === model.id ? 3 : 1.75}
                     />
                   ))}
                 </RadarChart>
