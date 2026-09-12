@@ -61,6 +61,13 @@ export type ModelSuitabilityTag =
   | 'Agent & Multi-Turn'
   | 'High-Precision Coding';
 
+export interface EngineerBuzz {
+  headline: string; // キャッチコピー / 現場での通り名
+  community_sentiments: string[]; // 現場エンジニアからのポジティブな実感・評価
+  caution_rumor: string; // 現場で囁かれる注意点・ボヤキ
+  source_note: string; // "※ SNS上のエンジニアの声・コミュニティの噂・所感"
+}
+
 export interface ModelEvaluation {
   overall_score: number; // 0 - 100
   grade: 'S+' | 'S' | 'A+' | 'A' | 'B+';
@@ -70,6 +77,7 @@ export interface ModelEvaluation {
   weaknesses: string[];
   summary_verdict: string;
   copilot_usage_guidance: string;
+  buzz?: EngineerBuzz;
 }
 
 export interface ModelBenchmarkProfile {

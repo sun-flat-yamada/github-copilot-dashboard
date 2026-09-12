@@ -29,6 +29,9 @@ import {
   ShieldCheck,
   RefreshCw,
   Sliders,
+  MessageSquareQuote,
+  Target,
+  Eye,
 } from 'lucide-react';
 
 interface ModelRadarViewProps {
@@ -609,6 +612,56 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                     </div>
                   </div>
                 )}
+
+                {/* リアルなエンジニアの声・現場の評判 (※ SNSの噂) */}
+                {focusedModel.evaluation.buzz && (
+                  <div className="mt-4 p-3.5 bg-gradient-to-br from-purple-950/30 via-slate-950/70 to-indigo-950/30 border border-purple-800/40 rounded-xl space-y-2.5">
+                    <div className="flex items-center justify-between border-b border-purple-800/30 pb-2">
+                      <div className="flex items-center space-x-1.5 text-xs font-bold text-purple-300">
+                        <MessageSquareQuote className="w-4 h-4 text-purple-400" />
+                        <span>リアルなエンジニアの声・現場の評判</span>
+                      </div>
+                      <span className="text-[10px] font-semibold text-amber-300/95 bg-amber-950/70 border border-amber-600/50 px-2 py-0.5 rounded-full shadow-sm">
+                        {focusedModel.evaluation.buzz.source_note}
+                      </span>
+                    </div>
+
+                    {/* キャッチコピー / 通り名 */}
+                    <div className="text-xs font-bold text-slate-100 flex items-start space-x-1.5 pt-0.5">
+                      <span className="text-purple-400 font-mono text-base leading-none">“</span>
+                      <p className="italic leading-relaxed text-purple-200">
+                        {focusedModel.evaluation.buzz.headline}
+                      </p>
+                      <span className="text-purple-400 font-mono text-base leading-none">”</span>
+                    </div>
+
+                    {/* 現場エンジニアの実感ポイント */}
+                    <div className="space-y-1.5 pt-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-purple-400/90 block">
+                        現場で多く聞かれる実感・評価:
+                      </span>
+                      <ul className="space-y-1 text-slate-300 text-[11px]">
+                        {focusedModel.evaluation.buzz.community_sentiments.map((sentiment, i) => (
+                          <li key={i} className="flex items-start space-x-1.5">
+                            <span className="text-purple-400 font-bold flex-shrink-0">💬</span>
+                            <span className="leading-snug">{sentiment}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* 囁かれる注意点・噂 */}
+                    {focusedModel.evaluation.buzz.caution_rumor && (
+                      <div className="pt-2 border-t border-purple-800/30 text-[11px] text-amber-200/90 flex items-start space-x-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
+                        <div className="leading-snug">
+                          <span className="font-semibold text-amber-300">囁かれる噂・ボヤキ: </span>
+                          <span>{focusedModel.evaluation.buzz.caution_rumor}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* モデル切り替えクイックセレクタ */}
@@ -854,37 +907,97 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
         </div>
       </div>
 
-      {/* 4. ベンチマークデータソース & 判定基準情報 */}
-      <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-lg">
-        <div className="flex items-center space-x-2 text-sm font-bold text-white mb-3">
-          <Layers className="w-4 h-4 text-indigo-400" />
-          <span>著名ベンチマーク出典・評価メトリクス解説</span>
+      {/* 4. ベンチマークデータソース & 判定基準情報 (お題設計・性能の見え方・SNSの噂) */}
+      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3 mb-4">
+          <div className="flex items-center space-x-2 text-sm font-bold text-white">
+            <Layers className="w-4 h-4 text-indigo-400" />
+            <span>著名ベンチマーク出典の設計背景・現場での見え方・エンジニアの声</span>
+          </div>
+          <span className="text-[11px] text-slate-400">
+            各ベンチマークの出題意図と実務開発での評価ポイント
+          </span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 text-xs">
           {dataset.sources.map((src) => (
             <div
               key={src.id}
-              className="p-3.5 bg-slate-950/60 rounded-xl border border-slate-800/80 flex flex-col justify-between"
+              className="p-4 bg-slate-950/70 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3.5 hover:border-slate-700 transition-colors"
             >
+              {/* カードヘッダー */}
               <div>
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-200">{src.name}</span>
-                  <a
-                    href={src.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-indigo-400 hover:text-indigo-300"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                    <h4 className="font-bold text-slate-100 text-sm">{src.name}</h4>
+                  </div>
+                  <div className="flex items-center space-x-2 flex-shrink-0">
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      {new Date(src.last_fetched_at).toLocaleDateString('ja-JP')}
+                    </span>
+                    <a
+                      href={src.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-1 rounded bg-slate-800 text-indigo-400 hover:text-white transition-colors"
+                      title="公式サイトを開く"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
+                <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
                   {src.description}
                 </p>
               </div>
-              <span className="text-[10px] text-slate-500 font-mono mt-3">
-                最終取得: {new Date(src.last_fetched_at).toLocaleDateString('ja-JP')}
-              </span>
+
+              {/* 3層の詳細解説ブロック */}
+              <div className="space-y-2.5">
+                {/* 1. どのようなお題に対して設計されているか */}
+                {src.target_problem && (
+                  <div className="p-3 bg-slate-900/90 rounded-lg border border-slate-800/80">
+                    <div className="flex items-center space-x-1.5 text-indigo-300 font-bold text-[11px] mb-1">
+                      <Target className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
+                      <span>出題内容・お題の設計:</span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      {src.target_problem}
+                    </p>
+                  </div>
+                )}
+
+                {/* 2. 現場でどのような性能の見え方をするものなのか */}
+                {src.performance_view && (
+                  <div className="p-3 bg-slate-900/90 rounded-lg border border-slate-800/80">
+                    <div className="flex items-center space-x-1.5 text-sky-300 font-bold text-[11px] mb-1">
+                      <Eye className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />
+                      <span>現場での性能の見え方・評価の見所:</span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      {src.performance_view}
+                    </p>
+                  </div>
+                )}
+
+                {/* 3. リアルなエンジニアの声・SNSの噂 */}
+                {src.community_rumor && (
+                  <div className="p-3 bg-amber-950/20 rounded-lg border border-amber-800/40">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center space-x-1.5 text-amber-300 font-bold text-[11px]">
+                        <MessageSquareQuote className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                        <span>エンジニア界隈のリアルな声・議論</span>
+                      </div>
+                      <span className="text-[9px] font-semibold text-amber-300 bg-amber-950/80 border border-amber-700/60 px-1.5 py-0.2 rounded">
+                        ※ SNSの噂
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-amber-200/90 leading-relaxed">
+                      {src.community_rumor}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
