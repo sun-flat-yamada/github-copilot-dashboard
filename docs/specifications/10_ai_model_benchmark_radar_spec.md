@@ -74,9 +74,9 @@ flowchart TD
   Normalizes label variations (e.g., `Claude 3.7 Sonnet`, `GPT-4o mini`, `o1 (Reasoning)`, `Gemini 2.0 Flash`) to standard knowledge IDs (`claude-3-7-sonnet`, `gpt-4o-mini`, `o1`, `gemini-2-0-flash`).
 
 ### 2.4 Quick Navigation in Model Details Card
-- **Top Placement**: Positioned at the very top of the card widget above the header.
+- **Top-Mounted 2-Tier Full-Width Layout**: Positioned at the very top of the card widget with a dedicated 2-tier row layout: upper tier hosts the label and index counter (`1 / 4`), while the lower tier utilizes the full width of the widget for step navigation buttons (`<` / `>`) and the wide model selector dropdown. This prevents unwanted line wrapping and layout shifting when model names are long.
 - **Step Navigation**: `<` and `>` buttons enable swift cycling between selected models (disabled when only 1 model is active).
-- **Dropdown Jump**: Clicking the model title reveals a dropdown menu with theme colors, tiers, grades, and an active index counter (e.g., `1 / 4`).
+- **Dropdown Jump**: Clicking the model title reveals a full-width dropdown menu with theme colors, tiers, grades, and an active index counter.
 
 ### 2.5 Standard Comparison Presets (`PRESETS`)
 - **🌟 2026 Flagship 4 (`flagship-2026`)**: Claude Sonnet 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3

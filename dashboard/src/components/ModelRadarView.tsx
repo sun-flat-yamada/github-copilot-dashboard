@@ -1130,22 +1130,31 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
           {focusedModel ? (
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex-1 flex flex-col">
               <div>
-                {/* 1. 詳細カード切り替えバー (ウィジェット最上部) */}
-                <div className="mb-4 pb-3.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <div className="flex items-center space-x-1.5 text-xs text-slate-400">
-                    <Sliders className="w-3.5 h-3.5 text-indigo-400" />
-                    <span className="font-semibold text-slate-300">詳細カード切り替え:</span>
+                {/* 1. 詳細カード切り替えバー (ウィジェット最上部: 最初から2段構成で全幅を活用) */}
+                <div className="mb-4 pb-3.5 border-b border-slate-800 space-y-2 text-xs">
+                  {/* 上段: ラベル & カウンター表示 */}
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <div className="flex items-center space-x-1.5">
+                      <Sliders className="w-3.5 h-3.5 text-indigo-400" />
+                      <span className="font-semibold text-slate-300">詳細カード切り替え:</span>
+                    </div>
+                    {selectedModels.length > 1 && (
+                      <span className="text-[11px] font-mono text-slate-400 select-none">
+                        位置: <strong className="text-indigo-400">{currentFocusedIndex >= 0 ? currentFocusedIndex + 1 : 1}</strong> / {selectedModels.length} モデル
+                      </span>
+                    )}
                   </div>
 
-                  <div className="flex items-center space-x-1.5">
+                  {/* 下段: ウィジェット横幅をフル活用した左右移動ボタン ＆ 幅広モデルセレクタ */}
+                  <div className="flex items-center space-x-1.5 w-full">
                     {/* 左移動ボタン */}
                     <button
                       type="button"
                       onClick={handlePrevModel}
                       disabled={selectedModels.length <= 1}
-                      className={`p-1.5 rounded-lg border transition-all ${
+                      className={`p-2 rounded-lg border transition-all flex-shrink-0 ${
                         selectedModels.length > 1
-                          ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border-slate-700 active:scale-95 shadow-sm cursor-pointer'
+                          ? 'bg-slate-800 hover:bg-slate-750 text-slate-200 hover:text-white border-slate-700 active:scale-95 shadow-sm cursor-pointer'
                           : 'bg-slate-900/60 text-slate-600 border-slate-800 cursor-not-allowed opacity-40'
                       }`}
                       title={
@@ -1162,8 +1171,8 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                       <ChevronLeft className="w-4 h-4" />
                     </button>
 
-                    {/* モデル名表示部 (プルダウン切り替え) */}
-                    <div className="relative">
+                    {/* モデル名表示部 (プルダウン切り替え) - flex-1 で横幅を最大活用 */}
+                    <div className="relative flex-1 min-w-0">
                       <button
                         type="button"
                         onClick={() => {
@@ -1172,7 +1181,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                           }
                         }}
                         disabled={selectedModels.length <= 1}
-                        className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all max-w-[190px] sm:max-w-[240px] ${
+                        className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${
                           selectedModels.length > 1
                             ? isDetailCardDropdownOpen
                               ? 'bg-indigo-900/60 border-indigo-500 text-white shadow ring-2 ring-indigo-500/30'
@@ -1183,14 +1192,21 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                         aria-haspopup="listbox"
                         title={selectedModels.length > 1 ? 'クリックしてモデルを選択 (プルダウン)' : focusedModel.name}
                       >
-                        <span
-                          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: focusedModel.color }}
-                        />
-                        <span className="truncate font-bold">{focusedModel.name}</span>
+                        <div className="flex items-center space-x-2 min-w-0 truncate pr-1">
+                          <span
+                            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: focusedModel.color }}
+                          />
+                          <span className="truncate font-bold text-slate-100">{focusedModel.name}</span>
+                          {focusedModel.extended_capabilities?.tier && (
+                            <span className="hidden sm:inline-block text-[9px] uppercase px-1.5 py-0.2 rounded bg-slate-900 text-slate-400 font-mono flex-shrink-0">
+                              {focusedModel.extended_capabilities.tier}
+                            </span>
+                          )}
+                        </div>
                         {selectedModels.length > 1 && (
                           <ChevronDown
-                            className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 flex-shrink-0 ${
+                            className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 flex-shrink-0 ml-1.5 ${
                               isDetailCardDropdownOpen ? 'rotate-180 text-white' : ''
                             }`}
                           />
@@ -1206,7 +1222,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                             aria-hidden="true"
                           />
                           <div
-                            className="absolute right-0 top-full mt-2 w-72 sm:w-80 max-h-80 overflow-y-auto bg-slate-900/98 border border-slate-700/90 rounded-xl shadow-2xl z-50 backdrop-blur-md p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150"
+                            className="absolute left-0 right-0 top-full mt-1.5 w-full min-w-[280px] max-h-80 overflow-y-auto bg-slate-900/98 border border-slate-700/90 rounded-xl shadow-2xl z-50 backdrop-blur-md p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150"
                             role="listbox"
                           >
                             <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800 flex items-center justify-between">
@@ -1252,7 +1268,9 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                                     >
                                       {m.evaluation.grade}
                                     </span>
-                                    {isCurrent && <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />}
+                                    {isCurrent && (
+                                      <Check className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
+                                    )}
                                   </div>
                                 </button>
                               );
@@ -1267,9 +1285,9 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                       type="button"
                       onClick={handleNextModel}
                       disabled={selectedModels.length <= 1}
-                      className={`p-1.5 rounded-lg border transition-all ${
+                      className={`p-2 rounded-lg border transition-all flex-shrink-0 ${
                         selectedModels.length > 1
-                          ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border-slate-700 active:scale-95 shadow-sm cursor-pointer'
+                          ? 'bg-slate-800 hover:bg-slate-750 text-slate-200 hover:text-white border-slate-700 active:scale-95 shadow-sm cursor-pointer'
                           : 'bg-slate-900/60 text-slate-600 border-slate-800 cursor-not-allowed opacity-40'
                       }`}
                       title={
@@ -1285,16 +1303,6 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                     >
                       <ChevronRight className="w-4 h-4" />
                     </button>
-
-                    {/* カウンター表示 (例: 2/4) */}
-                    {selectedModels.length > 1 && (
-                      <span className="text-[11px] font-mono text-slate-400 ml-1 select-none whitespace-nowrap">
-                        <strong className="text-indigo-400">
-                          {currentFocusedIndex >= 0 ? currentFocusedIndex + 1 : 1}
-                        </strong>
-                        /{selectedModels.length}
-                      </span>
-                    )}
                   </div>
                 </div>
 
