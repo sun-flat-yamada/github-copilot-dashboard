@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-09-12T10:21:51.891Z",
+  "generated_at": "2026-09-12T10:23:20.035Z",
   "total_issues": 3,
   "errors_count": 1,
   "warnings_count": 2,
   "issues": [
     {
-      "id": "issue-1789208511812-c90xk",
-      "timestamp": "2026-09-12T10:21:51.812Z",
+      "id": "issue-1789208599996-xx87t",
+      "timestamp": "2026-09-12T10:23:19.996Z",
       "severity": "warning",
       "category": "rate_limit",
       "target": "api:copilot/metrics",
@@ -18,8 +18,8 @@
       ]
     },
     {
-      "id": "issue-1789208511812-zhw0j",
-      "timestamp": "2026-09-12T10:21:51.812Z",
+      "id": "issue-1789208599996-151ro",
+      "timestamp": "2026-09-12T10:23:19.996Z",
       "severity": "error",
       "category": "api_auth",
       "target": "org:proud-internal-sys",
@@ -33,8 +33,8 @@
       ]
     },
     {
-      "id": "issue-1789208511821-auu2n",
-      "timestamp": "2026-09-12T10:21:51.821Z",
+      "id": "issue-1789208600004-gu8ue",
+      "timestamp": "2026-09-12T10:23:20.004Z",
       "severity": "warning",
       "category": "data_integrity",
       "target": "api:billing/cost-centers/cc-ent-9009",
