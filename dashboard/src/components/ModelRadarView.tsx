@@ -46,6 +46,8 @@ import {
   ChevronRight,
   ChevronDown,
   Check,
+  Trash2,
+  Plus,
 } from 'lucide-react';
 
 import { normalizeModelId } from '../../../src/processor/benchmark-evaluator';
@@ -151,9 +153,13 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   const [focusedModelId, setFocusedModelId] = useState<string>('');
   // 詳細カード上部プルダウンの開閉状態
   const [isDetailCardDropdownOpen, setIsDetailCardDropdownOpen] = useState<boolean>(false);
-  // 生データテーブルのソート列 (社内利用シェア 'usage'、コンテキスト長 'context' も追加)
-  const [sortKey, setSortKey] = useState<'overall' | 'swe' | 'speed' | 'cost' | 'aime' | 'usage' | 'context'>('overall');
+  // 生データテーブルのソート列 (社内利用シェア 'usage'、コンテキスト長 'context'、モデル名 'model'、レーダー表示 'radar' も対応)
+  const [sortKey, setSortKey] = useState<
+    'overall' | 'swe' | 'speed' | 'cost' | 'aime' | 'usage' | 'context' | 'model' | 'radar'
+  >('overall');
   const [sortAsc, setSortAsc] = useState<boolean>(false);
+  // モデル列用3種ループ状態 ('default' > 'asc' > 'desc')
+  const [modelSortMode, setModelSortMode] = useState<'default' | 'asc' | 'desc'>('default');
 
   // モデル選択チップス用: 表示モード (メーカー別 'vendor' / カテゴリ別 'category') & 絞り込み
   const [groupingMode, setGroupingMode] = useState<'vendor' | 'category'>('vendor');
@@ -359,6 +365,16 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       });
     }
 
+    if (sortKey === 'model') {
+      if (modelSortMode === 'asc') {
+        list.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+      } else if (modelSortMode === 'desc') {
+        list.sort((a, b) => b.name.localeCompare(a.name, undefined, { numeric: true, sensitivity: 'base' }));
+      }
+      // 'default' は dataset.models の原順序をそのまま保持
+      return list;
+    }
+
     list.sort((a, b) => {
       let valA = 0;
       let valB = 0;
@@ -384,12 +400,15 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       } else if (sortKey === 'context') {
         valA = a.raw_metrics.context_window_k;
         valB = b.raw_metrics.context_window_k;
+      } else if (sortKey === 'radar') {
+        valA = selectedModelIds.includes(a.id) ? 1 : 0;
+        valB = selectedModelIds.includes(b.id) ? 1 : 0;
       }
       return sortAsc ? valA - valB : valB - valA;
     });
 
     return list;
-  }, [dataset, sortKey, sortAsc, usageStats, tableVendorFilter, tableTierFilter]);
+  }, [dataset, sortKey, sortAsc, modelSortMode, selectedModelIds, usageStats, tableVendorFilter, tableTierFilter]);
 
   // モデル選択トグル (全モデル選択可能)
   const handleToggleModel = (id: string) => {
@@ -419,7 +438,25 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
     setFocusedModelId(modelIds[0] || '');
   };
 
-  const handleSort = (key: 'overall' | 'swe' | 'speed' | 'cost' | 'aime' | 'usage' | 'context') => {
+  const handleSort = (
+    key: 'overall' | 'swe' | 'speed' | 'cost' | 'aime' | 'usage' | 'context' | 'model' | 'radar'
+  ) => {
+    if (key === 'model') {
+      if (sortKey !== 'model') {
+        setSortKey('model');
+        setModelSortMode('default');
+      } else {
+        if (modelSortMode === 'default') {
+          setModelSortMode('asc');
+        } else if (modelSortMode === 'asc') {
+          setModelSortMode('desc');
+        } else {
+          setModelSortMode('default');
+        }
+      }
+      return;
+    }
+
     if (sortKey === key) {
       setSortAsc(!sortAsc);
     } else {
@@ -1817,51 +1854,82 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-slate-800 text-slate-400 font-semibold uppercase tracking-wider bg-slate-950/40">
-                <th className="py-3 px-3">モデル / 仕様・Tier</th>
-                <th className="py-3 px-3 cursor-pointer" onClick={() => handleSort('overall')}>
+                <th
+                  className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors"
+                  onClick={() => handleSort('model')}
+                  title="モデル順ソート (クリックで巡回: デフォルト並び順 → 昇順 → 降順)"
+                >
+                  <div className="flex items-center space-x-1.5">
+                    <span>モデル / 仕様・Tier</span>
+                    <ArrowUpDown
+                      className={`w-3 h-3 ${sortKey === 'model' ? 'text-indigo-400' : 'text-slate-500'}`}
+                    />
+                    {sortKey === 'model' && (
+                      <span className="text-[10px] font-mono font-normal px-1.5 py-0.2 rounded bg-indigo-950/80 text-indigo-300 border border-indigo-700/60">
+                        {modelSortMode === 'default'
+                          ? 'デフォルト'
+                          : modelSortMode === 'asc'
+                          ? '昇順'
+                          : '降順'}
+                      </span>
+                    )}
+                  </div>
+                </th>
+                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('overall')}>
                   <div className="flex items-center space-x-1">
                     <span>総合 Grade</span>
-                    <ArrowUpDown className="w-3 h-3" />
+                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'overall' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
-                <th className="py-3 px-3 cursor-pointer" onClick={() => handleSort('usage')}>
-                  <div className="flex items-center space-x-1 text-slate-200 font-bold">
+                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('usage')}>
+                  <div className="flex items-center space-x-1">
                     <span>社内利用シェア</span>
-                    <ArrowUpDown className="w-3 h-3 text-indigo-400" />
+                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'usage' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
-                <th className="py-3 px-3 cursor-pointer" onClick={() => handleSort('swe')}>
+                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('swe')}>
                   <div className="flex items-center space-x-1">
                     <span>SWE-bench Verified</span>
-                    <ArrowUpDown className="w-3 h-3" />
+                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'swe' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
-                <th className="py-3 px-3 cursor-pointer" onClick={() => handleSort('aime')}>
+                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('aime')}>
                   <div className="flex items-center space-x-1">
                     <span>AIME 2024 / GPQA</span>
-                    <ArrowUpDown className="w-3 h-3" />
+                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'aime' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
                 <th className="py-3 px-3">Arena Coding Elo</th>
-                <th className="py-3 px-3 cursor-pointer" onClick={() => handleSort('speed')}>
+                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('speed')}>
                   <div className="flex items-center space-x-1">
                     <span>速度 (TPS)</span>
-                    <ArrowUpDown className="w-3 h-3" />
+                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'speed' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
-                <th className="py-3 px-3 cursor-pointer" onClick={() => handleSort('cost')}>
+                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('cost')}>
                   <div className="flex items-center space-x-1">
                     <span>単価 ($/1M Tok)</span>
-                    <ArrowUpDown className="w-3 h-3" />
+                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'cost' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
-                <th className="py-3 px-3 cursor-pointer" onClick={() => handleSort('context')}>
+                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('context')}>
                   <div className="flex items-center space-x-1">
                     <span>Context 窓</span>
-                    <ArrowUpDown className="w-3 h-3" />
+                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'context' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
-                <th className="py-3 px-3 text-right">レーダー表示</th>
+                <th
+                  className="py-3 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors"
+                  onClick={() => handleSort('radar')}
+                  title="レーダー表示中モデルでソート (選択中優先 ⇔ 非選択優先)"
+                >
+                  <div className="flex items-center justify-end space-x-1">
+                    <span>レーダー表示</span>
+                    <ArrowUpDown
+                      className={`w-3 h-3 ${sortKey === 'radar' ? 'text-indigo-400' : 'text-slate-500'}`}
+                    />
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
@@ -2012,13 +2080,28 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                     <td className="py-3 px-3 text-right">
                       <button
                         onClick={() => handleToggleModel(m.id)}
-                        className={`px-2.5 py-1 rounded text-xs font-semibold transition-all ${
+                        disabled={isSelected && selectedModelIds.length <= 1}
+                        title={
                           isSelected
-                            ? 'bg-indigo-600 text-white'
-                            : 'bg-slate-800 text-slate-400 hover:text-white'
+                            ? selectedModelIds.length <= 1
+                              ? 'レーダーには最低1つのモデル選択が必要です'
+                              : '選択解除'
+                            : 'レーダー追加'
+                        }
+                        aria-label={isSelected ? '選択解除' : 'レーダー追加'}
+                        className={`p-1.5 rounded-lg inline-flex items-center justify-center transition-all ${
+                          isSelected
+                            ? selectedModelIds.length <= 1
+                              ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/40'
+                              : 'bg-indigo-600 text-white hover:bg-rose-600 border border-indigo-500/60 hover:border-rose-500 shadow-sm'
+                            : 'bg-slate-800 text-slate-400 hover:bg-indigo-600 hover:text-white border border-slate-700/60'
                         }`}
                       >
-                        {isSelected ? '選択解除' : 'レーダー追加'}
+                        {isSelected ? (
+                          <Trash2 className="w-4 h-4" />
+                        ) : (
+                          <Plus className="w-4 h-4" />
+                        )}
                       </button>
                     </td>
                   </tr>
