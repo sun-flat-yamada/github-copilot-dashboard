@@ -88,7 +88,7 @@ export const CostAllocationCharts: React.FC<CostAllocationChartsProps> = ({
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value: number) => [`$${value.toLocaleString()}`, '費用']}
+                formatter={(value: any) => [`$${Number(value || 0).toLocaleString()}`, '費用']}
                 contentStyle={{
                   backgroundColor: '#161b22',
                   borderColor: '#30363d',

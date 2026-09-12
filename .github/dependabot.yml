@@ -10,6 +10,21 @@ updates:
     labels:
       - "dependencies"
       - "javascript"
+    groups:
+      react:
+        patterns:
+          - "react*"
+          - "@types/react*"
+      vite:
+        patterns:
+          - "vite*"
+          - "@vitejs/*"
+      tailwind:
+        patterns:
+          - "tailwindcss*"
+          - "@tailwindcss/*"
+          - "postcss*"
+          - "autoprefixer*"
 
   - package-ecosystem: "github-actions"
     directory: "/"

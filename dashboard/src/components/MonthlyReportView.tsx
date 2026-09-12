@@ -350,7 +350,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(val: number) => [`$${val.toFixed(2)}`, '費用']}
+                  formatter={(val: any) => [`$${Number(val || 0).toFixed(2)}`, '費用']}
                   contentStyle={{ backgroundColor: '#090d13', borderColor: '#334155', borderRadius: 8 }}
                 />
               </PieChart>
