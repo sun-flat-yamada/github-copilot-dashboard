@@ -236,12 +236,6 @@ npm run build
 
 ---
 
-## 🤝 Contribution & Support
-
-Contributions are welcome! If you find this tool useful, please consider supporting its development.
-
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=flat&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/sun.flat.yamada)
-
 ## 🤝 コントリビューション & サポート
 
 コントリビューションやフィードバックを歓迎します！もしこのツールが役に立ちましたら、継続的な開発支援をご検討いただけますと幸いです。
