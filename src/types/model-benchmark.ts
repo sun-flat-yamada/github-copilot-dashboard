@@ -89,6 +89,9 @@ export interface BenchmarkSourceMeta {
   id: string;
   name: string;
   description: string;
+  target_problem?: string;
+  performance_view?: string;
+  community_rumor?: string;
   url: string;
   last_fetched_at: string;
 }

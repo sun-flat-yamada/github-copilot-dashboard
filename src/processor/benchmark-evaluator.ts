@@ -69,30 +69,54 @@ export const DEFAULT_BENCHMARK_SOURCES: BenchmarkSourceMeta[] = [
   {
     id: 'swe-bench',
     name: 'SWE-bench Verified Leaderboard',
-    description: '実世界GitHub課題を自律解決するソフトウェアエンジニアリング評価ベンチマーク (Verified)',
+    description: '実世界GitHubリポジトリのIssueを自律解決するソフトウェアエンジニアリング評価ベンチマーク (Verified)',
     url: 'https://www.swebench.com/',
     last_fetched_at: '2026-09-01T00:00:00Z',
+    target_problem:
+      '実世界の代表的Pythonオープンソース（Django, SymPy, scikit-learn, matplotlib等）で実際に過去に起票・マージされた本物のGitHub IssueとPull Request。問題記述のみからコードベース全体を探索し、既存テストを破壊せずに新規テストを通す実用パッチ（diff）を自律生成できるかを厳密判定します。',
+    performance_view:
+      '単一の関数実装ではなく、複数ファイルにまたがる参照関係の把握・エッジケース処理・環境再現が問われるため、「自律型コーディングエージェントとしての実務即戦力度」が最もダイレクトに現れます。部分点なし（全テスト合格のみパス）という極めてシビアな採点のため、スコアが60%〜70%を超えるモデルは現場で人間シニア並みの修正力を発揮します。',
+    community_rumor:
+      '※ SNSの噂: 「SWE-bench特化のプロンプトエンジニアリングや検索戦略でスコアを盛っている疑惑」や「解けたと報告されても、人間の曖昧な日本語指示だと意図を汲み違えることがある」「Verifiedになって悪問が排除され、トップモデルの実力差が誤魔化せなくなった」など、期待と警戒が入り混じった声が多数囁かれています。',
   },
   {
     id: 'lmsys-arena',
     name: 'LMSYS Chatbot Arena (Coding)',
-    description: '100万件以上の実世界ユーザー対戦によるブラインドコーディング能力レーティング',
+    description: '100万件以上の実世界ユーザー対戦によるブラインドコーディング能力レーティング (Elo)',
     url: 'https://chat.lmsys.org/?leaderboard',
     last_fetched_at: '2026-09-01T00:00:00Z',
+    target_problem:
+      '世界中のエンジニアが日々の業務や学習で実際に遭遇した自由形式のプログラミング課題。2つの匿名AIモデルが生成したコードと解説を提示し、人間がどちらの回答が優れているかをブラインドで比較判定するクラウドソーシング対戦方式です。',
+    performance_view:
+      '静的な正解一致テストでは測れない「人間のプログラマーが読んだときの納得感・コードの綺麗さ・モダンな構文の採用・丁寧な説明・ニュアンスの汲み取り」といった主観的満足度が浮き彫りになります。Eloレーティングによる統計的有意差で順位付けされます。',
+    community_rumor:
+      '※ SNSの噂: 「思考過程（CoT）が長くて見た目が豪華なモデルに人間がバイアスで投票しやすい」「サクッと1行修正だけ欲しい現場派と、懇切丁寧なチュートリアルを好む初学者で評価が分かれる」「新しいモデルがリリースされるたびにArenaの首位争いでエンジニア界隈のタイムラインが沸く」と言われています。',
   },
   {
     id: 'artificial-analysis',
     name: 'Artificial Analysis AI Benchmark',
-    description: '独立系機関による出力速度 (TPS)、初回トークン遅延 (TTFT)、価格性能比の実測データ',
+    description: '独立系第三者機関による生成速度 (TPS)、初回応答遅延 (TTFT)、価格性能比の実測データ',
     url: 'https://artificialanalysis.ai/',
     last_fetched_at: '2026-09-01T00:00:00Z',
+    target_problem:
+      '各AIプロバイダーの公式APIエンドポイントを24時間連続でベンチマークし、同一プロンプトに対する1秒あたりの出力トークン数（TPS）、最初の1文字が返ってくるまでの遅延時間（TTFT: Time To First Token）、および入力/出力トークン価格の費用対効果を計測。',
+    performance_view:
+      'いくら知能指数が高くても、1文字出るのに30秒待たされたりストリーミングが遅いモデルはIDEのインライン補完やペアプロで使い物になりません。「開発者の思考フローを止めない即時性（DX）」と「チーム導入時のAPI運用コスト」の現実的バランスがはっきり見えます。',
+    community_rumor:
+      '※ SNSの噂: 「公式発表の爆速アピールと実測値のギャップを暴いてくれる唯一の良心」「推論モデル（o1等）の思考待ちはベンチマーク数値以上に現場で体感フリーズに感じる」「Flash系モデルの異常な速さは一度慣れると通常モデルに戻れなくなる」という現場のリアルな実感で支持されています。',
   },
   {
     id: 'frontier-papers',
     name: 'Frontier AI Technical Reports (Anthropic/OpenAI/Google)',
-    description: '各社公式テクニカルレポート公表ベンチマーク (AIME 2024, GPQA Diamond, HumanEval+)',
+    description: 'フロンティアAI各社公式テクニカルレポート公表ベンチマーク (AIME 2024, GPQA, HumanEval+)',
     url: 'https://github.com/features/copilot',
     last_fetched_at: '2026-09-01T00:00:00Z',
+    target_problem:
+      '全米数学招待試験 (AIME 2024)、大学院生・博士レベルの超難関科学多肢選択問 (GPQA Diamond)、および関数の正確な入出力一致 (HumanEval+) など、AIの極限の思考力・論理推論・型推論・抽象化能力を極限まで試すアカデミック難関テスト群。',
+    performance_view:
+      '並行処理のデッドロック検出、複雑なビット演算、高度な型パズル、暗号理論など、普通の人間エンジニアでも頭を抱える「超難関バグの根本原因の特定」においてどこまで正確な推論チェーンを組み立てられるかの天井（極限性能）を示します。',
+    community_rumor:
+      '※ SNSの噂: 「テストデータが事前学習コーパスに漏洩（リーク）しているのではないかと常に議論が紛糾する」「AIMEで90%取るモデルでも、CSSの微妙な崩れや正規表現の初歩的ミスをポロッとやるギャップが面白い」「スコアが人間平均を軽々超えていてインフレ気味」と語られています。',
   },
 ];
 
@@ -340,6 +364,111 @@ export function evaluateModel(
       '【推奨シーン】IDEでの汎用コーディング支援、日常的なチャット相談。あらゆる開発言語に対して堅実で安定したサポートを提供します。';
   }
 
+  // エンジニアコミュニティでの生の声・SNSの噂
+  let buzz: EngineerBuzz;
+
+  if (modelId.includes('claude-3-7')) {
+    buzz = {
+      headline: 'リファクタリングの神。ただしThinking全開時はトークン消費と回答長に注意',
+      community_sentiments: [
+        '複数ファイルにまたがる大規模リファクタと依存解決の精度が異次元に高い',
+        'TypeScriptの複雑な型パズルやジェネリクスを迷いなく一発で綺麗に解決する',
+        'テストが失敗した原因を自己反省（CoT）しながら修正してくれる頼もしさが異常',
+      ],
+      caution_rumor: '思考が深すぎて回答が長大になりがち。調子に乗って使いまくるとCopilotのクォータ上限が一瞬で溶けるという噂。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+    };
+  } else if (modelId.includes('claude-3-5')) {
+    buzz = {
+      headline: '全エンジニアの精神安定剤。一番打率が高く安定している定番主力',
+      community_sentiments: [
+        '言った通りの指示を余計な小細工なしに実直にコーディングしてくれる打率の高さ',
+        'ReactやNext.jsなどモダンWebフロントエンドの実装センスがピカイチ',
+        '長文コードを渡してもハルシネーションが少なく、安心してPRレビューを任せられる',
+      ],
+      caution_rumor: 'たまに同一箇所の修正を指示しても頑固に直さない修正ループに陥ることがあるという噂。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+    };
+  } else if (modelId === 'o1') {
+    buzz = {
+      headline: '難攻不落のバグ調査専門ドクター。沈黙の後に本質的な一撃を放つ',
+      community_sentiments: [
+        '何時間も悩んだ並行処理のデッドロックやメモリリーク原因を一発で見抜いた',
+        'アルゴリズムの正当性検証やエッジケースの指摘では他の追随を許さない',
+        'アーキテクチャの境界線やドメイン設計の壁打ち相手として最も頼れる',
+      ],
+      caution_rumor: '最初の1文字が出るまで20〜40秒平気で待たされる。インライン補完感覚で呼び出すとフリーズしたかと錯覚する。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+    };
+  } else if (modelId.includes('o3-mini')) {
+    buzz = {
+      headline: 'o1の頭脳を高速・低価格化。実務で常用できる推論モデルの最高傑作',
+      community_sentiments: [
+        'o1並みの鋭い思考チェーンを展開するのに待たされ感が劇的に少なくサクサク動く',
+        '単価が安いため、チーム内で推論機能を気軽にガンガン使わせやすい',
+        '競プロレベルの難問やエッジケースのテストケース出しで鬼のように活躍する',
+      ],
+      caution_rumor: 'Reasoning Effort を High にするとたまに考えすぎて長文の推論迷路に入るという噂。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+    };
+  } else if (modelId.includes('gemini-2-0-flash')) {
+    buzz = {
+      headline: '光速のレスポンスと1M窓。開発者のタイプ速度を置き去りにする爆速補完',
+      community_sentiments: [
+        'とにかくレスポンスが速すぎて脳の思考速度と同じスピードでコードが出てくる',
+        '1Mトークンのコンテキストが使えるので、設計書とログファイルを丸ごと放り込める',
+        '大量のユニットテストを一気に自動生成させるときのスピード感が快感',
+      ],
+      caution_rumor: 'たまに実在しないメソッドや非推奨APIを平然とした顔で書いてくるので確認必須という噂。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+    };
+  } else if (modelId.includes('gemini-2-5-pro')) {
+    buzz = {
+      headline: '2Mコンテキストの超巨大胃袋。プロジェクト全体の過去ログも丸ごと記憶',
+      community_sentiments: [
+        '200万トークンはもはや異次元。リポジトリの全コードと過去のIssue履歴を全部読んで回答してくれる',
+        '手書きのシステム構成図やFigmaからコードを起こすマルチモーダル精度が高い',
+        'SWE-benchスコアも急上昇しており、長文解析とコーディングがハイレベルで融合',
+      ],
+      caution_rumor: '巨大プロンプトを投げるとコンテキスト処理にやや時間がかかるため、短文タスクにはFlashの方が快適。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+    };
+  } else if (modelId.includes('deepseek-r1')) {
+    buzz = {
+      headline: 'オープンウェイト界の革命児。o1級の推論力を自前ホストできる衝撃',
+      community_sentiments: [
+        'オープンウェイトなのに数学・推論が本当にo1とタメを張るレベルで強い',
+        '思考プロセス（<think>タグ）が丸見えなので、AIがどう悩んで結論を出したか観察できる',
+        '推論コストの常識を破壊し、各社の価格競争の引き金を引いた立役者',
+      ],
+      caution_rumor: '思考の途中で中国語が混ざったり、エージェント的なツール呼び出し（Function calling）がたまに不安定という噂。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+    };
+  } else if (modelId.includes('gpt-4o-mini')) {
+    buzz = {
+      headline: '爆安・爆速の超軽量ギア。単純作業やインライン提案をノーコスト感覚で回す',
+      community_sentiments: [
+        '単価が圧倒的に安く、大量の定型ファイル生成やログ解析スクリプト作成に最適',
+        'インラインサジェストの反応が機敏で引っかかりがない',
+        '軽い質問やタイポ修正ならこれで一瞬で片付く',
+      ],
+      caution_rumor: '複雑なロジックを頼むと途端に雑な実装になったり知らんライブラリを hallucinate しがちという噂。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+    };
+  } else {
+    // GPT-4o / General
+    buzz = {
+      headline: '頼れる社内標準オールラウンダー。速度とバランスの良さで日常を支える',
+      community_sentiments: [
+        'Markdownドキュメントの整理やAPI仕様書の作成、日常スクリプトならこれで十分',
+        'レスポンスが早くてテンポ良く対話できるためペアプロのテンポが崩れない',
+        '画像（UIモックやエラー画面のスクショ）を貼り付けての質問に対する理解力が高い',
+      ],
+      caution_rumor: '最近の超難関コーディングタスクではClaude 3.7やo1と比べるとややあっさりした実装になりがちとの噂。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+    };
+  }
+
   return {
     overall_score: overall,
     grade,
@@ -349,6 +478,7 @@ export function evaluateModel(
     weaknesses,
     summary_verdict,
     copilot_usage_guidance,
+    buzz,
   };
 }
 
