@@ -24,12 +24,53 @@
 
 ### 2.1 Secrets
 - `COPILOT_READ_TOKEN`:
-  - Personal Access Token (PAT) or GitHub App Private Key with administrative read permissions for GitHub Enterprise or target Organizations.
-  - Required Scopes:
-    - Enterprise / Org: `Manage Copilot` (read)
-    - Enterprise: `Billing` (read)
-    - Org: `Members` (read)
+  - Personal Access Token (PAT) or GitHub App with administrative read permissions for GitHub Enterprise or target Organizations.
   - *Note*: Optional when running in mock mode (`MOCK_MODE=true`).
+
+#### 2.1.1 Token Types and Permissions
+
+Based on current GitHub specifications, you can use either a **Fine-grained Personal Access Token (recommended)** or a **Personal Access Token (classic)**.
+
+##### A. Fine-grained Personal Access Token (Recommended / Least Privilege)
+Enforces least privilege and is the most secure method.
+
+1. **Navigation**: `Settings` > `Developer settings` > `Personal access tokens` > `Fine-grained tokens` > **Generate new token**
+2. **Resource owner**: ⚠️ **Must select the target Organization, NOT your personal user account** (if personal account is selected, Organization Permissions will not be available).
+3. **Repository access**: `Only select repositories` (or `Public Repositories (read-only)`). Source code permissions are not required.
+4. **Organization permissions**:
+   | Permission | Access Level | Purpose |
+   | :--- | :--- | :--- |
+   | **Copilot metrics** | **Read-only** | Daily code completions, chat events, and multi-model usage metrics |
+   | **Members** | **Read-only** | Seat assignment list (`seats`) and activity timestamps |
+   | **Organization administration** | **Read-only** | Organization metadata and status inspection (optional) |
+
+##### B. Personal Access Token (classic)
+1. **Navigation**: `Settings` > `Developer settings` > `Personal access tokens` > `Tokens (classic)` > **Generate new token (classic)**
+2. **Select scopes**:
+   | Scope | Purpose |
+   | :--- | :--- |
+   | **`manage_billing:copilot`** | Read Copilot usage, seat assignments, and billing data |
+   | **`read:org`** | Read organization membership and member profiles |
+   | **`read:enterprise`** | Enterprise environments only: Read enterprise billing and cost centers |
+
+---
+
+#### 2.1.2 Important Notes for Personal Free Accounts
+
+When setting up or analyzing GitHub Copilot from a personal GitHub account (Free plan), keep in mind the following API constraints:
+
+> [!WARNING]
+> **No Metrics API exists for individual personal accounts (Copilot Individual / Free)**  
+> The official GitHub Copilot Metrics API (`/copilot/metrics`) and Seats API (`/copilot/billing/seats`) are designed exclusively for **GitHub Organizations (Copilot Business)** and **GitHub Enterprises (Copilot Enterprise)**. There is no individual-level endpoint such as `/user/copilot/metrics`.
+
+To analyze or evaluate this dashboard with a personal Free account:
+
+1. **Create a Free GitHub Organization (Real Data Evaluation)**:
+   - Create a free GitHub Organization under your personal account and link Copilot to it.
+   - Follow section "2.1.1 A" above: create a Fine-grained PAT with the **Resource owner set to the Organization**, register it under Secrets as `COPILOT_READ_TOKEN`, and configure Variables with `COPILOT_ORGS=<org-name>`.
+2. **Use Mock Mode (Zero-Cost Simulation / No Tokens Needed)**:
+   - Without any token, simply set `MOCK_MODE=true` in GitHub Actions Variables.
+   - All dashboard features (Claude 3.7 Sonnet, GPT-4o, Gemini 2.0 Flash trends, 38-model radar benchmark, FinOps cost allocation) will function immediately and deploy to GitHub Pages.
 
 ### 2.2 Variables
 - `COPILOT_USER_MAPPING`:

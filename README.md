@@ -198,11 +198,15 @@ Register sensitive user attributes (such as employee names and internal departme
 
 ### Step 5: Configure Scope and Authentication Tokens
 - **Secrets**:
-  - `COPILOT_READ_TOKEN`: Personal Access Token (PAT) with Copilot and Billing read permissions (`manage_billing:copilot`, `read:org`).
+  - `COPILOT_READ_TOKEN`: Personal Access Token (PAT) with Copilot and Billing read permissions (Fine-grained PAT or `manage_billing:copilot`, `read:org`).
 - **Variables**:
   - `COPILOT_ENTERPRISE`: Enterprise slug (e.g., `my-enterprise`).
   - Or `COPILOT_ORGS`: Comma-separated list of organization names (e.g., `org-core,org-ai-labs`).
   - (Testing / Demo) `MOCK_MODE`: Set to `true` to immediately spin up the dashboard using 2026 simulation data without real credentials.
+
+> [!NOTE]
+> **Note for Personal Accounts (Free Plan)**:  
+> For GitHub API constraints regarding individual personal accounts and token setup (Fine-grained PAT / Permissions) via a free Organization, see [Important Notes for Personal Free Accounts](docs/specifications/08_automation_workflow_spec.md#212-important-notes-for-personal-free-accounts).
 
 ---
 

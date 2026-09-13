@@ -198,11 +198,15 @@ github-copilot-dashboard/
 
 ### ステップ 5: 取得スコープと認証トークンの設定
 - **Secrets**:
-  - `COPILOT_READ_TOKEN`: CopilotおよびBillingの読み取り権限（`manage_billing:copilot`, `read:org`）を持つPAT。
+  - `COPILOT_READ_TOKEN`: CopilotおよびBillingの読み取り権限（Fine-grained PAT または `manage_billing:copilot`, `read:org`）を持つPAT。
 - **Variables**:
   - `COPILOT_ENTERPRISE`: Enterpriseスラッグ（例: `my-enterprise`）。
   - または `COPILOT_ORGS`: カンマ区切りのOrganization名（例: `org-core,org-ai-labs`）。
   - （テスト運用時）`MOCK_MODE`: `true` を指定すると、実際のトークンがなくても2026年仕様のシミュレーションデータでダッシュボードが即座に立ち上がります。
+
+> [!NOTE]
+> **個人契約（Freeプラン）のアカウントで利用する場合の注意点**:  
+> 個人アカウント単体に対するCopilot Metrics API仕様上の制約や、無料Organizationでの検証用トークン（Fine-grained PAT / Permissions）の設定手順については、[個人アカウント利用時の注意点・トークン設定手順](docs/specifications/08_automation_workflow_spec.ja.md#212-個人契約freeプランgithubアカウント利用時の重要注意点) を参照してください。
 
 ---
 
