@@ -130,12 +130,12 @@ Provides instant, pre-configured 3-to-4 model comparisons. Recommended presets e
 - **3-Mode Display State Switching (`sidebarMode`)**:
   - **Expanded (`expanded`) [Default]**: Standard width (~320px) featuring full model names, model color swatches, Copilot badges, organization usage percentage, vendor/tier grouping toggles, and filters.
   - **Compact (`compact`)**: Narrow width (~210-220px) displaying model abbreviations preserving model family and version numbers without omission (e.g., `gpt-5.6-luna`, `gpt-6-astra`, `gpt-o1`, `gpt-o3-mini`, `opus-5`, `opus-4.8`, `sonnet-4.6`, `gemini-3.8-flash`) generated via `getModelShortName`, with rich tooltips on hover showing full model identity, grade, tier, and internal usage share.
-  - **Collapsed (`collapsed`)**: Frame collapsed with a permanent floating/sticky reopen button (`[▶ Model Selector (X)]`) on the left edge to reclaim 100% horizontal real estate for widgets.
+  - **Collapsed (`collapsed`)**: Frame collapsed with horizontal real estate maximized for widgets. Simplified down to **only the AI model icon (Boxes) and expand toggle icon (PanelLeftOpen)** with no extra labels, plus an optional count badge.
 - **State Persistence**:
   - The active mode (`expanded`, `compact`, or `collapsed`) is persisted across sessions in `localStorage` under `copilot_radar_sidebar_mode`.
 - **Selection State & Batch Operations**:
   - **Default Initial Selection**: Defaults to the Top 3 models by actual organizational usage requests (`requests > 0`) in descending order via `getTopUsageModelIds`.
-  - **Empty Data Handling**: If no usage data exists or all model requests are 0, initializes with empty selection (`selectedModelIds = []`) and renders a helpful guidance overlay in the radar chart with a button to select Copilot native models.
+  - **Empty Data & Unselected Handling**: If no usage data exists or all model requests are 0 (or all models are deselected), initializes with empty selection (`selectedModelIds = []`). Both the 6-axis radar map and the detail diagnostics card switch to a synchronized empty state overlay with a button to select Copilot native models.
   - **Full Clear**: Clicking "クリア" completely empties the selection (`selectedModelIds = []`).
   - **Vendor / Tier Batch Selection**: "全選択 / 全解除" buttons under each Vendor and Tier heading toggle between selecting all and deselecting all models in that group cleanly (`onBatchSelectModels`).
 

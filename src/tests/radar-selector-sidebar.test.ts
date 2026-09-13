@@ -233,6 +233,15 @@ test('AI Model Radar Selector Sidebar and Abbreviation Tests', async (t) => {
     assert.ok(viewContent.includes('onBatchSelectModels={handleBatchSelectModels}'), 'Must pass handleBatchSelectModels to ModelSelectorSidebar');
     assert.ok(viewContent.includes('onClearSelection={handleClearSelection}'), 'Must pass handleClearSelection to ModelSelectorSidebar');
     assert.ok(viewContent.includes('getTopUsageModelIds'), 'Must call getTopUsageModelIds for initial selection');
+
+    // コラプス（非表示）状態でのアイコンのみ表示（Boxes + PanelLeftOpen）
+    assert.ok(sidebarContent.includes('<Boxes className="w-4 h-4 text-white" />'), 'Must show Boxes icon in collapsed mode');
+    assert.ok(sidebarContent.includes('<PanelLeftOpen className="w-3.5 h-3.5'), 'Must show PanelLeftOpen icon in collapsed mode');
+    assert.ok(!sidebarContent.includes('<span>\n              モデル選択\n            </span>'), 'Must NOT have "モデル選択" text in collapsed mode');
+
+    // 詳細カード切り替えウィジェットの非表示・未選択時制御
+    assert.ok(viewContent.includes('if (!dataset || selectedModels.length === 0) return null;'), 'focusedModel must be null when 0 models are selected');
+    assert.ok(viewContent.includes('モデルが選択されていません'), 'Must render empty state message in detail card widget');
   });
 });
 

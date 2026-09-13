@@ -357,19 +357,14 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
 
   // フォーカス中モデルのプロファイル
   const focusedModel = useMemo(() => {
-    if (!dataset) return null;
+    if (!dataset || selectedModels.length === 0) return null;
     // 選択中モデルに focusedModelId が含まれていればそれを最優先
     if (selectedModelIds.includes(focusedModelId)) {
       const found = dataset.models.find((m) => m.id === focusedModelId);
       if (found) return found;
     }
-    // 含まれていなければ選択中モデルの先頭、なければナレッジの先頭
-    return (
-      selectedModels[0] ||
-      dataset.models.find((m) => m.id === focusedModelId) ||
-      dataset.models[0] ||
-      null
-    );
+    // 含まれていなければ選択中モデルの先頭
+    return selectedModels[0] || null;
   }, [dataset, focusedModelId, selectedModelIds, selectedModels]);
 
   // 詳細カード切り替え用: 選択中モデルリスト内での現在位置
@@ -1594,8 +1589,18 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
               </div>
             </div>
           ) : (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center text-slate-500">
-              モデルを選択してください
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl flex-1 flex flex-col items-center justify-center text-center space-y-3 min-h-[400px]">
+              <Sliders className="w-10 h-10 text-slate-600 animate-pulse" />
+              <p className="text-sm font-bold text-slate-300">モデルが選択されていません</p>
+              <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
+                AIモデルを選択すると、ここに「詳細カード（総合スコア、適性タグ、推奨ユースケース、強み・弱み、現場の評判）」が表示されます。
+              </p>
+              <button
+                onClick={handleSelectAllCopilot}
+                className="mt-2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold shadow transition-all"
+              >
+                Copilot公式モデルを選択
+              </button>
             </div>
           )}
         </div>

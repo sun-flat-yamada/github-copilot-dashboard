@@ -195,42 +195,25 @@ export const ModelSelectorSidebar: React.FC<ModelSelectorSidebarProps> = ({
     });
   }
 
-  // 1. 非表示モード (collapsed)
+  // 1. 非表示モード (collapsed): アイコン表示のみにコンパクト化
   if (sidebarMode === 'collapsed') {
     return (
       <div className="sticky top-20 z-30 flex-shrink-0 self-start">
-        <div className="bg-slate-900/95 border border-slate-800 hover:border-indigo-500/60 rounded-xl shadow-xl backdrop-blur p-2 flex flex-col items-center space-y-2.5 transition-all">
+        <div className="bg-slate-900/95 border border-slate-800 hover:border-indigo-500/60 rounded-xl shadow-xl backdrop-blur p-2 flex flex-col items-center space-y-2 transition-all">
           <button
             onClick={() => onSidebarModeChange('expanded')}
-            className="flex items-center space-x-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold shadow-md shadow-indigo-600/30 transition-all group"
-            title="AIモデル選択フレームを展開 (表示)"
-            aria-label="AIモデル選択フレームを展開"
+            className="p-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shadow-md shadow-indigo-600/30 transition-all group flex flex-col items-center gap-1.5"
+            title="AIモデル選択を展開"
+            aria-label="AIモデル選択を展開"
           >
-            <PanelLeftOpen className="w-4 h-4 group-hover:scale-110 transition-transform" />
-            <span className="tracking-wider">
-              モデル選択
-            </span>
-            <span className="px-1.5 py-0.5 rounded-full bg-indigo-950 text-indigo-200 text-[10px] font-mono font-extrabold border border-indigo-700">
-              {selectedModelIds.length}
-            </span>
+            <Boxes className="w-4 h-4 text-white" />
+            <PanelLeftOpen className="w-3.5 h-3.5 text-indigo-200 group-hover:scale-110 transition-transform" />
+            {selectedModelIds.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-indigo-950 text-indigo-200 text-[9px] font-mono font-bold border border-indigo-700">
+                {selectedModelIds.length}
+              </span>
+            )}
           </button>
-
-          <div className="flex flex-col items-center space-y-1 pt-1 border-t border-slate-800 w-full">
-            <button
-              onClick={() => onSidebarModeChange('compact')}
-              className="p-1.5 rounded-md hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-[10px] transition-colors"
-              title="省幅表示で展開"
-            >
-              <Minimize2 className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => onSidebarModeChange('expanded')}
-              className="p-1.5 rounded-md hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-[10px] transition-colors"
-              title="通常表示で展開"
-            >
-              <Maximize2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
         </div>
       </div>
     );
