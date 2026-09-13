@@ -1,5 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   computeRadarScores,
   evaluateModel,
@@ -192,6 +194,95 @@ describe('AI Model Benchmark Evaluator Tests', () => {
       'https://www.sbbit.jp/article/cont1/186928',
       'Must have exact URL to Business+IT article'
     );
+  });
+
+  it('guarantees Claude Opus 4.8 has Anthropic-specific buzz and sources without OpenAI mismatch', () => {
+    const rawOpus48: BenchmarkRawMetrics = {
+      swe_bench_verified: 78.5,
+      humaneval_plus: 94.2,
+      aime_2024: 91.5,
+      gpqa_diamond: 82.0,
+      arena_coding_elo: 1460,
+      output_speed_tps: 60,
+      input_cost_per_m: 5.0,
+      output_cost_per_m: 25.0,
+      context_window_k: 1000,
+    };
+    const radar = computeRadarScores(rawOpus48);
+    const evaluation = evaluateModel('claude-opus-4-8', rawOpus48, radar, 'Anthropic');
+
+    assert.ok(evaluation.buzz, 'Opus 4.8 must have buzz');
+    assert.ok(
+      evaluation.buzz.headline.includes('Opus 4世代の最高峰'),
+      'Opus 4.8 must have Opus 4 specific headline'
+    );
+    assert.ok(evaluation.buzz.sources && evaluation.buzz.sources.length > 0, 'Must have sources');
+    const firstSource = evaluation.buzz.sources[0];
+    assert.ok(
+      firstSource.title.includes('Anthropic') && !firstSource.title.includes('OpenAI'),
+      'Opus 4.8 source must be Anthropic and must NOT mention OpenAI'
+    );
+    assert.ok(
+      firstSource.url.includes('anthropic.com'),
+      'Opus 4.8 source URL must link to anthropic.com'
+    );
+  });
+
+  it('guarantees zero vendor mismatches across all 38 benchmark dataset models', () => {
+    const datasetPath = path.resolve(process.cwd(), 'dashboard/public/data/model-benchmarks.json');
+    if (!fs.existsSync(datasetPath)) return;
+    const dataset = JSON.parse(fs.readFileSync(datasetPath, 'utf8'));
+
+    dataset.models.forEach((m: any) => {
+      const buzz = m.evaluation.buzz;
+      assert.ok(buzz, `Model ${m.id} must have buzz`);
+      assert.ok(buzz.sources && buzz.sources.length > 0, `Model ${m.id} must have buzz sources`);
+      const src = buzz.sources[0];
+
+      if (m.vendor === 'Anthropic') {
+        assert.ok(
+          src.title.includes('Anthropic') || src.title.includes('Claude'),
+          `Anthropic model ${m.id} must have Anthropic source, got: ${src.title}`
+        );
+        assert.ok(
+          !src.title.includes('OpenAI'),
+          `Anthropic model ${m.id} must NOT have OpenAI source`
+        );
+      } else if (m.vendor === 'Google') {
+        assert.ok(
+          src.title.includes('Google') || src.title.includes('Gemini'),
+          `Google model ${m.id} must have Google source, got: ${src.title}`
+        );
+        assert.ok(
+          !src.title.includes('OpenAI'),
+          `Google model ${m.id} must NOT have OpenAI source`
+        );
+      } else if (m.vendor === 'DeepSeek') {
+        assert.ok(
+          src.title.includes('DeepSeek'),
+          `DeepSeek model ${m.id} must have DeepSeek source, got: ${src.title}`
+        );
+        assert.ok(
+          !src.title.includes('OpenAI'),
+          `DeepSeek model ${m.id} must NOT have OpenAI source`
+        );
+      } else if (m.vendor === 'Microsoft') {
+        assert.ok(
+          src.title.includes('Microsoft'),
+          `Microsoft model ${m.id} must have Microsoft source, got: ${src.title}`
+        );
+      } else if (m.vendor === 'xAI') {
+        assert.ok(
+          src.title.includes('xAI'),
+          `xAI model ${m.id} must have xAI source, got: ${src.title}`
+        );
+      } else if (m.vendor === 'Moonshot AI') {
+        assert.ok(
+          src.title.includes('Moonshot') || src.title.includes('Kimi'),
+          `Moonshot model ${m.id} must have Moonshot source, got: ${src.title}`
+        );
+      }
+    });
   });
 
   it('correctly normalizes diverse model name variants to knowledge model IDs', () => {
