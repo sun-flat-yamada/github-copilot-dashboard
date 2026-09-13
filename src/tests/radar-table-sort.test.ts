@@ -95,10 +95,38 @@ test('AI Model Radar Table Sort and Action Button Tests', async (t) => {
     // Header sort requirement: model and radar columns
     assert.ok(content.includes("handleSort('model')"), "Header must have onClick handleSort('model')");
     assert.ok(content.includes("handleSort('radar')"), "Header must have onClick handleSort('radar')");
+    assert.ok(content.includes("handleSort('arena')"), "Header must have onClick handleSort('arena')");
 
     // 3-state loop indicators
     assert.ok(content.includes("modelSortMode === 'default'"), 'Must support default sort mode');
     assert.ok(content.includes("modelSortMode === 'asc'"), 'Must support asc sort mode');
     assert.ok(content.includes("modelSortMode === 'desc'"), 'Must support desc sort mode');
+  });
+
+  await t.test('verifies 6-axis quick reference interactive links and cross-widget navigation', () => {
+    const viewFilePath = path.resolve(process.cwd(), 'dashboard/src/components/ModelRadarView.tsx');
+    const content = fs.readFileSync(viewFilePath, 'utf-8');
+
+    // Section title & explanation
+    assert.ok(content.includes('6軸評価基準 & 実測ベンチマーク対応'), 'Must render clear 6-axis reference title');
+    assert.ok(content.includes('handleJumpToTable'), 'Must provide handleJumpToTable navigation');
+    assert.ok(content.includes('handleJumpToSource'), 'Must provide handleJumpToSource navigation');
+
+    // All 6 axes mapped
+    const requiredAxes = [
+      'coding_swe',
+      'reasoning_logic',
+      'arena_elo',
+      'speed_latency',
+      'cost_efficiency',
+      'architecture_design',
+    ];
+    for (const axisKey of requiredAxes) {
+      assert.ok(content.includes(axisKey), `Must configure axis link for ${axisKey}`);
+    }
+
+    // Source highlight state and anchors
+    assert.ok(content.includes('highlightedSourceId'), 'Must manage highlightedSourceId state');
+    assert.ok(content.includes('id={`source-${src.id}`}'), 'Must set source anchor IDs for smooth scroll');
   });
 });

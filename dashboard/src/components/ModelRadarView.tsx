@@ -48,6 +48,14 @@ import {
   Check,
   Trash2,
   Plus,
+  Code2,
+  Brain,
+  Trophy,
+  Zap,
+  Coins,
+  Maximize2,
+  Table,
+  HelpCircle,
 } from 'lucide-react';
 
 import { normalizeModelId } from '../../../src/processor/benchmark-evaluator';
@@ -153,13 +161,16 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   const [focusedModelId, setFocusedModelId] = useState<string>('');
   // 詳細カード上部プルダウンの開閉状態
   const [isDetailCardDropdownOpen, setIsDetailCardDropdownOpen] = useState<boolean>(false);
-  // 生データテーブルのソート列 (社内利用シェア 'usage'、コンテキスト長 'context'、モデル名 'model'、レーダー表示 'radar' も対応)
+  // 生データテーブルのソート列 (社内利用シェア 'usage'、コンテキスト長 'context'、モデル名 'model'、レーダー表示 'radar'、Arena Elo 'arena' も対応)
   const [sortKey, setSortKey] = useState<
-    'overall' | 'swe' | 'speed' | 'cost' | 'aime' | 'usage' | 'context' | 'model' | 'radar'
+    'overall' | 'swe' | 'speed' | 'cost' | 'aime' | 'arena' | 'usage' | 'context' | 'model' | 'radar'
   >('overall');
   const [sortAsc, setSortAsc] = useState<boolean>(false);
   // モデル列用3種ループ状態 ('default' > 'asc' > 'desc')
   const [modelSortMode, setModelSortMode] = useState<'default' | 'asc' | 'desc'>('default');
+
+  // 出典解説カードへのジャンプ時の一時ハイライト対象ID
+  const [highlightedSourceId, setHighlightedSourceId] = useState<string | null>(null);
 
   // モデル選択チップス用: 表示モード (メーカー別 'vendor' / カテゴリ別 'category') & 絞り込み
   const [groupingMode, setGroupingMode] = useState<'vendor' | 'category'>('vendor');
@@ -394,6 +405,9 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       } else if (sortKey === 'aime') {
         valA = a.raw_metrics.aime_2024;
         valB = b.raw_metrics.aime_2024;
+      } else if (sortKey === 'arena') {
+        valA = a.raw_metrics.arena_coding_elo;
+        valB = b.raw_metrics.arena_coding_elo;
       } else if (sortKey === 'usage') {
         valA = usageStats[a.id]?.percentage || 0;
         valB = usageStats[b.id]?.percentage || 0;
@@ -456,7 +470,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   };
 
   const handleSort = (
-    key: 'overall' | 'swe' | 'speed' | 'cost' | 'aime' | 'usage' | 'context' | 'model' | 'radar'
+    key: 'overall' | 'swe' | 'speed' | 'cost' | 'aime' | 'arena' | 'usage' | 'context' | 'model' | 'radar'
   ) => {
     if (key === 'model') {
       if (sortKey !== 'model') {
@@ -480,6 +494,92 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       setSortKey(key);
       setSortAsc(false);
     }
+  };
+
+  // 6軸カードから生データ比較テーブルへジャンプ & ソート連動
+  const handleJumpToTable = (targetSortKey: 'swe' | 'aime' | 'arena' | 'speed' | 'cost' | 'context') => {
+    setSortKey(targetSortKey);
+    setSortAsc(false);
+    const target = document.getElementById('radar-table');
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // 6軸カードから出典解説カードへジャンプ & ハイライト
+  const handleJumpToSource = (sourceId: string) => {
+    setHighlightedSourceId(sourceId);
+    const target = document.getElementById(`source-${sourceId}`);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      document.getElementById('radar-sources')?.scrollIntoView({ behavior: 'smooth' });
+    }
+    setTimeout(() => {
+      setHighlightedSourceId((prev) => (prev === sourceId ? null : prev));
+    }, 3000);
+  };
+
+  // 6軸と対応するテーブルソートキー・出典解説の紐付け定義
+  const AXIS_LINK_CONFIG: Record<
+    string,
+    {
+      sortKey: 'swe' | 'aime' | 'arena' | 'speed' | 'cost' | 'context';
+      sourceId: string;
+      sourceName: string;
+      icon: React.ComponentType<{ className?: string }>;
+      colorClass: string;
+      borderHoverClass: string;
+    }
+  > = {
+    coding_swe: {
+      sortKey: 'swe',
+      sourceId: 'swe-bench',
+      sourceName: 'SWE-bench Verified',
+      icon: Code2,
+      colorClass: 'text-indigo-400',
+      borderHoverClass: 'hover:border-indigo-500/80',
+    },
+    reasoning_logic: {
+      sortKey: 'aime',
+      sourceId: 'frontier-papers',
+      sourceName: 'Frontier Reports',
+      icon: Brain,
+      colorClass: 'text-purple-400',
+      borderHoverClass: 'hover:border-purple-500/80',
+    },
+    arena_elo: {
+      sortKey: 'arena',
+      sourceId: 'lmsys-arena',
+      sourceName: 'LMSYS Arena',
+      icon: Trophy,
+      colorClass: 'text-amber-400',
+      borderHoverClass: 'hover:border-amber-500/80',
+    },
+    speed_latency: {
+      sortKey: 'speed',
+      sourceId: 'artificial-analysis',
+      sourceName: 'Artificial Analysis',
+      icon: Zap,
+      colorClass: 'text-emerald-400',
+      borderHoverClass: 'hover:border-emerald-500/80',
+    },
+    cost_efficiency: {
+      sortKey: 'cost',
+      sourceId: 'artificial-analysis',
+      sourceName: 'Artificial Analysis',
+      icon: Coins,
+      colorClass: 'text-green-400',
+      borderHoverClass: 'hover:border-green-500/80',
+    },
+    architecture_design: {
+      sortKey: 'context',
+      sourceId: 'frontier-papers',
+      sourceName: 'Frontier Reports',
+      icon: Maximize2,
+      colorClass: 'text-cyan-400',
+      borderHoverClass: 'hover:border-cyan-500/80',
+    },
   };
 
   if (loading) {
@@ -1186,17 +1286,87 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
             </div>
           </div>
 
-          {/* 軸の凡例クイックリファレンス */}
-          <div className="mt-4 pt-3 border-t border-slate-800/80 grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
-            {dataset.axis_definitions.map((axis) => (
-              <div
-                key={axis.key}
-                className="bg-slate-950/60 p-2 rounded-lg border border-slate-800/60"
-              >
-                <span className="font-semibold text-slate-300 block">{axis.shortLabel}</span>
-                <span className="text-slate-500 text-[10px]">{axis.primaryMetric}</span>
+          {/* 軸の凡例クイックリファレンス & ウィジェット間相互リンク */}
+          <div className="mt-4 pt-3.5 border-t border-slate-800/80 space-y-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+              <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-200">
+                <Compass className="w-3.5 h-3.5 text-indigo-400" />
+                <span>6軸評価基準 & 実測ベンチマーク対応</span>
               </div>
-            ))}
+              <span className="text-[10px] text-slate-400">
+                各軸をクリックで実測テーブル（ソート連動）や出典解説へジャンプ
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 text-[11px]">
+              {dataset.axis_definitions.map((axis) => {
+                const config = AXIS_LINK_CONFIG[axis.key] || {
+                  sortKey: 'overall' as const,
+                  sourceId: 'swe-bench',
+                  sourceName: 'Benchmark',
+                  icon: HelpCircle,
+                  colorClass: 'text-slate-400',
+                  borderHoverClass: 'hover:border-slate-700',
+                };
+                const IconComponent = config.icon;
+
+                return (
+                  <div
+                    key={axis.key}
+                    onClick={() => handleJumpToTable(config.sortKey)}
+                    className={`bg-slate-950/70 hover:bg-slate-900/90 p-2.5 rounded-xl border border-slate-800/80 ${config.borderHoverClass} transition-all cursor-pointer group shadow-sm flex flex-col justify-between space-y-2 select-none`}
+                    title={`クリックして「04 著名ベンチマーク実測テーブル」で【${axis.primaryMetric}】順にソート表示`}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleJumpToTable(config.sortKey);
+                      }
+                    }}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center space-x-1.5">
+                          <IconComponent className={`w-3.5 h-3.5 ${config.colorClass}`} />
+                          <span className="font-bold text-slate-200 group-hover:text-white transition-colors">
+                            {axis.shortLabel}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-mono text-slate-400 bg-slate-800/60 px-1.5 py-0.5 rounded">
+                          {(axis.weight * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                      <div className="font-semibold text-indigo-300 text-xs truncate">
+                        {axis.primaryMetric}
+                      </div>
+                      <p className="text-slate-400 text-[10px] line-clamp-1 mt-0.5" title={axis.description}>
+                        {axis.description}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-800/60 text-[10px]">
+                      <span className="text-indigo-400 font-medium group-hover:underline flex items-center space-x-0.5">
+                        <Table className="w-3 h-3" />
+                        <span>実測テーブルソート ↓</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleJumpToSource(config.sourceId);
+                        }}
+                        className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 hover:border-slate-500 transition-all flex items-center space-x-0.5"
+                        title={`「05 出典の設計背景・現場の見え方」の【${config.sourceName}】へジャンプ`}
+                      >
+                        <BookOpen className="w-2.5 h-2.5 text-slate-400" />
+                        <span>出典解説 ↗</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -1824,6 +1994,26 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
               SWE-bench
             </button>
             <button
+              onClick={() => handleSort('aime')}
+              className={`px-2.5 py-1 rounded-md font-medium border ${
+                sortKey === 'aime'
+                  ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
+                  : 'bg-slate-800/60 border-slate-700 text-slate-400'
+              }`}
+            >
+              AIME 2024
+            </button>
+            <button
+              onClick={() => handleSort('arena')}
+              className={`px-2.5 py-1 rounded-md font-medium border ${
+                sortKey === 'arena'
+                  ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
+                  : 'bg-slate-800/60 border-slate-700 text-slate-400'
+              }`}
+            >
+              Arena Elo
+            </button>
+            <button
               onClick={() => handleSort('speed')}
               className={`px-2.5 py-1 rounded-md font-medium border ${
                 sortKey === 'speed'
@@ -1916,7 +2106,16 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                     <ArrowUpDown className={`w-3 h-3 ${sortKey === 'aime' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
-                <th className="py-3 px-3">Arena Coding Elo</th>
+                <th
+                  className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors"
+                  onClick={() => handleSort('arena')}
+                  title="Arena Coding Elo 順ソート"
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>Arena Coding Elo</span>
+                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'arena' ? 'text-indigo-400' : 'text-slate-500'}`} />
+                  </div>
+                </th>
                 <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('speed')}>
                   <div className="flex items-center space-x-1">
                     <span>速度 (TPS)</span>
@@ -2201,7 +2400,12 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
           {dataset.sources.map((src) => (
             <div
               key={src.id}
-              className="p-4 bg-slate-950/70 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3.5 hover:border-slate-700 transition-colors"
+              id={`source-${src.id}`}
+              className={`p-4 bg-slate-950/70 rounded-xl border flex flex-col justify-between space-y-3.5 transition-all scroll-mt-24 ${
+                highlightedSourceId === src.id
+                  ? 'border-indigo-500 ring-2 ring-indigo-500/60 shadow-xl shadow-indigo-500/20 bg-slate-900'
+                  : 'border-slate-800 hover:border-slate-700'
+              }`}
             >
               {/* カードヘッダー */}
               <div>
