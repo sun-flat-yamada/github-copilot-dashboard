@@ -910,47 +910,61 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                         return null;
                       }}
                     />
-                    {[...selectedModels]
-                      .sort((a, b) => {
-                        const isAFocused = (focusedModel?.id ?? focusedModelId) === a.id;
-                        const isBFocused = (focusedModel?.id ?? focusedModelId) === b.id;
-                        if (isAFocused) return 1;
-                        if (isBFocused) return -1;
-                        return 0;
-                      })
-                      .map((model) => {
-                        const isFocused = (focusedModel?.id ?? focusedModelId) === model.id;
-                        const hasFocusedModel = Boolean(focusedModel?.id ?? focusedModelId);
-                        return (
-                          <Radar
-                            key={model.id}
-                            name={model.name}
-                            dataKey={model.name}
-                            stroke={model.color}
-                            fill={model.color}
-                            fillOpacity={
-                              isFocused
-                                ? selectedModels.length === 1
-                                  ? 0.4
-                                  : selectedModels.length > 4
-                                  ? 0.22
-                                  : 0.32
-                                : hasFocusedModel
-                                ? 0.02
-                                : selectedModels.length > 4
-                                ? 0.04
-                                : 0.08
-                            }
-                            strokeWidth={isFocused ? 4.5 : 1.5}
-                            strokeDasharray={isFocused ? undefined : '6 3'}
-                            strokeOpacity={isFocused ? 1 : hasFocusedModel ? 0.35 : 0.8}
-                            className={`cursor-pointer ${
-                              isFocused ? 'radar-focused-highlight' : 'transition-opacity duration-300'
-                            }`}
-                            onClick={() => setFocusedModelId(model.id)}
-                          />
-                        );
-                      })}
+                    {/* 1. 背景比較モデル群 (非アクティブモデル: 点線・低不透明度・zIndex: 50) */}
+                    {selectedModels
+                      .filter((m) => m.id !== (focusedModel?.id ?? focusedModelId))
+                      .map((model) => (
+                        <Radar
+                          key={model.id}
+                          name={model.name}
+                          dataKey={model.name}
+                          stroke={model.color}
+                          fill={model.color}
+                          zIndex={50}
+                          fillOpacity={selectedModels.length > 4 ? 0.02 : 0.05}
+                          strokeWidth={1.5}
+                          strokeDasharray="6 3"
+                          strokeOpacity={0.35}
+                          className="cursor-pointer transition-opacity duration-300"
+                          onClick={() => setFocusedModelId(model.id)}
+                        />
+                      ))}
+
+                    {/* 2. 選択中(アクティブ)AIモデル: 常に最前面 (zIndex: 1000, 太線5px, 発光点滅, 頂点ドット) */}
+                    {focusedModel && (
+                      <Radar
+                        key={focusedModel.id}
+                        name={focusedModel.name}
+                        dataKey={focusedModel.name}
+                        stroke={focusedModel.color}
+                        fill={focusedModel.color}
+                        zIndex={1000}
+                        dot={{
+                          r: 4.5,
+                          fill: focusedModel.color,
+                          stroke: '#ffffff',
+                          strokeWidth: 2,
+                        }}
+                        activeDot={{
+                          r: 7,
+                          fill: '#ffffff',
+                          stroke: focusedModel.color,
+                          strokeWidth: 2,
+                        }}
+                        fillOpacity={
+                          selectedModels.length === 1
+                            ? 0.4
+                            : selectedModels.length > 4
+                            ? 0.22
+                            : 0.32
+                        }
+                        strokeWidth={5}
+                        strokeDasharray={undefined}
+                        strokeOpacity={1}
+                        className="cursor-pointer radar-focused-highlight"
+                        onClick={() => setFocusedModelId(focusedModel.id)}
+                      />
+                    )}
                   </RadarChart>
                 </ResponsiveContainer>
               </div>
