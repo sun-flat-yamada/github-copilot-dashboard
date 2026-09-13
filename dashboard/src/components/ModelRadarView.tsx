@@ -808,7 +808,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
               <div className="flex items-center space-x-3 text-[11px] text-slate-400">
                 <span className="hidden sm:inline-flex items-center space-x-1.5">
                   <span className="inline-block w-3.5 h-0.5 bg-indigo-400 rounded" />
-                  <span className="text-slate-300 font-medium">実線(太): アクティブ</span>
+                  <span className="text-slate-300 font-medium">実線(太・点滅): アクティブ</span>
                   <span className="text-slate-600">|</span>
                   <span className="inline-block w-4 border-b border-dashed border-slate-400" />
                   <span>点線: 比較モデル</span>
@@ -837,6 +837,25 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                 </div>
               )}
               <div className="w-full h-[400px] relative">
+                <style>{`
+                  @keyframes radar-strong-pulse {
+                    0%, 100% {
+                      opacity: 1;
+                      filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 14px currentColor);
+                    }
+                    50% {
+                      opacity: 0.12;
+                      filter: drop-shadow(0 0 1px transparent);
+                    }
+                  }
+                  .radar-focused-highlight {
+                    animation: radar-strong-pulse 1.1s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+                  }
+                  .radar-focused-highlight path.recharts-radar-polygon {
+                    stroke-width: 4.5px !important;
+                    stroke-opacity: 1 !important;
+                  }
+                `}</style>
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart data={radarChartData} outerRadius="82%" margin={{ top: 10, right: 40, bottom: 10, left: 40 }}>
                     <PolarGrid stroke="#334155" strokeDasharray="3 3" />
@@ -891,34 +910,47 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                         return null;
                       }}
                     />
-                    {selectedModels.map((model) => {
-                      const isFocused = (focusedModel?.id ?? focusedModelId) === model.id;
-                      return (
-                        <Radar
-                          key={model.id}
-                          name={model.name}
-                          dataKey={model.name}
-                          stroke={model.color}
-                          fill={model.color}
-                          fillOpacity={
-                            isFocused
-                              ? selectedModels.length === 1
-                                ? 0.35
+                    {[...selectedModels]
+                      .sort((a, b) => {
+                        const isAFocused = (focusedModel?.id ?? focusedModelId) === a.id;
+                        const isBFocused = (focusedModel?.id ?? focusedModelId) === b.id;
+                        if (isAFocused) return 1;
+                        if (isBFocused) return -1;
+                        return 0;
+                      })
+                      .map((model) => {
+                        const isFocused = (focusedModel?.id ?? focusedModelId) === model.id;
+                        const hasFocusedModel = Boolean(focusedModel?.id ?? focusedModelId);
+                        return (
+                          <Radar
+                            key={model.id}
+                            name={model.name}
+                            dataKey={model.name}
+                            stroke={model.color}
+                            fill={model.color}
+                            fillOpacity={
+                              isFocused
+                                ? selectedModels.length === 1
+                                  ? 0.4
+                                  : selectedModels.length > 4
+                                  ? 0.22
+                                  : 0.32
+                                : hasFocusedModel
+                                ? 0.02
                                 : selectedModels.length > 4
-                                ? 0.14
-                                : 0.22
-                              : selectedModels.length > 4
-                              ? 0.04
-                              : 0.08
-                          }
-                          strokeWidth={isFocused ? 3.5 : 1.75}
-                          strokeDasharray={isFocused ? undefined : '8 3'}
-                          strokeOpacity={isFocused ? 1 : 0.85}
-                          className={`cursor-pointer ${isFocused ? 'animate-pulse' : ''}`}
-                          onClick={() => setFocusedModelId(model.id)}
-                        />
-                      );
-                    })}
+                                ? 0.04
+                                : 0.08
+                            }
+                            strokeWidth={isFocused ? 4.5 : 1.5}
+                            strokeDasharray={isFocused ? undefined : '6 3'}
+                            strokeOpacity={isFocused ? 1 : hasFocusedModel ? 0.35 : 0.8}
+                            className={`cursor-pointer ${
+                              isFocused ? 'radar-focused-highlight' : 'transition-opacity duration-300'
+                            }`}
+                            onClick={() => setFocusedModelId(model.id)}
+                          />
+                        );
+                      })}
                   </RadarChart>
                 </ResponsiveContainer>
               </div>
