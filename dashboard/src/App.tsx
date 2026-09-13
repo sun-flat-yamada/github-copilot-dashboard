@@ -371,7 +371,7 @@ export const App: React.FC = () => {
       </header>
 
       {/* 2. メインコンテンツエリア */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col space-y-6 w-full">
+      <main className={`${appMode === 'model_radar' ? 'max-w-[1600px]' : 'max-w-7xl'} mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col space-y-6 w-full`}>
         {/* モード A: Monthly Usage Report モード */}
         {appMode === 'monthly_report' && (
           <>

@@ -40,7 +40,6 @@ import {
   Building2,
   CreditCard,
   BookOpen,
-  Boxes,
   Tag,
   ChevronLeft,
   ChevronRight,
@@ -60,6 +59,7 @@ import {
 
 import { normalizeModelId } from '../../../src/processor/benchmark-evaluator';
 import { RadarTableOfContents } from './RadarTableOfContents';
+import { ModelSelectorSidebar, SidebarDisplayMode } from './ModelSelectorSidebar';
 
 export interface ModelUsageStat {
   modelId: string;
@@ -180,6 +180,28 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   // 生データテーブル用: メーカー & カテゴリ絞り込み
   const [tableVendorFilter, setTableVendorFilter] = useState<string>('all');
   const [tableTierFilter, setTableTierFilter] = useState<string>('all');
+
+  // AIモデル選択サイドバーの表示モード ('expanded' (表示/デフォルト) / 'compact' (省幅) / 'collapsed' (非表示))
+  const [sidebarMode, setSidebarMode] = useState<SidebarDisplayMode>(() => {
+    try {
+      const stored = localStorage.getItem('copilot_radar_sidebar_mode');
+      if (stored === 'expanded' || stored === 'compact' || stored === 'collapsed') {
+        return stored;
+      }
+    } catch {
+      // localStorage 非対応環境
+    }
+    return 'expanded';
+  });
+
+  const handleSidebarModeChange = (mode: SidebarDisplayMode) => {
+    setSidebarMode(mode);
+    try {
+      localStorage.setItem('copilot_radar_sidebar_mode', mode);
+    } catch {
+      // ignore
+    }
+  };
 
   // 1. ベンチマークデータの取得
   useEffect(() => {
@@ -676,430 +698,36 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
             })}
           </div>
         </div>
-
-        {/* モデル選択 & 整理・分類パネル (未利用モデルも必ず 0% として全ナレッジモデルを選択可能) */}
-        <div className="mt-4 flex flex-col space-y-3">
-          {/* ヘッダー: タイトル & モード切り替え & 一括操作 */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
-            <div className="flex items-center space-x-2">
-              <Boxes className="w-4 h-4 text-indigo-400" />
-              <span className="text-xs font-bold text-slate-200">AIモデル選択 & 整理・分類</span>
-              <span className="text-[11px] text-slate-400">
-                （保持ナレッジ全 <strong className="text-indigo-300">{dataset.models.length}</strong> モデル • 未利用は <span className="font-mono text-slate-400 bg-slate-900 px-1 rounded border border-slate-800">0%</span> として選択可能）
-              </span>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              {/* 表示整理モード切り替え */}
-              <div className="inline-flex rounded-lg bg-slate-900 p-0.5 border border-slate-800 text-xs">
-                <button
-                  onClick={() => setGroupingMode('vendor')}
-                  className={`px-2.5 py-1 rounded-md font-semibold transition-all flex items-center space-x-1.5 ${
-                    groupingMode === 'vendor'
-                      ? 'bg-indigo-600 text-white shadow'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                  title="メーカー/ベンダー（OpenAI、Anthropic、Google等）ごとに整理して表示"
-                >
-                  <Building2 className="w-3 h-3" />
-                  <span>メーカー別</span>
-                </button>
-                <button
-                  onClick={() => setGroupingMode('category')}
-                  className={`px-2.5 py-1 rounded-md font-semibold transition-all flex items-center space-x-1.5 ${
-                    groupingMode === 'category'
-                      ? 'bg-purple-600 text-white shadow'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                  title="モデルカテゴリ/Tier（Powerful、Versatile、Lightweight）ごとに整理して表示"
-                >
-                  <Tag className="w-3 h-3" />
-                  <span>カテゴリ(Tier)別</span>
-                </button>
-              </div>
-
-              {/* 一括操作 */}
-              <button
-                onClick={handleSelectAllCopilot}
-                className="px-2.5 py-1 text-[11px] font-semibold rounded bg-indigo-950/70 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60 transition-all shadow-sm flex items-center space-x-1"
-                title="GitHub Copilot公式提供の全モデルを一括選択"
-              >
-                <span>Copilot公式全選択</span>
-              </button>
-              <button
-                onClick={() => {
-                  if (selectedModelIds.length > 1) {
-                    setSelectedModelIds([selectedModelIds[0]]);
-                  }
-                }}
-                className="px-2 py-1 text-[11px] font-medium rounded bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 transition-all"
-                title="1モデルのみ残して他を解除"
-              >
-                <span>選択クリア</span>
-              </button>
-            </div>
-          </div>
-
-          {/* 絞り込みタブバー */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 px-1 text-xs">
-            {/* メーカー絞り込み */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-[11px] font-semibold text-slate-400 mr-1 flex items-center space-x-1">
-                <Building2 className="w-3 h-3 text-indigo-400" />
-                <span>メーカー絞り込み:</span>
-              </span>
-              {(() => {
-                const standardVendors = (CANONICAL_VENDOR_ORDER as readonly string[]).filter((x) => x !== 'Other');
-                return (['all', ...CANONICAL_VENDOR_ORDER] as const)
-                  .filter((v) => v === 'all' || v === 'Other' || dataset.models.some((m) => m.vendor === v))
-                  .map((v) => {
-                    const count = v === 'all'
-                      ? dataset.models.length
-                      : v === 'Other'
-                      ? dataset.models.filter((m) => !standardVendors.includes(m.vendor)).length
-                      : dataset.models.filter((m) => m.vendor === v).length;
-                    const label = v === 'all' ? 'すべて' : v === 'Other' ? 'その他' : v;
-                    const isSelected = selectedVendorFilter === v;
-                    return (
-                      <button
-                        key={v}
-                        onClick={() => setSelectedVendorFilter(v)}
-                        className={`px-2 py-0.5 rounded-full text-[11px] font-medium transition-all ${
-                          isSelected
-                            ? 'bg-indigo-600 text-white shadow-sm'
-                            : 'bg-slate-950/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800'
-                        }`}
-                      >
-                        {label} ({count})
-                      </button>
-                    );
-                  });
-              })()}
-            </div>
-
-            {/* カテゴリ絞り込み */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-[11px] font-semibold text-slate-400 mr-1 flex items-center space-x-1">
-                <Tag className="w-3 h-3 text-purple-400" />
-                <span>カテゴリ絞り込み:</span>
-              </span>
-              {[
-                { id: 'all', label: '全カテゴリ' },
-                { id: 'powerful', label: '⚡ Powerful (最上位)' },
-                { id: 'versatile', label: '🛠️ Versatile (実務)' },
-                { id: 'lightweight', label: '🚀 Lightweight (高速)' },
-              ].map((t) => {
-                const isSelected = selectedTierFilter === t.id;
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => setSelectedTierFilter(t.id)}
-                    className={`px-2 py-0.5 rounded-full text-[11px] font-medium transition-all ${
-                      isSelected
-                        ? 'bg-purple-600 text-white shadow-sm'
-                        : 'bg-slate-950/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800'
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* モデル一覧グループ表示 (メーカー別 または カテゴリ別) */}
-          <div className="space-y-3 pt-1">
-            {(() => {
-              const vendorOrder: readonly string[] = CANONICAL_VENDOR_ORDER;
-              const vendorIcons: Record<string, string> = {
-                'Anthropic': '🟠',
-                'OpenAI': '🟢',
-                'Google': '🔵',
-                'Microsoft': '🟣',
-                'Microsoft (External)': '🟣',
-                'DeepSeek': '🔍',
-                'xAI': '⚡',
-                'Moonshot AI': '🌙',
-                'Other': '📦',
-              };
-              const tierOrder = ['powerful', 'versatile', 'lightweight', '_none'] as const;
-              const tierMeta: Record<string, { label: string; icon: string; badgeColor: string; cardBg: string; desc: string }> = {
-                'powerful': {
-                  label: 'Powerful (最上位推論・深層アーキテクチャ設計)',
-                  icon: '⚡',
-                  badgeColor: 'text-amber-300 bg-amber-950/60 border-amber-700/50',
-                  cardBg: 'border-amber-900/40 bg-amber-950/10',
-                  desc: '最高難度のバグ修正・アルゴリズム開発・高難度障害解析向け',
-                },
-                'versatile': {
-                  label: 'Versatile (実務開発・標準コーディング・バランス)',
-                  icon: '🛠️',
-                  badgeColor: 'text-sky-300 bg-sky-950/60 border-sky-700/50',
-                  cardBg: 'border-sky-900/40 bg-sky-950/10',
-                  desc: '日々の開発・機能実装・対話型ペアプログラミング向け',
-                },
-                'lightweight': {
-                  label: 'Lightweight (超高速・低コスト日常補完)',
-                  icon: '🚀',
-                  badgeColor: 'text-emerald-300 bg-emerald-950/60 border-emerald-700/50',
-                  cardBg: 'border-emerald-900/40 bg-emerald-950/10',
-                  desc: 'インライン補完・定型テスト生成・高速タイピング追従向け',
-                },
-                '_none': {
-                  label: 'その他 / クラシックモデル',
-                  icon: '📦',
-                  badgeColor: 'text-slate-400 bg-slate-900 border-slate-700',
-                  cardBg: 'border-slate-800/60 bg-slate-900/20',
-                  desc: '以前の世代のモデルまたは対照ベンチマークモデル',
-                },
-              };
-
-              // 共通チップレンダラー
-              const renderChip = (model: (typeof dataset.models)[0]) => {
-                const isSelected = selectedModelIds.includes(model.id);
-                const isFocused = focusedModelId === model.id;
-                const usage = usageStats[model.id] || { requests: 0, percentage: 0, hasUsage: false };
-                return (
-                  <button
-                    key={model.id}
-                    onClick={() => handleToggleModel(model.id)}
-                    className={`inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-all border ${
-                      isSelected
-                        ? 'border-indigo-500/80 text-white shadow-sm'
-                        : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-                    } ${isFocused && isSelected ? 'ring-2 ring-indigo-400 ring-offset-2 ring-offset-slate-900' : ''}`}
-                    style={{
-                      backgroundColor: isSelected ? `${model.color}25` : undefined,
-                    }}
-                    title={`社内利用シェア: ${usage.percentage}% (${usage.requests.toLocaleString()} 回)${usage.hasUsage ? '' : ' - 実績なし (ナレッジとして選択可能)'}`}
-                  >
-                    <span
-                      className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: model.color }}
-                    />
-                    <span className="font-medium">{model.name}</span>
-                    {model.is_copilot_native && (
-                      <span className="text-[9px] px-1 py-0.5 rounded bg-indigo-950 text-indigo-300 font-mono leading-none">
-                        Copilot
-                      </span>
-                    )}
-                    <span
-                      className={`text-[10px] font-mono px-1.5 py-0.5 rounded leading-none ${
-                        usage.hasUsage
-                          ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-700/60'
-                          : 'bg-slate-900/80 text-slate-500 border border-slate-800'
-                      }`}
-                    >
-                      {usage.percentage}%
-                    </span>
-                    {isSelected && (
-                      <span className="text-[10px] font-bold text-slate-300 ml-0.5">✓</span>
-                    )}
-                  </button>
-                );
-              };
-
-              // フィルタの適用
-              let filtered = dataset.models;
-              if (selectedVendorFilter !== 'all') {
-                if (selectedVendorFilter === 'Other') {
-                  const standardVendors = (CANONICAL_VENDOR_ORDER as readonly string[]).filter((x) => x !== 'Other');
-                  filtered = filtered.filter((m) => !standardVendors.includes(m.vendor));
-                } else {
-                  filtered = filtered.filter((m) => m.vendor === selectedVendorFilter);
-                }
-              }
-              if (selectedTierFilter !== 'all') {
-                filtered = filtered.filter((m) => {
-                  const t = (m.extended_capabilities?.tier || m.capabilities?.tier || '').toLowerCase();
-                  return t === selectedTierFilter;
-                });
-              }
-
-              if (filtered.length === 0) {
-                return (
-                  <div className="p-6 bg-slate-950/40 rounded-xl border border-slate-800 text-center text-slate-500 text-xs">
-                    該当する条件のモデルがありません。フィルタ条件を変更してください。
-                  </div>
-                );
-              }
-
-              // =====================================
-              // モード1: メーカー別グループ表示 (Vendor)
-              // =====================================
-              if (groupingMode === 'vendor') {
-                const grouped = new Map<string, typeof dataset.models>();
-                for (const model of filtered) {
-                  const v = model.vendor || 'Other';
-                  if (!grouped.has(v)) grouped.set(v, []);
-                  grouped.get(v)!.push(model);
-                }
-
-                const sortedVendors = vendorOrder.filter((v) => grouped.has(v));
-                for (const v of grouped.keys()) {
-                  if (!sortedVendors.includes(v)) sortedVendors.push(v);
-                }
-
-                return sortedVendors.map((vendor) => {
-                  const models = grouped.get(vendor)!;
-
-                  // Tier でサブグループ化
-                  const byTier = new Map<string, typeof dataset.models>();
-                  for (const m of models) {
-                    const t = (m.extended_capabilities?.tier || m.capabilities?.tier || '').toLowerCase() || '_none';
-                    if (!byTier.has(t)) byTier.set(t, []);
-                    byTier.get(t)!.push(m);
-                  }
-                  for (const arr of byTier.values()) {
-                    arr.sort((a, b) => b.evaluation.overall_score - a.evaluation.overall_score);
-                  }
-
-                  const sortedTiers = tierOrder.filter((t) => byTier.has(t));
-                  const showTierHeaders = sortedTiers.length > 1 || (sortedTiers.length === 1 && sortedTiers[0] !== '_none');
-
-                  return (
-                    <div key={vendor} className="bg-slate-900/40 rounded-xl border border-slate-800/60 p-3">
-                      {/* ベンダー見出し */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm">{vendorIcons[vendor] || '📦'}</span>
-                          <span className="text-xs font-bold text-slate-200">{vendor}</span>
-                          <span className="text-[10px] font-mono text-slate-500 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
-                            {models.length} モデル
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => {
-                            const vendorIds = models.map((m) => m.id);
-                            const allSelected = vendorIds.every((id) => selectedModelIds.includes(id));
-                            if (allSelected) {
-                              setSelectedModelIds((prev) => prev.filter((id) => !vendorIds.includes(id)));
-                            } else {
-                              setSelectedModelIds((prev) => [...new Set([...prev, ...vendorIds])]);
-                            }
-                          }}
-                          className="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700/60 transition-all"
-                        >
-                          {models.every((m) => selectedModelIds.includes(m.id)) ? '全解除' : '全選択'}
-                        </button>
-                      </div>
-
-                      {/* Tier サブグループ */}
-                      {sortedTiers.map((tierKey) => {
-                        const tierModels = byTier.get(tierKey);
-                        if (!tierModels || tierModels.length === 0) return null;
-                        const meta = tierMeta[tierKey] || tierMeta['_none'];
-
-                        return (
-                          <div key={tierKey} className="mb-1.5 last:mb-0">
-                            {showTierHeaders && tierKey !== '_none' && (
-                              <div className="flex items-center space-x-1.5 mb-1 ml-1">
-                                <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border ${meta.badgeColor}`}>
-                                  {meta.icon} {tierKey.toUpperCase()}
-                                </span>
-                              </div>
-                            )}
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              {tierModels.map((model) => renderChip(model))}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                });
-              }
-
-              // =====================================
-              // モード2: カテゴリ(Tier)別グループ表示
-              // =====================================
-              const groupedByTier = new Map<string, typeof dataset.models>();
-              for (const model of filtered) {
-                const t = (model.extended_capabilities?.tier || model.capabilities?.tier || '').toLowerCase() || '_none';
-                if (!groupedByTier.has(t)) groupedByTier.set(t, []);
-                groupedByTier.get(t)!.push(model);
-              }
-
-              const sortedTiers = tierOrder.filter((t) => groupedByTier.has(t));
-
-              return sortedTiers.map((tierKey) => {
-                const models = groupedByTier.get(tierKey)!;
-                const meta = tierMeta[tierKey] || tierMeta['_none'];
-
-                // ベンダーでサブグループ化
-                const byVendor = new Map<string, typeof dataset.models>();
-                for (const m of models) {
-                  const v = m.vendor || 'Other';
-                  if (!byVendor.has(v)) byVendor.set(v, []);
-                  byVendor.get(v)!.push(m);
-                }
-                for (const arr of byVendor.values()) {
-                  arr.sort((a, b) => b.evaluation.overall_score - a.evaluation.overall_score);
-                }
-
-                const sortedVendors = vendorOrder.filter((v) => byVendor.has(v));
-                for (const v of byVendor.keys()) {
-                  if (!sortedVendors.includes(v)) sortedVendors.push(v);
-                }
-
-                return (
-                  <div key={tierKey} className={`rounded-xl border p-3 ${meta.cardBg}`}>
-                    {/* カテゴリ見出し */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm">{meta.icon}</span>
-                        <span className="text-xs font-bold text-slate-100">{meta.label}</span>
-                        <span className="text-[10px] font-mono text-slate-400 bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800">
-                          {models.length} モデル
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-[10px] text-slate-400 hidden md:inline">
-                          {meta.desc}
-                        </span>
-                        <button
-                          onClick={() => {
-                            const tierIds = models.map((m) => m.id);
-                            const allSelected = tierIds.every((id) => selectedModelIds.includes(id));
-                            if (allSelected) {
-                              setSelectedModelIds((prev) => prev.filter((id) => !tierIds.includes(id)));
-                            } else {
-                              setSelectedModelIds((prev) => [...new Set([...prev, ...tierIds])]);
-                            }
-                          }}
-                          className="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 transition-all"
-                        >
-                          {models.every((m) => selectedModelIds.includes(m.id)) ? '全解除' : '全選択'}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* ベンダー別サブグループ */}
-                    {sortedVendors.map((vendor) => {
-                      const vendorModels = byVendor.get(vendor);
-                      if (!vendorModels || vendorModels.length === 0) return null;
-
-                      return (
-                        <div key={vendor} className="mb-2 last:mb-0">
-                          <div className="flex items-center space-x-1.5 mb-1 ml-1">
-                            <span className="text-[10px]">{vendorIcons[vendor] || '📦'}</span>
-                            <span className="text-[10px] font-semibold text-slate-400">
-                              {vendor}
-                            </span>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            {vendorModels.map((model) => renderChip(model))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              });
-            })()}
-          </div>
-        </div>
       </div>
+
+      {/* 2カラム構成: 左側フレーム (AIモデル選択) & 右側メインエリア (各分析ウィジェット) */}
+      <div className="flex flex-col lg:flex-row items-start gap-6 relative w-full">
+        {/* 左側フレーム: AIモデル選択 (表示 / 省幅 / 非表示 切り替え & 画面追従 sticky) */}
+        <ModelSelectorSidebar
+          dataset={dataset}
+          selectedModelIds={selectedModelIds}
+          focusedModelId={focusedModelId}
+          usageStats={usageStats}
+          sidebarMode={sidebarMode}
+          onSidebarModeChange={handleSidebarModeChange}
+          onToggleModel={handleToggleModel}
+          onSelectAllCopilot={handleSelectAllCopilot}
+          onClearSelection={() => {
+            if (selectedModelIds.length > 1) {
+              setSelectedModelIds([selectedModelIds[0]]);
+            }
+          }}
+          onApplyPreset={handleApplyPreset}
+          groupingMode={groupingMode}
+          onGroupingModeChange={setGroupingMode}
+          selectedVendorFilter={selectedVendorFilter}
+          onVendorFilterChange={setSelectedVendorFilter}
+          selectedTierFilter={selectedTierFilter}
+          onTierFilterChange={setSelectedTierFilter}
+        />
+
+        {/* 右側メインエリア: 各分析ウィジェット */}
+        <div className="flex-1 min-w-0 flex flex-col space-y-6 w-full">
 
       {/* 2. レーダーチャート & フォーカスモデル判定カード */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -2553,6 +2181,8 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
               URL: https://docs.github.com/ja/copilot/reference/copilot-billing/models-and-pricing
             </div>
           </div>
+        </div>
+      </div>
         </div>
       </div>
     </div>

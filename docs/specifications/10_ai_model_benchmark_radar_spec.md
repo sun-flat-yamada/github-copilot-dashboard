@@ -123,6 +123,17 @@ Provides instant, pre-configured 3-to-4 model comparisons. Recommended presets e
 - **Bi-directional Focus Synchronization with Detail Card**:
   - Clicking any model entry in the chart legend (or its polygon in the radar chart) immediately synchronizes the active focus state, updating the right-hand "Model Diagnostics & Guidance" detail card in lockstep.
 
+### 2.7 Left-Frame Model Selector & 3-Mode Display State Specification
+- **Left-Frame Placement & Viewport Tracking (`sticky`)**:
+  - The model selector is repositioned from inside the top overview card to a dedicated left-hand sidebar frame (`ModelSelectorSidebar`).
+  - Anchored with `sticky top-20` and internal scrollability (`max-h-[calc(100vh-5.5rem)] overflow-y-auto`), allowing engineers to view and interact with all analysis widgets (radar chart, detail card, benchmark table, background stories) while dynamically toggling model comparisons without having to scroll back to the top.
+- **3-Mode Display State Switching (`sidebarMode`)**:
+  - **Expanded (`expanded`) [Default]**: Standard width (~320px) featuring full model names, model color swatches, Copilot badges, organization usage percentage, vendor/tier grouping toggles, and filters.
+  - **Compact (`compact`)**: Narrow width (~200px) displaying model abbreviations (e.g., `opus4.8`, `opus5`, `sonnet5`, `astra`, `sol`, `gemini3.8`) generated via `getModelShortName`, with rich tooltips on hover showing full model identity, grade, tier, and internal usage share.
+  - **Collapsed (`collapsed`)**: Frame collapsed with a permanent floating/sticky reopen button (`[▶ Model Selector (X)]`) on the left edge to reclaim 100% horizontal real estate for widgets.
+- **State Persistence**:
+  - The active mode (`expanded`, `compact`, or `collapsed`) is persisted across sessions in `localStorage` under `copilot_radar_sidebar_mode`.
+
 ---
 
 ## 3. Radar Chart 6-Axis Evaluation Metrics
