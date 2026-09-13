@@ -348,10 +348,10 @@ export const App: React.FC = () => {
                     ? 'text-amber-400 bg-slate-800 cursor-default'
                     : 'text-slate-400 hover:text-amber-400 hover:bg-slate-800 cursor-pointer'
                 }`}
-                title={isStarred ? 'Starred' : 'Star on GitHub'}
+                title={isStarred ? 'Star on GitHub (Star済み)' : 'Star on GitHub'}
               >
                 <Star className={`w-3.5 h-3.5 ${isStarred ? 'fill-amber-400' : ''}`} />
-                <span className="text-xs font-semibold pr-0.5">{isStarred ? 'Starred' : 'Star'}</span>
+                <span className="text-xs font-semibold pr-0.5">Star</span>
               </button>
             </div>
 
