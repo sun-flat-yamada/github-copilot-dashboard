@@ -5,7 +5,6 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   Radar,
-  Legend,
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
@@ -796,10 +795,10 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
         {/* 右側メインエリア: 各分析ウィジェット */}
         <div className="flex-1 min-w-0 flex flex-col space-y-6 w-full">
 
-      {/* 2. レーダーチャート & フォーカスモデル判定カード */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* 左: レーダーチャート (7 cols) */}
-        <div id="radar-chart" className="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between scroll-mt-20">
+      {/* 2. レーダーチャート & フォーカスモデル判定カード (縦配置) */}
+      <div className="flex flex-col gap-6">
+        {/* 上: レーダーチャート */}
+        <div id="radar-chart" className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between scroll-mt-20">
           <div>
             <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
               <div className="flex items-center space-x-2">
@@ -821,7 +820,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
             </div>
 
             {/* チャート描画領域 */}
-            <div className="w-full h-[400px] flex items-center justify-center relative">
+            <div className="w-full relative flex flex-col">
               {selectedModels.length === 0 && (
                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-950/70 backdrop-blur-xs rounded-xl p-6 text-center space-y-2.5">
                   <RadarIcon className="w-10 h-10 text-slate-600 animate-pulse" />
@@ -837,162 +836,162 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                   </button>
                 </div>
               )}
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={radarChartData} outerRadius="75%">
-                  <PolarGrid stroke="#334155" strokeDasharray="3 3" />
-                  <PolarAngleAxis
-                    dataKey="subject"
-                    tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }}
-                  />
-                  <PolarRadiusAxis
-                    angle={30}
-                    domain={[0, 100]}
-                    stroke="#475569"
-                    tick={{ fill: '#64748b', fontSize: 10 }}
-                  />
-                  <Tooltip
-                    content={({ active, payload, label }) => {
-                      if (active && payload && payload.length) {
-                        const targetAxis = dataset.axis_definitions.find(
-                          (a) => a.shortLabel === label
-                        );
-                        return (
-                          <div className="bg-slate-950/95 border border-slate-800 p-3 rounded-xl shadow-2xl text-xs space-y-2 backdrop-blur max-w-xs">
-                            <p className="font-bold text-slate-200 border-b border-slate-800 pb-1">
-                              {targetAxis?.label || label}
-                            </p>
-                            <p className="text-[11px] text-slate-400">
-                              {targetAxis?.description}
-                            </p>
-                            <div className="space-y-1 pt-1">
-                              {payload.map((entry: any, index: number) => (
-                                <div
-                                  key={`item-${index}`}
-                                  className="flex items-center justify-between space-x-4"
-                                >
-                                  <div className="flex items-center space-x-1.5">
-                                    <span
-                                      className="w-2.5 h-2.5 rounded-full"
-                                      style={{ backgroundColor: entry.color }}
-                                    />
-                                    <span className="text-slate-300 font-medium truncate max-w-[130px]">
-                                      {entry.name}
+              <div className="w-full h-[400px] relative">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart data={radarChartData} outerRadius="82%" margin={{ top: 10, right: 40, bottom: 10, left: 40 }}>
+                    <PolarGrid stroke="#334155" strokeDasharray="3 3" />
+                    <PolarAngleAxis
+                      dataKey="subject"
+                      tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }}
+                    />
+                    <PolarRadiusAxis
+                      angle={30}
+                      domain={[0, 100]}
+                      stroke="#475569"
+                      tick={{ fill: '#64748b', fontSize: 10 }}
+                    />
+                    <Tooltip
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          const targetAxis = dataset.axis_definitions.find(
+                            (a) => a.shortLabel === label
+                          );
+                          return (
+                            <div className="bg-slate-950/95 border border-slate-800 p-3 rounded-xl shadow-2xl text-xs space-y-2 backdrop-blur max-w-xs">
+                              <p className="font-bold text-slate-200 border-b border-slate-800 pb-1">
+                                {targetAxis?.label || label}
+                              </p>
+                              <p className="text-[11px] text-slate-400">
+                                {targetAxis?.description}
+                              </p>
+                              <div className="space-y-1 pt-1">
+                                {payload.map((entry: any, index: number) => (
+                                  <div
+                                    key={`item-${index}`}
+                                    className="flex items-center justify-between space-x-4"
+                                  >
+                                    <div className="flex items-center space-x-1.5">
+                                      <span
+                                        className="w-2.5 h-2.5 rounded-full"
+                                        style={{ backgroundColor: entry.color }}
+                                      />
+                                      <span className="text-slate-300 font-medium truncate max-w-[130px]">
+                                        {entry.name}
+                                      </span>
+                                    </div>
+                                    <span className="font-mono font-bold text-white">
+                                      {entry.value} / 100
                                     </span>
                                   </div>
-                                  <span className="font-mono font-bold text-white">
-                                    {entry.value} / 100
-                                  </span>
-                                </div>
-                              ))}
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Legend
-                    content={() => (
-                      <div className="flex flex-wrap items-center justify-center gap-1.5 pt-3">
-                        {selectedModels.map((model) => {
-                          const isFocused = (focusedModel?.id ?? focusedModelId) === model.id;
-                          return (
-                            <button
-                              key={model.id}
-                              type="button"
-                              onClick={() => setFocusedModelId(model.id)}
-                              className={`group inline-flex items-center space-x-2 px-2.5 py-1 rounded-lg text-xs transition-all border cursor-pointer select-none ${
-                                isFocused
-                                  ? 'bg-slate-800 text-white font-bold border-indigo-500/70 shadow-sm ring-1 ring-indigo-500/40'
-                                  : 'bg-slate-950/40 text-slate-400 hover:text-slate-200 border-slate-800 hover:border-slate-700 hover:bg-slate-900/60'
-                              }`}
-                              title={`クリックして「${model.name}」を詳細カードに表示（アクティブ切替）`}
-                            >
-                              {/* 色ブロック (現在の色ブロック表示を維持) */}
-                              <span
-                                className="w-2.5 h-2.5 rounded-sm flex-shrink-0 shadow-sm transition-transform group-hover:scale-110"
-                                style={{ backgroundColor: model.color }}
-                                aria-hidden="true"
-                              />
-
-                              {/* 線/点線の状態表示 (スマートなミニチュアインジケータ) */}
-                              <span
-                                className="inline-flex items-center flex-shrink-0"
-                                aria-label={isFocused ? '実線(アクティブ)' : '点線(比較対象)'}
-                              >
-                                {isFocused ? (
-                                  <svg width="18" height="6" className="overflow-visible" aria-hidden="true">
-                                    <line
-                                      x1="0"
-                                      y1="3"
-                                      x2="18"
-                                      y2="3"
-                                      stroke={model.color}
-                                      strokeWidth="3"
-                                      strokeLinecap="round"
-                                    />
-                                  </svg>
-                                ) : (
-                                  <svg width="18" height="6" className="overflow-visible" aria-hidden="true">
-                                    <line
-                                      x1="0"
-                                      y1="3"
-                                      x2="18"
-                                      y2="3"
-                                      stroke={model.color}
-                                      strokeWidth="1.75"
-                                      strokeDasharray="5 2"
-                                      strokeOpacity="0.85"
-                                    />
-                                  </svg>
-                                )}
-                              </span>
-
-                              {/* モデル名 */}
-                              <span className="truncate max-w-[130px] sm:max-w-none">{model.name}</span>
-
-                              {/* アクティブ時のスマートバッジ */}
-                              {isFocused && (
-                                <span className="text-[9px] font-semibold px-1 py-0.2 bg-indigo-500/25 text-indigo-300 rounded border border-indigo-500/30 leading-none">
-                                  選択中
-                                </span>
-                              )}
-                            </button>
                           );
-                        })}
-                      </div>
-                    )}
-                  />
-                  {selectedModels.map((model) => {
-                    const isFocused = (focusedModel?.id ?? focusedModelId) === model.id;
-                    return (
-                      <Radar
-                        key={model.id}
-                        name={model.name}
-                        dataKey={model.name}
-                        stroke={model.color}
-                        fill={model.color}
-                        fillOpacity={
-                          isFocused
-                            ? selectedModels.length === 1
-                              ? 0.35
-                              : selectedModels.length > 4
-                              ? 0.14
-                              : 0.22
-                            : selectedModels.length > 4
-                            ? 0.04
-                            : 0.08
                         }
-                        strokeWidth={isFocused ? 3.5 : 1.75}
-                        strokeDasharray={isFocused ? undefined : '8 3'}
-                        strokeOpacity={isFocused ? 1 : 0.85}
-                        className="cursor-pointer"
-                        onClick={() => setFocusedModelId(model.id)}
+                        return null;
+                      }}
+                    />
+                    {selectedModels.map((model) => {
+                      const isFocused = (focusedModel?.id ?? focusedModelId) === model.id;
+                      return (
+                        <Radar
+                          key={model.id}
+                          name={model.name}
+                          dataKey={model.name}
+                          stroke={model.color}
+                          fill={model.color}
+                          fillOpacity={
+                            isFocused
+                              ? selectedModels.length === 1
+                                ? 0.35
+                                : selectedModels.length > 4
+                                ? 0.14
+                                : 0.22
+                              : selectedModels.length > 4
+                              ? 0.04
+                              : 0.08
+                          }
+                          strokeWidth={isFocused ? 3.5 : 1.75}
+                          strokeDasharray={isFocused ? undefined : '8 3'}
+                          strokeOpacity={isFocused ? 1 : 0.85}
+                          className="cursor-pointer"
+                          onClick={() => setFocusedModelId(model.id)}
+                        />
+                      );
+                    })}
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+              
+              {/* 凡例 (レーダーチャート外の下部に配置) */}
+              <div className="flex flex-wrap items-center justify-center gap-1.5 pt-3">
+                {selectedModels.map((model) => {
+                  const isFocused = (focusedModel?.id ?? focusedModelId) === model.id;
+                  return (
+                    <button
+                      key={model.id}
+                      type="button"
+                      onClick={() => setFocusedModelId(model.id)}
+                      className={`group inline-flex items-center space-x-2 px-2.5 py-1 rounded-lg text-xs transition-all border cursor-pointer select-none ${
+                        isFocused
+                          ? 'bg-slate-800 text-white font-bold border-indigo-500/70 shadow-sm ring-1 ring-indigo-500/40'
+                          : 'bg-slate-950/40 text-slate-400 hover:text-slate-200 border-slate-800 hover:border-slate-700 hover:bg-slate-900/60'
+                      }`}
+                      title={`クリックして「${model.name}」を詳細カードに表示（アクティブ切替）`}
+                    >
+                      {/* 色ブロック */}
+                      <span
+                        className="w-2.5 h-2.5 rounded-sm flex-shrink-0 shadow-sm transition-transform group-hover:scale-110"
+                        style={{ backgroundColor: model.color }}
+                        aria-hidden="true"
                       />
-                    );
-                  })}
-                </RadarChart>
-              </ResponsiveContainer>
+
+                      {/* 線/点線の状態表示 */}
+                      <span
+                        className="inline-flex items-center flex-shrink-0"
+                        aria-label={isFocused ? '実線(アクティブ)' : '点線(比較対象)'}
+                      >
+                        {isFocused ? (
+                          <svg width="18" height="6" className="overflow-visible" aria-hidden="true">
+                            <line
+                              x1="0"
+                              y1="3"
+                              x2="18"
+                              y2="3"
+                              stroke={model.color}
+                              strokeWidth="3"
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                        ) : (
+                          <svg width="18" height="6" className="overflow-visible" aria-hidden="true">
+                            <line
+                              x1="0"
+                              y1="3"
+                              x2="18"
+                              y2="3"
+                              stroke={model.color}
+                              strokeWidth="1.75"
+                              strokeDasharray="5 2"
+                              strokeOpacity="0.85"
+                            />
+                          </svg>
+                        )}
+                      </span>
+
+                      {/* モデル名 */}
+                      <span className="truncate max-w-[130px] sm:max-w-none">{model.name}</span>
+
+                      {/* アクティブ時のバッジ */}
+                      {isFocused && (
+                        <span className="text-[9px] font-semibold px-1 py-0.2 bg-indigo-500/25 text-indigo-300 rounded border border-indigo-500/30 leading-none">
+                          選択中
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -1080,8 +1079,8 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
           </div>
         </div>
 
-        {/* 右: フォーカスモデルの特性判定カード (5 cols) */}
-        <div id="radar-detail" className="lg:col-span-5 flex flex-col space-y-4 scroll-mt-20">
+        {/* 下: フォーカスモデルの特性判定カード */}
+        <div id="radar-detail" className="flex flex-col space-y-4 scroll-mt-20">
           {focusedModel ? (
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex-1 flex flex-col">
               <div>
