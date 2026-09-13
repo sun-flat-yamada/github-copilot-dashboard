@@ -343,15 +343,15 @@ export const App: React.FC = () => {
                     window.open(repoInfo.url, '_blank', 'noopener,noreferrer');
                   }
                 }}
-                className={`flex items-center justify-center px-2 py-1.5 rounded-r-xl transition-all group space-x-1 ${
+                className={`flex items-center justify-center p-2 rounded-r-xl transition-all group cursor-pointer ${
                   isStarred
-                    ? 'text-amber-400 bg-slate-800 cursor-default'
-                    : 'text-slate-400 hover:text-amber-400 hover:bg-slate-800 cursor-pointer'
+                    ? 'text-amber-400 bg-slate-800'
+                    : 'text-slate-400 hover:text-amber-400 hover:bg-slate-800'
                 }`}
                 title={isStarred ? 'Star on GitHub (Star済み)' : 'Star on GitHub'}
+                aria-label="Star on GitHub"
               >
-                <Star className={`w-3.5 h-3.5 ${isStarred ? 'fill-amber-400' : ''}`} />
-                <span className="text-xs font-semibold pr-0.5">Star</span>
+                <Star className={`w-4 h-4 ${isStarred ? 'fill-amber-400 text-amber-400' : 'transition-colors'}`} />
               </button>
             </div>
 
