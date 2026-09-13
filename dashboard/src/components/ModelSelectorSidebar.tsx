@@ -40,64 +40,73 @@ export interface ModelSelectorSidebarProps {
 }
 
 /**
- * AIモデルの省幅表示用略称を生成 (ex. opus4.8, sonnet5, astra, sol, gemini3.8 等)
+ * AIモデルの省幅表示用略称を生成
+ * ルール: モデル派閥（gpt, opus, sonnet, fable, haiku, gemini, mai, grok, kimi, deepseek等）と
+ * バージョンを示す番号（5.6, 6, 5, 4.8, 3.8等）は必ず省略せず含める。
+ * ex. gpt-5.6-luna, gpt-6-astra, opus-5, sonnet-4.5
  */
 export function getModelShortName(model: { id: string; name: string }): string {
   const id = model.id.toLowerCase();
-  const name = model.name;
 
-  // 特注マッピング (例: opus4.8 など)
-  if (id === 'claude-opus-4-8') return 'opus4.8';
-  if (id === 'claude-opus-4-8-fast') return 'opus4.8 (fast)';
-  if (id === 'claude-opus-5') return 'opus5';
-  if (id === 'claude-sonnet-5') return 'sonnet5';
-  if (id === 'claude-fable-5-1') return 'fable5.1';
-  if (id === 'claude-fable-5') return 'fable5';
-  if (id === 'claude-haiku-4-5') return 'haiku4.5';
-  if (id === 'claude-opus-4-7') return 'opus4.7';
-  if (id === 'claude-sonnet-4-6') return 'sonnet4.6';
-  if (id === 'claude-sonnet-4') return 'sonnet4';
-  if (id === 'claude-3-7-sonnet') return 'sonnet3.7';
-  if (id === 'claude-3-5-sonnet') return 'sonnet3.5';
+  // 1. Anthropic Claude ファミリ: 派閥（opus/sonnet/fable/haiku）+ バージョン番号
+  if (id === 'claude-opus-5') return 'opus-5';
+  if (id === 'claude-opus-4-8') return 'opus-4.8';
+  if (id === 'claude-opus-4-8-fast') return 'opus-4.8 (fast)';
+  if (id === 'claude-opus-4-7') return 'opus-4.7';
 
-  if (id === 'gpt-6-astra') return 'astra';
-  if (id === 'gpt-5-6-sol') return 'sol';
-  if (id === 'gpt-5-6-terra') return 'terra';
-  if (id === 'gpt-5-6-luna') return 'luna';
+  if (id === 'claude-sonnet-5') return 'sonnet-5';
+  if (id === 'claude-sonnet-4-6') return 'sonnet-4.6';
+  if (id === 'claude-sonnet-4') return 'sonnet-4';
+  if (id === 'claude-3-7-sonnet') return 'sonnet-3.7';
+  if (id === 'claude-3-5-sonnet') return 'sonnet-3.5';
+
+  if (id === 'claude-fable-5-1') return 'fable-5.1';
+  if (id === 'claude-fable-5') return 'fable-5';
+
+  if (id === 'claude-haiku-4-5') return 'haiku-4.5';
+
+  // 2. OpenAI GPT ファミリ: gpt + バージョン番号 + サブネーム
+  if (id === 'gpt-6-astra') return 'gpt-6-astra';
+  if (id === 'gpt-5-6-sol') return 'gpt-5.6-sol';
+  if (id === 'gpt-5-6-terra') return 'gpt-5.6-terra';
+  if (id === 'gpt-5-6-luna') return 'gpt-5.6-luna';
   if (id === 'gpt-5-5') return 'gpt-5.5';
   if (id === 'gpt-5-4') return 'gpt-5.4';
-  if (id === 'gpt-5-4-mini') return '5.4 mini';
-  if (id === 'gpt-5-4-nano') return '5.4 nano';
-  if (id === 'gpt-5-3-codex') return '5.3 codex';
-  if (id === 'gpt-5-mini') return '5 mini';
+  if (id === 'gpt-5-4-mini') return 'gpt-5.4-mini';
+  if (id === 'gpt-5-4-nano') return 'gpt-5.4-nano';
+  if (id === 'gpt-5-3-codex') return 'gpt-5.3-codex';
+  if (id === 'gpt-5-mini') return 'gpt-5-mini';
   if (id === 'gpt-4o') return 'gpt-4o';
-  if (id === 'gpt-4o-mini') return '4o mini';
+  if (id === 'gpt-4o-mini') return 'gpt-4o-mini';
   if (id === 'o1') return 'o1';
-  if (id === 'o3-mini') return 'o3 mini';
+  if (id === 'o3-mini') return 'o3-mini';
 
-  if (id === 'gemini-3-8-flash') return 'gemini3.8';
-  if (id === 'gemini-3-7-flash') return 'gemini3.7';
-  if (id === 'gemini-3-6-flash') return 'gemini3.6';
-  if (id === 'gemini-3-5-flash') return 'gemini3.5';
-  if (id === 'gemini-2-5-pro') return 'gemini2.5';
-  if (id === 'gemini-2-0-flash') return 'gemini2.0';
+  // 3. Google Gemini ファミリ: gemini + バージョン番号 (+ エディション)
+  if (id === 'gemini-3-8-flash') return 'gemini-3.8-flash';
+  if (id === 'gemini-3-7-flash') return 'gemini-3.7-flash';
+  if (id === 'gemini-3-6-flash') return 'gemini-3.6-flash';
+  if (id === 'gemini-3-5-flash') return 'gemini-3.5-flash';
+  if (id === 'gemini-2-5-pro') return 'gemini-2.5-pro';
+  if (id === 'gemini-2-0-flash') return 'gemini-2.0-flash';
 
-  if (id === 'mai-code-1-1-flash') return 'mai1.1';
-  if (id === 'grok-4-6') return 'grok4.6';
-  if (id === 'grok-4-5') return 'grok4.5';
-  if (id === 'kimi-k3') return 'kimi k3';
-  if (id === 'kimi-k2-7-code') return 'kimi k2.7';
-  if (id === 'deepseek-r1') return 'deepseek r1';
+  // 4. その他の派閥: mai, grok, kimi, deepseek
+  if (id === 'mai-code-1-1-flash') return 'mai-1.1-flash';
+  if (id === 'grok-4-6') return 'grok-4.6';
+  if (id === 'grok-4-5') return 'grok-4.5';
+  if (id === 'kimi-k3') return 'kimi-k3';
+  if (id === 'kimi-k2-7-code') return 'kimi-k2.7';
+  if (id === 'deepseek-r1') return 'deepseek-r1';
 
-  // 汎用フォールバック
-  let short = name
+  // 汎用フォールバック (Claudeプレフィックスのみ除去し、派閥名とバージョン番号を温存)
+  let short = model.name
     .replace(/^Claude\s+/i, '')
     .replace(/^OpenAI\s+/i, '')
     .replace(/\s*\(.*?\)/g, '')
     .trim()
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/\s+/g, '-');
 
-  return short || model.name;
+  return short || model.id;
 }
 
 const vendorIcons: Record<string, string> = {
@@ -498,7 +507,7 @@ Tier: ${(model.extended_capabilities?.tier || model.capabilities?.tier || '標�
   return (
     <aside
       className={`sticky top-20 z-30 flex-shrink-0 self-start transition-all duration-300 max-h-[calc(100vh-5.5rem)] flex flex-col bg-slate-900/95 border border-slate-800 rounded-2xl shadow-2xl backdrop-blur overflow-hidden ${
-        isCompact ? 'w-48 sm:w-52' : 'w-72 sm:w-80 xl:w-84'
+        isCompact ? 'w-52 sm:w-56' : 'w-72 sm:w-80 xl:w-84'
       }`}
     >
       {/* 1. サイドバー最上部ヘッダー: タイトル & 3段階モード切り替え */}

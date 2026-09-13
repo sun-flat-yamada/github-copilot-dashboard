@@ -9,58 +9,81 @@ test('AI Model Radar Selector Sidebar and Abbreviation Tests', async (t) => {
   const datasetJson = JSON.parse(fs.readFileSync(datasetPath, 'utf-8'));
   const models = datasetJson.models as Array<{ id: string; name: string }>;
 
-  await t.test('verifies getModelShortName generates expected abbreviations including opus4.8', () => {
-    // ユーザー要求の明示例: opus4.8
+  await t.test('verifies getModelShortName retains model family and version numbers without omission', () => {
+    // ユーザー要求の指定例:
+    // - gpt-5.6-luna
+    // - gpt-6-astra
+    // - opus-5
+    // - sonnet-4.5 (claude-haiku-4-5 / claude-sonnet-4-6 等のバージョン保持)
     assert.strictEqual(
-      getModelShortName({ id: 'claude-opus-4-8', name: 'Claude Opus 4.8' }),
-      'opus4.8',
-      'claude-opus-4-8 must map to opus4.8'
-    );
-
-    // 主力モデルの略称確認
-    assert.strictEqual(
-      getModelShortName({ id: 'claude-opus-5', name: 'Claude Opus 5' }),
-      'opus5'
-    );
-    assert.strictEqual(
-      getModelShortName({ id: 'claude-sonnet-5', name: 'Claude Sonnet 5' }),
-      'sonnet5'
+      getModelShortName({ id: 'gpt-5-6-luna', name: 'GPT-5.6 Luna' }),
+      'gpt-5.6-luna',
+      'gpt-5-6-luna must retain family and version number'
     );
     assert.strictEqual(
       getModelShortName({ id: 'gpt-6-astra', name: 'GPT-6 Astra' }),
-      'astra'
+      'gpt-6-astra',
+      'gpt-6-astra must retain family and version number'
+    );
+    assert.strictEqual(
+      getModelShortName({ id: 'claude-opus-5', name: 'Claude Opus 5' }),
+      'opus-5',
+      'claude-opus-5 must retain family and version number'
+    );
+    assert.strictEqual(
+      getModelShortName({ id: 'claude-haiku-4-5', name: 'Claude Haiku 4.5' }),
+      'haiku-4.5',
+      'claude-haiku-4-5 must retain family and version number'
+    );
+
+    // その他の主要モデル
+    assert.strictEqual(
+      getModelShortName({ id: 'claude-opus-4-8', name: 'Claude Opus 4.8' }),
+      'opus-4.8'
+    );
+    assert.strictEqual(
+      getModelShortName({ id: 'claude-sonnet-5', name: 'Claude Sonnet 5' }),
+      'sonnet-5'
+    );
+    assert.strictEqual(
+      getModelShortName({ id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6' }),
+      'sonnet-4.6'
     );
     assert.strictEqual(
       getModelShortName({ id: 'gpt-5-6-sol', name: 'GPT-5.6 Sol' }),
-      'sol'
+      'gpt-5.6-sol'
     );
     assert.strictEqual(
       getModelShortName({ id: 'gpt-5-6-terra', name: 'GPT-5.6 Terra' }),
-      'terra'
-    );
-    assert.strictEqual(
-      getModelShortName({ id: 'gpt-5-6-luna', name: 'GPT-5.6 Luna' }),
-      'luna'
+      'gpt-5.6-terra'
     );
     assert.strictEqual(
       getModelShortName({ id: 'gemini-3-8-flash', name: 'Gemini 3.8 Flash' }),
-      'gemini3.8'
+      'gemini-3.8-flash'
+    );
+    assert.strictEqual(
+      getModelShortName({ id: 'gemini-3-5-flash', name: 'Gemini 3.5 Flash' }),
+      'gemini-3.5-flash'
     );
     assert.strictEqual(
       getModelShortName({ id: 'mai-code-1-1-flash', name: 'MAI-Code-1.1-Flash' }),
-      'mai1.1'
+      'mai-1.1-flash'
     );
     assert.strictEqual(
       getModelShortName({ id: 'grok-4-6', name: 'Grok 4.6' }),
-      'grok4.6'
+      'grok-4.6'
     );
     assert.strictEqual(
       getModelShortName({ id: 'kimi-k3', name: 'Kimi K3' }),
-      'kimi k3'
+      'kimi-k3'
+    );
+    assert.strictEqual(
+      getModelShortName({ id: 'kimi-k2-7-code', name: 'Kimi K2.7 Code' }),
+      'kimi-k2.7'
     );
     assert.strictEqual(
       getModelShortName({ id: 'deepseek-r1', name: 'DeepSeek R1 (Open Reasoning)' }),
-      'deepseek r1'
+      'deepseek-r1'
     );
   });
 
