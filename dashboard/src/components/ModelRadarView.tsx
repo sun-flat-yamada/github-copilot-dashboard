@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   RadarChart,
   PolarGrid,
@@ -66,6 +66,75 @@ export interface ModelUsageStat {
   requests: number;
   percentage: number;
   hasUsage: boolean;
+}
+
+/**
+ * 組織内・分析対象データの実績集計 (未利用モデルも必ず 0% として保持)
+ */
+export function computeModelUsage(
+  dataset: BenchmarkDataset | null,
+  aggregatedData?: ScopeAggregatedData | null,
+  monthlyReportData?: MonthlyReportAggregatedData | null
+): Record<string, ModelUsageStat> {
+  const rawCounts: Record<string, number> = {};
+  let totalRequests = 0;
+
+  // A. Live Metrics (aggregatedData) から集計
+  if (aggregatedData?.user_profiles && aggregatedData.user_profiles.length > 0) {
+    for (const p of aggregatedData.user_profiles) {
+      if (p.model_usage_totals) {
+        for (const [rawModel, count] of Object.entries(p.model_usage_totals)) {
+          const normId = normalizeModelId(rawModel);
+          rawCounts[normId] = (rawCounts[normId] || 0) + count;
+          totalRequests += count;
+        }
+      }
+    }
+  }
+
+  // B. Monthly Report (monthlyReportData) から集計 (Live Metricsが空または未連携の場合の補完)
+  if (totalRequests === 0 && monthlyReportData?.model_breakdown) {
+    for (const m of monthlyReportData.model_breakdown) {
+      const normId = normalizeModelId(m.model_name);
+      rawCounts[normId] = (rawCounts[normId] || 0) + m.total_requests;
+      totalRequests += m.total_requests;
+    }
+  }
+
+  const result: Record<string, ModelUsageStat> = {};
+  if (!dataset) return result;
+
+  for (const model of dataset.models) {
+    const count = rawCounts[model.id] || 0;
+    const pct = totalRequests > 0 ? Number(((count / totalRequests) * 100).toFixed(1)) : 0;
+    result[model.id] = {
+      modelId: model.id,
+      requests: count,
+      percentage: pct,
+      hasUsage: count > 0,
+    };
+  }
+
+  return result;
+}
+
+/**
+ * 実績利用数上位のモデルIDリストを取得 (デフォルトTop3、データなし/0件時は空配列)
+ */
+export function getTopUsageModelIds(
+  dataset: BenchmarkDataset,
+  usageStats: Record<string, ModelUsageStat>,
+  limit = 3
+): string[] {
+  const activeModels = dataset.models
+    .filter((m) => (usageStats[m.id]?.requests || 0) > 0)
+    .sort((a, b) => (usageStats[b.id]?.requests || 0) - (usageStats[a.id]?.requests || 0));
+
+  if (activeModels.length === 0) {
+    return [];
+  }
+
+  return activeModels.slice(0, limit).map((m) => m.id);
 }
 
 interface ModelRadarViewProps {
@@ -203,6 +272,9 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
     }
   };
 
+  // 初期選択完了フラグ
+  const hasInitializedRef = useRef<boolean>(false);
+
   // 1. ベンチマークデータの取得
   useEffect(() => {
     async function loadDataset() {
@@ -216,16 +288,19 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
         const data = (await res.json()) as BenchmarkDataset;
         setDataset(data);
 
-        // 初期選択モデルの設定: デフォルトは Copilot 提供全モデル
+        // 初期選択モデルの設定:
+        // 1. initialSelectedModelId が指定されていればそれを選択
+        // 2. 利用データに基づく Top 3 モデルを選択 (利用実績データがない/0件の場合は未選択: [])
         if (initialSelectedModelId && data.models.some((m) => m.id === initialSelectedModelId)) {
           setSelectedModelIds([initialSelectedModelId]);
           setFocusedModelId(initialSelectedModelId);
+          hasInitializedRef.current = true;
         } else {
-          // Copilot 公式提供モデルをすべて初期選択
-          const copilotModelIds = data.models.filter((m) => m.is_copilot_native).map((m) => m.id);
-          const defaultIds = copilotModelIds.length > 0 ? copilotModelIds : data.models.map((m) => m.id);
-          setSelectedModelIds(defaultIds);
-          setFocusedModelId(defaultIds[0]);
+          const stats = computeModelUsage(data, aggregatedData, monthlyReportData);
+          const top3Ids = getTopUsageModelIds(data, stats, 3);
+          setSelectedModelIds(top3Ids);
+          setFocusedModelId(top3Ids[0] || '');
+          hasInitializedRef.current = true;
         }
       } catch (e: any) {
         console.error('Failed to load benchmark dataset:', e);
@@ -238,50 +313,27 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
     loadDataset();
   }, [initialSelectedModelId]);
 
+  // 利用データが非同期で後から到着した場合の初期選択反映 (未初期化または未選択時)
+  useEffect(() => {
+    if (!dataset || hasInitializedRef.current) return;
+    if (initialSelectedModelId && dataset.models.some((m) => m.id === initialSelectedModelId)) {
+      setSelectedModelIds([initialSelectedModelId]);
+      setFocusedModelId(initialSelectedModelId);
+      hasInitializedRef.current = true;
+      return;
+    }
+    const stats = computeModelUsage(dataset, aggregatedData, monthlyReportData);
+    const top3Ids = getTopUsageModelIds(dataset, stats, 3);
+    if (top3Ids.length > 0) {
+      setSelectedModelIds(top3Ids);
+      setFocusedModelId(top3Ids[0] || '');
+      hasInitializedRef.current = true;
+    }
+  }, [dataset, aggregatedData, monthlyReportData, initialSelectedModelId]);
+
   // 組織内・分析対象データの実績集計 (未利用モデルも必ず 0% として保持ナレッジ全モデルを網羅)
   const usageStats = useMemo<Record<string, ModelUsageStat>>(() => {
-    const rawCounts: Record<string, number> = {};
-    let totalRequests = 0;
-
-    // A. Live Metrics (aggregatedData) から集計
-    if (aggregatedData?.user_profiles && aggregatedData.user_profiles.length > 0) {
-      for (const p of aggregatedData.user_profiles) {
-        if (p.model_usage_totals) {
-          for (const [rawModel, count] of Object.entries(p.model_usage_totals)) {
-            const normId = normalizeModelId(rawModel);
-            rawCounts[normId] = (rawCounts[normId] || 0) + count;
-            totalRequests += count;
-          }
-        }
-      }
-    }
-
-    // B. Monthly Report (monthlyReportData) から集計 (Live Metricsが空または未連携の場合の補完)
-    if (totalRequests === 0 && monthlyReportData?.model_breakdown) {
-      for (const m of monthlyReportData.model_breakdown) {
-        const normId = normalizeModelId(m.model_name);
-        rawCounts[normId] = (rawCounts[normId] || 0) + m.total_requests;
-        totalRequests += m.total_requests;
-      }
-    }
-
-    const result: Record<string, ModelUsageStat> = {};
-    if (!dataset) return result;
-
-    // 保持しているナレッジとしての全モデル (dataset.models) を必ず網羅
-    // 利用がないモデルは requests: 0, percentage: 0, hasUsage: false となる
-    for (const model of dataset.models) {
-      const count = rawCounts[model.id] || 0;
-      const pct = totalRequests > 0 ? Number(((count / totalRequests) * 100).toFixed(1)) : 0;
-      result[model.id] = {
-        modelId: model.id,
-        requests: count,
-        percentage: pct,
-        hasUsage: count > 0,
-      };
-    }
-
-    return result;
+    return computeModelUsage(dataset, aggregatedData, monthlyReportData);
   }, [aggregatedData, monthlyReportData, dataset]);
 
   // 最終ベンチマーク確認日のフォーマット (yyyy-mm-dd)
@@ -463,18 +515,35 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
     };
   }, [dataset]);
 
-  // モデル選択トグル (全モデル選択可能)
+  // モデル選択トグル (全モデル選択可能・0モデル選択解除も可能)
   const handleToggleModel = (id: string) => {
     if (selectedModelIds.includes(id)) {
-      if (selectedModelIds.length > 1) {
-        setSelectedModelIds(selectedModelIds.filter((m) => m !== id));
-        if (focusedModelId === id) {
-          setFocusedModelId(selectedModelIds.find((m) => m !== id) || '');
-        }
+      const next = selectedModelIds.filter((m) => m !== id);
+      setSelectedModelIds(next);
+      if (focusedModelId === id) {
+        setFocusedModelId(next[0] || '');
       }
     } else {
       setSelectedModelIds([...selectedModelIds, id]);
       setFocusedModelId(id);
+    }
+  };
+
+  // 複数モデルの一括選択/一括解除 (ベンダー・Tier別ボタン用)
+  const handleBatchSelectModels = (targetIds: string[], select: boolean) => {
+    if (select) {
+      setSelectedModelIds((prev) => Array.from(new Set([...prev, ...targetIds])));
+      if (!targetIds.includes(focusedModelId) && targetIds.length > 0) {
+        setFocusedModelId(targetIds[0]);
+      }
+    } else {
+      setSelectedModelIds((prev) => {
+        const next = prev.filter((id) => !targetIds.includes(id));
+        if (targetIds.includes(focusedModelId)) {
+          setFocusedModelId(next[0] || '');
+        }
+        return next;
+      });
     }
   };
 
@@ -484,6 +553,12 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
     const copilotIds = dataset.models.filter((m) => m.is_copilot_native).map((m) => m.id);
     setSelectedModelIds(copilotIds);
     setFocusedModelId(copilotIds[0] || '');
+  };
+
+  // 全モデルの選択解除 (完全クリア)
+  const handleClearSelection = () => {
+    setSelectedModelIds([]);
+    setFocusedModelId('');
   };
 
   const handleApplyPreset = (modelIds: string[]) => {
@@ -711,12 +786,9 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
           sidebarMode={sidebarMode}
           onSidebarModeChange={handleSidebarModeChange}
           onToggleModel={handleToggleModel}
+          onBatchSelectModels={handleBatchSelectModels}
           onSelectAllCopilot={handleSelectAllCopilot}
-          onClearSelection={() => {
-            if (selectedModelIds.length > 1) {
-              setSelectedModelIds([selectedModelIds[0]]);
-            }
-          }}
+          onClearSelection={handleClearSelection}
           onApplyPreset={handleApplyPreset}
           groupingMode={groupingMode}
           onGroupingModeChange={setGroupingMode}
@@ -754,7 +826,22 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
             </div>
 
             {/* チャート描画領域 */}
-            <div className="w-full h-[400px] flex items-center justify-center">
+            <div className="w-full h-[400px] flex items-center justify-center relative">
+              {selectedModels.length === 0 && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-950/70 backdrop-blur-xs rounded-xl p-6 text-center space-y-2.5">
+                  <RadarIcon className="w-10 h-10 text-slate-600 animate-pulse" />
+                  <p className="text-sm font-bold text-slate-300">モデルが選択されていません</p>
+                  <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
+                    左側の「AIモデル選択」フレームから比較したいモデルを選択するか、「Copilot公式全選択」またはプリセットをクリックしてください。
+                  </p>
+                  <button
+                    onClick={handleSelectAllCopilot}
+                    className="mt-2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold shadow transition-all"
+                  >
+                    Copilot公式モデルを選択
+                  </button>
+                </div>
+              )}
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={radarChartData} outerRadius="75%">
                   <PolarGrid stroke="#334155" strokeDasharray="3 3" />
@@ -1980,20 +2067,11 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                     <td className="py-3 px-3 text-right">
                       <button
                         onClick={() => handleToggleModel(m.id)}
-                        disabled={isSelected && selectedModelIds.length <= 1}
-                        title={
-                          isSelected
-                            ? selectedModelIds.length <= 1
-                              ? 'レーダーには最低1つのモデル選択が必要です'
-                              : '選択解除'
-                            : 'レーダー追加'
-                        }
+                        title={isSelected ? '選択解除' : 'レーダー追加'}
                         aria-label={isSelected ? '選択解除' : 'レーダー追加'}
                         className={`p-1.5 rounded-lg inline-flex items-center justify-center transition-all ${
                           isSelected
-                            ? selectedModelIds.length <= 1
-                              ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/40'
-                              : 'bg-indigo-600 text-white hover:bg-rose-600 border border-indigo-500/60 hover:border-rose-500 shadow-sm'
+                            ? 'bg-indigo-600 text-white hover:bg-rose-600 border border-indigo-500/60 hover:border-rose-500 shadow-sm'
                             : 'bg-slate-800 text-slate-400 hover:bg-indigo-600 hover:text-white border border-slate-700/60'
                         }`}
                       >

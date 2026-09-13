@@ -96,6 +96,88 @@ test('AI Model Radar Selector Sidebar and Abbreviation Tests', async (t) => {
     assert.strictEqual(current, 'expanded', 'Next after collapsed should cycle to expanded (表示)');
   });
 
+  await t.test('verifies getTopUsageModelIds returns Top 3 models by requests or empty if no data', async (sub) => {
+    const { getTopUsageModelIds, computeModelUsage } = await import('../../dashboard/src/components/ModelRadarView');
+
+    await sub.test('computeModelUsage correctly computes stats and handles empty dataset', () => {
+      const stats = computeModelUsage(datasetJson, null, null);
+      assert.ok(stats['claude-opus-5']);
+      assert.strictEqual(stats['claude-opus-5'].requests, 0);
+      assert.strictEqual(stats['claude-opus-5'].hasUsage, false);
+    });
+
+    await sub.test('returns Top 3 active models in descending order of requests', () => {
+      const mockUsageStats = {
+        'claude-opus-5': { modelId: 'claude-opus-5', requests: 1200, percentage: 50, hasUsage: true },
+        'gemini-3-8-flash': { modelId: 'gemini-3-8-flash', requests: 800, percentage: 33.3, hasUsage: true },
+        'gpt-6-astra': { modelId: 'gpt-6-astra', requests: 300, percentage: 12.5, hasUsage: true },
+        'gpt-5-6-luna': { modelId: 'gpt-5-6-luna', requests: 100, percentage: 4.2, hasUsage: true },
+        'kimi-k3': { modelId: 'kimi-k3', requests: 0, percentage: 0, hasUsage: false },
+      };
+
+      const top3 = getTopUsageModelIds(datasetJson, mockUsageStats, 3);
+      assert.deepStrictEqual(top3, ['claude-opus-5', 'gemini-3-8-flash', 'gpt-6-astra']);
+    });
+
+    await sub.test('returns empty array [] when usage data is empty or all requests are 0', () => {
+      const emptyUsageStats = {};
+      const resultEmpty = getTopUsageModelIds(datasetJson, emptyUsageStats, 3);
+      assert.deepStrictEqual(resultEmpty, [], 'Should return empty array when no usage data exists');
+
+      const allZeroUsageStats: Record<string, any> = {};
+      for (const m of datasetJson.models) {
+        allZeroUsageStats[m.id] = { modelId: m.id, requests: 0, percentage: 0, hasUsage: false };
+      }
+      const resultZero = getTopUsageModelIds(datasetJson, allZeroUsageStats, 3);
+      assert.deepStrictEqual(resultZero, [], 'Should return empty array when all model requests are 0');
+    });
+
+    await sub.test('returns fewer than 3 models if only 1 or 2 models have requests', () => {
+      const twoModelsUsage = {
+        'claude-sonnet-5': { modelId: 'claude-sonnet-5', requests: 50, percentage: 70, hasUsage: true },
+        'gpt-5-6-terra': { modelId: 'gpt-5-6-terra', requests: 20, percentage: 30, hasUsage: true },
+      };
+      const result = getTopUsageModelIds(datasetJson, twoModelsUsage, 3);
+      assert.deepStrictEqual(result, ['claude-sonnet-5', 'gpt-5-6-terra']);
+    });
+  });
+
+  await t.test('verifies batch selection logic (select all / deselect all) and clear selection', () => {
+    // 1. 全選択 (select=true) のシミュレーション
+    const initialSelected = ['claude-opus-5'];
+    const vendorIds = ['claude-opus-5', 'claude-sonnet-5', 'claude-haiku-4-5'];
+
+    const handleBatchSelectModels = (prev: string[], targetIds: string[], select: boolean): string[] => {
+      if (select) {
+        return Array.from(new Set([...prev, ...targetIds]));
+      } else {
+        return prev.filter((id) => !targetIds.includes(id));
+      }
+    };
+
+    const afterSelectAll = handleBatchSelectModels(initialSelected, vendorIds, true);
+    assert.deepStrictEqual(
+      afterSelectAll.sort(),
+      ['claude-haiku-4-5', 'claude-opus-5', 'claude-sonnet-5'].sort(),
+      'Vendor batch select should add all models without duplicate'
+    );
+
+    // 2. 全解除 (select=false) のシミュレーション
+    const afterDeselectAll = handleBatchSelectModels(afterSelectAll, vendorIds, false);
+    assert.deepStrictEqual(
+      afterDeselectAll,
+      [],
+      'Vendor batch deselect should remove all target models'
+    );
+
+    // 3. クリア処理のシミュレーション: 全モデル選択を空配列にする
+    const currentSelected = ['claude-opus-5', 'gpt-6-astra'];
+    assert.strictEqual(currentSelected.length, 2);
+    const handleClearSelection = (): string[] => [];
+    const cleared = handleClearSelection();
+    assert.deepStrictEqual(cleared, [], 'Clear selection must result in empty array []');
+  });
+
   await t.test('ModelSelectorSidebar and ModelRadarView files contain required 3-mode elements and layout bindings', () => {
     const sidebarPath = path.resolve(process.cwd(), 'dashboard/src/components/ModelSelectorSidebar.tsx');
     const sidebarContent = fs.readFileSync(sidebarPath, 'utf-8');
@@ -107,6 +189,7 @@ test('AI Model Radar Selector Sidebar and Abbreviation Tests', async (t) => {
     assert.ok(sidebarContent.includes('PanelLeftOpen'), 'Must render reopen toggle for collapsed mode');
     assert.ok(sidebarContent.includes('title={tooltipText}'), 'Must render full details tooltip on hover');
     assert.ok(sidebarContent.includes('sticky top-20'), 'Must be sticky for page scroll tracking');
+    assert.ok(sidebarContent.includes('onBatchSelectModels'), 'Must support onBatchSelectModels prop');
 
     const viewPath = path.resolve(process.cwd(), 'dashboard/src/components/ModelRadarView.tsx');
     const viewContent = fs.readFileSync(viewPath, 'utf-8');
@@ -114,5 +197,9 @@ test('AI Model Radar Selector Sidebar and Abbreviation Tests', async (t) => {
     assert.ok(viewContent.includes('<ModelSelectorSidebar'), 'Must render ModelSelectorSidebar in ModelRadarView');
     assert.ok(viewContent.includes("localStorage.getItem('copilot_radar_sidebar_mode')"), 'Must persist sidebar mode to localStorage');
     assert.ok(viewContent.includes('flex flex-col lg:flex-row items-start gap-6 relative w-full'), 'Must use 2-column responsive layout');
+    assert.ok(viewContent.includes('onBatchSelectModels={handleBatchSelectModels}'), 'Must pass handleBatchSelectModels to ModelSelectorSidebar');
+    assert.ok(viewContent.includes('onClearSelection={handleClearSelection}'), 'Must pass handleClearSelection to ModelSelectorSidebar');
+    assert.ok(viewContent.includes('getTopUsageModelIds'), 'Must call getTopUsageModelIds for initial selection');
   });
 });
+

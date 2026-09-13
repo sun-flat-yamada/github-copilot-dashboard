@@ -133,6 +133,11 @@ Provides instant, pre-configured 3-to-4 model comparisons. Recommended presets e
   - **Collapsed (`collapsed`)**: Frame collapsed with a permanent floating/sticky reopen button (`[▶ Model Selector (X)]`) on the left edge to reclaim 100% horizontal real estate for widgets.
 - **State Persistence**:
   - The active mode (`expanded`, `compact`, or `collapsed`) is persisted across sessions in `localStorage` under `copilot_radar_sidebar_mode`.
+- **Selection State & Batch Operations**:
+  - **Default Initial Selection**: Defaults to the Top 3 models by actual organizational usage requests (`requests > 0`) in descending order via `getTopUsageModelIds`.
+  - **Empty Data Handling**: If no usage data exists or all model requests are 0, initializes with empty selection (`selectedModelIds = []`) and renders a helpful guidance overlay in the radar chart with a button to select Copilot native models.
+  - **Full Clear**: Clicking "クリア" completely empties the selection (`selectedModelIds = []`).
+  - **Vendor / Tier Batch Selection**: "全選択 / 全解除" buttons under each Vendor and Tier heading toggle between selecting all and deselecting all models in that group cleanly (`onBatchSelectModels`).
 
 ---
 

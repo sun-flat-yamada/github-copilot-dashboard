@@ -27,6 +27,7 @@ export interface ModelSelectorSidebarProps {
   sidebarMode: SidebarDisplayMode;
   onSidebarModeChange: (mode: SidebarDisplayMode) => void;
   onToggleModel: (modelId: string) => void;
+  onBatchSelectModels: (modelIds: string[], select: boolean) => void;
   onSelectAllCopilot: () => void;
   onClearSelection: () => void;
   onApplyPreset?: (modelIds: string[]) => void;
@@ -155,6 +156,7 @@ export const ModelSelectorSidebar: React.FC<ModelSelectorSidebarProps> = ({
   sidebarMode,
   onSidebarModeChange,
   onToggleModel,
+  onBatchSelectModels,
   onSelectAllCopilot,
   onClearSelection,
   onApplyPreset,
@@ -377,15 +379,7 @@ Tier: ${(model.extended_capabilities?.tier || model.capabilities?.tier || '標�
                   onClick={() => {
                     const vendorIds = models.map((m) => m.id);
                     const allSelected = vendorIds.every((id) => selectedModelIds.includes(id));
-                    if (allSelected) {
-                      for (const id of vendorIds) {
-                        if (selectedModelIds.length > 1) onToggleModel(id);
-                      }
-                    } else {
-                      for (const id of vendorIds) {
-                        if (!selectedModelIds.includes(id)) onToggleModel(id);
-                      }
-                    }
+                    onBatchSelectModels(vendorIds, !allSelected);
                   }}
                   className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700/60 transition-all"
                 >
@@ -468,15 +462,7 @@ Tier: ${(model.extended_capabilities?.tier || model.capabilities?.tier || '標�
                 onClick={() => {
                   const tierIds = models.map((m) => m.id);
                   const allSelected = tierIds.every((id) => selectedModelIds.includes(id));
-                  if (allSelected) {
-                    for (const id of tierIds) {
-                      if (selectedModelIds.length > 1) onToggleModel(id);
-                    }
-                  } else {
-                    for (const id of tierIds) {
-                      if (!selectedModelIds.includes(id)) onToggleModel(id);
-                    }
-                  }
+                  onBatchSelectModels(tierIds, !allSelected);
                 }}
                 className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 transition-all"
               >
@@ -579,7 +565,7 @@ Tier: ${(model.extended_capabilities?.tier || model.capabilities?.tier || '標�
           <button
             onClick={onClearSelection}
             className="px-2 py-1 text-[10px] font-medium rounded bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 transition-all"
-            title="1モデルのみ残して他を解除"
+            title="全モデルの選択を解除"
           >
             クリア
           </button>
