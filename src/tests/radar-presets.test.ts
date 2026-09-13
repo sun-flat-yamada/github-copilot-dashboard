@@ -27,7 +27,7 @@ test('AI Model Radar Comparison Presets Tests', async (t) => {
   await t.test('includes the 2026 flagship 4 preset with Powerful Claude model (Claude Opus 5)', () => {
     const flagshipPreset = PRESETS.find((p) => p.id === 'flagship-2026');
     assert.ok(flagshipPreset, 'flagship-2026 preset must exist');
-    assert.match(flagshipPreset.name, /2026 旗艦4選/);
+    assert.match(flagshipPreset.name, /2026上 旗艦4選/);
     assert.strictEqual(flagshipPreset.modelIds.length, 4, 'Must contain 4 models');
     // Verify Claude Powerful model (claude-opus-5) is selected over versatile
     assert.ok(flagshipPreset.modelIds.includes('claude-opus-5'), 'Must include claude-opus-5 as Anthropic Powerful flagship');

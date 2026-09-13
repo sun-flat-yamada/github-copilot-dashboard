@@ -111,7 +111,8 @@ flowchart TD
     3. **High-Value (高コスパ・高速設計壁打ち＆比較)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / Logic 95, Arch 93, SWE 71.0)
 
 #### カテゴリ・メーカー別標準プリセット
-- **🌟 2026 旗艦4選 (`flagship-2026`)**: 各社最前線フラッグシップ（Claude Opus 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3）
+- **🌟 2026上 旗艦4選 (`flagship-2026`)**: 2026年上期各社最前線フラッグシップスナップショット（Claude Opus 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3）。
+  - ※ 世代比較の再現性を担保するため、本プリセットは当時のスナップショットとして固定保持する。今後のベンチマークデータ更新時は、上期・下期完了時点の各タイミングで新しい期間の旗艦4選（例: `2026下 旗艦4選` 等）を追記・追加していく運用とする。
 - **💡 実用性能で高コスパ (`practical-high-value`)**: 実用コーディング性能と抜群の費用対効果を両立（Claude Sonnet 5 / Gemini 3.8 Flash / GPT-5.6 Luna / Kimi K2.7 Code）
 - **⚡ Powerful (最上位推論) (`tier-powerful`)**: 最高峰コーディング・推論群（GPT-6 Astra / Claude Opus 5 / GPT-5.6 Sol / Kimi K3）
 - **🛠️ Versatile (実務バランス) (`tier-versatile`)**: 標準実務・俊敏性重視（Claude Sonnet 5 / GPT-5.6 Terra / Gemini 3.8 Flash / Grok 4.6）

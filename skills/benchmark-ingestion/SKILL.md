@@ -62,8 +62,11 @@ interface RawModelEntry {
 
 1. Update `LATEST_BENCHMARK_RECORDS` in `scripts/update-benchmarks.ts`.
 2. Ensure model ID normalization is compatible with `src/processor/benchmark-evaluator.ts`.
-3. Run the update script:
+3. **Check Semiannual Flagship Snapshot Transition (上期・下期完了時点の旗艦4選追加ルール)**:
+   - Existing period flagship snapshots (e.g., `flagship-2026`: `🌟 2026上 旗艦4選`) must be kept intact and immutable.
+   - When a half-year period concludes (上期/下期完了時点), notify or collaborate with `preset-curator-agent` (`skills/preset-curator`) to **append** a new flagship 4 preset for the completed half (e.g. `flagship-2026-h2`: `🌟 2026下 旗艦4選`, or `flagship-2027-h1`: `🌟 2027上 旗艦4選`) to track generational frontier progress across time.
+4. Run the update script:
    ```bash
    npm run benchmark:update
    ```
-4. Verify dataset generation and model scores.
+5. Verify dataset generation and model scores.

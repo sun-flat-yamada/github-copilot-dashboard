@@ -148,8 +148,8 @@ interface ModelRadarViewProps {
 export const PRESETS = [
   {
     id: 'flagship-2026',
-    name: '🌟 2026 旗艦4選',
-    description: 'Claude Opus 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3 (各社最前線フラッグシップ — Powerful Tier 代表)',
+    name: '🌟 2026上 旗艦4選',
+    description: 'Claude Opus 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3 (2026年上期 各社最前線フラッグシップ — Powerful Tier 代表スナップショット)',
     modelIds: ['claude-opus-5', 'gpt-6-astra', 'gemini-3-8-flash', 'kimi-k3'],
   },
   {

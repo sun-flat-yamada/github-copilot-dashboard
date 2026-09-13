@@ -41,8 +41,9 @@ When instructed to perform a radar update:
    - Coordinate with `benchmark-ingestion-agent` to update `LATEST_BENCHMARK_RECORDS` in `scripts/update-benchmarks.ts`.
 2. **Step 2: Re-harvest SNS Developer Buzz**:
    - Coordinate with `sns-buzz-agent` to update `MODEL_ENGINEER_BUZZ` in `src/processor/benchmark-evaluator.ts`.
-3. **Step 3: Curate Comparison Presets**:
+3. **Step 3: Curate Comparison Presets & Preserve Semiannual Flagship Snapshots**:
    - Coordinate with `preset-curator-agent` to evaluate models against the quality gates and update `PRESETS` in `dashboard/src/components/ModelRadarView.tsx`.
+   - Ensure existing flagship presets (such as `flagship-2026`: `🌟 2026上 旗艦4選`) are maintained as immutable snapshots; when a half-year period concludes, add a new flagship preset (e.g. `2026下 旗艦4選`) rather than modifying historical presets.
 4. **Step 4: Increment Version & Generate Dataset**:
    - Coordinate with `radar-version-agent` to run `npm run benchmark:update` which automatically issues the next `yyyy-mm-dd-xxxx` sequence.
 5. **Step 5: Run Full Quality Gate**:

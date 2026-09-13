@@ -12,8 +12,11 @@ Specialized agent responsible for deriving and maintaining recommended compariso
      - High-End (Ultimate capability)
      - Balanced (Enterprise daily driver)
      - High-Value (Lowest cost passing all quality gates)
-2. Maintain standard presets:
-   - `flagship-2026` (2026 旗艦4選: Anthropic Powerful層 `claude-opus-5`, OpenAI `gpt-6-astra`, Google `gemini-3-8-flash`, Moonshot `kimi-k3`)
+2. Maintain standard presets & semiannual flagship snapshot history:
+   - `flagship-2026` (🌟 2026上 旗艦4選: Anthropic Powerful層 `claude-opus-5`, OpenAI `gpt-6-astra`, Google `gemini-3-8-flash`, Moonshot `kimi-k3`)
+   - **Semiannual Flagship Snapshot Preservation & Addition Rule**:
+     - Maintain existing flagship snapshots as immutable records (do not mutate past model assignments).
+     - When benchmark ingestion occurs and a semiannual period concludes (上期・下期完了時点), append a new flagship preset for that period (e.g. `flagship-2026-h2`: `🌟 2026下 旗艦4選`) to track generational AI frontier progression.
    - `recommended-code-review` (コードレビュー利用に推奨)
    - `recommended-codebase-analysis` (コードベース分析に推奨)
    - `recommended-architecture` (設計に推奨)
