@@ -849,9 +849,11 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                   .radar-focused-highlight {
                     animation: radar-gentle-pulse 2s ease-in-out infinite !important;
                   }
-                  .radar-focused-highlight path.recharts-radar-polygon {
+                  .radar-focused-highlight path.recharts-radar-polygon,
+                  .radar-focused-highlight path {
                     stroke-width: 3.5px !important;
                     stroke-opacity: 1 !important;
+                    transition: stroke 0.4s ease, fill 0.4s ease;
                   }
                 `}</style>
                 <ResponsiveContainer width="100%" height="100%">
@@ -908,7 +910,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                         return null;
                       }}
                     />
-                    {/* 1. 背景比較モデル群 (非アクティブモデル: 点線・低不透明度・zIndex: 50) */}
+                    {/* 1. 背景比較モデル群 (非アクティブモデル: 点線・低不透明度・zIndex: 50, 静止固定表示) */}
                     {selectedModels
                       .filter((m) => m.id !== (focusedModel?.id ?? focusedModelId))
                       .map((model) => (
@@ -925,13 +927,14 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                           strokeOpacity={0.35}
                           className="cursor-pointer transition-opacity duration-300"
                           onClick={() => setFocusedModelId(model.id)}
+                          isAnimationActive={false}
                         />
                       ))}
 
-                    {/* 2. 選択中(アクティブ)AIモデル: 常に最前面 (zIndex: 1000, 実線3.5px, 穏やかな点滅) */}
+                    {/* 2. 選択中(アクティブ)AIモデル: 常に最前面 (zIndex: 1000, 実線3.5px, 穏やかな点滅, 前モデル枠線からのモーフィング変形) */}
                     {focusedModel && (
                       <Radar
-                        key={focusedModel.id}
+                        key="active-focused-radar"
                         name={focusedModel.name}
                         dataKey={focusedModel.name}
                         stroke={focusedModel.color}
@@ -955,6 +958,9 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                         strokeOpacity={1}
                         className="cursor-pointer radar-focused-highlight"
                         onClick={() => setFocusedModelId(focusedModel.id)}
+                        isAnimationActive={true}
+                        animationDuration={600}
+                        animationEasing="ease-out"
                       />
                     )}
                   </RadarChart>
