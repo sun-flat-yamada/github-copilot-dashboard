@@ -35,24 +35,22 @@ body {
   background: #484f58;
 }
 
-/* Radar Chart Focus Animation: High-contrast pulsing glow & stroke */
-@keyframes radar-strong-pulse {
+/* Radar Chart Focus Animation: Gentle slow breathing pulse (no white glow, pure line opacity) */
+@keyframes radar-gentle-pulse {
   0%, 100% {
     opacity: 1;
-    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 14px currentColor);
   }
   50% {
-    opacity: 0.12;
-    filter: drop-shadow(0 0 1px transparent);
+    opacity: 0.4;
   }
 }
 
 .radar-focused-highlight {
-  animation: radar-strong-pulse 1.1s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+  animation: radar-gentle-pulse 2s ease-in-out infinite !important;
 }
 
 .radar-focused-highlight path.recharts-radar-polygon {
-  stroke-width: 4.5px !important;
+  stroke-width: 3.5px !important;
   stroke-opacity: 1 !important;
 }
 

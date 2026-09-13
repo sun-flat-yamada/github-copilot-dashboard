@@ -838,21 +838,19 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
               )}
               <div className="w-full h-[400px] relative">
                 <style>{`
-                  @keyframes radar-strong-pulse {
+                  @keyframes radar-gentle-pulse {
                     0%, 100% {
                       opacity: 1;
-                      filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 14px currentColor);
                     }
                     50% {
-                      opacity: 0.12;
-                      filter: drop-shadow(0 0 1px transparent);
+                      opacity: 0.4;
                     }
                   }
                   .radar-focused-highlight {
-                    animation: radar-strong-pulse 1.1s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+                    animation: radar-gentle-pulse 2s ease-in-out infinite !important;
                   }
                   .radar-focused-highlight path.recharts-radar-polygon {
-                    stroke-width: 4.5px !important;
+                    stroke-width: 3.5px !important;
                     stroke-opacity: 1 !important;
                   }
                 `}</style>
@@ -930,7 +928,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                         />
                       ))}
 
-                    {/* 2. 選択中(アクティブ)AIモデル: 常に最前面 (zIndex: 1000, 太線5px, 発光点滅, 頂点ドット) */}
+                    {/* 2. 選択中(アクティブ)AIモデル: 常に最前面 (zIndex: 1000, 実線3.5px, 穏やかな点滅) */}
                     {focusedModel && (
                       <Radar
                         key={focusedModel.id}
@@ -939,26 +937,20 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                         stroke={focusedModel.color}
                         fill={focusedModel.color}
                         zIndex={1000}
-                        dot={{
-                          r: 4.5,
-                          fill: focusedModel.color,
-                          stroke: '#ffffff',
-                          strokeWidth: 2,
-                        }}
+                        dot={false}
                         activeDot={{
-                          r: 7,
-                          fill: '#ffffff',
+                          r: 5,
+                          fill: focusedModel.color,
                           stroke: focusedModel.color,
-                          strokeWidth: 2,
                         }}
                         fillOpacity={
                           selectedModels.length === 1
-                            ? 0.4
+                            ? 0.35
                             : selectedModels.length > 4
-                            ? 0.22
-                            : 0.32
+                            ? 0.16
+                            : 0.25
                         }
-                        strokeWidth={5}
+                        strokeWidth={3.5}
                         strokeDasharray={undefined}
                         strokeOpacity={1}
                         className="cursor-pointer radar-focused-highlight"
