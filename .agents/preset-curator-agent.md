@@ -13,6 +13,7 @@ Specialized agent responsible for deriving and maintaining recommended compariso
      - Balanced (Enterprise daily driver)
      - High-Value (Lowest cost passing all quality gates)
 2. Maintain standard presets:
+   - `flagship-2026` (2026 旗艦4選: Anthropic Powerful層 `claude-opus-5`, OpenAI `gpt-6-astra`, Google `gemini-3-8-flash`, Moonshot `kimi-k3`)
    - `recommended-code-review` (コードレビュー利用に推奨)
    - `recommended-codebase-analysis` (コードベース分析に推奨)
    - `recommended-architecture` (設計に推奨)

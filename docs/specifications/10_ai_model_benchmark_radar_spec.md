@@ -102,7 +102,7 @@ Provides instant, pre-configured 3-to-4 model comparisons. Recommended presets e
     3. **High-Value (Fast Brainstorming & Trade-offs)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / Logic 95, Arch 93, SWE 71.0)
 
 #### Category & Vendor Presets
-- **🌟 2026 Flagship 4 (`flagship-2026`)**: Claude Sonnet 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3
+- **🌟 2026 Flagship 4 (`flagship-2026`)**: Claude Opus 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3
 - **💡 Practical High-Value (`practical-high-value`)**: Claude Sonnet 5 / Gemini 3.8 Flash / GPT-5.6 Luna / Kimi K2.7 Code
 - **⚡ Powerful Reasoning (`tier-powerful`)**: GPT-6 Astra / Claude Opus 5 / GPT-5.6 Sol / Kimi K3
 - **🛠️ Versatile Engineering (`tier-versatile`)**: Claude Sonnet 5 / GPT-5.6 Terra / Gemini 3.8 Flash / Grok 4.6

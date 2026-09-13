@@ -24,6 +24,18 @@ test('AI Model Radar Comparison Presets Tests', async (t) => {
     assert.strictEqual(practicalPreset.modelIds.length, 4, 'Preset should contain 4 models');
   });
 
+  await t.test('includes the 2026 flagship 4 preset with Powerful Claude model (Claude Opus 5)', () => {
+    const flagshipPreset = PRESETS.find((p) => p.id === 'flagship-2026');
+    assert.ok(flagshipPreset, 'flagship-2026 preset must exist');
+    assert.match(flagshipPreset.name, /2026 旗艦4選/);
+    assert.strictEqual(flagshipPreset.modelIds.length, 4, 'Must contain 4 models');
+    // Verify Claude Powerful model (claude-opus-5) is selected over versatile
+    assert.ok(flagshipPreset.modelIds.includes('claude-opus-5'), 'Must include claude-opus-5 as Anthropic Powerful flagship');
+    assert.ok(flagshipPreset.modelIds.includes('gpt-6-astra'), 'Must include gpt-6-astra');
+    assert.ok(flagshipPreset.modelIds.includes('gemini-3-8-flash'), 'Must include gemini-3-8-flash');
+    assert.ok(flagshipPreset.modelIds.includes('kimi-k3'), 'Must include kimi-k3');
+  });
+
   await t.test('includes the 3 new recommended presets (code review, codebase analysis, architecture) with top-3 cost variations', () => {
     // 1. コードレビュー利用に推奨
     const reviewPreset = PRESETS.find((p) => p.id === 'recommended-code-review');

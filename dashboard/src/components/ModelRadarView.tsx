@@ -72,8 +72,8 @@ export const PRESETS = [
   {
     id: 'flagship-2026',
     name: '🌟 2026 旗艦4選',
-    description: 'Claude Sonnet 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3 (各社最前線フラッグシップ)',
-    modelIds: ['claude-sonnet-5', 'gpt-6-astra', 'gemini-3-8-flash', 'kimi-k3'],
+    description: 'Claude Opus 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3 (各社最前線フラッグシップ — Powerful Tier 代表)',
+    modelIds: ['claude-opus-5', 'gpt-6-astra', 'gemini-3-8-flash', 'kimi-k3'],
   },
   {
     id: 'practical-high-value',
@@ -409,6 +409,23 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
 
     return list;
   }, [dataset, sortKey, sortAsc, modelSortMode, selectedModelIds, usageStats, tableVendorFilter, tableTierFilter]);
+
+  // 全モデル中の各指標の最大値 (スコアバー描画用)
+  const maxMetrics = useMemo(() => {
+    if (!dataset || dataset.models.length === 0) return null;
+    const ms = dataset.models;
+    return {
+      overall:    Math.max(...ms.map((m) => m.evaluation.overall_score)),
+      swe:        Math.max(...ms.map((m) => m.raw_metrics.swe_bench_verified)),
+      humaneval:  Math.max(...ms.map((m) => m.raw_metrics.humaneval_plus)),
+      aime:       Math.max(...ms.map((m) => m.raw_metrics.aime_2024)),
+      gpqa:       Math.max(...ms.map((m) => m.raw_metrics.gpqa_diamond)),
+      arena_elo:  Math.max(...ms.map((m) => m.raw_metrics.arena_coding_elo)),
+      speed_tps:  Math.max(...ms.map((m) => m.raw_metrics.output_speed_tps)),
+      // コスト効率: cost_efficiency レーダースコアが高いほど良い
+      cost_eff:   Math.max(...ms.map((m) => m.radar_scores.cost_efficiency)),
+    };
+  }, [dataset]);
 
   // モデル選択トグル (全モデル選択可能)
   const handleToggleModel = (id: string) => {
@@ -1990,9 +2007,19 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                         >
                           {m.evaluation.grade}
                         </span>
-                        <span className="font-mono text-slate-300 font-bold">
-                          {m.evaluation.overall_score} pt
-                        </span>
+                        <div className="flex flex-col min-w-[52px]">
+                          <span className="font-mono text-slate-300 font-bold text-xs">
+                            {m.evaluation.overall_score} pt
+                          </span>
+                          {maxMetrics && (
+                            <div className="mt-1 h-[3px] rounded-full bg-slate-800 w-full overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-indigo-500"
+                                style={{ width: `${(m.evaluation.overall_score / maxMetrics.overall) * 100}%` }}
+                              />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </td>
 
@@ -2013,48 +2040,94 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                     </td>
 
                     <td className="py-3 px-3 font-mono">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-slate-200">
+                      <div className="flex flex-col min-w-[80px]">
+                        <span className="font-bold text-slate-200 text-xs">
                           {m.raw_metrics.swe_bench_verified}%
                         </span>
-                        <span className="text-[10px] text-slate-500">
+                        {maxMetrics && (
+                          <div className="mt-1 h-[3px] rounded-full bg-slate-800 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-violet-500"
+                              style={{ width: `${(m.raw_metrics.swe_bench_verified / maxMetrics.swe) * 100}%` }}
+                            />
+                          </div>
+                        )}
+                        <span className="text-[10px] text-slate-500 mt-0.5">
                           HumanEval+: {m.raw_metrics.humaneval_plus}%
                         </span>
                       </div>
                     </td>
 
                     <td className="py-3 px-3 font-mono">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-slate-200">
+                      <div className="flex flex-col min-w-[80px]">
+                        <span className="font-bold text-slate-200 text-xs">
                           AIME: {m.raw_metrics.aime_2024}%
                         </span>
-                        <span className="text-[10px] text-slate-500">
+                        {maxMetrics && (
+                          <div className="mt-1 h-[3px] rounded-full bg-slate-800 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-amber-500"
+                              style={{ width: `${(m.raw_metrics.aime_2024 / maxMetrics.aime) * 100}%` }}
+                            />
+                          </div>
+                        )}
+                        <span className="text-[10px] text-slate-500 mt-0.5">
                           GPQA: {m.raw_metrics.gpqa_diamond}%
                         </span>
                       </div>
                     </td>
 
-                    <td className="py-3 px-3 font-mono font-bold text-indigo-300">
-                      {m.raw_metrics.arena_coding_elo}
+                    <td className="py-3 px-3 font-mono">
+                      <div className="flex flex-col min-w-[72px]">
+                        <span className="font-bold text-indigo-300 text-xs">
+                          {m.raw_metrics.arena_coding_elo}
+                        </span>
+                        {maxMetrics && (
+                          <div className="mt-1 h-[3px] rounded-full bg-slate-800 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-sky-500"
+                              style={{ width: `${(m.raw_metrics.arena_coding_elo / maxMetrics.arena_elo) * 100}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
                     </td>
 
                     <td className="py-3 px-3 font-mono">
-                      <div className="flex items-center space-x-1.5">
-                        <Gauge className="w-3.5 h-3.5 text-cyan-400" />
-                        <span className="font-bold text-white">
-                          {m.raw_metrics.output_speed_tps} tps
-                        </span>
+                      <div className="flex flex-col min-w-[60px]">
+                        <div className="flex items-center space-x-1">
+                          <Gauge className="w-3 h-3 text-cyan-400" />
+                          <span className="font-bold text-white text-xs">
+                            {m.raw_metrics.output_speed_tps} tps
+                          </span>
+                        </div>
+                        {maxMetrics && (
+                          <div className="mt-1 h-[3px] rounded-full bg-slate-800 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-cyan-500"
+                              style={{ width: `${(m.raw_metrics.output_speed_tps / maxMetrics.speed_tps) * 100}%` }}
+                            />
+                          </div>
+                        )}
                       </div>
                     </td>
 
                     <td className="py-3 px-3 font-mono text-slate-300">
-                      <div className="flex flex-col">
-                        <div className="flex items-center space-x-1">
+                      <div className="flex flex-col min-w-[100px]">
+                        <div className="flex items-center space-x-1 text-xs">
                           <span className="text-emerald-400">In: ${m.raw_metrics.input_cost_per_m}</span>
                           <span className="text-slate-600">/</span>
                           <span className="text-indigo-300">Out: ${m.raw_metrics.output_cost_per_m}</span>
                         </div>
-                        <span className="text-[10px] text-slate-500">
+                        {maxMetrics && (
+                          <div className="mt-1 h-[3px] rounded-full bg-slate-800 overflow-hidden" title="コスト効率 (高いほど安い)">
+                            <div
+                              className="h-full rounded-full bg-emerald-500"
+                              style={{ width: `${(m.radar_scores.cost_efficiency / maxMetrics.cost_eff) * 100}%` }}
+                            />
+                          </div>
+                        )}
+                        <span className="text-[10px] text-slate-500 mt-0.5">
                           Cache: ${m.raw_metrics.cached_input_cost_per_m ?? (m.raw_metrics.input_cost_per_m * 0.1).toFixed(2)}
                         </span>
                       </div>
