@@ -42,6 +42,10 @@ test('AI Model Radar Selector Sidebar and Abbreviation Tests', async (t) => {
       'opus-4.8'
     );
     assert.strictEqual(
+      getModelShortName({ id: 'claude-opus-4-6', name: 'Claude Opus 4.6' }),
+      'opus-4.6'
+    );
+    assert.strictEqual(
       getModelShortName({ id: 'claude-sonnet-5', name: 'Claude Sonnet 5' }),
       'sonnet-5'
     );

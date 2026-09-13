@@ -53,6 +53,7 @@ export function getModelShortName(model: { id: string; name: string }): string {
   if (id === 'claude-opus-4-8') return 'opus-4.8';
   if (id === 'claude-opus-4-8-fast') return 'opus-4.8 (fast)';
   if (id === 'claude-opus-4-7') return 'opus-4.7';
+  if (id === 'claude-opus-4-6') return 'opus-4.6';
 
   if (id === 'claude-sonnet-5') return 'sonnet-5';
   if (id === 'claude-sonnet-4-6') return 'sonnet-4.6';

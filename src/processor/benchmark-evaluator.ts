@@ -453,6 +453,29 @@ export function getModelBuzz(modelId: string, vendor?: ModelVendor): EngineerBuz
     };
   }
 
+  if (m.includes('claude-opus-4-6') || m.includes('opus-4-6') || m.includes('opus46')) {
+    return {
+      headline: '「旧モデルのほうが良い」と現場が熱狂。Enterprise向けに提供が続くOpus 4世代の銘機',
+      community_sentiments: [
+        'Opus 5よりも余計なお節介がなく、指示されたコード変更だけを正確に実行してくれるため最も扱いやすい',
+        'Claude Codeユーザーの間で「Opus 4.6回帰」が起き、一般提供終了後もEnterprise環境で熱烈に愛用されている',
+        '自律性の暴走がなく、エンジニアの手足として堅実かつ完璧にタスクを完遂してくれる信頼感',
+      ],
+      caution_rumor: '2026年9月に一般向け提供（GA）は終了（Retired）しており、現在はEnterpriseプランや年間特定契約環境でのみ利用可能。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+      sources: [
+        {
+          title: 'Claude Codeでなぜ異変、「旧モデルのほうが良い」が続出…AI進化で起きた逆転現象 (ビジネス+IT)',
+          url: 'https://www.sbbit.jp/article/cont1/186928',
+        },
+        {
+          title: 'Anthropic: Claude Enterprise Model Lifecycle & Availability',
+          url: 'https://www.anthropic.com/news',
+        },
+      ],
+    };
+  }
+
   if (m.includes('claude-opus')) {
     return {
       headline: '現場エンジニアから「使いやすい」「安定している」と絶賛されるOpus 4世代の最高峰',
@@ -903,6 +926,16 @@ export function evaluateModel(
       '驚異的なSWE-benchスコアと$2.00/$10.00という圧倒的低価格を両立した次世代の絶対的主力モデル。1Mトークン窓と構成可能推論に完全対応。';
     copilot_usage_guidance =
       '【推奨シーン】日常のIDE ChatからAgentモードでの大規模改修まで、全社デフォルトとして最も費用対効果が高い推奨フラッグシップです。';
+  } else if (mId.includes('claude-opus-4-6') || mId.includes('opus-4-6')) {
+    recommended_for.push(
+      '指示に忠実な実装・余計な変更を避けたい保守改修',
+      'Enterprise環境での安定したコード生成・リファクタリング',
+      '過剰な自律最適化を制御したいミッションクリティカルな開発'
+    );
+    summary_verdict =
+      'Opus 4世代の堅実な銘機。2026年9月に一般提供は終了（Retired）したものの、Enterprise向けプラン等で継続提供されており、指示への実直さから現場で根強い支持を誇ります。';
+    copilot_usage_guidance =
+      '【推奨シーン】Enterprise環境での基幹システム改修、保守開発。Opus 5のような過剰な自律介入がなく、指示通りのシンプルな変更を求める現場に最適です。';
   } else if (mId.includes('claude-opus') || mId.includes('claude-fable')) {
     recommended_for.push(
       'エンタープライズ領域の厳格なセキュリティ・コンプライアンス検証',
@@ -1152,6 +1185,7 @@ export function normalizeModelId(rawName: string): string {
   if (s.includes('claudeopus48fast')) return 'claude-opus-4-8-fast';
   if (s.includes('claudeopus48') || s.includes('opus48')) return 'claude-opus-4-8';
   if (s.includes('claudeopus47') || s.includes('opus47')) return 'claude-opus-4-7';
+  if (s.includes('claudeopus46') || s.includes('opus46')) return 'claude-opus-4-6';
   if (s.includes('claudesonnet46') || s.includes('sonnet46')) return 'claude-sonnet-4-6';
   if (s.includes('claudesonnet4') || s.includes('claude4sonnet') || s.includes('sonnet4')) return 'claude-sonnet-4';
   if (s.includes('claudehaiku45') || s.includes('claude45haiku') || s.includes('haiku45')) return 'claude-haiku-4-5';

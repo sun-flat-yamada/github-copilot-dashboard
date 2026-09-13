@@ -228,7 +228,41 @@ describe('AI Model Benchmark Evaluator Tests', () => {
     );
   });
 
-  it('guarantees zero vendor mismatches across all 38 benchmark dataset models', () => {
+  it('guarantees Claude Opus 4.6 has Retired/Enterprise evaluation and accurate buzz', () => {
+    const rawOpus46: BenchmarkRawMetrics = {
+      swe_bench_verified: 72.5,
+      humaneval_plus: 92.5,
+      aime_2024: 86.5,
+      gpqa_diamond: 76.0,
+      arena_coding_elo: 1420,
+      output_speed_tps: 68,
+      input_cost_per_m: 5.0,
+      output_cost_per_m: 25.0,
+      context_window_k: 1000,
+    };
+    const radar = computeRadarScores(rawOpus46);
+    const evaluation = evaluateModel('claude-opus-4-6', rawOpus46, radar, 'Anthropic');
+
+    assert.ok(evaluation.buzz, 'Opus 4.6 must have buzz');
+    assert.ok(
+      evaluation.buzz.headline.includes('Enterprise向け'),
+      'Opus 4.6 headline must mention Enterprise availability'
+    );
+    assert.ok(
+      evaluation.buzz.caution_rumor.includes('Enterpriseプラン'),
+      'Opus 4.6 caution must mention Enterprise continued availability'
+    );
+    assert.ok(
+      evaluation.summary_verdict.includes('一般提供は終了（Retired）したものの、Enterprise向けプラン等で継続提供'),
+      'Opus 4.6 summary must mention Retired status and Enterprise continuation'
+    );
+    assert.ok(
+      evaluation.copilot_usage_guidance.includes('Enterprise環境での基幹システム改修'),
+      'Opus 4.6 guidance must mention Enterprise environment recommendation'
+    );
+  });
+
+  it('guarantees zero vendor mismatches across all 39 benchmark dataset models', () => {
     const datasetPath = path.resolve(process.cwd(), 'dashboard/public/data/model-benchmarks.json');
     if (!fs.existsSync(datasetPath)) return;
     const dataset = JSON.parse(fs.readFileSync(datasetPath, 'utf8'));
@@ -364,6 +398,7 @@ describe('AI Model Benchmark Evaluator Tests', () => {
     assert.strictEqual(normalizeModelId('Claude Sonnet 5'), 'claude-sonnet-5');
     assert.strictEqual(normalizeModelId('claude-5-sonnet'), 'claude-sonnet-5');
     assert.strictEqual(normalizeModelId('Claude Opus 5'), 'claude-opus-5');
+    assert.strictEqual(normalizeModelId('Claude Opus 4.6'), 'claude-opus-4-6');
     assert.strictEqual(normalizeModelId('GPT-5.6 Sol'), 'gpt-5-6-sol');
     assert.strictEqual(normalizeModelId('GPT-5.6 Terra'), 'gpt-5-6-terra');
     assert.strictEqual(normalizeModelId('GPT-5.6 Luna'), 'gpt-5-6-luna');
