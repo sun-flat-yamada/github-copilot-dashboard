@@ -78,8 +78,8 @@ export function getModelShortName(model: { id: string; name: string }): string {
   if (id === 'gpt-5-mini') return 'gpt-5-mini';
   if (id === 'gpt-4o') return 'gpt-4o';
   if (id === 'gpt-4o-mini') return 'gpt-4o-mini';
-  if (id === 'o1') return 'o1';
-  if (id === 'o3-mini') return 'o3-mini';
+  if (id === 'o1') return 'gpt-o1';
+  if (id === 'o3-mini') return 'gpt-o3-mini';
 
   // 3. Google Gemini ファミリ: gemini + バージョン番号 (+ エディション)
   if (id === 'gemini-3-8-flash') return 'gemini-3.8-flash';

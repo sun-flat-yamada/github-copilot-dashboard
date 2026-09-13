@@ -58,6 +58,16 @@ test('AI Model Radar Selector Sidebar and Abbreviation Tests', async (t) => {
       'gpt-5.6-terra'
     );
     assert.strictEqual(
+      getModelShortName({ id: 'o1', name: 'OpenAI o1 (Full Reasoning)' }),
+      'gpt-o1',
+      'o1 must map to gpt-o1'
+    );
+    assert.strictEqual(
+      getModelShortName({ id: 'o3-mini', name: 'OpenAI o3-mini' }),
+      'gpt-o3-mini',
+      'o3-mini must map to gpt-o3-mini'
+    );
+    assert.strictEqual(
       getModelShortName({ id: 'gemini-3-8-flash', name: 'Gemini 3.8 Flash' }),
       'gemini-3.8-flash'
     );
