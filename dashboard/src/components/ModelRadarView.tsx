@@ -914,7 +914,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                           strokeWidth={isFocused ? 3.5 : 1.75}
                           strokeDasharray={isFocused ? undefined : '8 3'}
                           strokeOpacity={isFocused ? 1 : 0.85}
-                          className="cursor-pointer"
+                          className={`cursor-pointer ${isFocused ? 'animate-pulse' : ''}`}
                           onClick={() => setFocusedModelId(model.id)}
                         />
                       );
