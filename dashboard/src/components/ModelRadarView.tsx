@@ -2053,7 +2053,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
 
                     <td className="py-3 px-3 font-mono text-slate-300">
                       <div className="flex items-center space-x-1.5">
-                        <span>
+                        <span className="inline-block min-w-[64px]">
                           {m.raw_metrics.context_window_display || (
                             m.raw_metrics.context_window_k >= 1000
                               ? `${m.raw_metrics.context_window_k / 1000}M Tok`
