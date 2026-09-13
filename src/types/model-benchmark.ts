@@ -67,11 +67,17 @@ export type ModelSuitabilityTag =
   | 'Agent & Multi-Turn'
   | 'High-Precision Coding';
 
+export interface BuzzSource {
+  title: string;
+  url: string;
+}
+
 export interface EngineerBuzz {
   headline: string; // キャッチコピー / 現場での通り名
   community_sentiments: string[]; // 現場エンジニアからのポジティブな実感・評価
   caution_rumor: string; // 現場で囁かれる注意点・ボヤキ
   source_note: string; // "※ SNS上のエンジニアの声・コミュニティの噂・所感"
+  sources?: BuzzSource[]; // 引用元・参考記事・コミュニティ等のURL一覧
 }
 
 export interface ModelEvaluation {

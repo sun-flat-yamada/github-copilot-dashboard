@@ -451,6 +451,12 @@ export function evaluateModel(
       ],
       caution_rumor: 'クレジット消費が圧倒的。日常の些細な質問で乱用すると月末に上長から呼び出されるという噂。',
       source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+      sources: [
+        {
+          title: 'OpenAI: Frontier Research & Model Announcements',
+          url: 'https://openai.com/index/',
+        },
+      ],
     };
   } else if (modelId.includes('claude-sonnet-5') || modelId.includes('claude-5-sonnet')) {
     buzz = {
@@ -462,6 +468,12 @@ export function evaluateModel(
       ],
       caution_rumor: '便利すぎてこれ以外のモデルを使う気にならなくなる「Sonnet 5依存症」が多発中との噂。',
       source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+      sources: [
+        {
+          title: 'Anthropic: Announcements & Engineering Updates',
+          url: 'https://www.anthropic.com/news',
+        },
+      ],
     };
   } else if (modelId.includes('gpt-5-6-sol') || modelId.includes('sol')) {
     buzz = {
@@ -473,6 +485,12 @@ export function evaluateModel(
       ],
       caution_rumor: 'キャッシュ書き込みコストがあるため、同じセッションを上手に再利用しないとコスト効率が落ちるという噂。',
       source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+      sources: [
+        {
+          title: 'OpenAI: Developer Platform & Model Specifications',
+          url: 'https://platform.openai.com/docs/models',
+        },
+      ],
     };
   } else if (modelId.includes('gpt-5-6-terra') || modelId.includes('terra')) {
     buzz = {
@@ -484,6 +502,12 @@ export function evaluateModel(
       ],
       caution_rumor: '超難関アルゴリズムや数学的証明ではSolやAstraに一歩譲るので使い分けが必要との噂。',
       source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+      sources: [
+        {
+          title: 'OpenAI: Developer Platform & Model Specifications',
+          url: 'https://platform.openai.com/docs/models',
+        },
+      ],
     };
   } else if (modelId.includes('gpt-5-6-luna') || modelId.includes('luna')) {
     buzz = {
@@ -495,6 +519,12 @@ export function evaluateModel(
       ],
       caution_rumor: '少しでも複雑なビジネスロジックを任せると凡ミスが増えるので、設計相談には向かないという噂。',
       source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+      sources: [
+        {
+          title: 'OpenAI: Developer Platform & Model Specifications',
+          url: 'https://platform.openai.com/docs/models',
+        },
+      ],
     };
   } else if (modelId.includes('gemini-3') || modelId.includes('gemini-3-8') || modelId.includes('gemini-3-7') || modelId.includes('gemini-3-6')) {
     buzz = {
@@ -506,6 +536,12 @@ export function evaluateModel(
       ],
       caution_rumor: 'たまにライブラリのバージョン差異を混同することがあるので、インポート文は目視確認が必要との噂。',
       source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+      sources: [
+        {
+          title: 'Google DeepMind & Developers Blog',
+          url: 'https://blog.google/technology/developers/',
+        },
+      ],
     };
   } else if (modelId.includes('kimi-k3') || modelId.includes('kimi')) {
     buzz = {
@@ -516,6 +552,12 @@ export function evaluateModel(
       ],
       caution_rumor: '英語や中国語のコードベースに比べて日本語コメントのニュアンスに若干のクセがあるという噂。',
       source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+      sources: [
+        {
+          title: 'Moonshot AI / Kimi Platform',
+          url: 'https://kimi.moonshot.cn/',
+        },
+      ],
     };
   } else if (modelId.includes('claude-3-7')) {
     buzz = {
@@ -527,6 +569,12 @@ export function evaluateModel(
       ],
       caution_rumor: '思考が深すぎて回答が長大になりがち。調子に乗って使いまくるとクォータ上限が一瞬で溶けるという噂。',
       source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+      sources: [
+        {
+          title: 'Anthropic: Claude 3.7 Sonnet and Claude Code',
+          url: 'https://www.anthropic.com/news/claude-3-7-sonnet',
+        },
+      ],
     };
   } else if (modelId.includes('claude-3-5')) {
     buzz = {
@@ -538,6 +586,12 @@ export function evaluateModel(
       ],
       caution_rumor: 'たまに同一箇所の修正を指示しても頑固に直さない修正ループに陥ることがあるという噂。',
       source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+      sources: [
+        {
+          title: 'Anthropic: Claude 3.5 Sonnet Announcement',
+          url: 'https://www.anthropic.com/news/claude-3-5-sonnet',
+        },
+      ],
     };
   } else if (modelId === 'o1') {
     buzz = {
@@ -548,6 +602,12 @@ export function evaluateModel(
       ],
       caution_rumor: '最初の1文字が出るまで20〜40秒待たされる。インライン補完感覚で呼ぶとフリーズしたかと錯覚する。',
       source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+      sources: [
+        {
+          title: 'OpenAI: Introducing OpenAI o1',
+          url: 'https://openai.com/index/introducing-openai-o1/',
+        },
+      ],
     };
   } else if (modelId.includes('o3-mini')) {
     buzz = {
@@ -558,6 +618,12 @@ export function evaluateModel(
       ],
       caution_rumor: 'Reasoning Effort を High にするとたまに考えすぎて長文の推論迷路に入るという噂。',
       source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+      sources: [
+        {
+          title: 'OpenAI: OpenAI o3-mini Announcement',
+          url: 'https://openai.com/index/openai-o3-mini/',
+        },
+      ],
     };
   } else if (modelId.includes('claude-opus-5') || modelId.includes('claude-5-opus')) {
     buzz = {
@@ -568,7 +634,13 @@ export function evaluateModel(
         '高い推論力と自律性が裏目に出てしまい、エンジニアの制御を超えて過剰な最適化を行ってしまう傾向がある',
       ],
       caution_rumor: '最新の進化により高性能にはなったものの、現場のエンジニアからは「扱いづらくなった」という不満が続出しており、アンソロピック公式の設計思想と実際のユースケースとの間にギャップが生じているとの指摘がある。',
-      source_note: '※ ビジネス+IT記事『Claude Codeでなぜ異変、「旧モデルのほうが良い」が続出…AI進化で起きた逆転現象』等より加味',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+      sources: [
+        {
+          title: 'Claude Codeでなぜ異変、「旧モデルのほうが良い」が続出…AI進化で起きた逆転現象 (ビジネス+IT)',
+          url: 'https://www.sbbit.jp/article/cont1/186928',
+        },
+      ],
     };
   } else {
     // GPT-4o / General
@@ -580,6 +652,12 @@ export function evaluateModel(
       ],
       caution_rumor: '最新世代モデルと比べると複雑なコードベースでの自律解決力に差が出始めているとの噂。',
       source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+      sources: [
+        {
+          title: 'OpenAI: Hello GPT-4o',
+          url: 'https://openai.com/index/hello-gpt-4o/',
+        },
+      ],
     };
   }
 

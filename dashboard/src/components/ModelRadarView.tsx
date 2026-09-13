@@ -1621,6 +1621,40 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                         </div>
                       </div>
                     )}
+
+                    {/* 引用元・参考URL一覧 */}
+                    {focusedModel.evaluation.buzz.sources && focusedModel.evaluation.buzz.sources.length > 0 && (
+                      <div className="pt-2.5 border-t border-purple-800/30 text-[11px] space-y-1.5">
+                        <div className="flex items-center space-x-1.5 text-[10px] font-bold uppercase tracking-wider text-purple-400">
+                          <ExternalLink className="w-3 h-3 text-purple-400 flex-shrink-0" />
+                          <span>引用元・参考URL:</span>
+                        </div>
+                        <ul className="space-y-1.5 pl-0.5">
+                          {focusedModel.evaluation.buzz.sources.map((src, i) => (
+                            <li key={i} className="flex items-start space-x-1.5 text-[11px]">
+                              <span className="text-purple-400 font-bold flex-shrink-0 mt-0.5">•</span>
+                              <div className="min-w-0 flex-1 leading-snug">
+                                {src.title && (
+                                  <div className="text-slate-200 font-medium text-[11px]">
+                                    {src.title}
+                                  </div>
+                                )}
+                                <a
+                                  href={src.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-purple-300 hover:text-purple-100 underline decoration-purple-500/50 hover:decoration-purple-300 text-[10px] break-all inline-flex items-center gap-1 mt-0.5"
+                                  title={src.url}
+                                >
+                                  <span>{src.url}</span>
+                                  <ExternalLink className="w-2.5 h-2.5 flex-shrink-0 opacity-70" />
+                                </a>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

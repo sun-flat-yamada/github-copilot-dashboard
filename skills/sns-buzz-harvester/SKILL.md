@@ -26,12 +26,17 @@ While official benchmarks offer standardized numerical scores, production softwa
 
 ## 📝 Sentiment Profile Schema (`EngineerBuzz`)
 
-```typescript
+export interface BuzzSource {
+  title: string;
+  url: string;
+}
+
 export interface EngineerBuzz {
   headline: string; // e.g. "2026年フロントエンド自律実装のデファクトスタンダード"
   community_sentiments: string[]; // 3-4 bullet points of positive production feedback
   caution_rumor: string; // 1-2 cautionary nuances or community gripes
   source_note: string; // "※ SNS上のエンジニアの声・コミュニティの噂・所感"
+  sources?: BuzzSource[]; // 引用元・参考記事等のURL一覧
 }
 ```
 

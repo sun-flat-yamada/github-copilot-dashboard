@@ -155,6 +155,43 @@ describe('AI Model Benchmark Evaluator Tests', () => {
       evaluation.buzz.source_note.includes('※ SNS上のエンジニアの声'),
       'Buzz source_note must explicitly specify SNS rumor note'
     );
+    assert.ok(evaluation.buzz.sources && evaluation.buzz.sources.length > 0, 'Buzz must have sources');
+    assert.ok(evaluation.buzz.sources[0].url.startsWith('https://'), 'Buzz source URL must be valid');
+  });
+
+  it('guarantees Claude Opus 5 buzz has standard source_note and lists Business+IT source URL without individual memo', () => {
+    const rawOpus: BenchmarkRawMetrics = {
+      swe_bench_verified: 81.0,
+      humaneval_plus: 95.8,
+      aime_2024: 93.8,
+      gpqa_diamond: 84.5,
+      arena_coding_elo: 1470,
+      output_speed_tps: 62,
+      input_cost_per_m: 5.0,
+      output_cost_per_m: 25.0,
+      context_window_k: 1000,
+    };
+    const radar = computeRadarScores(rawOpus);
+    const evaluation = evaluateModel('claude-opus-5', rawOpus, radar);
+
+    assert.ok(evaluation.buzz, 'Opus 5 evaluation must have buzz');
+    assert.strictEqual(
+      evaluation.buzz.source_note,
+      '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+      'Opus 5 source_note must be the standard note, without ad-hoc memos'
+    );
+    assert.ok(
+      !evaluation.buzz.source_note.includes('ビジネス+IT'),
+      'source_note must not contain article note'
+    );
+    assert.ok(evaluation.buzz.sources && evaluation.buzz.sources.length > 0, 'Must have sources');
+    const sbbitSource = evaluation.buzz.sources.find((s) => s.url.includes('sbbit.jp'));
+    assert.ok(sbbitSource, 'Must include Business+IT article in sources');
+    assert.strictEqual(
+      sbbitSource?.url,
+      'https://www.sbbit.jp/article/cont1/186928',
+      'Must have exact URL to Business+IT article'
+    );
   });
 
   it('correctly normalizes diverse model name variants to knowledge model IDs', () => {
