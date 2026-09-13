@@ -87,7 +87,7 @@ export const DEFAULT_BENCHMARK_SOURCES: BenchmarkSourceMeta[] = [
     id: 'lmsys-arena',
     name: 'LMSYS Chatbot Arena (Coding)',
     description: '100万件以上の実世界ユーザー対戦によるブラインドコーディング能力レーティング (Elo)',
-    url: 'https://chat.lmsys.org/?leaderboard',
+    url: 'https://lmarena.ai/',
     last_fetched_at: '2026-09-01T00:00:00Z',
     target_problem:
       '世界中のエンジニアが日々の業務や学習で実際に遭遇した自由形式のプログラミング課題。2つの匿名AIモデルが生成したコードと解説を提示し、人間がどちらの回答が優れているかをブラインドで比較判定するクラウドソーシング対戦方式です。',
@@ -113,7 +113,7 @@ export const DEFAULT_BENCHMARK_SOURCES: BenchmarkSourceMeta[] = [
     id: 'frontier-papers',
     name: 'Frontier AI Technical Reports (Anthropic/OpenAI/Google)',
     description: 'フロンティアAI各社公式テクニカルレポート公表ベンチマーク (AIME 2024, GPQA, HumanEval+)',
-    url: 'https://github.com/features/copilot',
+    url: 'https://arxiv.org/',
     last_fetched_at: '2026-09-01T00:00:00Z',
     target_problem:
       '全米数学招待試験 (AIME 2024)、大学院生・博士レベルの超難関科学多肢選択問 (GPQA Diamond)、および関数の正確な入出力一致 (HumanEval+) など、AIの極限の思考力・論理推論・型推論・抽象化能力を極限まで試すアカデミック難関テスト群。',
