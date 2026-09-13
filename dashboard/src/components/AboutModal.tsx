@@ -158,6 +158,22 @@ export const AboutModal: React.FC<AboutModalProps> = ({
                 </span>
               </div>
             </div>
+            
+            {/* 作者 & ライセンス情報 */}
+            <div className="p-3.5 rounded-xl bg-slate-950/40 border border-slate-800 flex items-start space-x-3 sm:col-span-2">
+              <div className="p-1.5 rounded-lg bg-slate-800 text-slate-400 mt-0.5">
+                <Users className="w-4 h-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="text-slate-400 block font-medium">作成者 (Author)</span>
+                <span className="text-slate-200 font-semibold text-xs mt-0.5 inline-block">
+                  sun-flat-yamada (Youhei Yamada)
+                </span>
+                <span className="block text-[10px] text-slate-500 mt-0.5">
+                  License: MIT License
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* 3. データ保持 & 座席概要 */}
