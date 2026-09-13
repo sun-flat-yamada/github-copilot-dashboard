@@ -559,6 +559,17 @@ export function evaluateModel(
       caution_rumor: 'Reasoning Effort を High にするとたまに考えすぎて長文の推論迷路に入るという噂。',
       source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
     };
+  } else if (modelId.includes('claude-opus-5') || modelId.includes('claude-5-opus')) {
+    buzz = {
+      headline: '高性能化の代償？ 最新モデル「Opus 5」に対する現場の戸惑いと「旧モデル回帰」の動き',
+      community_sentiments: [
+        '回答が長すぎるし、頼んでいないことまで勝手に修正しようとするため、意図した通りのシンプルな変更が難しい',
+        'Claude Codeのユーザーコミュニティでは、かえって旧モデル「Opus 4.6」のほうが使いやすいという声が急速に支持を集めている',
+        '高い推論力と自律性が裏目に出てしまい、エンジニアの制御を超えて過剰な最適化を行ってしまう傾向がある',
+      ],
+      caution_rumor: '最新の進化により高性能にはなったものの、現場のエンジニアからは「扱いづらくなった」という不満が続出しており、アンソロピック公式の設計思想と実際のユースケースとの間にギャップが生じているとの指摘がある。',
+      source_note: '※ ビジネス+IT記事『Claude Codeでなぜ異変、「旧モデルのほうが良い」が続出…AI進化で起きた逆転現象』等より加味',
+    };
   } else {
     // GPT-4o / General
     buzz = {
