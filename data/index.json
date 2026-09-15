@@ -4,7 +4,7 @@
     "name": "github-copilot-dashboard",
     "is_fork": false
   },
-  "generated_at": "2026-09-14T03:42:05.113Z",
+  "generated_at": "2026-09-15T03:42:40.891Z",
   "data_retention_days": 365,
   "available_months": [
     "2026-09"
@@ -33,15 +33,15 @@
   },
   "summary": {
     "total_seats": 85,
-    "active_seats_30d": 71,
-    "idle_seats_30d": 14,
+    "active_seats_30d": 75,
+    "idle_seats_30d": 10,
     "total_monthly_spend_usd": 2975,
-    "idle_waste_spend_usd": 526
+    "idle_waste_spend_usd": 370
   },
   "issues": [
     {
-      "id": "issue-1789357325051-lknvy",
-      "timestamp": "2026-09-14T03:42:05.051Z",
+      "id": "issue-1789443760773-devsl",
+      "timestamp": "2026-09-15T03:42:40.773Z",
       "severity": "warning",
       "category": "rate_limit",
       "target": "api:copilot/metrics",
@@ -53,8 +53,8 @@
       ]
     },
     {
-      "id": "issue-1789357325051-ncbtf",
-      "timestamp": "2026-09-14T03:42:05.051Z",
+      "id": "issue-1789443760773-u9tcn",
+      "timestamp": "2026-09-15T03:42:40.773Z",
       "severity": "error",
       "category": "api_auth",
       "target": "org:proud-internal-sys",
@@ -68,8 +68,8 @@
       ]
     },
     {
-      "id": "issue-1789357325057-z2cfy",
-      "timestamp": "2026-09-14T03:42:05.057Z",
+      "id": "issue-1789443760781-v1f7s",
+      "timestamp": "2026-09-15T03:42:40.781Z",
       "severity": "warning",
       "category": "data_integrity",
       "target": "api:billing/cost-centers/cc-ent-9009",
