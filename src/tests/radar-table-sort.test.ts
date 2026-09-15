@@ -2,9 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
+import { runBenchmarkUpdate } from '../../scripts/update-benchmarks.js';
 
 test('AI Model Radar Table Sort and Action Button Tests', async (t) => {
   const datasetPath = path.resolve(process.cwd(), 'dashboard/public/data/model-benchmarks.json');
+  if (!fs.existsSync(datasetPath)) {
+    runBenchmarkUpdate();
+  }
   const datasetJson = JSON.parse(fs.readFileSync(datasetPath, 'utf-8'));
   const models = datasetJson.models as Array<{ id: string; name: string }>;
 

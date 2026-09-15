@@ -26,6 +26,9 @@ jobs:
       - name: Run Secret & Privacy Scan
         run: npm run secret-scan
 
+      - name: Generate AI Model Benchmark Dataset
+        run: npm run benchmark:update
+
       - name: Run TypeScript typecheck
         run: npm run typecheck
 

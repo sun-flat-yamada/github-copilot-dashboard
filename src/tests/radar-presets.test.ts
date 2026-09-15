@@ -3,9 +3,13 @@ import assert from 'node:assert';
 import { PRESETS } from '../../dashboard/src/components/ModelRadarView.js';
 import fs from 'node:fs';
 import path from 'node:path';
+import { runBenchmarkUpdate } from '../../scripts/update-benchmarks.js';
 
 test('AI Model Radar Comparison Presets Tests', async (t) => {
   const datasetPath = path.resolve(process.cwd(), 'dashboard/public/data/model-benchmarks.json');
+  if (!fs.existsSync(datasetPath)) {
+    runBenchmarkUpdate();
+  }
   const datasetJson = JSON.parse(fs.readFileSync(datasetPath, 'utf-8'));
   const validModelIds = new Set(datasetJson.models.map((m: { id: string }) => m.id));
 

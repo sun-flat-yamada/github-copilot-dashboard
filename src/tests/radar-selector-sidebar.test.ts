@@ -3,9 +3,13 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
 import { getModelShortName, SidebarDisplayMode } from '../../dashboard/src/components/ModelSelectorSidebar';
+import { runBenchmarkUpdate } from '../../scripts/update-benchmarks.js';
 
 test('AI Model Radar Selector Sidebar and Abbreviation Tests', async (t) => {
   const datasetPath = path.resolve(process.cwd(), 'dashboard/public/data/model-benchmarks.json');
+  if (!fs.existsSync(datasetPath)) {
+    runBenchmarkUpdate();
+  }
   const datasetJson = JSON.parse(fs.readFileSync(datasetPath, 'utf-8'));
   const models = datasetJson.models as Array<{ id: string; name: string }>;
 

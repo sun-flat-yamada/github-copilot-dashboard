@@ -11,6 +11,7 @@ import {
   DEFAULT_BENCHMARK_SOURCES,
 } from '../processor/benchmark-evaluator';
 import { BenchmarkRawMetrics, CANONICAL_VENDOR_ORDER } from '../types/model-benchmark';
+import { runBenchmarkUpdate } from '../../scripts/update-benchmarks.js';
 
 describe('AI Model Benchmark Evaluator Tests', () => {
   it('defines 6 radar axes and benchmark sources correctly', () => {
@@ -264,7 +265,9 @@ describe('AI Model Benchmark Evaluator Tests', () => {
 
   it('guarantees zero vendor mismatches across all 39 benchmark dataset models', () => {
     const datasetPath = path.resolve(process.cwd(), 'dashboard/public/data/model-benchmarks.json');
-    if (!fs.existsSync(datasetPath)) return;
+    if (!fs.existsSync(datasetPath)) {
+      runBenchmarkUpdate();
+    }
     const dataset = JSON.parse(fs.readFileSync(datasetPath, 'utf8'));
 
     dataset.models.forEach((m: any) => {
