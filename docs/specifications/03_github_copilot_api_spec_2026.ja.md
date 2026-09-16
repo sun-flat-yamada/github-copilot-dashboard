@@ -15,6 +15,15 @@
 
 2026年9月時点で利用可能なGitHub Copilot関連の公式REST API仕様を定義する。
 
+### 1.1 APIバージョンおよび共通HTTPリクエストヘッダー
+GitHub REST API はカレンダーベースのバージョン体系を採用しており、本プラットフォームは公式の最新APIバージョンである **`2026-03-10`** に準拠する。
+すべてのAPIリクエストには以下のヘッダーを付与する：
+
+- `Authorization: Bearer <GITHUB_TOKEN>`
+- `Accept: application/vnd.github+json`
+- `X-GitHub-Api-Version: 2026-03-10`（最新バージョン、環境変数 `GITHUB_API_VERSION` またはクライアント設定で変更可能）
+- `User-Agent: GitHub-Copilot-Analytics-Platform/2026.09`
+
 ---
 
 ## 2. Copilot Metrics API

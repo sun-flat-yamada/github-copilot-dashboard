@@ -15,6 +15,15 @@
 
 Defines the official GitHub REST API specifications for GitHub Copilot and Enterprise Billing available as of September 2026.
 
+### 1.1 API Versioning and Common HTTP Request Headers
+The GitHub REST API adheres to calendar-based versioning. This platform complies with the latest official REST API version: **`2026-03-10`**.
+All API requests must supply the following HTTP headers:
+
+- `Authorization: Bearer <GITHUB_TOKEN>`
+- `Accept: application/vnd.github+json`
+- `X-GitHub-Api-Version: 2026-03-10` (latest version, configurable via `GITHUB_API_VERSION` environment variable or client config)
+- `User-Agent: GitHub-Copilot-Analytics-Platform/2026.09`
+
 ---
 
 ## 2. Copilot Metrics API

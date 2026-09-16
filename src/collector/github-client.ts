@@ -13,6 +13,7 @@ export interface GitHubClientConfig {
   enterprise?: string;
   orgs?: string[];
   mockMode?: boolean;
+  apiVersion?: string;
 }
 
 export class GitHubCopilotClient {
@@ -20,6 +21,7 @@ export class GitHubCopilotClient {
   private enterprise?: string;
   private orgs: string[];
   private mockMode: boolean;
+  private apiVersion: string;
   private mockGenerator: MockDataGenerator;
   private issues: DataFetchIssue[] = [];
 
@@ -29,6 +31,7 @@ export class GitHubCopilotClient {
     const orgsEnv = config.orgs || (process.env.COPILOT_ORGS ? process.env.COPILOT_ORGS.split(',').map((o) => o.trim()) : []);
     this.orgs = orgsEnv.filter(Boolean);
     this.mockMode = config.mockMode ?? (process.env.MOCK_MODE === 'true' || !this.token);
+    this.apiVersion = config.apiVersion || process.env.GITHUB_API_VERSION || '2026-03-10';
     this.mockGenerator = new MockDataGenerator();
   }
 
@@ -258,11 +261,11 @@ export class GitHubCopilotClient {
     return this.mockGenerator.generateBundle(30).userProfiles;
   }
 
-  private getHeaders(): Record<string, string> {
+  public getHeaders(): Record<string, string> {
     return {
       Authorization: `Bearer ${this.token}`,
       Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
+      'X-GitHub-Api-Version': this.apiVersion,
       'User-Agent': 'GitHub-Copilot-Analytics-Platform/2026.09',
     };
   }
