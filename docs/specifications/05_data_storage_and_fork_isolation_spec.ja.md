@@ -138,3 +138,5 @@ data/
    - **Sync Fork 時**: Fork 先の `main` ブランチにはデータファイルが一切存在しないため、Upstream（本家）のコード更新を「Sync Fork」ボタンで 100% Fast-Forward / クリーンマージ可能。
    - **Pull Request 時**: Fork 先から本家 `main` への PR にデータ差分が 1 行たりとも混入せず、純粋なコード変更のみを提出可能。
    - **GitHub Pages デプロイ時**: `gh-pages` ブランチへのコミットを行わず `actions/deploy-pages`（Direct Artifact Deployment）を採用しているため、Pages デプロイに伴うブランチ競合も一切生じない。
+4. **Fork運用保守・同期詳細仕様**:
+   - Fork先における詳細な本家同期手順、Zero-Code Customization、2層ブランチモデル、および健全性診断（`npm run fork:verify`）については、[SDD-12 (Fork先変更反映 & 運用保守仕様書)](12_fork_sync_and_customization_ops_spec.ja.md) および専用スキル（`skills/fork-sync-ops/`）を参照のこと。

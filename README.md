@@ -9,7 +9,7 @@
 [![React](https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react)](https://reactjs.org/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.x-38bdf8?style=flat-square&logo=tailwindcss)](https://tailwindcss.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
-[![SDD: 11 Specs](https://img.shields.io/badge/SDD-11%20Specifications-blueviolet?style=flat-square)](docs/specifications/)
+[![SDD: 12 Specs](https://img.shields.io/badge/SDD-12%20Specifications-blueviolet?style=flat-square)](docs/specifications/)
 [![GitHub API](https://img.shields.io/badge/GitHub%20API-2026.09%20LTS-blue?style=flat-square)](https://docs.github.com)
 [![Zero Infra](https://img.shields.io/badge/Infrastructure-Zero%20(Pages%20%2B%20Actions)-emerald?style=flat-square)](https://pages.github.com)
 
@@ -53,10 +53,11 @@ Performs multidimensional aggregation and cost allocation across 3 primary axes 
 - **CI/CD Automated Inspection (`.github/workflows/secret-scan.yml`)**: Dual-layer interception gate on PR/Push via Gitleaks and custom scanner.
 - **Zero PII Leakage**: User and department mapping tables are isolated exclusively in **GitHub Actions Variables / Secrets (`COPILOT_USER_MAPPING`)**. Zero personally identifiable information (PII) or internal org charts ever enter Git commit history.
 
-### 7. Fork-Safe Storage Architecture
+### 7. Fork-Safe Storage Architecture & Maintenance Platform
 - Zero data files committed to `main`; employs a dedicated **isolated orphan data branch (`copilot-data`)**.
 - Append-only persistence partitioned by date (`data/raw/YYYY/MM/...`).
 - Guaranteed 100% conflict-free `Sync Fork` and Pull Request operations when forks are shared across internal enterprise teams.
+- Equipped with **Fork Health Verification Tool (`npm run fork:verify`)**, automated synchronization skill (`skills/fork-sync-ops/`), and full operational guide ([SDD-12](docs/specifications/12_fork_sync_and_customization_ops_spec.md)).
 
 ### 8. Idle Seat Optimization Advisor
 - Automatically flags seats unused for 30+ days, calculating wasted license expenses and potential savings.
@@ -146,6 +147,7 @@ Every feature in this project is engineered in strict accordance with **Specific
 | [SDD-09](docs/specifications/09_monthly_usage_report_mode_spec.md) | Monthly Usage Report Mode Specification | Direct parsing & persistent storage for monthly CSV reports |
 | [SDD-10](docs/specifications/10_ai_model_benchmark_radar_spec.md) | AI Model Benchmark Radar Specification | 6-axis radar charts and evaluations across 38 frontier models |
 | [SDD-11](docs/specifications/11_deep_analysis_view_spec.md) | Deep Analytics View Specification | Inefficient AI pattern diagnostics and AEDP autonomy depth |
+| [SDD-12](docs/specifications/12_fork_sync_and_customization_ops_spec.md) | Fork Synchronization & Operations Specification | Upstream sync runbooks (Web UI/CLI/Actions), dual-branch model, health audit |
 
 ---
 
@@ -204,9 +206,26 @@ Register sensitive user attributes (such as employee names and internal departme
   - Or `COPILOT_ORGS`: Comma-separated list of organization names (e.g., `org-core,org-ai-labs`).
   - (Testing / Demo) `MOCK_MODE`: Set to `true` to immediately spin up the dashboard using 2026 simulation data without real credentials.
 
-> [!NOTE]
-> **Note for Personal Accounts (Free Plan)**:  
-> For GitHub API constraints regarding individual personal accounts and token setup (Fine-grained PAT / Permissions) via a free Organization, see [Important Notes for Personal Free Accounts](docs/specifications/08_automation_workflow_spec.md#212-important-notes-for-personal-free-accounts).
+### Step 6: Synchronize with Upstream & Run Health Audit
+When upstream releases new features or models, keep your fork synchronized and verified:
+
+```bash
+# 1. Run automated pre-flight health audit
+npm run fork:verify
+
+# 2. Fetch and fast-forward upstream main
+git fetch upstream main
+git merge upstream/main --ff-only
+
+# 3. Update dependencies and verify quality gates
+npm ci
+npm run typecheck && npm test && npm run secret-scan && npm run build
+
+# 4. Push updates to your fork
+git push origin main
+```
+> [!TIP]
+> For complete procedures (1-click Web UI sync, dual-branch custom code architecture, and troubleshooting), refer to [SDD-12 (Fork Synchronization & Operations Specification)](docs/specifications/12_fork_sync_and_customization_ops_spec.md) and the dedicated skill (`skills/fork-sync-ops/`).
 
 ---
 
@@ -218,23 +237,26 @@ Full development, verification, and testing can be conducted locally without any
 # 1. Install dependencies
 npm install
 
-# 2. TypeScript typecheck
+# 2. Pre-flight fork health & sync audit
+npm run fork:verify
+
+# 3. TypeScript typecheck
 npm run typecheck
 
-# 3. Run unit & pipeline tests
+# 4. Run unit & pipeline tests
 npm test
 
-# 4. Run secret & PII leak audit scanner
+# 5. Run secret & PII leak audit scanner
 npm run secret-scan
 
-# 5. Execute aggregation pipeline with 2026 mock data
+# 6. Execute aggregation pipeline with 2026 mock data
 npm run pipeline:mock
 
-# 6. Start local development server (with HMR)
+# 7. Start local development server (with HMR)
 npm run dev
 # -> Opens interactive dashboard at http://localhost:3000
 
-# 7. Production build verification
+# 8. Production build verification
 npm run build
 ```
 

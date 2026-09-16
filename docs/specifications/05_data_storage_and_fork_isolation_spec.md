@@ -138,3 +138,5 @@ The entry metadata file loaded first by the dashboard SPA to provide available d
    - **Sync Fork**: Because `main` contains zero data files in downstream forks, clicking "Sync Fork" performs a 100% clean fast-forward merge without conflict.
    - **Pull Requests**: PRs from forks back to upstream `main` contain only code changes without a single line of data diff.
    - **GitHub Pages Deployment**: Direct artifact deployment (`actions/deploy-pages`) is used instead of pushing commits to a `gh-pages` branch, eliminating branch collision.
+4. **Fork Maintenance & Operations Specification**:
+   - For complete downstream fork synchronization runbooks, Zero-Code Customization, the dual-branch model, and health diagnostics (`npm run fork:verify`), refer to [SDD-12 (Fork Synchronization & Operations Specification)](12_fork_sync_and_customization_ops_spec.md) and the dedicated skill (`skills/fork-sync-ops/`).

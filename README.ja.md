@@ -9,7 +9,7 @@
 [![React](https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react)](https://reactjs.org/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.x-38bdf8?style=flat-square&logo=tailwindcss)](https://tailwindcss.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
-[![SDD: 11 Specs](https://img.shields.io/badge/SDD-11%20Specifications-blueviolet?style=flat-square)](docs/specifications/)
+[![SDD: 12 Specs](https://img.shields.io/badge/SDD-12%20Specifications-blueviolet?style=flat-square)](docs/specifications/)
 [![GitHub API](https://img.shields.io/badge/GitHub%20API-2026.09%20LTS-blue?style=flat-square)](https://docs.github.com)
 [![Zero Infra](https://img.shields.io/badge/Infrastructure-Zero%20(Pages%20%2B%20Actions)-emerald?style=flat-square)](https://pages.github.com)
 
@@ -53,10 +53,11 @@
 - **CI/CD 自動検査 (`.github/workflows/secret-scan.yml`)**: Gitleaks と独自スキャナーによる PR/Push 時の二重遮断ゲート。
 - **完全秘匿化**: 氏名や部署情報の対応テーブルは **GitHub Actions Variables / Secrets (`COPILOT_USER_MAPPING`)** に完全隔離。公開コミット履歴に個人情報（PII）や社内組織図が一切混入しません。
 
-### 7. Fork非競合ストレージアーキテクチャ (Fork-Safe Storage)
+### 7. Fork非競合ストレージアーキテクチャ & 運用保守基盤 (Fork-Safe Storage & Ops)
 - メインブランチ（`main`）にデータファイルをコミットせず、**独立データブランチ（`copilot-data`）分離モデル** を採用。
 - 日付パーティショニング（`data/raw/YYYY/MM/...`）による追記型（Append-only）保存。
 - 本リポジトリが社内で多数Forkされた際にも、Upstreamとの `Sync Fork` や Pull Request でマージ競合が100%発生しません。
+- **Fork健全性診断ツール (`npm run fork:verify`)** および本家同期専用スキル（`skills/fork-sync-ops/`）、詳細運用仕様（[SDD-12](docs/specifications/12_fork_sync_and_customization_ops_spec.ja.md)）を完備。
 
 ### 8. 遊休シート（Idle Seats）最適化アドバイザー
 - 過去30日以上未利用のシートを自動検出し、無駄になっているライセンス費用と削減可能額を算出。
@@ -146,6 +147,7 @@ github-copilot-dashboard/
 | [SDD-09](docs/specifications/09_monthly_usage_report_mode_spec.ja.md) | Monthly Usage Report 分析モード仕様書 | 月次CSVレポート直接解析・永続化仕様 |
 | [SDD-10](docs/specifications/10_ai_model_benchmark_radar_spec.ja.md) | AIモデル特性レーダー & 著名ベンチマーク評価仕様書 | 6軸レーダーチャート、38モデルベンチマーク評価 |
 | [SDD-11](docs/specifications/11_deep_analysis_view_spec.ja.md) | 深い分析専用ビュー仕様書 | AI活用非効率パターン診断、AEDP自律駆動深度評価 |
+| [SDD-12](docs/specifications/12_fork_sync_and_customization_ops_spec.ja.md) | Fork先変更反映 & 運用保守仕様書 | 本家同期手順 (Web UI/CLI/Actions)、2層ブランチ運用、健全性診断 |
 
 ---
 
@@ -204,9 +206,26 @@ github-copilot-dashboard/
   - または `COPILOT_ORGS`: カンマ区切りのOrganization名（例: `org-core,org-ai-labs`）。
   - （テスト運用時）`MOCK_MODE`: `true` を指定すると、実際のトークンがなくても2026年仕様のシミュレーションデータでダッシュボードが即座に立ち上がります。
 
-> [!NOTE]
-> **個人契約（Freeプラン）のアカウントで利用する場合の注意点**:  
-> 個人アカウント単体に対するCopilot Metrics API仕様上の制約や、無料Organizationでの検証用トークン（Fine-grained PAT / Permissions）の設定手順については、[個人アカウント利用時の注意点・トークン設定手順](docs/specifications/08_automation_workflow_spec.ja.md#212-個人契約freeプランgithubアカウント利用時の重要注意点) を参照してください。
+### ステップ 6: 本家（Upstream）更新の同期と健全性診断
+本家リポジトリで新しいAIモデルや機能が追加された場合、以下のコマンドで安全に同期・診断を行えます：
+
+```bash
+# 1. Fork環境の健全性診断（リモート設定、データ分離、作業ツリー）
+npm run fork:verify
+
+# 2. 本家更新の取得と Fast-Forward マージ
+git fetch upstream main
+git merge upstream/main --ff-only
+
+# 3. 依存関係の更新と品質ゲート検証
+npm ci
+npm run typecheck && npm test && npm run secret-scan && npm run build
+
+# 4. Fork先への反映
+git push origin main
+```
+> [!TIP]
+> 詳しい運用方式（GitHub Web UIでの1-Click同期、2層ブランチ運用、障害復旧）については [SDD-12 (Fork先変更反映 & 運用保守仕様書)](docs/specifications/12_fork_sync_and_customization_ops_spec.ja.md) および Antigravity専用スキル（`skills/fork-sync-ops/`）を参照してください。
 
 ---
 
@@ -218,23 +237,26 @@ github-copilot-dashboard/
 # 1. 依存ライブラリのインストール
 npm install
 
-# 2. TypeScript 型チェック
+# 2. Fork環境の診断・同期前健全性チェック
+npm run fork:verify
+
+# 3. TypeScript 型チェック
 npm run typecheck
 
-# 3. 単体テスト & パイプラインテストの実行
+# 4. 単体テスト & パイプラインテストの実行
 npm test
 
-# 4. シークレット & 個人情報（PII）流出防止スキャンの実行
+# 5. シークレット & 個人情報（PII）流出防止スキャンの実行
 npm run secret-scan
 
-# 5. 2026年仕様モックデータによる集計パイプライン実行
+# 6. 2026年仕様モックデータによる集計パイプライン実行
 npm run pipeline:mock
 
-# 6. ローカル開発サーバー起動 (HMR対応)
+# 7. ローカル開発サーバー起動 (HMR対応)
 npm run dev
 # -> http://localhost:3000 でインタラクティブダッシュボードが開きます
 
-# 7. プロダクション用ビルド検証
+# 8. プロダクション用ビルド検証
 npm run build
 ```
 

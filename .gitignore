@@ -102,3 +102,4 @@ Thumbs.db
 .cursor/sessions/
 .gemini/
 .agents/scratch/
+.devs/

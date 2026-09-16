@@ -36,7 +36,9 @@
     "report:import": "tsx scripts/import-report.ts",
     "benchmark:update": "tsx scripts/update-benchmarks.ts",
     "test": "tsx --test src/tests/**/*.test.ts",
-    "secret-scan": "tsx scripts/scan-secrets.ts"
+    "secret-scan": "tsx scripts/scan-secrets.ts",
+    "fork:verify": "tsx scripts/verify-fork-health.ts",
+    "fork:status": "tsx scripts/verify-fork-health.ts --quick"
   },
   "dependencies": {
     "clsx": "^2.1.1",

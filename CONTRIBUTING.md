@@ -26,6 +26,9 @@ cd github-copilot-dashboard
 # Install dependencies
 npm install
 
+# Verify fork health & environment
+npm run fork:verify
+
 # Run TypeScript typecheck
 npm run typecheck
 
@@ -64,6 +67,8 @@ We enforce the [Conventional Commits](https://www.conventionalcommits.org/) spec
 
 1. Ensure all TypeScript checks pass: `npm run typecheck`
 2. Ensure all unit tests pass: `npm test`
-3. Ensure production SPA build succeeds: `npm run build`
-4. Submit your Pull Request against the `main` branch.
-5. Fill out the [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md) completely.
+3. Ensure no secrets or PII are leaked: `npm run secret-scan`
+4. Ensure fork health checks pass: `npm run fork:verify`
+5. Ensure production SPA build succeeds: `npm run build`
+6. Submit your Pull Request against the `main` branch (ensure zero `data/` files are included).
+7. Fill out the [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md) completely.

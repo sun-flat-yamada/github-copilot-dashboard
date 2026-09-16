@@ -26,6 +26,7 @@ All AI coding assistants (Antigravity, Gemini, Claude Code, Cursor, Copilot Work
 
 ## 🧪 4. Quality Standard
 - Every pull request must pass:
+  - `npm run fork:verify`
   - `npm run typecheck`
   - `npm test`
   - `npm run secret-scan`
