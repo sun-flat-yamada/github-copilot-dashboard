@@ -9,13 +9,13 @@
 [![React](https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react)](https://reactjs.org/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.x-38bdf8?style=flat-square&logo=tailwindcss)](https://tailwindcss.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
-[![SDD: 12 Specs](https://img.shields.io/badge/SDD-12%20Specifications-blueviolet?style=flat-square)](docs/specifications/)
+[![SDD: 13 Specs](https://img.shields.io/badge/SDD-13%20Specifications-blueviolet?style=flat-square)](docs/specifications/)
 [![GitHub API](https://img.shields.io/badge/GitHub%20API-2026.09%20LTS-blue?style=flat-square)](https://docs.github.com)
 [![Zero Infra](https://img.shields.io/badge/Infrastructure-Zero%20(Pages%20%2B%20Actions)-emerald?style=flat-square)](https://pages.github.com)
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=flat&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/sun.flat.yamada)
 
-2026年9月時点の最新GitHub仕様（Copilot Metrics, Seats, Cost Centers, Multi-Model Usage, Billing）に完全準拠した、エンタープライズ品質の **GitHub Copilot 使用量・利用料金分析基盤** です。  
+2026年9月時点の最新GitHub仕様（Copilot Metrics, Seats, Cost Centers, Multi-Model Usage, Billing）に完全準拠した、エンタープライズ品質の **GitHub Copilot 使用量・利用料金分析基盤** です。
 
 **GitHub Organization**、**GitHub Cost Center**、および **任意ユーザー属性情報（表示名・仕訳グループ対応表）** の3軸で多次元集計・コスト按分を行い、自動更新される **GitHub Pages** ダッシュボードとして美しく可視化します。
 
@@ -112,7 +112,7 @@ github-copilot-dashboard/
 │   ├── mock/                  # 2026年仕様シミュレーションモックデータ
 │   ├── processed/             # 集計済みスコープデータ (daily, monthly, custom)
 │   └── raw/                   # パーティション別Rawデータ
-├── docs/specifications/       # SDD (仕様駆動開発) 正式設計仕様書 (01〜11)
+├── docs/specifications/       # SDD (仕様駆動開発) 正式設計仕様書 (01〜13)
 ├── src/                       # データパイプライン & バックエンドコア
 │   ├── cli/                   # パイプライン実行CLI (run-pipeline.ts)
 │   ├── collector/             # API/モックデータ収集 & 異常検出ハンドラ
@@ -148,6 +148,7 @@ github-copilot-dashboard/
 | [SDD-10](docs/specifications/10_ai_model_benchmark_radar_spec.ja.md) | AIモデル特性レーダー & 著名ベンチマーク評価仕様書 | 6軸レーダーチャート、38モデルベンチマーク評価 |
 | [SDD-11](docs/specifications/11_deep_analysis_view_spec.ja.md) | 深い分析専用ビュー仕様書 | AI活用非効率パターン診断、AEDP自律駆動深度評価 |
 | [SDD-12](docs/specifications/12_fork_sync_and_customization_ops_spec.ja.md) | Fork先変更反映 & 運用保守仕様書 | 本家同期手順 (Web UI/CLI/Actions)、2層ブランチ運用、健全性診断 |
+| [SDD-13](docs/specifications/13_fork_restricted_environment_setup_guide.ja.md) | Fork制限環境向けセットアップ手順書 | EMU・ポリシー制限によりGitHub Forkを使えない組織向けのミラー複製手順 |
 
 ---
 
@@ -155,6 +156,9 @@ github-copilot-dashboard/
 
 ### ステップ 1: リポジトリの Fork
 本リポジトリを社内の GitHub Enterprise または Organization に Fork します。
+
+> [!NOTE]
+> **組織に Fork できない場合は?** GitHub Enterprise Managed User (EMU) アカウントを利用している、または組織のポリシーで外部アカウントからの Fork がブロックされている場合は、Fork 不要のミラー複製手順を解説した [SDD-13: Fork制限環境向けセットアップ手順書](docs/specifications/13_fork_restricted_environment_setup_guide.ja.md) を参照してください。
 
 ### ステップ 2: GitHub Pages の設定
 1. リポジトリの **Settings** > **Pages** に移動します。
@@ -268,7 +272,7 @@ npm run build
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=flat&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/sun.flat.yamada)
 
-プルリクエストや Issue の起票を歓迎します！  
+プルリクエストや Issue の起票を歓迎します！
 コントリビューションの前に以下のガイドラインをご一読ください：
 
 - [コントリビューションガイド (CONTRIBUTING.md)](CONTRIBUTING.md)
@@ -280,5 +284,5 @@ npm run build
 
 ## 📄 ライセンス
 
-本プロジェクトは [MIT License](LICENSE) の下で公開されています。  
+本プロジェクトは [MIT License](LICENSE) の下で公開されています。
 Copyright (c) 2026 sun-flat-yamada (Youhei Yamada)
