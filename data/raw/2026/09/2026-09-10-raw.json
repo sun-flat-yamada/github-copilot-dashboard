@@ -1,92 +1,92 @@
 {
-  "collected_at": "2026-09-17T14:14:19.124Z",
+  "collected_at": "2026-09-17T14:14:54.344Z",
   "date": "2026-09-10",
   "metrics": {
     "date": "2026-09-10",
-    "total_active_users": 62,
-    "total_engaged_users": 54,
+    "total_active_users": 56,
+    "total_engaged_users": 49,
     "copilot_ide_code_completions": {
-      "total_engaged_users": 51,
+      "total_engaged_users": 46,
       "languages": [
         {
           "name": "typescript",
-          "total_engaged_users": 35,
-          "total_code_suggestions": 9369,
-          "total_code_acceptances": 2667,
-          "total_code_lines_suggested": 65583,
-          "total_code_lines_accepted": 16002
+          "total_engaged_users": 31,
+          "total_code_suggestions": 10771,
+          "total_code_acceptances": 3863,
+          "total_code_lines_suggested": 75397,
+          "total_code_lines_accepted": 23178
         },
         {
           "name": "python",
-          "total_engaged_users": 27,
-          "total_code_suggestions": 8188,
-          "total_code_acceptances": 2907,
-          "total_code_lines_suggested": 49128,
-          "total_code_lines_accepted": 14535
+          "total_engaged_users": 24,
+          "total_code_suggestions": 8574,
+          "total_code_acceptances": 2855,
+          "total_code_lines_suggested": 51444,
+          "total_code_lines_accepted": 14275
         },
         {
           "name": "go",
-          "total_engaged_users": 16,
-          "total_code_suggestions": 4055,
-          "total_code_acceptances": 1608,
-          "total_code_lines_suggested": 32440,
-          "total_code_lines_accepted": 11256
+          "total_engaged_users": 14,
+          "total_code_suggestions": 4605,
+          "total_code_acceptances": 1692,
+          "total_code_lines_suggested": 36840,
+          "total_code_lines_accepted": 11844
         },
         {
           "name": "rust",
-          "total_engaged_users": 10,
-          "total_code_suggestions": 2179,
-          "total_code_acceptances": 749,
-          "total_code_lines_suggested": 19611,
-          "total_code_lines_accepted": 5992
+          "total_engaged_users": 9,
+          "total_code_suggestions": 2918,
+          "total_code_acceptances": 961,
+          "total_code_lines_suggested": 26262,
+          "total_code_lines_accepted": 7688
         }
       ],
       "editors": [
         {
           "name": "vscode",
-          "total_engaged_users": 38
+          "total_engaged_users": 35
         },
         {
           "name": "jetbrains",
-          "total_engaged_users": 10
+          "total_engaged_users": 9
         },
         {
           "name": "neovim",
-          "total_engaged_users": 4
+          "total_engaged_users": 3
         }
       ]
     },
     "copilot_ide_chat": {
-      "total_engaged_users": 42,
-      "total_chats": 1596,
-      "total_chat_copy_events": 399,
-      "total_chat_insertion_events": 606,
+      "total_engaged_users": 38,
+      "total_chats": 1681,
+      "total_chat_copy_events": 420,
+      "total_chat_insertion_events": 638,
       "models": [
         {
           "name": "claude-3-7-sonnet",
-          "total_chats": 925
+          "total_chats": 974
         },
         {
           "name": "gpt-4o",
-          "total_chats": 446
+          "total_chats": 470
         },
         {
           "name": "o1",
-          "total_chats": 223
+          "total_chats": 235
         }
       ]
     },
     "copilot_dotcom_chat": {
-      "total_engaged_users": 16,
-      "total_chats": 287
+      "total_engaged_users": 14,
+      "total_chats": 302
     },
     "copilot_dotcom_pull_requests": {
-      "total_engaged_users": 24,
-      "total_pr_summaries_created": 61
+      "total_engaged_users": 22,
+      "total_pr_summaries_created": 65
     },
     "copilot_in_cli": {
-      "total_engaged_users": 11,
-      "total_cli_completions": 238
+      "total_engaged_users": 10,
+      "total_cli_completions": 208
     }
   },
   "seats": [
@@ -99,10 +99,10 @@
         "type": "User"
       },
       "plan_type": "business",
-      "created_at": "2026-03-23T00:00:00.000Z",
-      "updated_at": "2026-03-23T00:00:00.000Z",
+      "created_at": "2026-05-14T00:00:00.000Z",
+      "updated_at": "2026-05-14T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-09T00:00:00.000Z",
+      "last_activity_at": "2026-09-03T00:00:00.000Z",
       "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-fintech",
@@ -123,8 +123,8 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-05-16T00:00:00.000Z",
-      "updated_at": "2026-05-16T00:00:00.000Z",
+      "created_at": "2026-04-18T00:00:00.000Z",
+      "updated_at": "2026-04-18T00:00:00.000Z",
       "pending_cancellation_date": null,
       "last_activity_at": "2026-09-09T00:00:00.000Z",
       "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
@@ -147,10 +147,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-05-24T00:00:00.000Z",
-      "updated_at": "2026-05-24T00:00:00.000Z",
+      "created_at": "2026-04-17T00:00:00.000Z",
+      "updated_at": "2026-04-17T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-04T00:00:00.000Z",
+      "last_activity_at": "2026-09-09T00:00:00.000Z",
       "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
       "organization": {
         "login": "proud-ai-labs",
@@ -171,10 +171,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-04-09T00:00:00.000Z",
-      "updated_at": "2026-04-09T00:00:00.000Z",
+      "created_at": "2026-06-16T00:00:00.000Z",
+      "updated_at": "2026-06-16T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-06T00:00:00.000Z",
+      "last_activity_at": "2026-08-19T00:00:00.000Z",
       "last_activity_editor": "neovim/0.11.0/copilot.lua",
       "organization": {
         "login": "proud-fintech",
@@ -195,10 +195,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-04-11T00:00:00.000Z",
-      "updated_at": "2026-04-11T00:00:00.000Z",
+      "created_at": "2026-05-22T00:00:00.000Z",
+      "updated_at": "2026-05-22T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-28T00:00:00.000Z",
+      "last_activity_at": "2026-09-05T00:00:00.000Z",
       "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-cloud-core",
@@ -219,11 +219,11 @@
         "type": "User"
       },
       "plan_type": "business",
-      "created_at": "2026-05-29T00:00:00.000Z",
-      "updated_at": "2026-05-29T00:00:00.000Z",
+      "created_at": "2026-05-11T00:00:00.000Z",
+      "updated_at": "2026-05-11T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": null,
-      "last_activity_editor": null,
+      "last_activity_at": "2026-07-16T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
       "organization": {
         "login": "proud-ai-labs",
         "id": 103
@@ -243,10 +243,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-06-12T00:00:00.000Z",
-      "updated_at": "2026-06-12T00:00:00.000Z",
+      "created_at": "2026-07-01T00:00:00.000Z",
+      "updated_at": "2026-07-01T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-13T00:00:00.000Z",
+      "last_activity_at": "2026-09-06T00:00:00.000Z",
       "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
       "organization": {
         "login": "proud-fintech",
@@ -267,10 +267,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-05-30T00:00:00.000Z",
-      "updated_at": "2026-05-30T00:00:00.000Z",
+      "created_at": "2026-04-21T00:00:00.000Z",
+      "updated_at": "2026-04-21T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-21T00:00:00.000Z",
+      "last_activity_at": "2026-08-07T00:00:00.000Z",
       "last_activity_editor": "neovim/0.11.0/copilot.lua",
       "organization": {
         "login": "proud-cloud-core",
@@ -291,10 +291,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-04-17T00:00:00.000Z",
-      "updated_at": "2026-04-17T00:00:00.000Z",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "updated_at": "2026-06-07T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-01T00:00:00.000Z",
+      "last_activity_at": "2026-08-29T00:00:00.000Z",
       "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-ai-labs",
@@ -315,10 +315,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-06-15T00:00:00.000Z",
-      "updated_at": "2026-06-15T00:00:00.000Z",
+      "created_at": "2026-06-04T00:00:00.000Z",
+      "updated_at": "2026-06-04T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-29T00:00:00.000Z",
+      "last_activity_at": "2026-08-28T00:00:00.000Z",
       "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
       "organization": {
         "login": "proud-fintech",
@@ -339,10 +339,10 @@
         "type": "User"
       },
       "plan_type": "business",
-      "created_at": "2026-07-08T00:00:00.000Z",
-      "updated_at": "2026-07-08T00:00:00.000Z",
+      "created_at": "2026-04-06T00:00:00.000Z",
+      "updated_at": "2026-04-06T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-16T00:00:00.000Z",
+      "last_activity_at": "2026-09-04T00:00:00.000Z",
       "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
       "organization": {
         "login": "proud-cloud-core",
@@ -363,11 +363,11 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-05-23T00:00:00.000Z",
-      "updated_at": "2026-05-23T00:00:00.000Z",
+      "created_at": "2026-05-25T00:00:00.000Z",
+      "updated_at": "2026-05-25T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-06T00:00:00.000Z",
-      "last_activity_editor": "neovim/0.11.0/copilot.lua",
+      "last_activity_at": null,
+      "last_activity_editor": null,
       "organization": {
         "login": "proud-ai-labs",
         "id": 103
@@ -387,10 +387,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-07-02T00:00:00.000Z",
-      "updated_at": "2026-07-02T00:00:00.000Z",
+      "created_at": "2026-04-19T00:00:00.000Z",
+      "updated_at": "2026-04-19T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-10T00:00:00.000Z",
+      "last_activity_at": "2026-08-29T00:00:00.000Z",
       "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-fintech",
@@ -411,10 +411,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-04-10T00:00:00.000Z",
-      "updated_at": "2026-04-10T00:00:00.000Z",
+      "created_at": "2026-04-07T00:00:00.000Z",
+      "updated_at": "2026-04-07T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-31T00:00:00.000Z",
+      "last_activity_at": "2026-09-07T00:00:00.000Z",
       "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
       "organization": {
         "login": "proud-cloud-core",
@@ -435,10 +435,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-07-07T00:00:00.000Z",
-      "updated_at": "2026-07-07T00:00:00.000Z",
+      "created_at": "2026-03-22T00:00:00.000Z",
+      "updated_at": "2026-03-22T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-28T00:00:00.000Z",
+      "last_activity_at": "2026-09-07T00:00:00.000Z",
       "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
       "organization": {
         "login": "proud-ai-labs",
@@ -459,11 +459,11 @@
         "type": "User"
       },
       "plan_type": "business",
-      "created_at": "2026-04-20T00:00:00.000Z",
-      "updated_at": "2026-04-20T00:00:00.000Z",
+      "created_at": "2026-04-22T00:00:00.000Z",
+      "updated_at": "2026-04-22T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": null,
-      "last_activity_editor": null,
+      "last_activity_at": "2026-09-06T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
       "organization": {
         "login": "proud-fintech",
         "id": 101
@@ -483,10 +483,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-07-01T00:00:00.000Z",
-      "updated_at": "2026-07-01T00:00:00.000Z",
+      "created_at": "2026-04-21T00:00:00.000Z",
+      "updated_at": "2026-04-21T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-28T00:00:00.000Z",
+      "last_activity_at": "2026-08-22T00:00:00.000Z",
       "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-cloud-core",
@@ -507,10 +507,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-04-01T00:00:00.000Z",
-      "updated_at": "2026-04-01T00:00:00.000Z",
+      "created_at": "2026-04-13T00:00:00.000Z",
+      "updated_at": "2026-04-13T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-10T00:00:00.000Z",
+      "last_activity_at": "2026-09-01T00:00:00.000Z",
       "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
       "organization": {
         "login": "proud-ai-labs",
@@ -531,11 +531,11 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-04-05T00:00:00.000Z",
-      "updated_at": "2026-04-05T00:00:00.000Z",
+      "created_at": "2026-05-07T00:00:00.000Z",
+      "updated_at": "2026-05-07T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": null,
-      "last_activity_editor": null,
+      "last_activity_at": "2026-09-02T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
       "organization": {
         "login": "proud-fintech",
         "id": 101
@@ -555,10 +555,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-03-21T00:00:00.000Z",
-      "updated_at": "2026-03-21T00:00:00.000Z",
+      "created_at": "2026-05-22T00:00:00.000Z",
+      "updated_at": "2026-05-22T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-20T00:00:00.000Z",
+      "last_activity_at": "2026-08-31T00:00:00.000Z",
       "last_activity_editor": "neovim/0.11.0/copilot.lua",
       "organization": {
         "login": "proud-cloud-core",
@@ -579,11 +579,11 @@
         "type": "User"
       },
       "plan_type": "business",
-      "created_at": "2026-05-10T00:00:00.000Z",
-      "updated_at": "2026-05-10T00:00:00.000Z",
+      "created_at": "2026-07-07T00:00:00.000Z",
+      "updated_at": "2026-07-07T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": null,
-      "last_activity_editor": null,
+      "last_activity_at": "2026-09-08T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-ai-labs",
         "id": 103
@@ -603,10 +603,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-05-08T00:00:00.000Z",
-      "updated_at": "2026-05-08T00:00:00.000Z",
+      "created_at": "2026-04-04T00:00:00.000Z",
+      "updated_at": "2026-04-04T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-10T00:00:00.000Z",
+      "last_activity_at": "2026-07-25T00:00:00.000Z",
       "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
       "organization": {
         "login": "proud-fintech",
@@ -627,11 +627,11 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-06-19T00:00:00.000Z",
-      "updated_at": "2026-06-19T00:00:00.000Z",
+      "created_at": "2026-05-27T00:00:00.000Z",
+      "updated_at": "2026-05-27T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": null,
-      "last_activity_editor": null,
+      "last_activity_at": "2026-08-28T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
       "organization": {
         "login": "proud-cloud-core",
         "id": 102
@@ -651,10 +651,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-07-09T00:00:00.000Z",
-      "updated_at": "2026-07-09T00:00:00.000Z",
+      "created_at": "2026-05-22T00:00:00.000Z",
+      "updated_at": "2026-05-22T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-30T00:00:00.000Z",
+      "last_activity_at": "2026-07-16T00:00:00.000Z",
       "last_activity_editor": "neovim/0.11.0/copilot.lua",
       "organization": {
         "login": "proud-ai-labs",
@@ -675,10 +675,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-04-27T00:00:00.000Z",
-      "updated_at": "2026-04-27T00:00:00.000Z",
+      "created_at": "2026-03-27T00:00:00.000Z",
+      "updated_at": "2026-03-27T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-09T00:00:00.000Z",
+      "last_activity_at": "2026-09-06T00:00:00.000Z",
       "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-fintech",
@@ -699,10 +699,10 @@
         "type": "User"
       },
       "plan_type": "business",
-      "created_at": "2026-06-18T00:00:00.000Z",
-      "updated_at": "2026-06-18T00:00:00.000Z",
+      "created_at": "2026-03-23T00:00:00.000Z",
+      "updated_at": "2026-03-23T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-31T00:00:00.000Z",
+      "last_activity_at": "2026-09-04T00:00:00.000Z",
       "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
       "organization": {
         "login": "proud-cloud-core",
@@ -723,10 +723,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-05-24T00:00:00.000Z",
-      "updated_at": "2026-05-24T00:00:00.000Z",
+      "created_at": "2026-06-09T00:00:00.000Z",
+      "updated_at": "2026-06-09T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-09T00:00:00.000Z",
+      "last_activity_at": "2026-09-01T00:00:00.000Z",
       "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
       "organization": {
         "login": "proud-ai-labs",
@@ -747,10 +747,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-04-16T00:00:00.000Z",
-      "updated_at": "2026-04-16T00:00:00.000Z",
+      "created_at": "2026-05-11T00:00:00.000Z",
+      "updated_at": "2026-05-11T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-05T00:00:00.000Z",
+      "last_activity_at": "2026-09-07T00:00:00.000Z",
       "last_activity_editor": "neovim/0.11.0/copilot.lua",
       "organization": {
         "login": "proud-fintech",
@@ -771,10 +771,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-05-25T00:00:00.000Z",
-      "updated_at": "2026-05-25T00:00:00.000Z",
+      "created_at": "2026-07-07T00:00:00.000Z",
+      "updated_at": "2026-07-07T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-07T00:00:00.000Z",
+      "last_activity_at": "2026-09-10T00:00:00.000Z",
       "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-cloud-core",
@@ -795,10 +795,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-03-16T00:00:00.000Z",
-      "updated_at": "2026-03-16T00:00:00.000Z",
+      "created_at": "2026-05-19T00:00:00.000Z",
+      "updated_at": "2026-05-19T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-14T00:00:00.000Z",
+      "last_activity_at": "2026-09-03T00:00:00.000Z",
       "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
       "organization": {
         "login": "proud-ai-labs",
@@ -819,10 +819,10 @@
         "type": "User"
       },
       "plan_type": "business",
-      "created_at": "2026-03-23T00:00:00.000Z",
-      "updated_at": "2026-03-23T00:00:00.000Z",
+      "created_at": "2026-05-08T00:00:00.000Z",
+      "updated_at": "2026-05-08T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-21T00:00:00.000Z",
+      "last_activity_at": "2026-09-02T00:00:00.000Z",
       "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
       "organization": {
         "login": "proud-fintech",
@@ -843,10 +843,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-06-05T00:00:00.000Z",
-      "updated_at": "2026-06-05T00:00:00.000Z",
+      "created_at": "2026-04-25T00:00:00.000Z",
+      "updated_at": "2026-04-25T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-31T00:00:00.000Z",
+      "last_activity_at": "2026-08-28T00:00:00.000Z",
       "last_activity_editor": "neovim/0.11.0/copilot.lua",
       "organization": {
         "login": "proud-cloud-core",
@@ -867,11 +867,11 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-04-27T00:00:00.000Z",
-      "updated_at": "2026-04-27T00:00:00.000Z",
+      "created_at": "2026-06-29T00:00:00.000Z",
+      "updated_at": "2026-06-29T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": null,
-      "last_activity_editor": null,
+      "last_activity_at": "2026-08-30T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-ai-labs",
         "id": 103
@@ -891,11 +891,11 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-05-18T00:00:00.000Z",
-      "updated_at": "2026-05-18T00:00:00.000Z",
+      "created_at": "2026-03-28T00:00:00.000Z",
+      "updated_at": "2026-03-28T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": null,
-      "last_activity_editor": null,
+      "last_activity_at": "2026-09-05T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
       "organization": {
         "login": "proud-fintech",
         "id": 101
@@ -915,10 +915,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-07-09T00:00:00.000Z",
-      "updated_at": "2026-07-09T00:00:00.000Z",
+      "created_at": "2026-03-24T00:00:00.000Z",
+      "updated_at": "2026-03-24T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-29T00:00:00.000Z",
+      "last_activity_at": "2026-09-06T00:00:00.000Z",
       "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
       "organization": {
         "login": "proud-cloud-core",
@@ -939,11 +939,11 @@
         "type": "User"
       },
       "plan_type": "business",
-      "created_at": "2026-04-02T00:00:00.000Z",
-      "updated_at": "2026-04-02T00:00:00.000Z",
+      "created_at": "2026-03-26T00:00:00.000Z",
+      "updated_at": "2026-03-26T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": null,
-      "last_activity_editor": null,
+      "last_activity_at": "2026-09-03T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
       "organization": {
         "login": "proud-ai-labs",
         "id": 103
@@ -963,10 +963,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-05-05T00:00:00.000Z",
-      "updated_at": "2026-05-05T00:00:00.000Z",
+      "created_at": "2026-04-22T00:00:00.000Z",
+      "updated_at": "2026-04-22T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-22T00:00:00.000Z",
+      "last_activity_at": "2026-08-31T00:00:00.000Z",
       "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-fintech",
@@ -987,10 +987,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-04-01T00:00:00.000Z",
-      "updated_at": "2026-04-01T00:00:00.000Z",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "updated_at": "2026-06-05T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-31T00:00:00.000Z",
+      "last_activity_at": "2026-09-03T00:00:00.000Z",
       "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
       "organization": {
         "login": "proud-cloud-core",
@@ -1011,11 +1011,11 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-04-08T00:00:00.000Z",
-      "updated_at": "2026-04-08T00:00:00.000Z",
+      "created_at": "2026-05-23T00:00:00.000Z",
+      "updated_at": "2026-05-23T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-31T00:00:00.000Z",
-      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "last_activity_at": null,
+      "last_activity_editor": null,
       "organization": {
         "login": "proud-ai-labs",
         "id": 103
@@ -1035,10 +1035,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-05-25T00:00:00.000Z",
-      "updated_at": "2026-05-25T00:00:00.000Z",
+      "created_at": "2026-05-20T00:00:00.000Z",
+      "updated_at": "2026-05-20T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-09T00:00:00.000Z",
+      "last_activity_at": "2026-09-10T00:00:00.000Z",
       "last_activity_editor": "neovim/0.11.0/copilot.lua",
       "organization": {
         "login": "proud-fintech",
@@ -1059,11 +1059,11 @@
         "type": "User"
       },
       "plan_type": "business",
-      "created_at": "2026-05-24T00:00:00.000Z",
-      "updated_at": "2026-05-24T00:00:00.000Z",
+      "created_at": "2026-04-06T00:00:00.000Z",
+      "updated_at": "2026-04-06T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": null,
-      "last_activity_editor": null,
+      "last_activity_at": "2026-09-04T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-cloud-core",
         "id": 102
@@ -1083,10 +1083,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-06-15T00:00:00.000Z",
-      "updated_at": "2026-06-15T00:00:00.000Z",
+      "created_at": "2026-03-31T00:00:00.000Z",
+      "updated_at": "2026-03-31T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-13T00:00:00.000Z",
+      "last_activity_at": "2026-07-14T00:00:00.000Z",
       "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
       "organization": {
         "login": "proud-ai-labs",
@@ -1107,10 +1107,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-06-20T00:00:00.000Z",
-      "updated_at": "2026-06-20T00:00:00.000Z",
+      "created_at": "2026-03-28T00:00:00.000Z",
+      "updated_at": "2026-03-28T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-01T00:00:00.000Z",
+      "last_activity_at": "2026-08-31T00:00:00.000Z",
       "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
       "organization": {
         "login": "proud-fintech",
@@ -1131,10 +1131,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-03-30T00:00:00.000Z",
-      "updated_at": "2026-03-30T00:00:00.000Z",
+      "created_at": "2026-05-13T00:00:00.000Z",
+      "updated_at": "2026-05-13T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-30T00:00:00.000Z",
+      "last_activity_at": "2026-09-07T00:00:00.000Z",
       "last_activity_editor": "neovim/0.11.0/copilot.lua",
       "organization": {
         "login": "proud-cloud-core",
@@ -1155,10 +1155,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-06-03T00:00:00.000Z",
-      "updated_at": "2026-06-03T00:00:00.000Z",
+      "created_at": "2026-03-26T00:00:00.000Z",
+      "updated_at": "2026-03-26T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-10T00:00:00.000Z",
+      "last_activity_at": "2026-07-16T00:00:00.000Z",
       "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-ai-labs",
@@ -1179,11 +1179,11 @@
         "type": "User"
       },
       "plan_type": "business",
-      "created_at": "2026-04-15T00:00:00.000Z",
-      "updated_at": "2026-04-15T00:00:00.000Z",
+      "created_at": "2026-06-27T00:00:00.000Z",
+      "updated_at": "2026-06-27T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": null,
-      "last_activity_editor": null,
+      "last_activity_at": "2026-09-06T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
       "organization": {
         "login": "proud-fintech",
         "id": 101
@@ -1203,10 +1203,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-04-26T00:00:00.000Z",
-      "updated_at": "2026-04-26T00:00:00.000Z",
+      "created_at": "2026-05-30T00:00:00.000Z",
+      "updated_at": "2026-05-30T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-30T00:00:00.000Z",
+      "last_activity_at": "2026-08-17T00:00:00.000Z",
       "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
       "organization": {
         "login": "proud-cloud-core",
@@ -1227,10 +1227,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-05-15T00:00:00.000Z",
-      "updated_at": "2026-05-15T00:00:00.000Z",
+      "created_at": "2026-05-14T00:00:00.000Z",
+      "updated_at": "2026-05-14T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-22T00:00:00.000Z",
+      "last_activity_at": "2026-07-24T00:00:00.000Z",
       "last_activity_editor": "neovim/0.11.0/copilot.lua",
       "organization": {
         "login": "proud-ai-labs",
@@ -1251,10 +1251,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-05-18T00:00:00.000Z",
-      "updated_at": "2026-05-18T00:00:00.000Z",
+      "created_at": "2026-06-27T00:00:00.000Z",
+      "updated_at": "2026-06-27T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-03T00:00:00.000Z",
+      "last_activity_at": "2026-08-29T00:00:00.000Z",
       "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-fintech",
@@ -1275,10 +1275,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-04-14T00:00:00.000Z",
-      "updated_at": "2026-04-14T00:00:00.000Z",
+      "created_at": "2026-05-30T00:00:00.000Z",
+      "updated_at": "2026-05-30T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-31T00:00:00.000Z",
+      "last_activity_at": "2026-08-15T00:00:00.000Z",
       "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
       "organization": {
         "login": "proud-cloud-core",
@@ -1299,10 +1299,10 @@
         "type": "User"
       },
       "plan_type": "business",
-      "created_at": "2026-03-24T00:00:00.000Z",
-      "updated_at": "2026-03-24T00:00:00.000Z",
+      "created_at": "2026-05-20T00:00:00.000Z",
+      "updated_at": "2026-05-20T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-21T00:00:00.000Z",
+      "last_activity_at": "2026-08-31T00:00:00.000Z",
       "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
       "organization": {
         "login": "proud-ai-labs",
@@ -1323,10 +1323,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-05-24T00:00:00.000Z",
-      "updated_at": "2026-05-24T00:00:00.000Z",
+      "created_at": "2026-05-27T00:00:00.000Z",
+      "updated_at": "2026-05-27T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-31T00:00:00.000Z",
+      "last_activity_at": "2026-09-05T00:00:00.000Z",
       "last_activity_editor": "neovim/0.11.0/copilot.lua",
       "organization": {
         "login": "proud-fintech",
@@ -1347,10 +1347,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-05-05T00:00:00.000Z",
-      "updated_at": "2026-05-05T00:00:00.000Z",
+      "created_at": "2026-07-04T00:00:00.000Z",
+      "updated_at": "2026-07-04T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-05T00:00:00.000Z",
+      "last_activity_at": "2026-09-07T00:00:00.000Z",
       "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-cloud-core",
@@ -1371,10 +1371,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-06-02T00:00:00.000Z",
-      "updated_at": "2026-06-02T00:00:00.000Z",
+      "created_at": "2026-04-27T00:00:00.000Z",
+      "updated_at": "2026-04-27T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-03T00:00:00.000Z",
+      "last_activity_at": "2026-09-08T00:00:00.000Z",
       "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
       "organization": {
         "login": "proud-ai-labs",
@@ -1395,10 +1395,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-06-23T00:00:00.000Z",
-      "updated_at": "2026-06-23T00:00:00.000Z",
+      "created_at": "2026-04-18T00:00:00.000Z",
+      "updated_at": "2026-04-18T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-03T00:00:00.000Z",
+      "last_activity_at": "2026-09-10T00:00:00.000Z",
       "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
       "organization": {
         "login": "proud-fintech",
@@ -1419,10 +1419,10 @@
         "type": "User"
       },
       "plan_type": "business",
-      "created_at": "2026-03-26T00:00:00.000Z",
-      "updated_at": "2026-03-26T00:00:00.000Z",
+      "created_at": "2026-03-24T00:00:00.000Z",
+      "updated_at": "2026-03-24T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-14T00:00:00.000Z",
+      "last_activity_at": "2026-08-12T00:00:00.000Z",
       "last_activity_editor": "neovim/0.11.0/copilot.lua",
       "organization": {
         "login": "proud-cloud-core",
@@ -1443,10 +1443,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-05-14T00:00:00.000Z",
-      "updated_at": "2026-05-14T00:00:00.000Z",
+      "created_at": "2026-04-08T00:00:00.000Z",
+      "updated_at": "2026-04-08T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-05T00:00:00.000Z",
+      "last_activity_at": "2026-09-10T00:00:00.000Z",
       "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-ai-labs",
@@ -1467,10 +1467,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-07-02T00:00:00.000Z",
-      "updated_at": "2026-07-02T00:00:00.000Z",
+      "created_at": "2026-04-28T00:00:00.000Z",
+      "updated_at": "2026-04-28T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-05T00:00:00.000Z",
+      "last_activity_at": "2026-09-06T00:00:00.000Z",
       "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
       "organization": {
         "login": "proud-fintech",
@@ -1491,10 +1491,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-06-02T00:00:00.000Z",
-      "updated_at": "2026-06-02T00:00:00.000Z",
+      "created_at": "2026-05-27T00:00:00.000Z",
+      "updated_at": "2026-05-27T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-09T00:00:00.000Z",
+      "last_activity_at": "2026-09-10T00:00:00.000Z",
       "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
       "organization": {
         "login": "proud-cloud-core",
@@ -1515,11 +1515,11 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-06-12T00:00:00.000Z",
-      "updated_at": "2026-06-12T00:00:00.000Z",
+      "created_at": "2026-06-17T00:00:00.000Z",
+      "updated_at": "2026-06-17T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": null,
-      "last_activity_editor": null,
+      "last_activity_at": "2026-08-31T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
       "organization": {
         "login": "proud-ai-labs",
         "id": 103
@@ -1539,10 +1539,10 @@
         "type": "User"
       },
       "plan_type": "business",
-      "created_at": "2026-03-27T00:00:00.000Z",
-      "updated_at": "2026-03-27T00:00:00.000Z",
+      "created_at": "2026-05-02T00:00:00.000Z",
+      "updated_at": "2026-05-02T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-05T00:00:00.000Z",
+      "last_activity_at": "2026-08-28T00:00:00.000Z",
       "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-fintech",
@@ -1563,10 +1563,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-06-18T00:00:00.000Z",
-      "updated_at": "2026-06-18T00:00:00.000Z",
+      "created_at": "2026-03-22T00:00:00.000Z",
+      "updated_at": "2026-03-22T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-30T00:00:00.000Z",
+      "last_activity_at": "2026-08-29T00:00:00.000Z",
       "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
       "organization": {
         "login": "proud-cloud-core",
@@ -1587,10 +1587,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-05-02T00:00:00.000Z",
-      "updated_at": "2026-05-02T00:00:00.000Z",
+      "created_at": "2026-07-08T00:00:00.000Z",
+      "updated_at": "2026-07-08T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-28T00:00:00.000Z",
+      "last_activity_at": "2026-09-01T00:00:00.000Z",
       "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
       "organization": {
         "login": "proud-ai-labs",
@@ -1611,10 +1611,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-04-27T00:00:00.000Z",
-      "updated_at": "2026-04-27T00:00:00.000Z",
+      "created_at": "2026-06-09T00:00:00.000Z",
+      "updated_at": "2026-06-09T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-01T00:00:00.000Z",
+      "last_activity_at": "2026-09-03T00:00:00.000Z",
       "last_activity_editor": "neovim/0.11.0/copilot.lua",
       "organization": {
         "login": "proud-fintech",
@@ -1635,10 +1635,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-06-09T00:00:00.000Z",
-      "updated_at": "2026-06-09T00:00:00.000Z",
+      "created_at": "2026-04-20T00:00:00.000Z",
+      "updated_at": "2026-04-20T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-31T00:00:00.000Z",
+      "last_activity_at": "2026-09-10T00:00:00.000Z",
       "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-cloud-core",
@@ -1659,11 +1659,11 @@
         "type": "User"
       },
       "plan_type": "business",
-      "created_at": "2026-07-04T00:00:00.000Z",
-      "updated_at": "2026-07-04T00:00:00.000Z",
+      "created_at": "2026-04-15T00:00:00.000Z",
+      "updated_at": "2026-04-15T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": null,
-      "last_activity_editor": null,
+      "last_activity_at": "2026-09-05T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
       "organization": {
         "login": "proud-ai-labs",
         "id": 103
@@ -1683,10 +1683,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-03-22T00:00:00.000Z",
-      "updated_at": "2026-03-22T00:00:00.000Z",
+      "created_at": "2026-05-27T00:00:00.000Z",
+      "updated_at": "2026-05-27T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-07-26T00:00:00.000Z",
+      "last_activity_at": "2026-08-13T00:00:00.000Z",
       "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
       "organization": {
         "login": "proud-fintech",
@@ -1707,10 +1707,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-03-23T00:00:00.000Z",
-      "updated_at": "2026-03-23T00:00:00.000Z",
+      "created_at": "2026-05-19T00:00:00.000Z",
+      "updated_at": "2026-05-19T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-30T00:00:00.000Z",
+      "last_activity_at": "2026-08-29T00:00:00.000Z",
       "last_activity_editor": "neovim/0.11.0/copilot.lua",
       "organization": {
         "login": "proud-cloud-core",
@@ -1731,10 +1731,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-03-31T00:00:00.000Z",
-      "updated_at": "2026-03-31T00:00:00.000Z",
+      "created_at": "2026-04-17T00:00:00.000Z",
+      "updated_at": "2026-04-17T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-05T00:00:00.000Z",
+      "last_activity_at": "2026-09-02T00:00:00.000Z",
       "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-ai-labs",
@@ -1755,10 +1755,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-05-22T00:00:00.000Z",
-      "updated_at": "2026-05-22T00:00:00.000Z",
+      "created_at": "2026-05-17T00:00:00.000Z",
+      "updated_at": "2026-05-17T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-04T00:00:00.000Z",
+      "last_activity_at": "2026-08-08T00:00:00.000Z",
       "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
       "organization": {
         "login": "proud-fintech",
@@ -1779,10 +1779,10 @@
         "type": "User"
       },
       "plan_type": "business",
-      "created_at": "2026-07-05T00:00:00.000Z",
-      "updated_at": "2026-07-05T00:00:00.000Z",
+      "created_at": "2026-07-03T00:00:00.000Z",
+      "updated_at": "2026-07-03T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-31T00:00:00.000Z",
+      "last_activity_at": "2026-08-13T00:00:00.000Z",
       "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
       "organization": {
         "login": "proud-cloud-core",
@@ -1803,10 +1803,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-06-17T00:00:00.000Z",
-      "updated_at": "2026-06-17T00:00:00.000Z",
+      "created_at": "2026-03-22T00:00:00.000Z",
+      "updated_at": "2026-03-22T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-06T00:00:00.000Z",
+      "last_activity_at": "2026-08-29T00:00:00.000Z",
       "last_activity_editor": "neovim/0.11.0/copilot.lua",
       "organization": {
         "login": "proud-ai-labs",
@@ -1827,10 +1827,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-07-02T00:00:00.000Z",
-      "updated_at": "2026-07-02T00:00:00.000Z",
+      "created_at": "2026-04-29T00:00:00.000Z",
+      "updated_at": "2026-04-29T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-26T00:00:00.000Z",
+      "last_activity_at": "2026-08-30T00:00:00.000Z",
       "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-fintech",
@@ -1851,10 +1851,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-06-01T00:00:00.000Z",
-      "updated_at": "2026-06-01T00:00:00.000Z",
+      "created_at": "2026-05-17T00:00:00.000Z",
+      "updated_at": "2026-05-17T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-23T00:00:00.000Z",
+      "last_activity_at": "2026-09-03T00:00:00.000Z",
       "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
       "organization": {
         "login": "proud-cloud-core",
@@ -1875,10 +1875,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-04-09T00:00:00.000Z",
-      "updated_at": "2026-04-09T00:00:00.000Z",
+      "created_at": "2026-04-17T00:00:00.000Z",
+      "updated_at": "2026-04-17T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-15T00:00:00.000Z",
+      "last_activity_at": "2026-08-12T00:00:00.000Z",
       "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
       "organization": {
         "login": "proud-ai-labs",
@@ -1899,10 +1899,10 @@
         "type": "User"
       },
       "plan_type": "business",
-      "created_at": "2026-05-08T00:00:00.000Z",
-      "updated_at": "2026-05-08T00:00:00.000Z",
+      "created_at": "2026-05-21T00:00:00.000Z",
+      "updated_at": "2026-05-21T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-07-30T00:00:00.000Z",
+      "last_activity_at": "2026-09-08T00:00:00.000Z",
       "last_activity_editor": "neovim/0.11.0/copilot.lua",
       "organization": {
         "login": "proud-fintech",
@@ -1923,10 +1923,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-03-30T00:00:00.000Z",
-      "updated_at": "2026-03-30T00:00:00.000Z",
+      "created_at": "2026-05-13T00:00:00.000Z",
+      "updated_at": "2026-05-13T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-01T00:00:00.000Z",
+      "last_activity_at": "2026-09-06T00:00:00.000Z",
       "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-cloud-core",
@@ -1947,10 +1947,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-05-23T00:00:00.000Z",
-      "updated_at": "2026-05-23T00:00:00.000Z",
+      "created_at": "2026-03-25T00:00:00.000Z",
+      "updated_at": "2026-03-25T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-14T00:00:00.000Z",
+      "last_activity_at": "2026-08-29T00:00:00.000Z",
       "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
       "organization": {
         "login": "proud-ai-labs",
@@ -1971,10 +1971,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-05-01T00:00:00.000Z",
-      "updated_at": "2026-05-01T00:00:00.000Z",
+      "created_at": "2026-04-05T00:00:00.000Z",
+      "updated_at": "2026-04-05T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-10T00:00:00.000Z",
+      "last_activity_at": "2026-09-03T00:00:00.000Z",
       "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
       "organization": {
         "login": "proud-fintech",
@@ -1995,10 +1995,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-07-12T00:00:00.000Z",
-      "updated_at": "2026-07-12T00:00:00.000Z",
+      "created_at": "2026-04-19T00:00:00.000Z",
+      "updated_at": "2026-04-19T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-10T00:00:00.000Z",
+      "last_activity_at": "2026-08-29T00:00:00.000Z",
       "last_activity_editor": "neovim/0.11.0/copilot.lua",
       "organization": {
         "login": "proud-cloud-core",
@@ -2019,10 +2019,10 @@
         "type": "User"
       },
       "plan_type": "business",
-      "created_at": "2026-04-26T00:00:00.000Z",
-      "updated_at": "2026-04-26T00:00:00.000Z",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "updated_at": "2026-06-07T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-06T00:00:00.000Z",
+      "last_activity_at": "2026-09-01T00:00:00.000Z",
       "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-ai-labs",
@@ -2043,10 +2043,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-07-07T00:00:00.000Z",
-      "updated_at": "2026-07-07T00:00:00.000Z",
+      "created_at": "2026-03-29T00:00:00.000Z",
+      "updated_at": "2026-03-29T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-25T00:00:00.000Z",
+      "last_activity_at": "2026-09-03T00:00:00.000Z",
       "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
       "organization": {
         "login": "proud-fintech",
@@ -2067,10 +2067,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-05-18T00:00:00.000Z",
-      "updated_at": "2026-05-18T00:00:00.000Z",
+      "created_at": "2026-04-12T00:00:00.000Z",
+      "updated_at": "2026-04-12T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-18T00:00:00.000Z",
+      "last_activity_at": "2026-09-05T00:00:00.000Z",
       "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
       "organization": {
         "login": "proud-cloud-core",
@@ -2091,10 +2091,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-06-19T00:00:00.000Z",
-      "updated_at": "2026-06-19T00:00:00.000Z",
+      "created_at": "2026-04-09T00:00:00.000Z",
+      "updated_at": "2026-04-09T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-08-23T00:00:00.000Z",
+      "last_activity_at": "2026-09-01T00:00:00.000Z",
       "last_activity_editor": "neovim/0.11.0/copilot.lua",
       "organization": {
         "login": "proud-ai-labs",
@@ -2115,10 +2115,10 @@
         "type": "User"
       },
       "plan_type": "enterprise",
-      "created_at": "2026-07-04T00:00:00.000Z",
-      "updated_at": "2026-07-04T00:00:00.000Z",
+      "created_at": "2026-04-12T00:00:00.000Z",
+      "updated_at": "2026-04-12T00:00:00.000Z",
       "pending_cancellation_date": null,
-      "last_activity_at": "2026-09-10T00:00:00.000Z",
+      "last_activity_at": "2026-09-03T00:00:00.000Z",
       "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
       "organization": {
         "login": "proud-fintech",
