@@ -6,7 +6,7 @@ import { BillingCalculator } from '../processor/billing-calculator.js';
 import { MetricsAggregator } from '../processor/metrics-aggregator.js';
 import { ReportParser } from '../processor/report-parser.js';
 import { ForkSafeStorage } from '../storage/fork-safe-storage.js';
-import { IndexMetadata } from '../types/copilot.js';
+import { CostCenterBudget, IndexMetadata, MonthlyUsageReportRawRecord, UserUsageProfile } from '../types/copilot.js';
 
 async function main() {
   console.log('=====================================================');
@@ -20,21 +20,21 @@ async function main() {
   const resolver = new AttributeResolver();
   const aggregator = new MetricsAggregator();
   const storage = new ForkSafeStorage();
+  const reportParser = new ReportParser(resolver);
 
   console.log(`📋 AttributeResolver: Loaded ${resolver.getMappingCount()} custom user attribute mapping(s).`);
 
-  // 2. データ収集
-  console.log('📡 Fetching Copilot Metrics, Seat assignments, Cost Centers, Budgets, and User Profiles...');
-  const [metrics, seats, costCenters, costCenterBudgets, userProfiles] = await Promise.all([
+  // 2. データ収集 (Cost Center Budgets と User Profiles は実データ運用では
+  //    この後のエンリッチメント/CSV集計結果から構築するため、ここでは取得しない)
+  console.log('📡 Fetching Copilot Metrics, Seat assignments, and Cost Centers...');
+  const [metrics, seats, costCenters] = await Promise.all([
     client.fetchMetrics(),
     client.fetchSeats(),
     client.fetchCostCenters(),
-    client.fetchCostCenterBudgets(),
-    client.fetchUserProfiles(),
   ]);
 
   console.log(
-    `✅ Data Fetched: ${metrics.length} daily metric records, ${seats.length} seats, ${costCenters.length} cost centers, ${costCenterBudgets.length} budgets, ${userProfiles.length} user profiles.`
+    `✅ Data Fetched: ${metrics.length} daily metric records, ${seats.length} seats, ${costCenters.length} cost centers.`
   );
 
   if (metrics.length === 0 || seats.length === 0) {
@@ -60,6 +60,41 @@ async function main() {
   const issues = client.getIssues();
   console.log(`🔍 Detected ${issues.length} data fetch issue(s) during collection.`);
   storage.saveErrorLog(issues);
+
+  // 4b. Cost Center Budgets と User Profiles の構築
+  //    - Mockモード: 従来通り MockDataGenerator 由来のデータを使用
+  //    - 実データモード: GitHubのPublic APIには Cost Center Budget や ユーザー別モデル内訳を返す
+  //      エンドポイントが存在しないため、(a) 実のEnrichedUserSeatコスト + 管理者宣言の
+  //      COPILOT_COST_CENTER_BUDGETS 環境変数からBudgetを計算し、(b) 既にインポート済みの
+  //      Monthly Usage Report CSV から User Profile を構築する。どちらも存在しない場合は捕造せず空配列とする。
+  let costCenterBudgets: CostCenterBudget[];
+  let userProfiles: UserUsageProfile[];
+
+  if (isMock) {
+    [costCenterBudgets, userProfiles] = await Promise.all([
+      client.fetchCostCenterBudgets(),
+      client.fetchUserProfiles(),
+    ]);
+  } else {
+    const budgetConfig = BillingCalculator.parseBudgetConfig(process.env.COPILOT_COST_CENTER_BUDGETS);
+    costCenterBudgets = BillingCalculator.computeCostCenterBudgets(enrichedSeats, costCenters, budgetConfig);
+
+    const seatsByLogin = new Map(enrichedSeats.map((s) => [s.login.toLowerCase(), s]));
+    const reportMonthsForProfiles = storage.getStoredReportMonths();
+    const allReportRecords: MonthlyUsageReportRawRecord[] = [];
+    for (const month of reportMonthsForProfiles) {
+      for (const csvPath of storage.getRawReportFiles(month)) {
+        try {
+          allReportRecords.push(...reportParser.parseRecords(fs.readFileSync(csvPath, 'utf-8')));
+        } catch (err) {
+          console.warn(`⚠️ Warning: Failed to parse report CSV for user profile construction at ${csvPath}:`, err);
+        }
+      }
+    }
+    userProfiles = reportParser.buildUserProfiles(allReportRecords, seatsByLogin);
+  }
+
+  console.log(`💰 Prepared ${costCenterBudgets.length} cost center budget(s) and ${userProfiles.length} user profile(s).`);
 
   // 5. 日次スコープ集計の生成
   const availableDays: string[] = [];
@@ -120,7 +155,6 @@ async function main() {
 
   // 8. Monthly Usage Report (CSV) の検出・集計・保存
   console.log('📑 Processing Monthly Usage Reports (CSV)...');
-  const reportParser = new ReportParser(resolver);
 
   // モックモードの場合、モックレポートCSVを生成 (保存されていない場合)
   if (isMock) {

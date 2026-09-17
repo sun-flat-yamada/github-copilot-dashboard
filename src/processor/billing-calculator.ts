@@ -1,6 +1,7 @@
 import {
   CopilotPlanType,
   CopilotSeatAssignment,
+  CostCenterBudget,
   EnrichedUserSeat,
   EnterpriseCostCenter,
   UserSeatStatus,
@@ -11,6 +12,18 @@ export const COPILOT_PRICING: Record<CopilotPlanType, number> = {
   business: 19.0,
   enterprise: 39.0,
 };
+
+/**
+ * 管理者が COPILOT_COST_CENTER_BUDGETS 環境変数(JSON)で宣言する予算設定。
+ * GitHub の公開APIには Cost Center の上限額(Budget)/無料枠を取得するエンドポイントが
+ * 存在しないため、この値は必ず管理者による明示的な設定に由来し、絶対に自動生成/推測しない。
+ */
+export interface CostCenterBudgetConfigEntry {
+  cost_center_id?: string;
+  cost_center_name?: string;
+  spending_limit_usd: number;
+  free_tier_budget_usd: number;
+}
 
 export class BillingCalculator {
   private resolver: AttributeResolver;
@@ -124,5 +137,83 @@ export class BillingCalculator {
    */
   public static getDaysInMonth(year: number, month: number): number {
     return new Date(year, month, 0).getDate();
+  }
+
+  /**
+   * COPILOT_COST_CENTER_BUDGETS 環境変数(JSON配列 or 単一オブジェクト)をパースする。
+   * 未設定・不正な値の場合は例外を投げず空配列を返す（実データ運用を止めないため）。
+   */
+  public static parseBudgetConfig(raw?: string): CostCenterBudgetConfigEntry[] {
+    if (!raw || !raw.trim()) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * 実データ運用時の Cost Center Budget を計算する。
+   * GitHub Public API には Budget(上限額/無料枠)を返すエンドポイントが存在しないため、
+   * - 上限額(spending_limit_usd) / 無料枠(free_tier_budget_usd) は管理者が宣言した budgetConfig からのみ取得（未宣言時は 0）
+   * - 現在使用額(current_spend_usd) は実際の EnrichedUserSeat.monthly_cost_usd をCost Center単位で集計した実値
+   * を用いる。モックデータやランダム値は一切生成しない。
+   */
+  public static computeCostCenterBudgets(
+    enrichedSeats: EnrichedUserSeat[],
+    costCenters: EnterpriseCostCenter[],
+    budgetConfig: CostCenterBudgetConfigEntry[]
+  ): CostCenterBudget[] {
+    if (enrichedSeats.length === 0) return [];
+
+    const nameToId = new Map(costCenters.map((cc) => [cc.name.toLowerCase(), cc.id]));
+    const nameToCode = new Map(costCenters.map((cc) => [cc.name.toLowerCase(), cc.cost_center_code]));
+
+    const configByKey = new Map<string, CostCenterBudgetConfigEntry>();
+    for (const cfg of budgetConfig) {
+      if (cfg.cost_center_id) configByKey.set(`id:${cfg.cost_center_id}`, cfg);
+      if (cfg.cost_center_name) configByKey.set(`name:${cfg.cost_center_name.toLowerCase()}`, cfg);
+    }
+
+    const spendByName = new Map<string, number>();
+    for (const seat of enrichedSeats) {
+      spendByName.set(seat.cost_center, (spendByName.get(seat.cost_center) || 0) + seat.monthly_cost_usd);
+    }
+
+    const results: CostCenterBudget[] = [];
+    for (const [ccName, spend] of spendByName.entries()) {
+      const ccId = nameToId.get(ccName.toLowerCase()) || ccName;
+      const ccCode = nameToCode.get(ccName.toLowerCase()) || '';
+      const cfg = configByKey.get(`id:${ccId}`) || configByKey.get(`name:${ccName.toLowerCase()}`);
+      const limit = cfg?.spending_limit_usd ?? 0;
+      const free = cfg?.free_tier_budget_usd ?? 0;
+
+      const netBillable = Math.max(0, spend - free);
+      const remaining = Math.max(0, limit - netBillable);
+      const utilPercent = limit > 0 ? Number(((netBillable / limit) * 100).toFixed(1)) : 0;
+
+      let status: CostCenterBudget['status'] = 'normal';
+      if (utilPercent >= 100) {
+        status = 'exceeded';
+      } else if (utilPercent >= 80) {
+        status = 'warning';
+      }
+
+      results.push({
+        cost_center_id: ccId,
+        cost_center_name: ccName,
+        cost_center_code: ccCode,
+        spending_limit_usd: limit,
+        free_tier_budget_usd: free,
+        current_spend_usd: Number(spend.toFixed(2)),
+        net_billable_spend_usd: Number(netBillable.toFixed(2)),
+        remaining_budget_usd: Number(remaining.toFixed(2)),
+        budget_utilization_percent: utilPercent,
+        status,
+      });
+    }
+
+    return results;
   }
 }
