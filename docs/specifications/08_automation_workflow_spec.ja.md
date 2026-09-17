@@ -78,6 +78,7 @@ GitHubの最新仕様に基づき、**Fine-grained Personal Access Token (推奨
   - 公開コミットには一切含めず、GitHubのリポジトリ設定（Settings > Secrets and variables > Actions > Variables）で登録。
 - `COPILOT_ENTERPRISE`: 対象のEnterpriseスラッグ（Enterprise一括集計時）。
 - `COPILOT_ORGS`: 対象のOrganizationスラッグ（カンマ区切り、複数Org対応）。
+- `COPILOT_COST_CENTER_BUDGETS`: `{ cost_center_id?, cost_center_name?, spending_limit_usd, free_tier_budget_usd }` のJSON配列。GitHub APIには予算上限を返すエンドポイントが存在しないため、実データ運用でCost Center別予算を表示するには管理者がこの値を宣言する必要がある。VariableまたはSecretのどちらでも設定可能。
 - `MOCK_MODE`: 実APIトークンなしでデモ・テスト運用する場合は `true` を指定。
 
 ---
