@@ -56,7 +56,7 @@ export class GitHubCopilotClient {
     if (this.mockMode) {
       console.log('⚡ [GitHubClient] Running in MOCK mode: generating 30-day simulated Copilot metrics (2026.09 spec)');
       const bundle = this.mockGenerator.generateBundle(30);
-      
+
       // モックモードで検証用の模擬エラー/警告を注入
       this.recordIssue({
         severity: 'warning',
@@ -128,8 +128,16 @@ export class GitHubCopilotClient {
         metrics.push(...data);
       }
     } catch (e: any) {
-      console.error('[GitHubClient] Error fetching metrics, falling back to mock data:', e);
-      return this.mockGenerator.generateBundle(30).metrics;
+      // 実データ運用では取得失敗を偽装(モックへの黙示的フォールバック)せず、
+      // 明示的なエラーとして記録した上で、これまでに取得できた実データのみを返す。
+      this.recordIssue({
+        severity: 'error',
+        category: 'server_error',
+        target: this.enterprise ? `enterprise:${this.enterprise}/copilot/metrics` : 'api:copilot/metrics',
+        message: `Unexpected error while fetching Copilot metrics: ${e?.message || e}`,
+        details: e?.stack,
+      });
+      console.error('[GitHubClient] Error fetching metrics:', e);
     }
 
     return metrics;
@@ -197,8 +205,16 @@ export class GitHubCopilotClient {
         }
       }
     } catch (e: any) {
-      console.error('[GitHubClient] Error fetching seats, falling back to mock data:', e);
-      return this.mockGenerator.generateBundle(30).seats;
+      // 実データ運用では取得失敗を偽装(モックへの黙示的フォールバック)せず、
+      // 明示的なエラーとして記録した上で、これまでに取得できた実データのみを返す。
+      this.recordIssue({
+        severity: 'error',
+        category: 'server_error',
+        target: this.enterprise ? `enterprise:${this.enterprise}/billing/seats` : 'api:copilot/billing/seats',
+        message: `Unexpected error while fetching Copilot seat assignments: ${e?.message || e}`,
+        details: e?.stack,
+      });
+      console.error('[GitHubClient] Error fetching seats:', e);
     }
 
     return allSeats;
@@ -208,20 +224,24 @@ export class GitHubCopilotClient {
    * Enterprise Cost Centers 一覧を取得
    */
   public async fetchCostCenters(): Promise<EnterpriseCostCenter[]> {
-    if (this.mockMode || !this.enterprise) {
+    if (this.mockMode) {
       // モックモードでもCost Centerエラーの検証ケースを1件注入
-      if (this.mockMode) {
-        this.recordIssue({
-          severity: 'warning',
-          category: 'data_integrity',
-          target: 'api:billing/cost-centers/cc-ent-9009',
-          message: 'Cost Center "cc-ent-9009" (Enterprise-IT) contains 3 unmapped user assignments',
-          details: 'Warning: 3 users could not be resolved against active enterprise seats.\nCost Center ID: cc-ent-9009\nFallback: Assigned to Default-CostCenter.',
-          http_status: 200,
-          affected_fields: ['cost_center'],
-        });
-      }
+      this.recordIssue({
+        severity: 'warning',
+        category: 'data_integrity',
+        target: 'api:billing/cost-centers/cc-ent-9009',
+        message: 'Cost Center "cc-ent-9009" (Enterprise-IT) contains 3 unmapped user assignments',
+        details: 'Warning: 3 users could not be resolved against active enterprise seats.\nCost Center ID: cc-ent-9009\nFallback: Assigned to Default-CostCenter.',
+        http_status: 200,
+        affected_fields: ['cost_center'],
+      });
       return this.mockGenerator.generateBundle(30).costCenters;
+    }
+
+    if (!this.enterprise) {
+      // Cost Centers は GitHub Enterprise Billing 専用機能のため、Organization単体運用では
+      // 取得対象が存在しない。モックで埋めず空配列を返す(呼び出し側は空のCost Center軸として扱う)。
+      return [];
     }
 
     const headers = this.getHeaders();
@@ -233,17 +253,23 @@ export class GitHubCopilotClient {
           severity: 'warning',
           category: 'server_error',
           target: `enterprise:${this.enterprise}/settings/billing/cost-centers`,
-          message: `Cost centers API returned HTTP ${res.status}, falling back to defaults`,
+          message: `Cost centers API returned HTTP ${res.status}`,
           details: await res.text().catch(() => ''),
           http_status: res.status,
         });
-        return this.mockGenerator.generateBundle(30).costCenters;
+        return [];
       }
       const json = await res.json();
       return (json.cost_centers || []) as EnterpriseCostCenter[];
     } catch (e: any) {
-      console.warn('[GitHubClient] Cost Centers fetch failed, using defaults:', e);
-      return this.mockGenerator.generateBundle(30).costCenters;
+      this.recordIssue({
+        severity: 'warning',
+        category: 'server_error',
+        target: `enterprise:${this.enterprise}/settings/billing/cost-centers`,
+        message: `Unexpected error while fetching Cost Centers: ${e?.message || e}`,
+        details: e?.stack,
+      });
+      return [];
     }
   }
 

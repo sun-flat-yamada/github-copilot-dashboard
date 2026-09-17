@@ -77,4 +77,53 @@ describe('ReportParser (Monthly Usage Report CSV)', () => {
     assert.strictEqual(agg.overview.total_active_users, 2);
     assert.strictEqual(agg.user_details.length, 2);
   });
+
+  it('builds real UserUsageProfile[] from Monthly Usage Report CSV records (no fabricated fields)', () => {
+    const mockMapping = JSON.stringify([
+      { github_user: 'dev_alice', display_name: 'Alice A.', department: 'Frontend Unit' },
+    ]);
+    const resolver = new AttributeResolver(mockMapping);
+    const parser = new ReportParser(resolver);
+
+    const csvText = `date,username,product,sku,model,quantity,unit_type,net_amount,organization,cost_center_name
+2026-08-01,dev_alice,copilot,copilot_premium_request,"Claude 3.7 Sonnet",10,requests,0.40,proud-org,CC-DEV-101
+2026-08-01,dev_alice,copilot,copilot_premium_request,GPT-4o,3,requests,0.09,proud-org,CC-DEV-101
+2026-08-02,dev_alice,copilot,copilot_premium_request,"Claude 3.7 Sonnet",6,requests,0.24,proud-org,CC-DEV-101
+2026-08-01,dev_bob,copilot,copilot_premium_request,o1,4,requests,0.20,proud-org,CC-INFRA-202
+`;
+    const records = parser.parseRecords(csvText);
+    const profiles = parser.buildUserProfiles(records);
+
+    assert.strictEqual(profiles.length, 2);
+    const alice = profiles.find((p) => p.login === 'dev_alice');
+    assert.ok(alice);
+    assert.strictEqual(alice?.display_name, 'Alice A.');
+    assert.strictEqual(alice?.department, 'Frontend Unit');
+    assert.strictEqual(alice?.daily_history.length, 2); // 2026-08-01, 2026-08-02
+    assert.strictEqual(alice?.daily_history[0].date, '2026-08-01');
+    assert.strictEqual(alice?.daily_history[1].date, '2026-08-02');
+
+    // モデル名は他画面(UserTrendViewer等)と一致する正規化キー('claude-3-7-sonnet'形式)を使用する
+    assert.strictEqual(alice?.daily_history[0].model_breakdown['claude-3-7-sonnet'], 10);
+    assert.strictEqual(alice?.daily_history[0].model_breakdown['gpt-4o'], 3);
+    assert.strictEqual(alice?.model_usage_totals['claude-3-7-sonnet'], 16); // 10 + 6
+
+    // 実データに存在しない項目は捏造せず0固定
+    assert.strictEqual(alice?.daily_history[0].suggestions, 0);
+    assert.strictEqual(alice?.daily_history[0].acceptances, 0);
+    assert.strictEqual(alice?.acceptance_rate, 0);
+
+    // 実コスト(net_amount合計)は正確に反映される
+    assert.strictEqual(alice?.total_cost_usd, 0.73); // 0.40 + 0.09 + 0.24
+    assert.strictEqual(alice?.daily_history[0].daily_cost_usd, 0.49); // 0.40 + 0.09
+
+    const bob = profiles.find((p) => p.login === 'dev_bob');
+    assert.ok(bob);
+    assert.strictEqual(bob?.daily_history[0].model_breakdown['o1'], 4);
+  });
+
+  it('returns an empty array when there are no records', () => {
+    const parser = new ReportParser();
+    assert.deepStrictEqual(parser.buildUserProfiles([]), []);
+  });
 });

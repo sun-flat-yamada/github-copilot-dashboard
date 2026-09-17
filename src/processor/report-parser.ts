@@ -1,5 +1,6 @@
 import { AttributeResolver } from '../collector/attribute-resolver.js';
 import {
+  EnrichedUserSeat,
   GroupSummary,
   MonthlyReportAggregatedData,
   MonthlyUsageReportRawRecord,
@@ -7,7 +8,21 @@ import {
   ReportModelBreakdown,
   ReportSkuBreakdown,
   ReportUserDetail,
+  UserModelDailyUsage,
+  UserUsageProfile,
 } from '../types/copilot.js';
+
+/**
+ * モデルの表示名(例: "Claude 3.7 Sonnet")をアプリ全体で使われる正規化ID(例: 'claude-3-7-sonnet')に変換する。
+ * ModelRadarView/UserTrendViewer など他画面が参照する既存の固定モデルIDと一致させるための純粋な文字列正規化であり、
+ * 値の捏造は行わない。
+ */
+function slugifyModelName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'unknown-model';
+}
 
 export class ReportParser {
   private resolver: AttributeResolver;
@@ -204,6 +219,98 @@ export class ReportParser {
     }
 
     return records;
+  }
+
+  /**
+   * Monthly Usage Report の生レコードから、ユーザー別モデル利用プロファイル(UserUsageProfile[])を構築する。
+   *
+   * 実データ運用における「ライブAPIでは取得不可能なユーザー別モデル内訳」の代替ソースとして、
+   * 既にインポート済みの Monthly Usage Report CSV (date, username, model, quantity, net_amount 等) を
+   * 集計する。CSVに存在しない指標 (suggestions/acceptances/lines_suggested/lines_accepted) は
+   * 絶対に推測・捏造せず 0 固定とする。
+   *
+   * @param records parseRecords() で取得した生レコード群（複数月分をまとめて渡してよい）
+   * @param seatsByLogin login(小文字)をキーとした EnrichedUserSeat のマップ。渡された場合、
+   *   avatar_url / organization / plan_type などシート由来の実データで補完する（任意）。
+   */
+  public buildUserProfiles(
+    records: MonthlyUsageReportRawRecord[],
+    seatsByLogin?: Map<string, EnrichedUserSeat>
+  ): UserUsageProfile[] {
+    if (records.length === 0) return [];
+
+    const byUserByDate = new Map<string, Map<string, UserModelDailyUsage>>();
+    const orgByUser = new Map<string, string>();
+    const skuByUser = new Map<string, string>();
+
+    for (const rec of records) {
+      const login = rec.username;
+      if (!login) continue;
+
+      const dayMap = byUserByDate.get(login) || new Map<string, UserModelDailyUsage>();
+      byUserByDate.set(login, dayMap);
+
+      const day: UserModelDailyUsage = dayMap.get(rec.date) || {
+        date: rec.date,
+        total_chats: 0,
+        model_breakdown: {},
+        suggestions: 0,
+        acceptances: 0,
+        lines_suggested: 0,
+        lines_accepted: 0,
+        acceptance_rate: 0,
+        daily_cost_usd: 0,
+      };
+
+      const qty = rec.quantity ?? 0;
+      const modelKey = slugifyModelName(rec.model || 'unknown-model');
+      day.total_chats += qty;
+      day.model_breakdown[modelKey] = (day.model_breakdown[modelKey] || 0) + qty;
+      day.daily_cost_usd = Number((day.daily_cost_usd + (rec.net_amount || 0)).toFixed(4));
+      dayMap.set(rec.date, day);
+
+      if (rec.organization) orgByUser.set(login, rec.organization);
+      if (rec.sku) skuByUser.set(login, rec.sku);
+    }
+
+    const profiles: UserUsageProfile[] = [];
+    for (const [login, dayMap] of byUserByDate.entries()) {
+      const resolved = this.resolver.resolve(login);
+      const seat = seatsByLogin?.get(login.toLowerCase());
+      const dailyHistory = Array.from(dayMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+
+      const modelTotals: Record<string, number> = {};
+      let totalChats = 0;
+      let totalCost = 0;
+      for (const d of dailyHistory) {
+        totalChats += d.total_chats;
+        totalCost += d.daily_cost_usd;
+        for (const [model, count] of Object.entries(d.model_breakdown)) {
+          modelTotals[model] = (modelTotals[model] || 0) + count;
+        }
+      }
+
+      const sku = skuByUser.get(login);
+      profiles.push({
+        login: resolved.login,
+        display_name: resolved.displayName,
+        avatar_url: seat?.avatar_url || '',
+        department: resolved.department,
+        cost_center: resolved.costCenterOverride || seat?.cost_center || 'Unassigned-CC',
+        organization: seat?.organization || orgByUser.get(login) || 'Default-Org',
+        plan_type: seat?.plan_type ?? (sku?.includes('enterprise') ? 'enterprise' : 'business'),
+        total_chats: totalChats,
+        // Monthly Usage Report には suggestions/acceptances 相当の指標が存在しないため捏造せず0固定
+        total_suggestions: 0,
+        total_acceptances: 0,
+        acceptance_rate: 0,
+        total_cost_usd: Number(totalCost.toFixed(2)),
+        model_usage_totals: modelTotals,
+        daily_history: dailyHistory,
+      });
+    }
+
+    return profiles;
   }
 
   /**
