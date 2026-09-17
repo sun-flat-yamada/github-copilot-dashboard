@@ -9,7 +9,7 @@
 [![React](https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react)](https://reactjs.org/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.x-38bdf8?style=flat-square&logo=tailwindcss)](https://tailwindcss.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
-[![SDD: 12 Specs](https://img.shields.io/badge/SDD-12%20Specifications-blueviolet?style=flat-square)](docs/specifications/)
+[![SDD: 13 Specs](https://img.shields.io/badge/SDD-13%20Specifications-blueviolet?style=flat-square)](docs/specifications/)
 [![GitHub API](https://img.shields.io/badge/GitHub%20API-2026.09%20LTS-blue?style=flat-square)](https://docs.github.com)
 [![Zero Infra](https://img.shields.io/badge/Infrastructure-Zero%20(Pages%20%2B%20Actions)-emerald?style=flat-square)](https://pages.github.com)
 
@@ -112,7 +112,7 @@ github-copilot-dashboard/
 │   ├── mock/                  # 2026 specification simulation mock data
 │   ├── processed/             # Precomputed scope data (daily, monthly, custom)
 │   └── raw/                   # Partitioned raw API responses
-├── docs/specifications/       # SDD (Specification-Driven Development) Specs (01–11)
+├── docs/specifications/       # SDD (Specification-Driven Development) Specs (01–13)
 ├── src/                       # Data Pipeline & Backend Core
 │   ├── cli/                   # Pipeline runner CLI (run-pipeline.ts)
 │   ├── collector/             # API / Mock collector & anomaly handler
@@ -148,6 +148,7 @@ Every feature in this project is engineered in strict accordance with **Specific
 | [SDD-10](docs/specifications/10_ai_model_benchmark_radar_spec.md) | AI Model Benchmark Radar Specification | 6-axis radar charts and evaluations across 38 frontier models |
 | [SDD-11](docs/specifications/11_deep_analysis_view_spec.md) | Deep Analytics View Specification | Inefficient AI pattern diagnostics and AEDP autonomy depth |
 | [SDD-12](docs/specifications/12_fork_sync_and_customization_ops_spec.md) | Fork Synchronization & Operations Specification | Upstream sync runbooks (Web UI/CLI/Actions), dual-branch model, health audit |
+| [SDD-13](docs/specifications/13_fork_restricted_environment_setup_guide.md) | Fork-Restricted Environment Setup Guide | Mirror-based duplication procedure for EMU / policy-restricted organizations that cannot use GitHub Fork |
 
 ---
 
@@ -155,6 +156,9 @@ Every feature in this project is engineered in strict accordance with **Specific
 
 ### Step 1: Fork the Repository
 Fork this repository into your enterprise GitHub Organization or Enterprise account.
+
+> [!NOTE]
+> **Can't fork into your organization?** If your account is a GitHub Enterprise Managed User (EMU) or your organization's policy blocks forking from outside accounts, see [SDD-13: Fork-Restricted Environment Setup Guide](docs/specifications/13_fork_restricted_environment_setup_guide.md) for a mirror-based duplication procedure that doesn't require Fork.
 
 ### Step 2: Configure GitHub Pages
 1. Navigate to **Settings** > **Pages** in your repository.
@@ -268,7 +272,7 @@ Contributions are welcome! If you find this tool useful, please consider support
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=flat&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/sun.flat.yamada)
 
-Pull requests and issues are warmly welcomed!  
+Pull requests and issues are warmly welcomed!
 Please review our community guidelines before contributing:
 
 - [Contribution Guide (CONTRIBUTING.md)](CONTRIBUTING.md)
@@ -280,5 +284,5 @@ Please review our community guidelines before contributing:
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).  
+This project is licensed under the [MIT License](LICENSE).
 Copyright (c) 2026 sun-flat-yamada (Youhei Yamada)
