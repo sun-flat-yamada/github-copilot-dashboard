@@ -8,7 +8,7 @@
 - **Status**: Approved / Active
 - **Target Version**: 2026.09-LTS
 - **Date**: 2026-09-16
-- **Related Specs**: [SDD-05 (Data Storage & Fork Isolation Spec)](05_data_storage_and_fork_isolation_spec.md), [SDD-08 (Automation Workflow Spec)](08_automation_workflow_spec.md)
+- **Related Specs**: [SDD-05 (Data Storage & Fork Isolation Spec)](05_data_storage_and_fork_isolation_spec.md), [SDD-08 (Automation Workflow Spec)](08_automation_workflow_spec.md), [SDD-13 (Fork Restricted Environment Setup Guide)](13_fork_restricted_environment_setup_guide.md)
 
 ---
 
@@ -56,6 +56,7 @@ Organization-specific details are registered as GitHub Actions Variables or Secr
 | **Variable** | `COPILOT_USER_MAPPING` | Settings > Variables > Actions | JSON array mapping logins to display names, departments, and cost center overrides |
 | **Variable** | `COPILOT_ORGS` | Settings > Variables > Actions | Target organization slugs (comma-separated) |
 | **Variable** | `COPILOT_ENTERPRISE` | Settings > Variables > Actions | Target Enterprise slug (for enterprise-wide aggregation) |
+| **Variable** | `COPILOT_COST_CENTER_BUDGETS` | Settings > Variables > Actions | JSON array of `{ cost_center_id?, cost_center_name?, spending_limit_usd, free_tier_budget_usd }` declaring per-cost-center budget ceilings (the GitHub API exposes no budget endpoint, so this must be supplied manually to enable FinOps budget-vs-actual views in real-data mode) |
 | **Variable** | `MOCK_MODE` | Settings > Variables > Actions | Set to `true` to test full UI/pipeline with simulated 2026 data without API tokens |
 
 With Zero-Code Customization, the fork's `main` branch has zero file diffs against upstream, enabling 1-click updates.
@@ -84,6 +85,43 @@ When internal enterprise requirements demand custom frontend changes (custom bra
   1. Fast-forward `main` to latest `upstream/main`.
   2. Switch to `fork/custom` and run `git merge main`.
   3. Deploy GitHub Pages from `fork/custom` if needed.
+
+---
+
+### 2.3 Operational Checklist for `fork/custom` Deployments
+Once code-level customizations exist on `fork/custom`, scheduled/CI workflows must be
+explicitly pointed at that branch — otherwise the daily cron and Pages deploy silently
+keep running `main`'s (upstream) code, and fork-only fixes or features never reach
+production. In practice, the following four settings need to change **together**;
+missing any one of them results in a partial, confusing rollout:
+
+1. **Retarget workflow trigger refs**: In every workflow that should run the
+   customized code, update the `push:`/`pull_request:` branch filters and the
+   `actions/checkout` `ref:` from `main` to `fork/custom`.
+2. **Set the repository's Default Branch to `fork/custom`**
+   (**Settings** > **General** > **Default branch**). The `schedule:` trigger always
+   reads the workflow *definition* from the Default Branch, regardless of the `ref:`
+   used inside the job — retargeting only the checkout step is not sufficient and is
+   a common source of "the workflow still runs the old code" confusion.
+3. **Update the deployment environment's branch policy** (e.g. **Settings** >
+   **Environments** > `github-pages` > **Deployment branches and tags**) to explicitly
+   allow `fork/custom`. This is independent of the Default Branch setting above;
+   without it, the deploy job fails with *"Branch is not allowed to deploy to
+   github-pages due to environment protection rules."*
+4. **Wire through any new environment variables** introduced by the customization
+   (e.g. a new `COPILOT_*` variable read only by fork-only code) into the retargeted
+   workflow's `env:` block. A variable that exists only in application code but is
+   never passed through the workflow silently has no effect in CI.
+
+> [!TIP]
+> Keep `test-and-preview.yml`'s `push` trigger on **both** `main` and `fork/custom`
+> (in addition to retargeting `pull_request`). This provides an immediate CI signal
+> right after every upstream fast-forward sync, on top of normal fork-side
+> development, without requiring a separate workflow.
+
+See [SDD-13](13_fork_restricted_environment_setup_guide.md) for the equivalent
+checklist under GitHub EMU / policy-restricted organizations, where some of these
+settings may be locked down and require an administrator exception request.
 
 ---
 
