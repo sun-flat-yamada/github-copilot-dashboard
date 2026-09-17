@@ -78,6 +78,7 @@ To analyze or evaluate this dashboard with a personal Free account:
   - Never committed to Git; configured via repository settings (**Settings** > **Secrets and variables** > **Actions** > **Variables**).
 - `COPILOT_ENTERPRISE`: Enterprise slug (for enterprise-wide aggregation).
 - `COPILOT_ORGS`: Comma-separated list of organization slugs (for multi-org setups).
+- `COPILOT_COST_CENTER_BUDGETS`: JSON array of `{ cost_center_id?, cost_center_name?, spending_limit_usd, free_tier_budget_usd }`. The GitHub API exposes no budget/spending-limit endpoint, so this must be declared manually to populate Cost Center budgets in real-data mode. Can be set as either a Variable or a Secret.
 - `MOCK_MODE`: Set to `true` to run pipelines using simulation data without live API tokens.
 
 ---

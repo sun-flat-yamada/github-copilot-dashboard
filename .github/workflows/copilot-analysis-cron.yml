@@ -66,6 +66,7 @@ jobs:
           COPILOT_ENTERPRISE: ${{ vars.COPILOT_ENTERPRISE }}
           COPILOT_ORGS: ${{ vars.COPILOT_ORGS }}
           COPILOT_USER_MAPPING: ${{ vars.COPILOT_USER_MAPPING || secrets.COPILOT_USER_MAPPING }}
+          COPILOT_COST_CENTER_BUDGETS: ${{ vars.COPILOT_COST_CENTER_BUDGETS || secrets.COPILOT_COST_CENTER_BUDGETS }}
           MOCK_MODE: ${{ inputs.mock_mode || vars.MOCK_MODE || (secrets.COPILOT_READ_TOKEN == '' && 'true' || 'false') }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
