@@ -8,7 +8,7 @@
 - **ステータス**: Approved / Active
 - **対象バージョン**: 2026.09-LTS
 - **作成日**: 2026-09-16
-- **関連文書**: [SDD-05 (データ永続化 & Fork非競合ストレージ仕様書)](05_data_storage_and_fork_isolation_spec.ja.md), [SDD-08 (自動化ワークフロー仕様書)](08_automation_workflow_spec.ja.md)
+- **関連文書**: [SDD-05 (データ永続化 & Fork非競合ストレージ仕様書)](05_data_storage_and_fork_isolation_spec.ja.md), [SDD-08 (自動化ワークフロー仕様書)](08_automation_workflow_spec.ja.md), [SDD-13 (制限環境向けFork運用セットアップガイド)](13_fork_restricted_environment_setup_guide.ja.md)
 
 ---
 
@@ -56,6 +56,7 @@ flowchart TD
 | **Variable** | `COPILOT_USER_MAPPING` | Settings > Variables > Actions | 氏名・社内部署・Cost Center上書きのJSON配列（機密性が極めて高い場合はSecret可） |
 | **Variable** | `COPILOT_ORGS` | Settings > Variables > Actions | 分析対象のOrganization名（カンマ区切り） |
 | **Variable** | `COPILOT_ENTERPRISE` | Settings > Variables > Actions | 分析対象のEnterpriseスラッグ（Enterprise一括集計時） |
+| **Variable** | `COPILOT_COST_CENTER_BUDGETS` | Settings > Variables > Actions | `{ cost_center_id?, cost_center_name?, spending_limit_usd, free_tier_budget_usd }` のJSON配列。GitHub APIには予算上限を返すエンドポイントが存在しないため、実データ運用でCost Center別のFinOps予算対比表示を有効化するには管理者がこの値を宣言する必要がある |
 | **Variable** | `MOCK_MODE` | Settings > Variables > Actions | 実APIトークンなしで動作検証する場合は `true` |
 
 この方式を採る限り、Fork 先の `main` ブランチ上のファイル差分はゼロとなり、本家からの更新をボタン 1 つで適用できます。
@@ -85,6 +86,42 @@ flowchart TD
   1. まず `main` を Upstream と Fast-Forward 同期。
   2. `fork/custom` ブランチに切り替え、`git merge main` を実行。
   3. GitHub Pages のビルド対象ブランチを `fork/custom` に設定（必要に応じてワークフロー内のトリガーブランチを調整）。
+
+---
+
+### 2.3 `fork/custom` 運用時の設定チェックリスト (Operational Checklist)
+`fork/custom` に独自コミットが存在するようになったら、定期実行/CIワークフロー側も
+明示的にそのブランチを参照するよう変更しないと、日次cronやPagesデプロイは
+黙って `main`（Upstream）のコードのまま動き続け、Fork独自の修正や機能が
+本番に反映されません。実運用では、以下の4つの設定を**同時に**変更する必要があり、
+どれか一つでも欠けると「一部だけ反映された」不可解な状態に陥ります。
+
+1. **ワークフローのトリガー参照先を変更する**: 独自コードを実行したい各ワークフローで、
+   `push:`/`pull_request:` のブランチフィルタと `actions/checkout` の `ref:` を
+   `main` から `fork/custom` へ変更する。
+2. **リポジトリの Default Branch を `fork/custom` に設定する**
+   (**Settings** > **General** > **Default branch**)。`schedule:` トリガーは
+   ジョブ内の `ref:` に関わらず、常に Default Branch 上の workflow *定義* を
+   読み込むため、checkoutステップの変更だけでは不十分であり、
+   「ワークフローを直しても旧コードのまま動く」混乱の典型的な原因となる。
+3. **デプロイ先環境のブランチポリシーを更新する**(例: **Settings** >
+   **Environments** > `github-pages` > **Deployment branches and tags**)。
+   `fork/custom` を明示的に許可する。これは前述の Default Branch 設定とは独立しており、
+   未設定だとデプロイジョブが「Branch is not allowed to deploy to github-pages due
+   to environment protection rules.」で失敗する。
+4. **独自コードが追加した新しい環境変数を、retarget後のワークフローにも配線する**
+   (例: fork独自コードが参照する新しい `COPILOT_*` 系変数)。アプリケーションコード側に
+   宣言があるだけでワークフローの `env:` に渡していない変数は、CI上では黙って
+   無効なまま残る。
+
+> [!TIP]
+> `test-and-preview.yml` の `push` トリガーは（`pull_request` のretargetに加えて）
+> `main` と `fork/custom` の**両方**に設定しておくと、別ワークフローを追加しなくても
+> Upstream からの fast-forward 同期直後と通常のFork側開発の両方でCIシグナルが得られる。
+
+GitHub EMU / ポリシー制限のある組織における同種のチェックリスト（一部設定が
+管理者により制限されており、例外申請が必要となる場合の対応）は
+[SDD-13](13_fork_restricted_environment_setup_guide.ja.md) を参照してください。
 
 ---
 
