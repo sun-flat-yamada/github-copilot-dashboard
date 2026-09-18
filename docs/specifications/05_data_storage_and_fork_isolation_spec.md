@@ -30,7 +30,7 @@ In many open-source projects and enterprise template repositories, automated bot
 │   └── .github/workflows/
 │       (Zero data files committed)
 │
-├── copilot-data (Dedicated Orphan Data Branch)
+├── copilot-data (Dedicated Orphan Data Branch — REAL data only)
 │   ├── data/
 │   │   ├── raw/YYYY/MM/copilot_metrics_YYYY-MM-DD.json
 │   │   ├── raw/YYYY/MM/copilot_seats_YYYY-MM-DD.json
@@ -40,9 +40,34 @@ In many open-source projects and enterprise template repositories, automated bot
 │   │   ├── processed/reports/YYYY-MM.json (Monthly report precomputed aggregates)
 │   │   └── index.json (Available dates, months, scopes, and report metadata)
 │
+├── copilot-data-mock (Dedicated Orphan Data Branch — MOCK/simulated data only)
+│   └── data/                          (Same layout as above, but force-reset on every mock run;
+│                                        see Section 1.3. Never merged with or read by real-data runs.)
+│
 └── GitHub Pages (Direct Artifact Deploy)
-    └── Direct distribution via actions/deploy-pages (Zero branch conflicts with gh-pages)
+    └── Direct distribution via actions/deploy-pages (Zero branch conflicts with gh-pages).
+        Only built/deployed for real-data runs — mock runs never publish to Pages (Section 1.3).
 ```
+
+### 1.3 Mock/Real Data Branch Separation
+
+Simulated ("mock" or "demo") data and real, credential-derived data are stored on **two entirely separate orphan branches** so that dummy data can never contaminate, be confused with, or overwrite real operational history:
+
+| Aspect | `copilot-data` (Real) | `copilot-data-mock` (Simulated) |
+|---|---|---|
+| Populated by | Live Copilot Metrics/Seats API + Monthly Usage Report CSV imports | `MockDataGenerator` (`MOCK_MODE=true`) |
+| Write pattern | Incremental — prior history is restored, then new partitions are appended/committed | **Force-reset** — a fresh orphan branch is created and force-pushed every run |
+| History retained? | Yes, indefinitely (valuable operational record) | No — each run fully regenerates a new 30-day simulated bundle, so retaining prior mock commits has no analytical value and would only bloat the branch (this exact bloat was diagnosed and cleaned up in an earlier remediation) |
+| Read by GitHub Pages deploy? | Yes — the live, production-facing dashboard is always built from `copilot-data` | **No** — `copilot-analysis-cron.yml` skips the SPA build and GitHub Pages deployment steps entirely when `MOCK_MODE=true`, so simulated data is never published to the production site |
+| Selected via | Default (`MOCK_MODE` unset/`false`) | `MOCK_MODE=true` Actions Variable, or the `workflow_dispatch` `mock_mode` input |
+
+This design was chosen over alternatives such as (a) a single shared branch with a mock/real subdirectory split, or (b) tagging commits by mode, because a fully separate orphan branch:
+- Requires zero changes to the existing per-partition file layout inside `data/` (both branches use the identical structure).
+- Makes it trivially easy to verify isolation (`git log copilot-data -- data/` never shows a mock-mode commit).
+- Allows the mock branch to be safely force-pushed/reset without any risk of destructively rewriting real historical data.
+- Is fully implemented via a single computed `DATA_BRANCH` environment variable in the workflow (`copilot-data-mock` when `MOCK_MODE=='true'`, else `copilot-data`), requiring no duplicated workflow logic.
+
+`scripts/verify-fork-health.ts` (`npm run fork:verify`) reports the presence/absence of `copilot-data-mock` as an `info`-level check — it never affects pass/warn/fail health status, since the mock branch is optional and only created when mock mode has been explicitly used at least once.
 
 ---
 
@@ -121,9 +146,43 @@ The entry metadata file loaded first by the dashboard SPA to provide available d
 }
 ```
 
+### 3.1 Empty-State Representation (No Live Credentials Configured)
+
+When `COPILOT_ENTERPRISE`/`COPILOT_ORGS` are unset, or the configured credential lacks Enterprise Owner/Org Admin permission, the pipeline still generates a valid `index.json` rather than aborting or fabricating placeholder values:
+
+```json
+{
+  "available_months": [],
+  "available_days": [],
+  "available_reports": [],
+  "default_scopes": {},
+  "summary": {
+    "total_seats": 0,
+    "active_seats_30d": 0,
+    "idle_seats_30d": 0,
+    "total_monthly_spend_usd": 0,
+    "idle_waste_spend_usd": 0
+  },
+  "issues": [
+    {
+      "severity": "warning",
+      "category": "api_auth",
+      "target": "config:copilot-metrics",
+      "message": "COPILOT_ENTERPRISE and COPILOT_ORGS are both unset — skipping live Copilot Metrics collection."
+    }
+  ]
+}
+```
+
+- `default_scopes.latest_day`/`latest_month`/`latest_range` are simply omitted (not fabricated with a placeholder date) when no live metrics exist.
+- `available_reports` reflects any independently-imported Monthly Usage Report CSVs (`npm run import:report`) even when `available_months`/`available_days` are empty — CSV-based reporting has no dependency on Copilot Metrics/Seats credentials.
+- The dashboard SPA (`dashboard/src/App.tsx`) detects this state (`noLiveData`) and renders an informational banner explaining that credential-independent features (CSV reports, AI Model Benchmarks) remain available, instead of silently defaulting to a hardcoded fallback month or crashing.
+
 ---
 
 ## 4. Git Workflow & Synchronization (Zero Fork Conflict Protocol)
+
+> The steps below reference `copilot-data` for brevity. In the actual workflow, the target branch is computed once as `$DATA_BRANCH` (`copilot-data-mock` when `MOCK_MODE=='true'`, otherwise `copilot-data`) — see Section 1.3.
 
 1. **Data Restoration Phase (`git archive` Extraction)**:
    - Run `git fetch origin copilot-data` within the Actions workflow.
