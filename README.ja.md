@@ -112,7 +112,11 @@ github-copilot-dashboard/
 │   ├── mock/                  # 2026年仕様シミュレーションモックデータ
 │   ├── processed/             # 集計済みスコープデータ (daily, monthly, custom)
 │   └── raw/                   # パーティション別Rawデータ
-├── docs/specifications/       # SDD (仕様駆動開発) 正式設計仕様書 (01〜13)
+├── docs/                      # 総合ドキュメントポータル
+│   ├── README.ja.md           # ドキュメントポータル総合案内
+│   ├── setup_guide.ja.md      # 完全セットアップ & 暗号化運用ガイド
+│   ├── models_pricing.md      # Copilot 対応AIモデル & トークン価格一覧
+│   └── specifications/        # SDD (仕様駆動開発) 正式設計仕様書 (01〜13)
 ├── src/                       # データパイプライン & バックエンドコア
 │   ├── cli/                   # パイプライン実行CLI (run-pipeline.ts)
 │   ├── collector/             # API/モックデータ収集 & 異常検出ハンドラ
@@ -132,33 +136,35 @@ github-copilot-dashboard/
 
 ## 📖 SDD (仕様駆動開発) 仕様書一覧
 
-本プロジェクトはすべての機能が **仕様駆動開発 (Specification-Driven Development)** に則り設計されています：
+本プロジェクトの全機能・データパイプライン・セキュリティ規約は、**仕様駆動開発 (Specification-Driven Development: SDD)** に基づき以下の6つのコア設計領域で定義されています：
 
-| ドキュメント | タイトル | 概要 |
-| :--- | :--- | :--- |
-| [SDD-01](docs/specifications/01_requirements_specification.ja.md) | システム要件定義書 | 業務要件、機能要件、セキュリティ・運用要件 |
-| [SDD-02](docs/specifications/02_system_architecture.ja.md) | システムアーキテクチャ設計書 | 全体構成図、データフロー、フォールバック設計 |
-| [SDD-03](docs/specifications/03_github_copilot_api_spec_2026.ja.md) | GitHub API 仕様書 (2026.09) | Copilot Metrics, Seats, Cost Centers API定義 |
-| [SDD-04](docs/specifications/04_user_attribute_mapping_spec.ja.md) | ユーザー属性情報仕様書 | PII秘匿化、Variables注入、バリデーション規約 |
-| [SDD-05](docs/specifications/05_data_storage_and_fork_isolation_spec.ja.md) | データ永続化 & Fork非競合仕様書 | orphanブランチ分離、追記型パーティション |
-| [SDD-06](docs/specifications/06_aggregation_and_billing_logic_spec.ja.md) | 集計・按分・分析ロジック仕様書 | 3軸按分、マルチモデル日次集計、ランキング、予算計算 |
-| [SDD-07](docs/specifications/07_dashboard_ui_ux_spec.ja.md) | ダッシュボード UI/UX 仕様書 | デザインシステム、異常検出モーダル、グラフ仕様 |
-| [SDD-08](docs/specifications/08_automation_workflow_spec.ja.md) | 自動化ワークフロー仕様書 | GitHub Actions cron、Pagesデプロイ、エラーハンドリング |
-| [SDD-09](docs/specifications/09_monthly_usage_report_mode_spec.ja.md) | Monthly Usage Report 分析モード仕様書 | 月次CSVレポート直接解析・永続化仕様 |
-| [SDD-10](docs/specifications/10_ai_model_benchmark_radar_spec.ja.md) | AIモデル特性レーダー & 著名ベンチマーク評価仕様書 | 6軸レーダーチャート、38モデルベンチマーク評価 |
-| [SDD-11](docs/specifications/11_deep_analysis_view_spec.ja.md) | 深い分析専用ビュー仕様書 | AI活用非効率パターン診断、AEDP自律駆動深度評価 |
-| [SDD-12](docs/specifications/12_fork_sync_and_customization_ops_spec.ja.md) | Fork先変更反映 & 運用保守仕様書 | 本家同期手順 (Web UI/CLI/Actions)、2層ブランチ運用、健全性診断 |
-| [SDD-13](docs/specifications/13_fork_restricted_environment_setup_guide.ja.md) | Fork制限環境向けセットアップ手順書 | EMU・ポリシー制限によりGitHub Forkを使えない組織向けのミラー複製手順 |
+1. **要件定義 & コアアーキテクチャ**: [SDD-01](docs/specifications/01_requirements_specification.ja.md)（システム要件定義書） & [SDD-02](docs/specifications/02_system_architecture.ja.md)（システムアーキテクチャ設計書）
+2. **Copilot API & データ収集**: [SDD-03](docs/specifications/03_github_copilot_api_spec_2026.ja.md)（GitHub API仕様書 2026.09） & [SDD-09](docs/specifications/09_monthly_usage_report_mode_spec.ja.md)（Monthly Usage Report 分析モード仕様書）
+3. **プライバシー & データ完全分離**: [SDD-04](docs/specifications/04_user_attribute_mapping_spec.ja.md)（ユーザー属性情報仕様書・PII秘匿 & GPG暗号化） & [SDD-05](docs/specifications/05_data_storage_and_fork_isolation_spec.ja.md)（orphanブランチ分離ストレージ）
+4. **集計エンジン & フロンティアAI評価**: [SDD-06](docs/specifications/06_aggregation_and_billing_logic_spec.ja.md)（3軸コスト按分・予算管理）、[SDD-10](docs/specifications/10_ai_model_benchmark_radar_spec.ja.md)（38モデルベンチマークレーダー評価）、& [SDD-11](docs/specifications/11_deep_analysis_view_spec.ja.md)（AEDP自律駆動深度診断）
+5. **ダッシュボード UI/UX**: [SDD-07](docs/specifications/07_dashboard_ui_ux_spec.ja.md)（デザインシステム、異常検出モーダル & 複合チャート）
+6. **自動化ワークフロー & Fork運用保守**: [SDD-08](docs/specifications/08_automation_workflow_spec.ja.md)（Actions CI/CD & cron）、[SDD-12](docs/specifications/12_fork_sync_and_customization_ops_spec.ja.md)（Fork先変更反映 & 2層ブランチ運用）、& [SDD-13](docs/specifications/13_fork_restricted_environment_setup_guide.ja.md)（Fork制限環境向けミラー複製手順）
+
+> [!TIP]
+> 全13件の仕様書一覧、言語別リンク、およびロール別推奨リーディングパスについては、**[📖 SDD設計仕様書一覧 (docs/specifications/README.ja.md)](docs/specifications/README.ja.md)** または総合案内 **[📚 ドキュメントポータル (docs/README.ja.md)](docs/README.ja.md)** をご覧ください。
+
+---
+
+## 🤖 対応モデル & トークン単価リファレンス
+
+最新のフロンティアAIモデル（GPT-6 Astra, GPT-5.6 Sol/Terra, Claude 5 Opus/Sonnet, Gemini 3.8 Flash 等）38種以上の日次利用量を追跡・可視化します：
+- **トークン単価リファレンス**: 入力・キャッシュ・キャッシュ書き込み・出力の100万トークンあたりの最新料金体系は **[docs/models_pricing.md](docs/models_pricing.md)** に整理されています。
+- **ベンチマークレーダー評価**: コーディング、推論、数学、エージェント自律度等の6軸レーダー評価は **[SDD-10](docs/specifications/10_ai_model_benchmark_radar_spec.ja.md)** を参照してください。
 
 ---
 
 ## 🚀 クイックスタート & セットアップ
 
-### ステップ 1: リポジトリの Fork
-本リポジトリを社内の GitHub Enterprise または Organization に Fork します。
+わずか4ステップで GitHub Pages への自動デプロイが完了します：
 
-> [!NOTE]
-> **組織に Fork できない場合は?** GitHub Enterprise Managed User (EMU) アカウントを利用している、または組織のポリシーで外部アカウントからの Fork がブロックされている場合は、Fork 不要のミラー複製手順を解説した [SDD-13: Fork制限環境向けセットアップ手順書](docs/specifications/13_fork_restricted_environment_setup_guide.ja.md) を参照してください。
+### ステップ 1: リポジトリの Fork またはミラー複製
+- **通常環境**: 右上の **「Fork」** ボタンをクリックし、社内 Organization にリポジトリを作成します。
+- **EMU・制限環境**: 外部Forkが禁止されている組織では、[SDD-13: Fork制限環境向けセットアップ手順書](docs/specifications/13_fork_restricted_environment_setup_guide.ja.md) のミラー複製手順を実施してください。
 
 ### ステップ 2: GitHub Pages の設定
 1. リポジトリの **Settings** > **Pages** に移動します。
@@ -168,68 +174,22 @@ github-copilot-dashboard/
 1. **Settings** > **Actions** > **General** に移動します。
 2. **Workflow permissions** で **「Read and write permissions」** を選択し、**「Allow GitHub Actions to create and approve pull requests」** にチェックを入れます。
 
-### ステップ 4: ユーザー属性マッピングの登録 (Secrets / Variables)
-氏名や社内部署情報などの機密属性を、GitHub Actions Variables（またはSecrets）として登録します。
-
-1. **Settings** > **Secrets and variables** > **Actions** > **Variables** タブを開きます。
-2. **New repository variable** をクリックし、名前を `COPILOT_USER_MAPPING` とします。
-3. 以下のJSON配列を入力して保存します：
-
-```json
-[
-  {
-    "github_user": "taro-tanaka",
-    "display_name": "田中 太郎",
-    "department": "コア決済基盤チーム",
-    "cost_center_override": "FinTech-Division",
-    "notes": "正社員 / リード"
-  },
-  {
-    "github_user": "hanako-suzuki",
-    "display_name": "鈴木 花子",
-    "department": "LLM応用プロダクトG",
-    "cost_center_override": "Research-and-AI",
-    "notes": "AIリサーチャー"
-  },
-  {
-    "github_user": "alex-partner",
-    "display_name": "Alex Rivera",
-    "department": "コア決済基盤チーム",
-    "notes": "業務委託"
-  }
-]
-```
-> [!TIP]
-> より高い秘匿性を要する場合は、Variables ではなく **Secrets** (`COPILOT_USER_MAPPING`) として登録することも可能です。
-
-### ステップ 5: 取得スコープと認証トークンの設定
+### ステップ 4: 認証トークン & 属性マッピングの設定
+**Settings** > **Secrets and variables** > **Actions** で以下を登録します：
 - **Secrets**:
   - `COPILOT_READ_TOKEN`: CopilotおよびBillingの読み取り権限（Fine-grained PAT または `manage_billing:copilot`, `read:org`）を持つPAT。
 - **Variables**:
-  - `COPILOT_ENTERPRISE`: Enterpriseスラッグ（例: `my-enterprise`）。
-  - または `COPILOT_ORGS`: カンマ区切りのOrganization名（例: `org-core,org-ai-labs`）。
-  - （テスト運用時）`MOCK_MODE`: `true` を指定すると、実際のトークンがなくても2026年仕様のシミュレーションデータでダッシュボードが即座に立ち上がります。
+  - `COPILOT_ENTERPRISE`: Enterpriseスラッグ（例: `my-enterprise`）、または `COPILOT_ORGS`: カンマ区切りOrg一覧。
+  - `COPILOT_USER_MAPPING`: GitHubアカウントと社内部署の対応JSON配列：
+    ```json
+    [
+      { "github_user": "octocat-lead", "display_name": "田中 太郎", "department": "プラットフォーム基盤部", "cost_center_override": "FinTech-Division" }
+    ]
+    ```
+  - *(テスト運用時)* `MOCK_MODE`: `true` を指定すると、実際のトークンがなくても2026年仕様のシミュレーションデータで即座にダッシュボードが立ち上がります。
 
-### ステップ 6: 本家（Upstream）更新の同期と健全性診断
-本家リポジトリで新しいAIモデルや機能が追加された場合、以下のコマンドで安全に同期・診断を行えます：
-
-```bash
-# 1. Fork環境の健全性診断（リモート設定、データ分離、作業ツリー）
-npm run fork:verify
-
-# 2. 本家更新の取得と Fast-Forward マージ
-git fetch upstream main
-git merge upstream/main --ff-only
-
-# 3. 依存関係の更新と品質ゲート検証
-npm ci
-npm run typecheck && npm test && npm run secret-scan && npm run build
-
-# 4. Fork先への反映
-git push origin main
-```
-> [!TIP]
-> 詳しい運用方式（GitHub Web UIでの1-Click同期、2層ブランチ運用、障害復旧）については [SDD-12 (Fork先変更反映 & 運用保守仕様書)](docs/specifications/12_fork_sync_and_customization_ops_spec.ja.md) および Antigravity専用スキル（`skills/fork-sync-ops/`）を参照してください。
+> [!NOTE]
+> **CSV形式でのマッピング登録**、**48KB超過時のGPG暗号化運用手順**、**認証トークン欠損時のフォールバック機能**、および **本家（Upstream）との定期同期手順** など、詳細な運用設定は **[🚀 完全セットアップ & 環境構築ガイド (docs/setup_guide.ja.md)](docs/setup_guide.ja.md)** を参照してください。
 
 ---
 
