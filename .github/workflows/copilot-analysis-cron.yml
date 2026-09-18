@@ -12,7 +12,7 @@ on:
         description: 'Run with 2026.09 simulated mock data'
         required: false
         type: boolean
-        default: true
+        default: false
 
 permissions:
   contents: write      # copilot-data 独立ブランチへのデータ蓄積コミット用
@@ -29,6 +29,20 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    env:
+      # モックモード判定とデータ保存先ブランチを一元管理する。
+      # モックデータ(ダミーデータ)は実データの copilot-data ブランチとは
+      # 完全に分離された copilot-data-mock ブランチにのみ保存し、
+      # 実データの履歴・Pagesデプロイに一切影響を与えないようにする。
+      #
+      # 注意: workflow_dispatch の boolean 型 input (inputs.mock_mode) は
+      # GitHub Actions 式評価上「真の boolean」であり、文字列 'true' と
+      # `==` 比較すると型不一致で常に false になる既知の罠がある
+      # (boolean は数値へ、'true' は数値変換できず NaN となり NaN 比較は常に false)。
+      # そのため boolean/string どちらの型でも正しく判定できるよう、
+      # 両方の等価比較を明示的に OR で連結する。
+      MOCK_MODE: ${{ (inputs.mock_mode == true || inputs.mock_mode == 'true' || vars.MOCK_MODE == 'true') && 'true' || 'false' }}
+      DATA_BRANCH: ${{ (inputs.mock_mode == true || inputs.mock_mode == 'true' || vars.MOCK_MODE == 'true') && 'copilot-data-mock' || 'copilot-data' }}
     steps:
       - name: Checkout main code branch
         uses: actions/checkout@v7
@@ -45,19 +59,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Restore previous data from 'copilot-data' branch
+      - name: Restore previous data from data branch
+        # モックモードは MockDataGenerator が毎回全量を再生成するため、
+        # 過去データの復元は不要 (copilot-data-mock の履歴も参照しない)
+        if: env.MOCK_MODE != 'true'
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           mkdir -p data
-          if git ls-remote --exit-code --heads origin copilot-data; then
-            echo "Fetching existing copilot-data branch..."
-            git fetch origin copilot-data
+          if git ls-remote --exit-code --heads origin "$DATA_BRANCH"; then
+            echo "Fetching existing $DATA_BRANCH branch..."
+            git fetch origin "$DATA_BRANCH"
             # git archive を用いてインデックスや作業ツリーのブランチを一切変更せずに安全展開
-            git archive origin/copilot-data data | tar -x || true
-            echo "✅ Successfully restored existing data partitions from copilot-data."
+            git archive "origin/$DATA_BRANCH" data | tar -x || true
+            echo "✅ Successfully restored existing data partitions from $DATA_BRANCH."
           else
-            echo "ℹ️ No copilot-data branch found on remote. Will initialize upon first sync."
+            echo "ℹ️ No $DATA_BRANCH branch found on remote. Will initialize upon first sync."
           fi
 
       - name: Run Copilot Analytics Pipeline
@@ -67,65 +84,95 @@ jobs:
           COPILOT_ORGS: ${{ vars.COPILOT_ORGS }}
           COPILOT_USER_MAPPING: ${{ vars.COPILOT_USER_MAPPING || secrets.COPILOT_USER_MAPPING }}
           COPILOT_COST_CENTER_BUDGETS: ${{ vars.COPILOT_COST_CENTER_BUDGETS || secrets.COPILOT_COST_CENTER_BUDGETS }}
-          MOCK_MODE: ${{ inputs.mock_mode || vars.MOCK_MODE || (secrets.COPILOT_READ_TOKEN == '' && 'true' || 'false') }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
           IS_FORK: ${{ github.event.repository.fork }}
         run: npm run pipeline:run
 
-      - name: Commit and Push to 'copilot-data' branch (Fork-Safe Storage)
+      - name: Commit and Push to data branch (Fork-Safe Storage)
         run: |
-          # コードブランチには一切触れず、独立した一時リポジトリディレクトリで copilot-data を操作
+          # コードブランチには一切触れず、独立した一時リポジトリディレクトリで data ブランチを操作
           DATA_WORK_DIR=$(mktemp -d)
           REPO_URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
 
-          if git ls-remote --exit-code --heads origin copilot-data; then
-            echo "Cloning existing copilot-data branch into isolated work directory..."
-            git clone --branch copilot-data --single-branch --depth 1 "$REPO_URL" "$DATA_WORK_DIR"
-          else
-            echo "Initializing new orphan copilot-data branch in isolated work directory..."
+          if [ "$MOCK_MODE" = "true" ]; then
+            # モックデータは実行のたびに MockDataGenerator が全量を再生成するため、
+            # 過去のモック履歴を保持する意味がない。copilot-data-mock を都度
+            # force-push でリセットし、ブランチ肥大化 (Phase 1で判明した問題) を防止する。
+            echo "Mock mode: resetting orphan $DATA_BRANCH branch (no history accumulation)..."
             git init "$DATA_WORK_DIR"
             cd "$DATA_WORK_DIR"
-            git checkout --orphan copilot-data
+            git checkout --orphan "$DATA_BRANCH"
             git remote add origin "$REPO_URL"
             cd "$GITHUB_WORKSPACE"
-          fi
 
-          # 最新の data/ を同期
-          mkdir -p "$DATA_WORK_DIR/data"
-          cp -r data/* "$DATA_WORK_DIR/data/"
+            mkdir -p "$DATA_WORK_DIR/data"
+            cp -r data/* "$DATA_WORK_DIR/data/"
 
-          cd "$DATA_WORK_DIR"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/
-          if git status --porcelain | grep -q 'data/'; then
-            git commit -m "chore(data): record copilot analytics partitions $(date -u +'%Y-%m-%d %H:%M UTC') [skip ci]"
-            git push origin copilot-data
-            echo "✅ Successfully synced partitions to copilot-data branch."
+            cd "$DATA_WORK_DIR"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add data/
+            git commit -m "chore(mock-data): regenerate simulated Copilot analytics dataset $(date -u +'%Y-%m-%d %H:%M UTC') [skip ci]"
+            git push --force origin "$DATA_BRANCH"
+            echo "✅ Successfully reset simulated dataset on $DATA_BRANCH branch."
           else
-            echo "ℹ️ No changes in data partitions to commit."
+            if git ls-remote --exit-code --heads origin "$DATA_BRANCH"; then
+              echo "Cloning existing $DATA_BRANCH branch into isolated work directory..."
+              git clone --branch "$DATA_BRANCH" --single-branch --depth 1 "$REPO_URL" "$DATA_WORK_DIR"
+            else
+              echo "Initializing new orphan $DATA_BRANCH branch in isolated work directory..."
+              git init "$DATA_WORK_DIR"
+              cd "$DATA_WORK_DIR"
+              git checkout --orphan "$DATA_BRANCH"
+              git remote add origin "$REPO_URL"
+              cd "$GITHUB_WORKSPACE"
+            fi
+
+            # 最新の data/ を同期
+            mkdir -p "$DATA_WORK_DIR/data"
+            cp -r data/* "$DATA_WORK_DIR/data/"
+
+            cd "$DATA_WORK_DIR"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add data/
+            if git status --porcelain | grep -q 'data/'; then
+              git commit -m "chore(data): record copilot analytics partitions $(date -u +'%Y-%m-%d %H:%M UTC') [skip ci]"
+              git push origin "$DATA_BRANCH"
+              echo "✅ Successfully synced partitions to $DATA_BRANCH branch."
+            else
+              echo "ℹ️ No changes in data partitions to commit."
+            fi
           fi
 
           cd "$GITHUB_WORKSPACE"
           rm -rf "$DATA_WORK_DIR"
 
+      # 以下のビルド・デプロイ工程は実データ運用時のみ実行する。
+      # モックモードは copilot-data-mock への検証用データ生成に留め、
+      # 本番の GitHub Pages には一切反映させない (実運用化の徹底)。
       - name: Update AI Model Benchmarks Dataset
+        if: env.MOCK_MODE != 'true'
         run: npm run benchmark:update
 
       - name: Build Dashboard SPA
+        if: env.MOCK_MODE != 'true'
         env:
           BASE_URL: './'
         run: npm run build
 
       - name: Setup Pages
+        if: env.MOCK_MODE != 'true'
         uses: actions/configure-pages@v6
 
       - name: Upload Pages Artifact
+        if: env.MOCK_MODE != 'true'
         uses: actions/upload-pages-artifact@v5
         with:
           path: './dist'
 
       - name: Deploy to GitHub Pages
+        if: env.MOCK_MODE != 'true'
         id: deployment
         uses: actions/deploy-pages@v5
