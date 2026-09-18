@@ -154,7 +154,7 @@ export const App: React.FC = () => {
         {/* モード A: Monthly Usage Report モード */}
         {appMode === 'monthly_report' && (
           <>
-            {reportLoading && (
+            {reportLoading && !currentReportData && (
               <div className="flex flex-col items-center justify-center py-20 space-y-3">
                 <RefreshCw className="w-8 h-8 text-emerald-500 animate-spin" />
                 <p className="text-sm text-slate-400">Monthly Usage Report を解析・ロード中...</p>
@@ -176,14 +176,16 @@ export const App: React.FC = () => {
               </div>
             )}
 
-            {!reportLoading && currentReportData && (
-              <MonthlyReportView
-                reportData={currentReportData}
-                availableReportMonths={availableReports}
-                selectedMonth={selectedReportMonth}
-                onSelectMonth={setSelectedReportMonth}
-                onOpenDropzone={() => setIsDropzoneModalOpen(true)}
-              />
+            {currentReportData && (
+              <div className={reportLoading ? 'opacity-60 pointer-events-none transition-opacity duration-200' : 'transition-opacity duration-200'}>
+                <MonthlyReportView
+                  reportData={currentReportData}
+                  availableReportMonths={availableReports}
+                  selectedMonth={selectedReportMonth}
+                  onSelectMonth={setSelectedReportMonth}
+                  onOpenDropzone={() => setIsDropzoneModalOpen(true)}
+                />
+              </div>
             )}
           </>
         )}
