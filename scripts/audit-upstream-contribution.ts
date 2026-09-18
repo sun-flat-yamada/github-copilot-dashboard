@@ -51,6 +51,21 @@ export const DATA_LEAK_RULES: DataLeakRule[] = [
     description: 'Internal organization chart dump (PII).',
   },
   {
+    id: 'sensitivity-data-directory',
+    pattern: /(^|\/)_sensitivity-data\//i,
+    description: 'Ad-hoc local working directory for sensitive PII inputs (e.g. raw org/enterprise member exports).',
+  },
+  {
+    id: 'userlist-csv',
+    pattern: /(^|\/).*user.*list.*\.csv$/i,
+    description: 'Org/enterprise member userlist export (PII).',
+  },
+  {
+    id: 'underscore-prefixed-local-path',
+    pattern: /(^|\/)_/,
+    description: 'Underscore-prefixed local-only backup/scratch path (matches the .gitignore "_*" / "_*/ " convention; may carry ad-hoc PII exports or backups).',
+  },
+  {
     id: 'secrets-file',
     pattern: /(^|\/)(secrets\.(json|ya?ml)|credentials\.json|service-account.*\.json|client_secret.*\.json)$/i,
     description: 'Hardcoded secrets/credentials file.',

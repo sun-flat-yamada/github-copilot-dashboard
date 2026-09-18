@@ -57,6 +57,24 @@ describe('Upstream Contribution Data-Leak Audit (checkDataLeaks)', () => {
     assert.equal(findings.length, 3);
   });
 
+  it('flags files under an ad-hoc _sensitivity-data/ working directory', () => {
+    const findings = checkDataLeaks(['_sensitivity-data/export.json']);
+    const ruleIds = findings.map((f) => f.rule.id).sort();
+    assert.deepEqual(ruleIds, ['sensitivity-data-directory', 'underscore-prefixed-local-path'].sort());
+  });
+
+  it('flags org/enterprise member userlist CSV exports', () => {
+    const findings = checkDataLeaks(['downloads/github-org-userlist.csv']);
+    assert.equal(findings.length, 1);
+    assert.equal(findings[0].rule.id, 'userlist-csv');
+  });
+
+  it('flags any underscore-prefixed local-only backup/scratch path (matches .gitignore "_*" convention)', () => {
+    const findings = checkDataLeaks(['_local-scratch/notes.md', 'src/_backup-2026/old-config.json']);
+    assert.equal(findings.length, 2);
+    assert.ok(findings.every((f) => f.rule.id === 'underscore-prefixed-local-path'));
+  });
+
   it('does not flag ordinary source, test, and documentation files', () => {
     const findings = checkDataLeaks([
       'src/cli/run-pipeline.ts',

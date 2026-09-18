@@ -7,6 +7,12 @@ build/
 .cache/
 
 # =================================================================
+# Backups
+# =================================================================
+_*/
+_*
+
+# =================================================================
 # 🔒 CRITICAL: Secrets, Credentials & Privacy Protection (OWASP / Gitleaks)
 # =================================================================
 # Environment files & Local Configs (NEVER commit tokens, user mappings or secrets)
@@ -92,6 +98,14 @@ AIUsageReport*.csv
 *[0-9][0-9][0-9][0-9][0-9][0-9].csv
 # Any filename ending in a hyphenated YYYY-MM before .csv (e.g. copilot-usage-2026-08.csv)
 *[0-9][0-9][0-9][0-9]-[0-9][0-9].csv
+
+# =================================================================
+# Data Storage (Stored only in GitHub Variables, not in any branches)
+# Ad-hoc local working directories/exports for sensitive PII inputs
+# (e.g. raw org/enterprise member exports staged before mapping generation)
+# =================================================================
+_sensitivity-data/
+*user*list*.csv
 
 # =================================================================
 # Logs, Temp & OS / Editor Metadata
