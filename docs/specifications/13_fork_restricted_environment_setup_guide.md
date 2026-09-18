@@ -160,3 +160,18 @@ Per [SDD-05](05_data_storage_and_fork_isolation_spec.md), `main` never contains 
 | GitHub Importer (`github.com/new/import`) | ✅ Full | ✅ Yes (same read/write boundary as mirroring) | UI-driven, no local git required; primarily documented for non-GitHub sources |
 | Escalate to enterprise/organization admin | N/A | ❌ Usually no | Only helps if the block is an org-level forking policy (Section 2, row 2), not an EMU restriction |
 | Fork via a personal (non-EMU) account, then transfer ownership | ✅ Full | ⚠️ Unconfirmed | Whether an EMU-managed organization accepts an inbound transfer from an external account is undocumented; lower reliability than mirroring |
+
+---
+
+## 7. Making the Mirror's Upstream Relationship Visible
+
+Because a mirror-based duplication is a genuinely independent repository (`isFork: false`, `parent: null` in the GitHub API), none of GitHub's native fork UI — the "forked from" link under the repo name, the fork network graph, the `compare` view across forks — is available here. Without deliberate action, visitors (and future maintainers) have no way to discover that this repository tracks an upstream. Since none of these methods touch `main` (which must remain a byte-for-byte, fast-forward-only mirror per [SDD-12 §2.2](12_fork_sync_and_customization_ops_spec.md#22-dual-branch-strategy-for-code-level-customizations)), apply all fork-identification content exclusively on `fork/custom` (the repository's default/deployment branch) or via repository metadata:
+
+1. **Repository description & topics** (zero git risk — server-side metadata, not a file):
+   ```powershell
+   gh repo edit <owner>/<repo> --description "Downstream deployment of <upstream-owner>/<upstream-repo> (mirror-based fork; see docs/specifications/13_fork_restricted_environment_setup_guide.md)." --add-topic fork
+   ```
+2. **README banner on `fork/custom` only**: add a short blockquote notice immediately below the language-switcher line at the top of `README.md`/`README.ja.md`, stating the upstream repository URL, the dual-branch model (`main` = mirror, `fork/custom` = customizations), and why `isFork` reads `false`. Keep it to a self-contained blockquote positioned between two rarely-changed anchor lines (language switcher and title) to minimize future merge-conflict surface when syncing upstream README changes into `fork/custom`.
+3. **Do not** add fork-identification content to `main`. Any file touched on `main` beyond what upstream itself contains breaks the `git merge upstream/main --ff-only` invariant that Section 4's sync procedure (and [SDD-12](12_fork_sync_and_customization_ops_spec.md)) depend on.
+
+This is purely a documentation/discoverability convention — it has no effect on git mechanics, Actions, or Pages behavior.
