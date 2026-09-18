@@ -77,12 +77,38 @@ jobs:
             echo "ℹ️ No $DATA_BRANCH branch found on remote. Will initialize upon first sync."
           fi
 
+      - name: Decrypt large User Mapping (optional GPG >48KB workaround)
+        # COPILOT_USER_MAPPING (Secret/Variable) は 48KB のサイズ上限があるため、
+        # それを超えるマッピングを扱う場合のオプション機構。
+        # data/config/copilot-user-mapping.json.gpg (copilot-data ブランチにのみ保管、
+        # 直前のステップで data/ ごと復元済み) と COPILOT_USER_MAPPING_PASSPHRASE Secret が
+        # 両方揃っている場合のみ有効化される。復号結果は $RUNNER_TEMP (ランナー破棄時に
+        # 消える一時領域) にのみ書き出し、data/ 配下やリポジトリには一切保存しない
+        # (平文PIIの誤コミット防止)。詳細: docs/specifications/04_user_attribute_mapping_spec.md
+        if: env.MOCK_MODE != 'true'
+        env:
+          COPILOT_USER_MAPPING_PASSPHRASE: ${{ secrets.COPILOT_USER_MAPPING_PASSPHRASE }}
+        run: |
+          ENCRYPTED_FILE="data/config/copilot-user-mapping.json.gpg"
+          if [ -f "$ENCRYPTED_FILE" ] && [ -n "$COPILOT_USER_MAPPING_PASSPHRASE" ]; then
+            echo "🔐 Found GPG-encrypted user mapping ($ENCRYPTED_FILE). Decrypting (>48KB workaround)..."
+            DECRYPTED_PATH="$RUNNER_TEMP/copilot-user-mapping.json"
+            npx tsx scripts/decrypt-user-mapping.ts "$ENCRYPTED_FILE" "$DECRYPTED_PATH" --passphrase-env COPILOT_USER_MAPPING_PASSPHRASE
+            echo "COPILOT_USER_MAPPING_FILE=$DECRYPTED_PATH" >> "$GITHUB_ENV"
+            echo "✅ Large user mapping decrypted to a runner-local temp path (never committed)."
+          elif [ -f "$ENCRYPTED_FILE" ]; then
+            echo "⚠️ $ENCRYPTED_FILE was found but COPILOT_USER_MAPPING_PASSPHRASE secret is not set. Skipping decryption; falling back to COPILOT_USER_MAPPING variable/secret if configured."
+          else
+            echo "ℹ️ No GPG-encrypted user mapping found at $ENCRYPTED_FILE. Using COPILOT_USER_MAPPING variable/secret if configured."
+          fi
+
       - name: Run Copilot Analytics Pipeline
         env:
           COPILOT_READ_TOKEN: ${{ secrets.COPILOT_READ_TOKEN }}
           COPILOT_ENTERPRISE: ${{ vars.COPILOT_ENTERPRISE }}
           COPILOT_ORGS: ${{ vars.COPILOT_ORGS }}
           COPILOT_USER_MAPPING: ${{ vars.COPILOT_USER_MAPPING || secrets.COPILOT_USER_MAPPING }}
+          COPILOT_USER_MAPPING_FILE: ${{ env.COPILOT_USER_MAPPING_FILE }}
           COPILOT_COST_CENTER_BUDGETS: ${{ vars.COPILOT_COST_CENTER_BUDGETS || secrets.COPILOT_COST_CENTER_BUDGETS }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
