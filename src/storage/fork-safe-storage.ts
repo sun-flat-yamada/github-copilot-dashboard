@@ -220,6 +220,82 @@ export class ForkSafeStorage {
   }
 
   /**
+   * 過去1年間のマクロ推移トレンドデータ (trends/rolling-1year.json) を保存
+   */
+  public saveRolling1YearTrend(data: any): void {
+    const targetDir = path.join(this.baseDir, 'processed', 'trends');
+    this.ensureDirectory(targetDir);
+
+    const filePath = path.join(targetDir, 'rolling-1year.json');
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+    console.log(`💾 [ForkSafeStorage] Saved rolling 1-year trend: ${filePath}`);
+
+    if (this.publicDir) {
+      const publicTargetDir = path.join(this.publicDir, 'trends');
+      this.ensureDirectory(publicTargetDir);
+      fs.writeFileSync(path.join(publicTargetDir, 'rolling-1year.json'), JSON.stringify(data, null, 2), 'utf-8');
+    }
+  }
+
+  /**
+   * 月次ディープ分析アーカイブ (deep-analysis/{YYYY-MM}.json) を保存
+   */
+  public saveDeepAnalysisArchive(monthStr: string, data: any): void {
+    const targetDir = path.join(this.baseDir, 'processed', 'deep-analysis');
+    this.ensureDirectory(targetDir);
+
+    const filePath = path.join(targetDir, `${monthStr}.json`);
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+    console.log(`💾 [ForkSafeStorage] Saved deep analysis archive for ${monthStr}: ${filePath}`);
+
+    if (this.publicDir) {
+      const publicTargetDir = path.join(this.publicDir, 'deep-analysis');
+      this.ensureDirectory(publicTargetDir);
+      fs.writeFileSync(path.join(publicTargetDir, `${monthStr}.json`), JSON.stringify(data, null, 2), 'utf-8');
+    }
+  }
+
+  /**
+   * 保持されている全月次集計データ (processed/monthly) の月一覧を取得 (降順)
+   */
+  public getStoredProcessedMonths(): string[] {
+    const months = new Set<string>();
+    const monthlyDir = path.join(this.baseDir, 'processed', 'monthly');
+    if (fs.existsSync(monthlyDir)) {
+      const files = fs.readdirSync(monthlyDir);
+      for (const f of files) {
+        if (f.endsWith('.json')) {
+          const m = f.replace('.json', '');
+          if (/^\d{4}-\d{2}$/.test(m)) {
+            months.add(m);
+          }
+        }
+      }
+    }
+    return Array.from(months).sort().reverse();
+  }
+
+  /**
+   * 保持されているディープ分析アーカイブの月一覧を取得 (降順)
+   */
+  public getStoredDeepAnalysisMonths(): string[] {
+    const months = new Set<string>();
+    const deepDir = path.join(this.baseDir, 'processed', 'deep-analysis');
+    if (fs.existsSync(deepDir)) {
+      const files = fs.readdirSync(deepDir);
+      for (const f of files) {
+        if (f.endsWith('.json')) {
+          const m = f.replace('.json', '');
+          if (/^\d{4}-\d{2}$/.test(m)) {
+            months.add(m);
+          }
+        }
+      }
+    }
+    return Array.from(months).sort().reverse();
+  }
+
+  /**
    * 指定月のRawレポートCSVファイル一覧を取得
    */
   public getRawReportFiles(monthStr: string): string[] {

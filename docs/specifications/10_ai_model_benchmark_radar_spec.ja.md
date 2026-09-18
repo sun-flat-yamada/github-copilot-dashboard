@@ -24,14 +24,11 @@ GitHub Copilot 公式ドキュメントに準拠し、公式サポートモデ�
 ## 2. アーキテクチャと配置
 
 ### 2.1 ダッシュボード統合方式
-- **表示モード (`DashboardAppMode`)**:
-  - `'live_metrics'`: API 連携リアルタイムメトリクスモード
-  - `'monthly_report'`: CSV 取り込み Monthly Usage Report モード
-  - `'model_radar'`: **AIモデル特性レーダー & ベンチマーク評価モード（新設）**
-  - `'deep_analysis'`: ディープ分析モード
+- **分析ビュー (`AnalysisViewId`)**:
+  - `model_radar`: **AIモデル特性レーダー & ベンチマーク評価ビュー**
 - **ナビゲーション**:
-  - ヘッダーバーの `ModeSwitcher` よりワンクリックで切り替え。
-  - Live Metrics タブバーの「モデル特性レーダー」ボタン、または「ユーザー別モデル推移 (UserTrendViewer)」の各モデル凡例からもジャンプ可能。
+  - ナビゲーションバーの `ViewNavigation` よりワンクリックで切り替え。
+  - 「ユーザー別モデル推移 (UserTrendViewer)」の各モデル凡例や関連ウィジェットからもダイレクトジャンプ可能。
 
 ### 2.2 データフロー
 ```mermaid

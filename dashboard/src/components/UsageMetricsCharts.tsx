@@ -36,7 +36,7 @@ export const UsageMetricsCharts: React.FC<UsageMetricsChartsProps> = ({ data }) 
   }));
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="flex flex-col space-y-6 w-full">
       {/* 1. トレンド推移 (アクティブ数 & 受諾率) */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col">
         <div className="flex items-center justify-between mb-4">

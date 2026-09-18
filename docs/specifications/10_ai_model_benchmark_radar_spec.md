@@ -24,14 +24,11 @@ By integrating prominent industry benchmarks (SWE-bench Verified, AIME 2024, LMS
 ## 2. Architecture & Layout
 
 ### 2.1 Dashboard Integration Modes
-- **App Modes (`DashboardAppMode`)**:
-  - `'live_metrics'`: API live metrics mode
-  - `'monthly_report'`: Monthly Usage Report CSV analytics mode
-  - `'model_radar'`: **AI Model Benchmark Radar & Evaluation Mode**
-  - `'deep_analysis'`: Deep Analytics View mode
+- **Analysis View (`AnalysisViewId`)**:
+  - `model_radar`: **AI Model Benchmark Radar & Evaluation View**
 - **Navigation**:
-  - One-click switching via header `ModeSwitcher`.
-  - Contextual jumps from the Live Metrics tab bar and the model legend in `UserTrendViewer`.
+  - One-click switching via the top `ViewNavigation` bar.
+  - Contextual jumps from model legends in `UserTrendViewer` and related widgets.
 
 ### 2.2 Data Flow
 ```mermaid

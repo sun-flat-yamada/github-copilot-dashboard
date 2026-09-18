@@ -120,6 +120,7 @@ export class BillingCalculator {
       days_inactive: daysInactive,
       status,
       notes: attr.notes,
+      tags: attr.tags,
       is_data_unavailable: isDataUnavailable,
       cost_center_error: costCenterError,
     };

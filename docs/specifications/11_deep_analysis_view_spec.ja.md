@@ -24,9 +24,10 @@ GitHub Copilot の利用実態をより多角的に深掘りし、組織の開�
 
 ## 2. 機能の配置と起動方法 (UI / UX Architecture)
 
-### 2.1 グローバルナビゲーション (ModeSwitcher)
-- トップヘッダーの `ModeSwitcher` に第4のモードとして **「ディープ分析 (高度診断)」** (`deep_analysis`) を追加。
+### 2.1 グローバルナビゲーション (ViewNavigation)
+- ナビゲーションバーの `ViewNavigation` に独立した専用ビューとして **「ディープ分析 (高度診断)」** (`deep_analysis`) を配置。
 - アイコン: `BrainCircuit`。ワンクリックで全社横断のディープアナリティクスハブへ遷移。
+- データ蓄積 & パーティショニング: 月次ディープ分析アーカイブ（`data/processed/deep-analysis/{YYYY-MM}.json`）として `copilot-data` に無期限蓄積され、過去1年間のローリングインデックスから高速に復元可能。
 
 ### 2.2 コンテキスト起動 (Contextual Deep-Link)
 - **ユーザー明細テーブル (`UserDetailTable`)**: 各行のアクション列に「ディープ分析」ボタンを設置。クリックすると対象ユーザーが自動選択された状態で専用ビューが起動。
