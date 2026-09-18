@@ -81,8 +81,24 @@ export class GitHubCopilotClient {
       return bundle.metrics;
     }
 
-    const headers = this.getHeaders();
     const metrics: CopilotDailyMetrics[] = [];
+
+    if (!this.enterprise && this.orgs.length === 0) {
+      // COPILOT_ENTERPRISE/COPILOT_ORGS がどちらも未設定の場合、捏造データを生成せず
+      // データなし(空配列)として動作を継続する。Enterprise Owner 権限が無い組織でも、
+      // このメッセージにより原因を把握した上で他の機能(Monthly Usage Report 等)を利用できる。
+      this.recordIssue({
+        severity: 'warning',
+        category: 'api_auth',
+        target: 'config:copilot-metrics',
+        message: 'COPILOT_ENTERPRISE and COPILOT_ORGS are both unset — skipping live Copilot Metrics collection.',
+        details:
+          'Set COPILOT_ENTERPRISE (enterprise-wide) or COPILOT_ORGS (comma-separated org slugs) as a repository/organization Actions variable to enable live metrics collection. Monthly Usage Report (CSV import) and other credential-independent features remain unaffected.',
+      });
+      return metrics;
+    }
+
+    const headers = this.getHeaders();
 
     try {
       if (this.enterprise) {
@@ -152,8 +168,23 @@ export class GitHubCopilotClient {
       return this.mockGenerator.generateBundle(30).seats;
     }
 
-    const headers = this.getHeaders();
     const allSeats: CopilotSeatAssignment[] = [];
+
+    if (!this.enterprise && this.orgs.length === 0) {
+      // COPILOT_ENTERPRISE/COPILOT_ORGS がどちらも未設定の場合、捏造データを生成せず
+      // データなし(空配列)として動作を継続する。
+      this.recordIssue({
+        severity: 'warning',
+        category: 'api_auth',
+        target: 'config:copilot-billing-seats',
+        message: 'COPILOT_ENTERPRISE and COPILOT_ORGS are both unset — skipping live Copilot Seats collection.',
+        details:
+          'Set COPILOT_ENTERPRISE (enterprise-wide) or COPILOT_ORGS (comma-separated org slugs) as a repository/organization Actions variable to enable live seat collection. Monthly Usage Report (CSV import) and other credential-independent features remain unaffected.',
+      });
+      return allSeats;
+    }
+
+    const headers = this.getHeaders();
 
     try {
       if (this.enterprise) {
