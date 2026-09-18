@@ -149,14 +149,16 @@ GPGによる暗号化/復号そのものは任意のファイル (バイト列) 
 1. **マッピングファイルをローカルで用意する** (第3章のJSON形式を推奨)。
 2. **GPGで暗号化する**:
    ```bash
-   npm run mapping:encrypt -- <入力ファイル> [出力ファイル] [--push]
+   npm run mapping:encrypt -- <入力ファイル> [出力ファイル] [--push] [--passphrase-env <VAR>]
    # 例:
    npm run mapping:encrypt -- _sensitive-data/copilot-user-mapping.draft.json
    ```
-   実行するとGnuPGが対話的にパスフレーズの設定を求める（対称鍵暗号化 / AES256）。
+   既定ではGnuPGが対話的にパスフレーズの設定を求める（対称鍵暗号化 / AES256）。
    このパスフレーズは手順4で使用するため必ず控えること。
    `--push` を付けると、暗号化済みファイルを自動的に `data/config/<ファイル名>.gpg` として
    `copilot-data` ブランチへコミット&プッシュする（手順3を省略できる）。
+   非対話/CI実行の場合は `--passphrase-env <ENV_VAR_NAME>` を指定すると、対話プロンプトの代わりに
+   指定した環境変数の値をパスフレーズとして使用する (`mapping:decrypt` の同名オプションと同じ挙動)。
 3. **(`--push` を使わない場合) 暗号化済みファイルを `copilot-data` ブランチにのみコミットする**。
    `main` / `fork/custom` などのコードブランチには**絶対にコミットしないこと**。
    ```bash
@@ -175,7 +177,7 @@ GPGによる暗号化/復号そのものは任意のファイル (バイト列) 
 
 | コマンド | 用途 |
 |---|---|
-| `npm run mapping:encrypt -- <input> [output] [--push]` | マッピングファイルをGPG暗号化 (任意で `copilot-data` へ自動コミット&プッシュ) |
+| `npm run mapping:encrypt -- <input> [output] [--push] [--passphrase-env <VAR>]` | マッピングファイルをGPG暗号化 (任意で `copilot-data` へ自動コミット&プッシュ、非対話CIモードも利用可) |
 | `npm run mapping:decrypt -- <input.gpg> <output> [--passphrase-env <VAR>]` | 暗号化ファイルを復号 (CI向け非対話モード、またはローカル対話確認用) |
 
 ### 6.5 セキュリティ上の注意
