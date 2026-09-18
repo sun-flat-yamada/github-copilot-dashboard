@@ -1,6 +1,6 @@
 # Contributing to github-copilot-dashboard
 
-Thank you for your interest in improving **github-copilot-dashboard**! We welcome contributions from the community.
+Thank you for your interest in improving **github-copilot-dashboard**! We welcome contributions from both human engineers and autonomous AI agents.
 
 ---
 
@@ -10,65 +10,104 @@ All contributors and maintainers are expected to adhere to our [Code of Conduct]
 
 ---
 
-## Development Workflow
+## Repository Roles & Direct Push Rules
 
-### 1. Prerequisites
+| Target Repository | Direct Commit/Push to `main` | Enforced Workflow |
+| :--- | :--- | :--- |
+| **Upstream Original (`sun-flat-yamada`)** | 🚫 **Strictly Forbidden** | **Full enforcement: Issue -> Sibling Worktree -> Quality Gate -> PR -> Rebase Merge** |
+| **Downstream Fork** | ⚠️ Permitted for small operational tasks | **Worktree + PR strongly recommended** for multi-agent or feature work |
+
+---
+
+## Development Workflow (Issue -> Worktree -> PR -> Rebase)
+
+To prevent edit collisions, git index locks, and untracked file bleed in multi-agent environments, all work proceeds through **Sibling Git Worktrees**.
+
+### 1. Prerequisites & Initial Setup
 - **Node.js**: v20.x or v22.x+ (Recommended: LTS)
 - **npm**: v10.x+
-- **Git**
+- **Git** & **GitHub CLI (`gh`)**
 
-### 2. Setup
 ```bash
-# Fork & clone the repository
 git clone https://github.com/your-username/github-copilot-dashboard.git
 cd github-copilot-dashboard
-
-# Install dependencies
 npm install
-
-# Verify fork health & environment
 npm run fork:verify
-
-# Run TypeScript typecheck
-npm run typecheck
-
-# Run unit tests
-npm test
-
-# Generate simulated 2026.09 Copilot test partitions
-npm run pipeline:mock
-
-# Start local interactive dashboard
-npm run dev
-# Open http://localhost:3000 in your browser
 ```
 
 ---
 
-## Branching & Commit Guidelines
+### 2. Step-by-Step Change Lifecycle
 
-### Branch Naming
-- `feat/feature-name` (New features)
-- `fix/bug-fix-name` (Bug fixes)
-- `docs/doc-updates` (Documentation changes)
-- `refactor/clean-up` (Refactoring without functional change)
+```text
+[1. Issue] ──> [2. Sibling Worktree] ──> [3. Quality Gate] ──> [4. Rebase & PR] ──> [5. Rebase Merge & Clean]
+```
 
-### Commit Message Format (Conventional Commits)
-We enforce the [Conventional Commits](https://www.conventionalcommits.org/) specification:
+#### Step 1: Create or Reference an Issue
+All non-trivial changes start with an Issue defining the objective, scope, and Acceptance Criteria:
+```bash
+gh issue create --title "feat: Add cost center budget threshold alerts" --label "enhancement"
+```
+Record the assigned Issue number (e.g. `#42`).
 
-- `feat: add model breakdown timeline for individual users`
-- `fix: correct prorated daily billing formula for leap years`
-- `docs: update setup steps for GitHub Actions Variables`
-- `test: add unit test for Cost Center budget threshold`
+#### Step 2: Provision an Isolated Sibling Worktree
+Worktrees are provisioned in a sibling directory (`../github-copilot-dashboard-worktrees/<branch>`) so concurrent agents never interfere with each other or the primary root checkout:
+```bash
+# Automated via helper script:
+npm run worktree:add feat/42-budget-alerts
 
----
+# Or manually:
+git fetch origin main
+git worktree add ../github-copilot-dashboard-worktrees/feat-42-budget-alerts -b feat/42-budget-alerts origin/main
+cd ../github-copilot-dashboard-worktrees/feat-42-budget-alerts
+npm ci
+```
 
-## Pull Request Guidelines
+#### Step 3: Implement & Run Local Quality Gate
+1. **Branch Naming**: `feat/<issue>-<slug>`, `fix/<issue>-<slug>`, `docs/...`, `refactor/...`.
+2. **Conventional Commits**: `feat: ...`, `fix: ...`, `docs: ...`, `test: ...`.
+3. **Mandatory 5-Stage Quality Gate** (run inside the worktree):
+   ```bash
+   npm run fork:verify   # Verify zero data files on code branch (SDD-05)
+   npm run typecheck     # TypeScript compiler verification
+   npm test              # Unit & regression tests
+   npm run secret-scan   # Multi-layered secrets & PII audit (Exit 0 mandatory)
+   npm run build         # Production SPA build
+   ```
 
-1. Ensure all TypeScript checks pass: `npm run typecheck`
-2. Ensure all unit tests pass: `npm test`
-3. Ensure no secrets or PII are leaked: `npm run secret-scan`
-4. Ensure fork health checks pass: `npm run fork:verify`
-5. Ensure production SPA build succeeds: `npm run build`
-6. Submit your Pull Request against the `main` branch (ensure zero `data/` files are included).
-7. Fill out the [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md) completely.
+#### Step 4: Rebase onto Base & Create PR
+1. Rebase onto the latest base to guarantee linear history:
+   ```bash
+   git fetch origin main
+   git rebase origin/main
+   git push -u origin feat/42-budget-alerts  # (or --force-with-lease)
+   ```
+2. Open a Pull Request linking the issue:
+   ```bash
+   gh pr create \
+     --base main \
+     --head feat/42-budget-alerts \
+     --title "feat: Add cost center budget threshold alerts (#42)" \
+     --body "## Summary\n\nCloses #42"
+   ```
+
+#### Step 5: Rebase & Merge
+We standardise on **Rebase & Merge** (preserving linear history and ensuring clean `git bisect` / fork sync):
+```bash
+gh pr merge 42 --rebase --delete-branch
+```
+
+#### Step 6: Worktree & Branch Cleanup
+Return to the primary repo directory and clean up:
+```bash
+# Automated:
+npm run worktree:clean feat/42-budget-alerts
+
+# Or manually:
+cd ../../github-copilot-dashboard
+git checkout main && git pull --ff-only origin main
+git worktree remove ../github-copilot-dashboard-worktrees/feat-42-budget-alerts
+git branch -d feat/42-budget-alerts
+```
+
+List active worktrees at any time: `npm run worktree:list`

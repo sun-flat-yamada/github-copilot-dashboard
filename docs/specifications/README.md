@@ -64,6 +64,7 @@ flowchart TD
 | **SDD-11** | Deep Analytics View Specification | [EN](11_deep_analysis_view_spec.md) \| [JA](11_deep_analysis_view_spec.ja.md) | Inefficient AI pattern diagnostics, AEDP autonomy depth metrics | Active (2026.09) |
 | **SDD-12** | Fork Synchronization & Operations Specification | [EN](12_fork_sync_and_customization_ops_spec.md) \| [JA](12_fork_sync_and_customization_ops_spec.ja.md) | Upstream sync runbooks (UI/CLI), dual-branch model, health audit | Active (2026.09) |
 | **SDD-13** | Fork-Restricted Environment Setup Guide | [EN](13_fork_restricted_environment_setup_guide.md) \| [JA](13_fork_restricted_environment_setup_guide.ja.md) | Mirror-based duplication procedure for EMU and restricted enterprises | Active (2026.09) |
+| **SDD-14** | Development Workflow & Git Ops Specification | [EN](14_development_workflow_and_git_ops_spec.md) \| [JA](14_development_workflow_and_git_ops_spec.ja.md) | Multi-agent parallel Worktree operations, Issue driven, PR & Rebase merge, permission model | Active (2026.09) |
 
 ---
 
