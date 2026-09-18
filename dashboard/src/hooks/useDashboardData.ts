@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   AnalysisScopeType,
   DashboardAppMode,
@@ -25,11 +25,20 @@ export function useDashboardData(appMode: DashboardAppMode) {
   const [error, setError] = useState<string | null>(null);
   const [noLiveData, setNoLiveData] = useState<boolean>(false);
 
-  // Monthly Usage Report モード用ステート
+  // Live Metrics 用キャッシュ & 最新参照
+  const currentDataRef = useRef<ScopeAggregatedData | null>(null);
+  currentDataRef.current = currentData;
+  const scopeDataCacheRef = useRef<Map<string, ScopeAggregatedData>>(new Map());
+
+  // Monthly Usage Report モード用ステート & キャッシュ & 最新参照
   const [selectedReportMonth, setSelectedReportMonth] = useState<string>('2026-08');
   const [currentReportData, setCurrentReportData] = useState<MonthlyReportAggregatedData | null>(null);
   const [reportLoading, setReportLoading] = useState<boolean>(false);
   const [reportError, setReportError] = useState<string | null>(null);
+
+  const currentReportDataRef = useRef<MonthlyReportAggregatedData | null>(null);
+  currentReportDataRef.current = currentReportData;
+  const reportCacheRef = useRef<Map<string, MonthlyReportAggregatedData>>(new Map());
 
   // 生成元 GitHub リポジトリ情報 (Fork セーフ・動的解決)
   const repoInfo: RepoInfo = useMemo(() => {
@@ -117,6 +126,25 @@ export function useDashboardData(appMode: DashboardAppMode) {
   useEffect(() => {
     if (!indexMeta || noLiveData || !selectedKey || appMode !== 'live_metrics') return;
 
+    // すでに同一スコープのデータがロード済みの場合は再フェッチをスキップ（モード切替時の画面ちらつき防止）
+    if (
+      currentDataRef.current?.scope_key === selectedKey &&
+      currentDataRef.current?.scope_type === scopeType
+    ) {
+      return;
+    }
+
+    const cacheKey = `${scopeType}:${selectedKey}`;
+    const cached = scopeDataCacheRef.current.get(cacheKey);
+    if (cached) {
+      setCurrentData(cached);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    let isCancelled = false;
+
     async function loadScopeData() {
       setLoading(true);
       setError(null);
@@ -137,24 +165,48 @@ export function useDashboardData(appMode: DashboardAppMode) {
           throw new Error(`Data for scope ${scopeType} (${selectedKey}) not found at ${url}`);
         }
         const data = (await res.json()) as ScopeAggregatedData;
-        setCurrentData(data);
+        if (!isCancelled) {
+          scopeDataCacheRef.current.set(cacheKey, data);
+          setCurrentData(data);
+        }
       } catch (e: any) {
-        console.error('Failed to load scope data:', e);
-        setError(e.message);
+        if (!isCancelled) {
+          console.error('Failed to load scope data:', e);
+          setError(e.message);
+        }
       } finally {
-        setLoading(false);
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     }
 
     loadScopeData();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [scopeType, selectedKey, appMode, indexMeta, noLiveData]);
 
-  // 3. Monthly Usage Report データの取得
+  // 3. Monthly Usage Report データの取得 (無限ループ抑止・インメモリキャッシュ・レースコンディション防止)
   useEffect(() => {
     if (!selectedReportMonth) return;
-    if (currentReportData?.source_type === 'local_drop' && currentReportData.report_month === selectedReportMonth) {
+
+    // A. 既にステートに該当月がセットされている場合は何もしない（サーバー取得・ローカル読込問わずスキップ）
+    if (currentReportDataRef.current?.report_month === selectedReportMonth) {
       return;
     }
+
+    // B. キャッシュに存在する場合は即時反映（ネットワーク通信・スピナーなし）
+    const cached = reportCacheRef.current.get(selectedReportMonth);
+    if (cached) {
+      setCurrentReportData(cached);
+      setReportLoading(false);
+      setReportError(null);
+      return;
+    }
+
+    let isCancelled = false;
 
     async function loadReportData() {
       setReportLoading(true);
@@ -166,22 +218,34 @@ export function useDashboardData(appMode: DashboardAppMode) {
           throw new Error(`Monthly report for ${selectedReportMonth} not found at ${url}`);
         }
         const data = (await res.json()) as MonthlyReportAggregatedData;
-        setCurrentReportData(data);
+        if (!isCancelled) {
+          reportCacheRef.current.set(selectedReportMonth, data);
+          setCurrentReportData(data);
+        }
       } catch (e: any) {
-        console.error('Failed to load report data:', e);
-        setReportError(e.message);
+        if (!isCancelled) {
+          console.error('Failed to load report data:', e);
+          setReportError(e.message);
+        }
       } finally {
-        setReportLoading(false);
+        if (!isCancelled) {
+          setReportLoading(false);
+        }
       }
     }
 
     loadReportData();
-  }, [selectedReportMonth, appMode, currentReportData]);
 
-  const handleReportLoadedClientSide = (data: MonthlyReportAggregatedData) => {
+    return () => {
+      isCancelled = true;
+    };
+  }, [selectedReportMonth]);
+
+  const handleReportLoadedClientSide = useCallback((data: MonthlyReportAggregatedData) => {
+    reportCacheRef.current.set(data.report_month, data);
     setCurrentReportData(data);
     setSelectedReportMonth(data.report_month);
-  };
+  }, []);
 
   return {
     indexMeta,
