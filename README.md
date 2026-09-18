@@ -112,7 +112,11 @@ github-copilot-dashboard/
 │   ├── mock/                  # 2026 specification simulation mock data
 │   ├── processed/             # Precomputed scope data (daily, monthly, custom)
 │   └── raw/                   # Partitioned raw API responses
-├── docs/specifications/       # SDD (Specification-Driven Development) Specs (01–13)
+├── docs/                      # Central Documentation Portal
+│   ├── README.md              # Documentation portal & index
+│   ├── setup_guide.md         # Comprehensive setup, GPG encryption & auth guide
+│   ├── models_pricing.md      # Copilot supported AI models & token pricing reference
+│   └── specifications/        # SDD Specifications (01–13) & Domain Index
 ├── src/                       # Data Pipeline & Backend Core
 │   ├── cli/                   # Pipeline runner CLI (run-pipeline.ts)
 │   ├── collector/             # API / Mock collector & anomaly handler
@@ -132,104 +136,60 @@ github-copilot-dashboard/
 
 ## 📖 SDD (Specification-Driven Development) Specifications
 
-Every feature in this project is engineered in strict accordance with **Specification-Driven Development (SDD)**:
+Every feature, data pipeline, and security control in this project is engineered in strict accordance with **Specification-Driven Development (SDD)** across six core engineering domains:
 
-| Specification | Title | Overview |
-| :--- | :--- | :--- |
-| [SDD-01](docs/specifications/01_requirements_specification.md) | Requirements Specification | Business, functional, security, and operational requirements |
-| [SDD-02](docs/specifications/02_system_architecture.md) | System Architecture Specification | Overall topology, data flows, and fallback architecture |
-| [SDD-03](docs/specifications/03_github_copilot_api_spec_2026.md) | GitHub Copilot API Specification (2026.09) | Metrics, Seats, and Cost Centers API definitions |
-| [SDD-04](docs/specifications/04_user_attribute_mapping_spec.md) | User Attribute Mapping Specification | PII isolation, Variables injection, and schema rules |
-| [SDD-05](docs/specifications/05_data_storage_and_fork_isolation_spec.md) | Data Storage & Fork Isolation Specification | Orphan branch segregation and append-only partitioning |
-| [SDD-06](docs/specifications/06_aggregation_and_billing_logic_spec.md) | Aggregation & Billing Logic Specification | 3-axis allocation, multi-model daily trends, rankings, budgets |
-| [SDD-07](docs/specifications/07_dashboard_ui_ux_spec.md) | Dashboard UI/UX Specification | Design system, anomaly modal, and chart specifications |
-| [SDD-08](docs/specifications/08_automation_workflow_spec.md) | Automation & CI/CD Workflow Specification | GitHub Actions cron, Pages deployment, and error handling |
-| [SDD-09](docs/specifications/09_monthly_usage_report_mode_spec.md) | Monthly Usage Report Mode Specification | Direct parsing & persistent storage for monthly CSV reports |
-| [SDD-10](docs/specifications/10_ai_model_benchmark_radar_spec.md) | AI Model Benchmark Radar Specification | 6-axis radar charts and evaluations across 38 frontier models |
-| [SDD-11](docs/specifications/11_deep_analysis_view_spec.md) | Deep Analytics View Specification | Inefficient AI pattern diagnostics and AEDP autonomy depth |
-| [SDD-12](docs/specifications/12_fork_sync_and_customization_ops_spec.md) | Fork Synchronization & Operations Specification | Upstream sync runbooks (Web UI/CLI/Actions), dual-branch model, health audit |
-| [SDD-13](docs/specifications/13_fork_restricted_environment_setup_guide.md) | Fork-Restricted Environment Setup Guide | Mirror-based duplication procedure for EMU / policy-restricted organizations that cannot use GitHub Fork |
+1. **Requirements & Core Architecture**: [SDD-01](docs/specifications/01_requirements_specification.md) (System Requirements) & [SDD-02](docs/specifications/02_system_architecture.md) (Architecture Topology)
+2. **Copilot APIs & Ingestion**: [SDD-03](docs/specifications/03_github_copilot_api_spec_2026.md) (2026.09 API Definitions) & [SDD-09](docs/specifications/09_monthly_usage_report_mode_spec.md) (Monthly CSV Usage Reports)
+3. **Privacy & Data Isolation**: [SDD-04](docs/specifications/04_user_attribute_mapping_spec.md) (Zero-PII User Mapping & GPG Encryption) & [SDD-05](docs/specifications/05_data_storage_and_fork_isolation_spec.md) (Orphan Branch Storage)
+4. **Analytics Engine & Frontier AI**: [SDD-06](docs/specifications/06_aggregation_and_billing_logic_spec.md) (3-Axis Cost Allocation & Budgets), [SDD-10](docs/specifications/10_ai_model_benchmark_radar_spec.md) (38 Frontier Models Benchmark Radar), & [SDD-11](docs/specifications/11_deep_analysis_view_spec.md) (AEDP Deep Diagnostics)
+5. **Dashboard User Interface**: [SDD-07](docs/specifications/07_dashboard_ui_ux_spec.md) (Design System, Anomaly Modals & Composed Charts)
+6. **Automation & Fork Lifecycle**: [SDD-08](docs/specifications/08_automation_workflow_spec.md) (CI/CD & Cron), [SDD-12](docs/specifications/12_fork_sync_and_customization_ops_spec.md) (Fork Sync & Dual-Branch Strategy), & [SDD-13](docs/specifications/13_fork_restricted_environment_setup_guide.md) (EMU Mirror Duplication)
+
+> [!TIP]
+> For the complete table of all 13 specifications, language editions, and role-based reading paths, consult the **[📖 SDD Specifications Catalog (docs/specifications/README.md)](docs/specifications/README.md)** or the central **[📚 Documentation Portal (docs/README.md)](docs/README.md)**.
+
+---
+
+## 🤖 Supported Models & Token Pricing
+
+This platform tracks and visualizes daily consumption across 38+ frontier models (GPT-6 Astra, GPT-5.6 Sol/Terra, Claude 5 Opus/Sonnet, Gemini 3.8 Flash, etc.):
+- **Token Pricing Reference**: Detailed cost per 1M tokens across input, cached, cache write, and output is documented in **[docs/models_pricing.md](docs/models_pricing.md)**.
+- **Benchmark Radar**: 6-axis capability ratings (Coding, Reasoning, Math, Agentic, Speed, Cost Efficiency) are detailed in **[SDD-10](docs/specifications/10_ai_model_benchmark_radar_spec.md)**.
 
 ---
 
 ## 🚀 Quick Start & Setup
 
-### Step 1: Fork the Repository
-Fork this repository into your enterprise GitHub Organization or Enterprise account.
+Deploy your auto-updating dashboard to GitHub Pages in 4 steps:
 
-> [!NOTE]
-> **Can't fork into your organization?** If your account is a GitHub Enterprise Managed User (EMU) or your organization's policy blocks forking from outside accounts, see [SDD-13: Fork-Restricted Environment Setup Guide](docs/specifications/13_fork_restricted_environment_setup_guide.md) for a mirror-based duplication procedure that doesn't require Fork.
+### Step 1: Fork or Mirror the Repository
+- **Standard**: Click **Fork** to copy this repository to your enterprise organization.
+- **EMU / Restricted**: If your organization blocks cross-org forking, follow [SDD-13: Fork-Restricted Environment Setup Guide](docs/specifications/13_fork_restricted_environment_setup_guide.md) for mirror duplication.
 
 ### Step 2: Configure GitHub Pages
-1. Navigate to **Settings** > **Pages** in your repository.
+1. Go to **Settings** > **Pages** in your repository.
 2. Under **Build and deployment** > **Source**, select **"GitHub Actions"**.
 
-### Step 3: Grant Workflow Permissions
+### Step 3: Enable Actions Permissions
 1. Navigate to **Settings** > **Actions** > **General**.
 2. Under **Workflow permissions**, select **"Read and write permissions"** and check **"Allow GitHub Actions to create and approve pull requests"**.
 
-### Step 4: Register User Attribute Mapping (Secrets / Variables)
-Register sensitive user attributes (such as employee names and internal departments) as a GitHub Actions Variable or Secret.
-
-1. Open **Settings** > **Secrets and variables** > **Actions** > **Variables** tab.
-2. Click **New repository variable** and name it `COPILOT_USER_MAPPING`.
-3. Input the JSON array and save:
-
-```json
-[
-  {
-    "github_user": "taro-tanaka",
-    "display_name": "Taro Tanaka",
-    "department": "Core Platform Team",
-    "cost_center_override": "FinTech-Division",
-    "notes": "Full-time / Tech Lead"
-  },
-  {
-    "github_user": "hanako-suzuki",
-    "display_name": "Hanako Suzuki",
-    "department": "LLM Product Group",
-    "cost_center_override": "Research-and-AI",
-    "notes": "AI Researcher"
-  },
-  {
-    "github_user": "alex-partner",
-    "display_name": "Alex Rivera",
-    "department": "Core Platform Team",
-    "notes": "Contractor"
-  }
-]
-```
-> [!TIP]
-> If higher confidentiality is required, you can store this mapping as a **Secret** (`COPILOT_USER_MAPPING`) instead of a Variable.
-
-### Step 5: Configure Scope and Authentication Tokens
+### Step 4: Configure Credentials & User Mapping
+Register your configuration under **Settings** > **Secrets and variables** > **Actions**:
 - **Secrets**:
-  - `COPILOT_READ_TOKEN`: Personal Access Token (PAT) with Copilot and Billing read permissions (Fine-grained PAT or `manage_billing:copilot`, `read:org`).
+  - `COPILOT_READ_TOKEN`: Personal Access Token with `manage_billing:copilot` (or Copilot read permissions) and `read:org`.
 - **Variables**:
-  - `COPILOT_ENTERPRISE`: Enterprise slug (e.g., `my-enterprise`).
-  - Or `COPILOT_ORGS`: Comma-separated list of organization names (e.g., `org-core,org-ai-labs`).
-  - (Testing / Demo) `MOCK_MODE`: Set to `true` to immediately spin up the dashboard using 2026 simulation data without real credentials.
+  - `COPILOT_ENTERPRISE`: Enterprise slug (e.g., `my-enterprise`), or `COPILOT_ORGS`: Comma-separated org list.
+  - `COPILOT_USER_MAPPING`: JSON array mapping GitHub logins to internal departments:
+    ```json
+    [
+      { "github_user": "octocat-lead", "display_name": "Taro Tanaka", "department": "Platform Engineering", "cost_center_override": "FinTech-Division" }
+    ]
+    ```
+  - *(Testing / Demo)* `MOCK_MODE`: Set to `true` to immediately spin up the dashboard using 2026 synthetic simulation data.
 
-### Step 6: Synchronize with Upstream & Run Health Audit
-When upstream releases new features or models, keep your fork synchronized and verified:
-
-```bash
-# 1. Run automated pre-flight health audit
-npm run fork:verify
-
-# 2. Fetch and fast-forward upstream main
-git fetch upstream main
-git merge upstream/main --ff-only
-
-# 3. Update dependencies and verify quality gates
-npm ci
-npm run typecheck && npm test && npm run secret-scan && npm run build
-
-# 4. Push updates to your fork
-git push origin main
-```
-> [!TIP]
-> For complete procedures (1-click Web UI sync, dual-branch custom code architecture, and troubleshooting), refer to [SDD-12 (Fork Synchronization & Operations Specification)](docs/specifications/12_fork_sync_and_customization_ops_spec.md) and the dedicated skill (`skills/fork-sync-ops/`).
+> [!NOTE]
+> For advanced setup options — including **CSV mapping format**, **GPG encryption for mappings > 48KB**, **graceful credentials degradation**, and **fork synchronization runbooks** — refer to the **[🚀 Complete Setup & Configuration Guide (docs/setup_guide.md)](docs/setup_guide.md)**.
 
 ---
 
