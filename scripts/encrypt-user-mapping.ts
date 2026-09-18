@@ -24,11 +24,17 @@
  *   標準出力に表示する。判定できない場合も暗号化自体は続行するが、警告を表示する。
  *
  * 使い方:
- *   npm run mapping:encrypt -- <input-file> [output-file] [--push]
+ *   npm run mapping:encrypt -- <input-file> [output-file] [--push] [--passphrase-env <ENV_VAR_NAME>]
  *
  * 例:
  *   npm run mapping:encrypt -- _sensitive-data/copilot-user-mapping.draft.json
  *   npm run mapping:encrypt -- _sensitive-data/copilot-user-mapping.draft.json --push
+ *   npm run mapping:encrypt -- _sensitive-data/copilot-user-mapping.draft.json out.gpg --push --passphrase-env MAPPING_PASSPHRASE
+ *
+ * --passphrase-env を省略した場合は GnuPG が対話的にパスフレーズの入力(2回)を求める。
+ * CI/自動化などで非対話実行したい場合のみ --passphrase-env <ENV_VAR_NAME> を指定し、
+ * 事前に十分ランダムなパスフレーズを環境変数へ設定しておくこと
+ * (このパスフレーズ自体は最終的に COPILOT_USER_MAPPING_PASSPHRASE Secret として登録する)。
  */
 import * as fs from 'fs';
 import * as os from 'os';
@@ -115,14 +121,26 @@ function main() {
 
   const rawArgs = process.argv.slice(2);
   const pushToRemote = rawArgs.includes('--push');
-  const positional = rawArgs.filter((a) => !a.startsWith('--'));
+  let passphraseEnvName: string | undefined;
+  const positional: string[] = [];
+  for (let i = 0; i < rawArgs.length; i++) {
+    if (rawArgs[i] === '--passphrase-env') {
+      passphraseEnvName = rawArgs[i + 1];
+      i++;
+    } else if (!rawArgs[i].startsWith('--')) {
+      positional.push(rawArgs[i]);
+    }
+  }
 
   if (positional.length === 0) {
-    console.error('❌ Usage: npm run mapping:encrypt -- <input-file> [output-file] [--push]');
+    console.error('❌ Usage: npm run mapping:encrypt -- <input-file> [output-file] [--push] [--passphrase-env <ENV_VAR_NAME>]');
     console.error('   Example: npm run mapping:encrypt -- _sensitive-data/copilot-user-mapping.draft.json');
     console.error('');
     console.error(
-      `   --push   暗号化後、${DEST_SUBPATH}/<basename>.gpg として '${DATA_BRANCH}' ブランチへ自動コミット&プッシュします。`
+      `   --push               暗号化後、${DEST_SUBPATH}/<basename>.gpg として '${DATA_BRANCH}' ブランチへ自動コミット&プッシュします。`
+    );
+    console.error(
+      '   --passphrase-env <VAR>  指定した環境変数の値をパスフレーズとして使い、GnuPGの対話プロンプトなしで実行します。'
     );
     console.error('');
     console.error('   対応入力形式: JSON (UserAttributeMapping[]、推奨) または CSV (ヘッダー行付き)。');
@@ -158,18 +176,46 @@ function main() {
 
   checkGpgAvailable();
 
-  console.log('');
-  console.log('🔑 GnuPG がこの後パスフレーズの入力を求めます (入力内容は表示されません)。');
-  console.log('   このパスフレーズは COPILOT_USER_MAPPING_PASSPHRASE として登録する必要があるため必ず控えてください。');
-  console.log('');
-
   if (fs.existsSync(outputPath)) {
     fs.unlinkSync(outputPath);
   }
 
-  const encrypt = spawnSync('gpg', ['--symmetric', '--cipher-algo', 'AES256', '-o', outputPath, inputPath], {
-    stdio: 'inherit',
-  });
+  let encrypt;
+  if (passphraseEnvName) {
+    const passphrase = process.env[passphraseEnvName];
+    if (!passphrase) {
+      fail(`環境変数 "${passphraseEnvName}" が未設定、または空です。`);
+    }
+    console.log('');
+    console.log(`🔑 環境変数 "${passphraseEnvName}" のパスフレーズを使用します (非対話モード)。`);
+    console.log('   このパスフレーズは COPILOT_USER_MAPPING_PASSPHRASE として登録する必要があるため必ず控えてください。');
+    encrypt = spawnSync(
+      'gpg',
+      [
+        '--batch',
+        '--yes',
+        '--pinentry-mode',
+        'loopback',
+        '--passphrase-fd',
+        '0',
+        '--symmetric',
+        '--cipher-algo',
+        'AES256',
+        '-o',
+        outputPath,
+        inputPath,
+      ],
+      { input: passphrase, stdio: ['pipe', 'inherit', 'inherit'] }
+    );
+  } else {
+    console.log('');
+    console.log('🔑 GnuPG がこの後パスフレーズの入力を求めます (入力内容は表示されません)。');
+    console.log('   このパスフレーズは COPILOT_USER_MAPPING_PASSPHRASE として登録する必要があるため必ず控えてください。');
+    console.log('');
+    encrypt = spawnSync('gpg', ['--symmetric', '--cipher-algo', 'AES256', '-o', outputPath, inputPath], {
+      stdio: 'inherit',
+    });
+  }
 
   if (encrypt.error || encrypt.status !== 0 || !fs.existsSync(outputPath)) {
     fail('GPG 暗号化に失敗しました。上記の gpg 出力を確認してください。');
