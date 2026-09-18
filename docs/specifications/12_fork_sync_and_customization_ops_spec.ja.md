@@ -317,7 +317,7 @@ npm run fork:verify
 ---
 
 ### ケース 3: GitHub Actions のプッシュ権限エラー (403: Resource not accessible)
-- **事象**: `copilot-analysis-cron.yml` の「Commit and Push to 'copilot-data' branch」ステップで `403 Forbidden` となる。
+- **事象**: `copilot-analysis-cron.yml` の「Commit and Push to data branch (Fork-Safe Storage)」ステップで `403 Forbidden` となる。
 - **原因**: Fork リポジトリでは、初期状態で GitHub Actions の書き込み権限が無効化されている場合がある。
 - **解決手順**:
   1. Fork リポジトリの **Settings** > **Actions** > **General** を開く。
@@ -345,12 +345,36 @@ Fork 先で開発した汎用的なバグ修正、新しいモデルのベンチ
    ```bash
    git checkout -b feature/my-improvement upstream/main
    ```
-2. **社内情報・PII の完全排除**:
-   - `COPILOT_USER_MAPPING` に含まれる実際の氏名・部署・社員番号がテストコードやモックデータに混入していないことを確認。
-   - `npm run secret-scan` を実行し、合格することを確認。
-3. **コミット & PR 作成**:
-   ```bash
-   git push origin feature/my-improvement
-   ```
-   GitHub UI 上で `sun-flat-yamada/github-copilot-dashboard:main` をターゲットにした Pull Request を作成します。
+2. **社内情報・PII・実データの完全排除**(必須。両方とも exit 0 であること):
+   - `COPILOT_USER_MAPPING` に含まれる実際の氏名・部署・社員番号、または組織固有のCopilot利用実績・請求データが、コード・テストフィクスチャ・ドキュメントのいずれにも混入していないことを確認。
+   - `npm run secret-scan` を実行(作業ツリー全体を対象にした汎用シークレット/PIIパターンスキャン)。
+   - `npm run upstream:audit -- upstream/main feature/my-improvement` を実行([6.1節](#61-upstream-データ流出防止機構-npm-run-upstreamaudit)参照)。候補ブランチと `upstream/main` との差分を専用にチェックし、実データ保護パターン(`AIUsageReport*.csv`・`*<yyyymm>.csv`・`data/`・ユーザーマッピング/組織図ダンプ等)に一致するファイルが1つでもあれば失敗する。secret-scanの再実行も含む。
+3. **PR 作成**:
+   - 本リポジトリが upstream のネイティブGitHub forkである場合は、`origin` にブランチをpushし、通常通りGitHub UI上でPRを作成する。
+   - 本リポジトリが([SDD-13](13_fork_restricted_environment_setup_guide.ja.md)のミラー複製手順で作成されており)upstreamとfork network上で連結していない場合、通常のリポジトリ間PR(`head: <このリポジトリ>:branch` → `base: <upstreamリポジトリ>:main`)は利用できない。代わりに、upstream側で書き込み権限を持つ私用の個人(非EMU)GitHubアカウント([SDD-13 §5](13_fork_restricted_environment_setup_guide.ja.md#5-既知の制約)参照)で監査済みブランチを直接pushし、同一リポジトリ内PRを作成する:
+     ```bash
+     gh auth switch --user <個人のupstreamアカウント>
+     git push <書き込み権限のあるupstreamリモート> feature/my-improvement
+     gh pr create --repo sun-flat-yamada/github-copilot-dashboard \
+       --base main --head feature/my-improvement \
+       --title "..." --body "..."
+     gh auth switch --user <通常のfork側アカウント>
+     ```
+     PR作成後は直ちに通常のEMU/fork側アカウントへ切り戻し、以降のコマンドが誤って別リポジトリのコンテキストで実行されることを防ぐ。
    （※ `data/` ディレクトリは追跡されていないため、PR の差分にデータファイルが含まれる心配はありません）
+
+### 6.1 Upstream データ流出防止機構 (`npm run upstream:audit`)
+
+`scripts/audit-upstream-contribution.ts` は、組織固有データがupstreamへの貢献に紛れ込むことを防ぐ専用のガードであり、汎用的な `npm run secret-scan` を補完する、貢献差分に特化したより厳格なチェックです:
+
+- `git diff <base>...<candidate>` (デフォルトは `upstream/main` 対 `HEAD`) の変更ファイル一覧を計算する ― すなわち `candidate` から作られるPRが実際に持ち込むファイルそのもの。
+- 変更された各ファイルパスを、`.gitignore` が強制する実データパターン(`AIUsageReport*.csv`、`YYYYMM`・`YYYY-MM` 両形式の `*<yyyymm>.csv`、`data/`、`dashboard/public/data/`)、および PII・シークレットのファイル名パターン(`user_mapping.*`、`copilot_user_mapping*`、`internal_org_chart.*`、`secrets.*`、`credentials.json` 等)と照合する。
+- 併せて `runSecretScan()` を再実行し、ファイル内容ベースのシークレット検知も行う。
+- 何か検出された場合は非ゼロで終了し、違反ファイルとマッチしたルールを全て出力する。候補差分に実データファイルもハードコードされたシークレットも一切無いと確認できた場合のみ exit 0。
+
+```bash
+npm run upstream:audit                              # HEAD vs upstream/main (デフォルト)
+npm run upstream:audit -- upstream/main my-branch    # base/candidateを明示指定
+```
+
+非ゼロ終了は必ずハードブロッカーとして扱うこと ― これに合格するまでupstreamへのpushやPR作成を行ってはならない。
