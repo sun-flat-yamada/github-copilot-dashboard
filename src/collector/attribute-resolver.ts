@@ -6,6 +6,7 @@ export interface ResolvedUserAttribute {
   department: string;
   costCenterOverride?: string;
   notes?: string;
+  tags?: string[];
 }
 
 export class AttributeResolver {
@@ -55,7 +56,8 @@ export class AttributeResolver {
       }
     }
 
-    // 2. CSV形式のパース試行 (ヘッダー: github_user,display_name,department,cost_center_override,notes)
+    // 2. CSV形式のパース試行 (ヘッダー: github_user,display_name,department,cost_center_override,notes,tags)
+    //    tags列は ";" 区切りで複数値を1セルに格納する (例: "契約社員;リモート")
     try {
       const lines = raw.split(/\r?\n/).filter((l) => l.trim().length > 0);
       if (lines.length > 0) {
@@ -65,6 +67,7 @@ export class AttributeResolver {
         const deptIdx = headers.indexOf('department');
         const ccIdx = headers.indexOf('cost_center_override');
         const notesIdx = headers.indexOf('notes');
+        const tagsIdx = headers.indexOf('tags');
 
         const startIndex = userIdx >= 0 ? 1 : 0;
         for (let i = startIndex; i < lines.length; i++) {
@@ -72,12 +75,21 @@ export class AttributeResolver {
           const githubUser = cols[userIdx >= 0 ? userIdx : 0];
           if (!githubUser) continue;
 
+          const tagsRaw = tagsIdx >= 0 ? cols[tagsIdx] : cols[5];
+          const tags = tagsRaw
+            ? tagsRaw
+                .split(';')
+                .map((t) => t.trim())
+                .filter((t) => t.length > 0)
+            : undefined;
+
           this.mappings.set(githubUser.toLowerCase(), {
             github_user: githubUser,
             display_name: nameIdx >= 0 ? cols[nameIdx] : cols[1] || githubUser,
             department: deptIdx >= 0 ? cols[deptIdx] : cols[2] || '未分類 (Unassigned)',
             cost_center_override: ccIdx >= 0 ? cols[ccIdx] : cols[3],
             notes: notesIdx >= 0 ? cols[notesIdx] : cols[4],
+            tags: tags && tags.length > 0 ? tags : undefined,
           });
         }
       }
@@ -97,6 +109,8 @@ export class AttributeResolver {
     let department = mapped?.department || '未分類 (Unassigned)';
     let costCenterOverride = mapped?.cost_center_override;
     const notes = mapped?.notes;
+    // tagsはPII(個人特定情報)ではないためアノニマイズ対象外 (notesと同様の扱い)
+    const tags = mapped?.tags;
 
     // アノニマイズ（匿名化）モードの処理
     if (this.isAnonymize) {
@@ -114,6 +128,7 @@ export class AttributeResolver {
       department,
       costCenterOverride,
       notes,
+      tags,
     };
   }
 
