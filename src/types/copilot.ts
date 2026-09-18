@@ -172,6 +172,7 @@ export interface UserAttributeMapping {
   department?: string; // 任意仕訳グループ (部署/PJ)
   cost_center_override?: string;
   notes?: string;
+  tags?: string[]; // 自由入力の複数ラベル (例: ["契約社員", "リモート"])。CSVでは ";" 区切りの1セルで表現
 }
 
 // ==========================================
