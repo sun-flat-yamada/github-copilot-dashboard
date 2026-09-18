@@ -80,6 +80,19 @@ internal_org_chart.*
 data/
 dashboard/public/data/
 
+# Monthly Usage Report CSV exports staged locally for 'npm run report:import'
+# (real billing/usage data with PII; must never be committed to main).
+# Intentionally NOT root-anchored: 'npm run report:import' examples stage files
+# under subdirectories too (e.g. ./downloads/copilot-usage-2026-08.csv), so these
+# patterns must match at any depth.
+AIUsageReport*.csv
+*usage_report*.csv
+*usage-report*.csv
+# Any filename ending in a 6-digit YYYYMM before .csv (e.g. foo_202608.csv)
+*[0-9][0-9][0-9][0-9][0-9][0-9].csv
+# Any filename ending in a hyphenated YYYY-MM before .csv (e.g. copilot-usage-2026-08.csv)
+*[0-9][0-9][0-9][0-9]-[0-9][0-9].csv
+
 # =================================================================
 # Logs, Temp & OS / Editor Metadata
 # =================================================================
