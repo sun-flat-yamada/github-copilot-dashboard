@@ -26,6 +26,10 @@
 - `COPILOT_READ_TOKEN`:
   - GitHub Enterprise または対象Orgの管理者権限を持つPersonal Access Token (PAT) または GitHub App。
   - ※ モックモード (`MOCK_MODE=true`) 実行時は未設定でも動作可能。実データ運用でも、`COPILOT_READ_TOKEN`/`COPILOT_ENTERPRISE`/`COPILOT_ORGS` が未設定、または権限(Enterprise Owner/Org Admin)不足の場合でもパイプラインは中断しなくなった。詳細は[2.3節](#23-copilot-metricsseats-の認証情報が無い場合の動作)を参照。
+- `COPILOT_USER_MAPPING_PASSPHRASE` (オプション):
+  - `COPILOT_USER_MAPPING` の48KBサイズ上限を超える大規模ユーザーマッピングを扱うための、GPG暗号化ワークアラウンド用パスフレーズ。
+  - `copilot-data` ブランチの `data/config/copilot-user-mapping.json.gpg` を復号する際にのみ使用される。未設定、または対象ファイルが存在しない場合はこのステップ自体がスキップされ、通常どおり `COPILOT_USER_MAPPING`/`COPILOT_USER_MAPPING_BASE64` にフォールバックする。
+  - 詳細は [SDD-04 第6章: GPG暗号化ワークアラウンド](04_user_attribute_mapping_spec.ja.md#6-48kb超マッピング向け-gpg暗号化ワークアラウンド-オプション) を参照。
 
 #### 2.1.1 認証トークンの種別と付与権限 (Permissions)
 
@@ -85,6 +89,7 @@ GitHubの最新仕様に基づき、**Fine-grained Personal Access Token (推奨
 - `COPILOT_USER_MAPPING`:
   - ユーザー名、表示名、仕訳グループ、Cost Center上書き情報のJSON配列文字列。
   - 公開コミットには一切含めず、GitHubのリポジトリ設定（Settings > Secrets and variables > Actions > Variables）で登録。
+  - **48KBサイズ上限**: 値が48KB (49,152バイト) を超える場合はGitHub側で設定できない。全社員規模など大規模マッピングが必要な場合は [SDD-04 第6章](04_user_attribute_mapping_spec.ja.md#6-48kb超マッピング向け-gpg暗号化ワークアラウンド-オプション) のGPG暗号化ワークアラウンド(`COPILOT_USER_MAPPING_PASSPHRASE` Secret + `copilot-data` ブランチ経由の暗号化ファイル配布)を利用すること。この場合、ワークフローが実行時に自動復号し `COPILOT_USER_MAPPING_FILE` (復号済みファイルへのローカルパス、`$RUNNER_TEMP` 配下)を内部的に設定するため、管理者がこの変数を直接登録する必要はない。
 - `COPILOT_ENTERPRISE`: 対象のEnterpriseスラッグ（Enterprise一括集計時）。
 - `COPILOT_ORGS`: 対象のOrganizationスラッグ（カンマ区切り、複数Org対応）。
 - `COPILOT_COST_CENTER_BUDGETS`: `{ cost_center_id?, cost_center_name?, spending_limit_usd, free_tier_budget_usd }` のJSON配列。GitHub APIには予算上限を返すエンドポイントが存在しないため、実データ運用でCost Center別予算を表示するには管理者がこの値を宣言する必要がある。VariableまたはSecretのどちらでも設定可能。
@@ -107,10 +112,11 @@ permissions:
 1. チェックアウト (`main`)
 2. Node.js 22 セットアップ & 依存関係インストール (`npm ci`)
 3. 対象ブランチから既存データを復元(実データ運用時は `copilot-data`。モック実行はシミュレーションデータを毎回全量再生成するためスキップ)
-4. データ収集・集計スクリプト実行 (`npm run pipeline:run`)。Copilot Metrics/Seats の認証情報が0件でも正常終了する(2.3節参照)
-5. 新規データを対象ブランチへ保存: 実データ運用は `copilot-data` への追記コミット、モック運用は `copilot-data-mock` の force-pushによるオーファンブランチ再構築(履歴を蓄積しない)
-6. *(実データ運用のみ)* SPAダッシュボードのビルド (`npm run build`)
-7. *(実データ運用のみ)* `actions/upload-pages-artifact@v5` で静的アーティファクトをアップロード
-8. *(実データ運用のみ)* `actions/deploy-pages@v5` でGitHub Pagesへ公開
+4. *(オプション)* GPG暗号化ワークアラウンドによる大容量ユーザーマッピングの復号: `data/config/copilot-user-mapping.json.gpg` と `COPILOT_USER_MAPPING_PASSPHRASE` Secret が両方存在する場合のみ実行され、`$RUNNER_TEMP` 配下に復号後 `COPILOT_USER_MAPPING_FILE` を自動設定する(詳細は[SDD-04 第6章](04_user_attribute_mapping_spec.ja.md#6-48kb超マッピング向け-gpg暗号化ワークアラウンド-オプション)を参照)
+5. データ収集・集計スクリプト実行 (`npm run pipeline:run`)。Copilot Metrics/Seats の認証情報が0件でも正常終了する(2.3節参照)
+6. 新規データを対象ブランチへ保存: 実データ運用は `copilot-data` への追記コミット、モック運用は `copilot-data-mock` の force-pushによるオーファンブランチ再構築(履歴を蓄積しない)
+7. *(実データ運用のみ)* SPAダッシュボードのビルド (`npm run build`)
+8. *(実データ運用のみ)* `actions/upload-pages-artifact@v5` で静的アーティファクトをアップロード
+9. *(実データ運用のみ)* `actions/deploy-pages@v5` でGitHub Pagesへ公開
 
-> モック実行 (`MOCK_MODE=true`) はステップ5で意図的に終了する。ダッシュボードのビルド・デプロイは一切行われないため、本番のGitHub Pagesサイトがシミュレーションデータで上書きされることはない。
+> モック実行 (`MOCK_MODE=true`) はステップ6で意図的に終了する。ダッシュボードのビルド・デプロイは一切行われないため、本番のGitHub Pagesサイトがシミュレーションデータで上書きされることはない。

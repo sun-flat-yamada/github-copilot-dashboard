@@ -26,6 +26,10 @@
 - `COPILOT_READ_TOKEN`:
   - Personal Access Token (PAT) or GitHub App with administrative read permissions for GitHub Enterprise or target Organizations.
   - *Note*: Optional when running in mock mode (`MOCK_MODE=true`). Also optional for real-data mode: if `COPILOT_READ_TOKEN`/`COPILOT_ENTERPRISE`/`COPILOT_ORGS` are unset, or if the credential lacks Enterprise Owner/Org Admin permission, the pipeline no longer aborts — see [Section 2.3](#23-graceful-operation-without-copilot-metricsseats-credentials) below.
+- `COPILOT_USER_MAPPING_PASSPHRASE` (Optional):
+  - Passphrase for the GPG encryption workaround used when a large user mapping exceeds `COPILOT_USER_MAPPING`'s 48KB size limit.
+  - Used only to decrypt `data/config/copilot-user-mapping.json.gpg` from the `copilot-data` branch. If unset, or if that file does not exist, this decryption step is simply skipped and the pipeline falls back to `COPILOT_USER_MAPPING`/`COPILOT_USER_MAPPING_BASE64` as usual.
+  - See [SDD-04 Section 6: GPG Encryption Workaround](04_user_attribute_mapping_spec.md#6-gpg-encryption-workaround-for-mappings-exceeding-48kb-optional) for details.
 
 #### 2.1.1 Token Types and Permissions
 
@@ -85,6 +89,7 @@ When running in real-data mode (`MOCK_MODE` unset or `false`) without `COPILOT_E
 - `COPILOT_USER_MAPPING`:
   - JSON array string defining usernames, display names, departments, and cost center overrides.
   - Never committed to Git; configured via repository settings (**Settings** > **Secrets and variables** > **Actions** > **Variables**).
+  - **48KB size limit**: GitHub rejects values larger than 48 KB (49,152 bytes). For company-wide rosters that exceed this limit, use the GPG encryption workaround described in [SDD-04 Section 6](04_user_attribute_mapping_spec.md#6-gpg-encryption-workaround-for-mappings-exceeding-48kb-optional) (`COPILOT_USER_MAPPING_PASSPHRASE` Secret + encrypted file distributed via the `copilot-data` branch). In that case, the workflow decrypts the mapping at runtime and internally sets `COPILOT_USER_MAPPING_FILE` (a local path under `$RUNNER_TEMP`) — administrators do not need to set this variable themselves.
 - `COPILOT_ENTERPRISE`: Enterprise slug (for enterprise-wide aggregation).
 - `COPILOT_ORGS`: Comma-separated list of organization slugs (for multi-org setups).
 - `COPILOT_COST_CENTER_BUDGETS`: JSON array of `{ cost_center_id?, cost_center_name?, spending_limit_usd, free_tier_budget_usd }`. The GitHub API exposes no budget/spending-limit endpoint, so this must be declared manually to populate Cost Center budgets in real-data mode. Can be set as either a Variable or a Secret.
@@ -107,10 +112,11 @@ permissions:
 1. Checkout repository (`main`).
 2. Setup Node.js 22 & install dependencies (`npm ci`).
 3. Restore prior data from the target branch (`copilot-data` for real runs; skipped for mock runs, since simulated data is fully regenerated each time).
-4. Execute data pipeline runner (`npm run pipeline:run`) — completes successfully even with zero Copilot Metrics/Seats credentials (see Section 2.3).
-5. Push newly generated data to the target branch: incremental commit to `copilot-data` for real runs, or a force-pushed orphan reset of `copilot-data-mock` for mock runs (no historical accumulation of simulated data).
-6. *(Real-data runs only)* Build SPA dashboard (`npm run build`).
-7. *(Real-data runs only)* Upload static deployment artifact via `actions/upload-pages-artifact@v5`.
-8. *(Real-data runs only)* Publish to GitHub Pages via `actions/deploy-pages@v5`.
+4. *(Optional)* Decrypt a large user mapping via the GPG encryption workaround: runs only if both `data/config/copilot-user-mapping.json.gpg` and the `COPILOT_USER_MAPPING_PASSPHRASE` Secret are present, decrypting into `$RUNNER_TEMP` and setting `COPILOT_USER_MAPPING_FILE` automatically (see [SDD-04 Section 6](04_user_attribute_mapping_spec.md#6-gpg-encryption-workaround-for-mappings-exceeding-48kb-optional)).
+5. Execute data pipeline runner (`npm run pipeline:run`) — completes successfully even with zero Copilot Metrics/Seats credentials (see Section 2.3).
+6. Push newly generated data to the target branch: incremental commit to `copilot-data` for real runs, or a force-pushed orphan reset of `copilot-data-mock` for mock runs (no historical accumulation of simulated data).
+7. *(Real-data runs only)* Build SPA dashboard (`npm run build`).
+8. *(Real-data runs only)* Upload static deployment artifact via `actions/upload-pages-artifact@v5`.
+9. *(Real-data runs only)* Publish to GitHub Pages via `actions/deploy-pages@v5`.
 
-> Mock runs (`MOCK_MODE=true`) intentionally stop after step 5: they never build or deploy the dashboard, so the production GitHub Pages site is never overwritten with simulated data.
+> Mock runs (`MOCK_MODE=true`) intentionally stop after step 6: they never build or deploy the dashboard, so the production GitHub Pages site is never overwritten with simulated data.
