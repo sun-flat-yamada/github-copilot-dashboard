@@ -1,0 +1,136 @@
+import React from 'react';
+import {
+  DashboardAppMode,
+} from '../../../../src/types/copilot';
+import { ModeSwitcher } from '../ModeSwitcher';
+import { RepoInfo } from '../../hooks/useDashboardData';
+import {
+  Sparkles,
+  Info,
+  Star,
+  AlertCircle,
+  AlertTriangle,
+} from 'lucide-react';
+
+interface DashboardHeaderProps {
+  appMode: DashboardAppMode;
+  onModeChange: (mode: DashboardAppMode) => void;
+  availableReportsCount: number;
+  repoInfo: RepoInfo;
+  isStarred: boolean;
+  onToggleStar: () => void;
+  allIssuesCount: number;
+  hasErrors: boolean;
+  onOpenErrorModal: () => void;
+  onOpenAboutModal: () => void;
+}
+
+export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
+  appMode,
+  onModeChange,
+  availableReportsCount,
+  repoInfo,
+  isStarred,
+  onToggleStar,
+  allIssuesCount,
+  hasErrors,
+  onOpenErrorModal,
+  onOpenAboutModal,
+}) => {
+  return (
+    <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
+      <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3 sm:gap-6">
+        {/* ブランド & タイトル & Aboutボタン */}
+        <div className="flex items-center space-x-2.5 sm:space-x-3 flex-shrink-0 min-w-max">
+          <div className="p-2 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/20 flex-shrink-0">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div className="flex flex-col justify-center">
+            <div className="flex items-center space-x-1.5 sm:space-x-2">
+              <h1 className="text-sm sm:text-base font-bold text-white tracking-tight whitespace-nowrap">
+                GitHub Copilot Analytics
+              </h1>
+              <button
+                onClick={onOpenAboutModal}
+                className="p-1 rounded-lg text-slate-400 hover:text-indigo-300 hover:bg-slate-800 transition-colors flex items-center cursor-pointer flex-shrink-0"
+                title="システム情報・分析作成日時 (About)"
+                aria-label="About"
+              >
+                <Info className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <p className="text-[11px] sm:text-xs text-slate-400 hidden md:block whitespace-nowrap">
+              3-Axis Allocation (Org, Cost Center, User Mapping)
+            </p>
+          </div>
+        </div>
+
+        {/* 右側アクション (モード切替、リポジトリリンク、エラー通知) */}
+        <div className="flex items-center space-x-2 sm:space-x-3 text-xs min-w-0 flex-shrink justify-end">
+          <ModeSwitcher
+            currentMode={appMode}
+            onModeChange={onModeChange}
+            reportCount={availableReportsCount}
+          />
+
+          {/* 生成元 GitHub リポジトリリンク & Star (Forkセーフ・動的解決) */}
+          <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl shadow-sm flex-shrink-0">
+            <a
+              href={repoInfo.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center text-slate-400 hover:text-slate-100 hover:bg-slate-800 p-2 rounded-l-xl transition-all group cursor-pointer"
+              title={`GitHubリポジトリを開く: ${repoInfo.owner}/${repoInfo.name}\nURL: ${repoInfo.url}`}
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-slate-400 group-hover:text-indigo-400 transition-colors">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+              </svg>
+            </a>
+            <div className="w-px h-4 bg-slate-700" />
+            <button
+              onClick={onToggleStar}
+              className={`flex items-center justify-center p-2 rounded-r-xl transition-all group cursor-pointer ${
+                isStarred
+                  ? 'text-amber-400 bg-slate-800'
+                  : 'text-slate-400 hover:text-amber-400 hover:bg-slate-800'
+              }`}
+              title={isStarred ? 'Star on GitHub (Star済み)' : 'Star on GitHub'}
+              aria-label="Star on GitHub"
+            >
+              <Star className={`w-4 h-4 ${isStarred ? 'fill-amber-400 text-amber-400' : 'transition-colors'}`} />
+            </button>
+          </div>
+
+          {/* 異常検出 (Error / Warning) アイコンボタン */}
+          {allIssuesCount > 0 && (
+            <button
+              onClick={onOpenErrorModal}
+              className={`relative p-2 rounded-xl border transition-all flex items-center space-x-1.5 cursor-pointer shadow-md flex-shrink-0 ${
+                hasErrors
+                  ? 'bg-rose-950/70 border-rose-800 text-rose-400 hover:bg-rose-900/80 hover:border-rose-600 animate-pulse'
+                  : 'bg-amber-950/70 border-amber-800 text-amber-400 hover:bg-amber-900/80 hover:border-amber-600'
+              }`}
+              title="データ取得時の異常・エラー一覧を表示"
+            >
+              {hasErrors ? (
+                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+              ) : (
+                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
+              )}
+              <span className="hidden md:inline-block text-xs font-bold">
+                {hasErrors ? 'エラー検知' : '警告あり'}
+              </span>
+              <span
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
+                  hasErrors ? 'bg-rose-600 text-white' : 'bg-amber-500 text-slate-950'
+                }`}
+              >
+                {allIssuesCount}
+              </span>
+            </button>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+};
