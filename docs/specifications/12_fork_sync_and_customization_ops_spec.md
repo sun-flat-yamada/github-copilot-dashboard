@@ -297,7 +297,7 @@ npm run fork:verify
 ---
 
 ### Case 3: GitHub Actions Push Permission Error (403 Forbidden)
-- **Symptom**: `copilot-analysis-cron.yml` fails on "Commit and Push to 'copilot-data' branch" step with HTTP 403.
+- **Symptom**: `copilot-analysis-cron.yml` fails on "Commit and Push to data branch (Fork-Safe Storage)" step with HTTP 403.
 - **Cause**: Default Actions write permissions are disabled in fork settings.
 - **Remediation**:
   1. Go to repository **Settings** > **Actions** > **General**.
@@ -324,11 +324,35 @@ When submitting upstream contributions (general bug fixes, new model benchmarks,
    ```bash
    git checkout -b feature/my-improvement upstream/main
    ```
-2. **Zero-PII & Secret Audit**:
-   - Ensure no real employee names, emails, or tokens are included in code or test fixtures.
-   - Run `npm run secret-scan` (must exit 0).
+2. **Zero-PII, Secret & Real-Data Audit** (mandatory, both must exit 0):
+   - Ensure no real employee names, emails, tokens, or organization-specific usage/billing data are included in code, test fixtures, or docs.
+   - Run `npm run secret-scan` (generic secret/PII pattern scan across the whole working tree).
+   - Run `npm run upstream:audit -- upstream/main feature/my-improvement` (see [Section 6.1](#61-upstream-data-leak-guard-npm-run-upstreamaudit) below) — this specifically diffs the candidate branch against `upstream/main` and fails if any file in that diff matches a real-data protection pattern (`AIUsageReport*.csv`, `*<yyyymm>.csv`, `data/`, user-mapping/org-chart dumps, etc.), in addition to re-running the secret scan.
 3. **Open Pull Request**:
-   ```bash
-   git push origin feature/my-improvement
-   ```
-   Open a PR targeting `sun-flat-yamada/github-copilot-dashboard:main`.
+   - If this repository is a native GitHub fork of upstream, push the branch to `origin` and open a PR from the GitHub UI as usual.
+   - If this repository was created via the mirror-based procedure ([SDD-13](13_fork_restricted_environment_setup_guide.md)) and is therefore *not* fork-network-linked to upstream, a conventional cross-repo PR (`head: <this-repo>:branch` → `base: <upstream-repo>:main`) is not available. Instead, push the audited branch directly into the upstream repository using a personal (non-EMU) GitHub identity that has write access there (see [SDD-13 §5](13_fork_restricted_environment_setup_guide.md#5-known-limitations)), then open a same-repository PR:
+     ```bash
+     gh auth switch --user <personal-upstream-identity>
+     git push <upstream-remote-with-write-access> feature/my-improvement
+     gh pr create --repo sun-flat-yamada/github-copilot-dashboard \
+       --base main --head feature/my-improvement \
+       --title "..." --body "..."
+     gh auth switch --user <your-normal-fork-identity>
+     ```
+     Switch back to the normal EMU/fork-side identity immediately after opening the PR to avoid accidentally operating on the wrong repository context in subsequent commands.
+
+### 6.1 Upstream Data-Leak Guard (`npm run upstream:audit`)
+
+`scripts/audit-upstream-contribution.ts` is a dedicated guard against organization-specific data ever riding along in an upstream contribution — a stricter, contribution-scoped complement to the general-purpose `npm run secret-scan`:
+
+- It computes the file list of `git diff <base>...<candidate>` (default `upstream/main` vs `HEAD`) — i.e., exactly the files a PR built from `candidate` would introduce.
+- Every changed file path is checked against the same real-data patterns enforced by `.gitignore` (`AIUsageReport*.csv`, `*<yyyymm>.csv` in both `YYYYMM` and `YYYY-MM` forms, `data/`, `dashboard/public/data/`) plus PII/secret filename patterns (`user_mapping.*`, `copilot_user_mapping*`, `internal_org_chart.*`, `secrets.*`, `credentials.json`, etc.).
+- It also re-runs `runSecretScan()` for full-content secret detection.
+- Exits non-zero (and prints every violating file + matched rule) if anything is found; exits 0 only when the candidate diff is provably free of both real-data files and hardcoded secrets.
+
+```bash
+npm run upstream:audit                              # HEAD vs upstream/main (defaults)
+npm run upstream:audit -- upstream/main my-branch    # explicit base/candidate refs
+```
+
+Treat a non-zero exit as a hard blocker — never push to upstream or open the PR until this passes.

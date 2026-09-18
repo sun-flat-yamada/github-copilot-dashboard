@@ -173,7 +173,6 @@ function walkDir(dir: string, baseDir: string): string[] {
 
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name);
-    const relPath = path.relative(baseDir, fullPath);
 
     if (entry.isDirectory()) {
       if (IGNORED_DIRS.has(entry.name) || entry.name.startsWith('.')) {
