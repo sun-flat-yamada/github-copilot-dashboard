@@ -34,6 +34,8 @@
     "pipeline:run": "tsx src/cli/run-pipeline.ts",
     "pipeline:mock": "tsx src/cli/run-pipeline.ts --mock",
     "report:import": "tsx scripts/import-report.ts",
+    "mapping:encrypt": "tsx scripts/encrypt-user-mapping.ts",
+    "mapping:decrypt": "tsx scripts/decrypt-user-mapping.ts",
     "benchmark:update": "tsx scripts/update-benchmarks.ts",
     "test": "tsx --test src/tests/**/*.test.ts",
     "secret-scan": "tsx scripts/scan-secrets.ts",
