@@ -4,81 +4,42 @@
     "name": "github-copilot-dashboard",
     "is_fork": false
   },
-  "generated_at": "2026-09-17T14:15:35.314Z",
+  "generated_at": "2026-09-18T01:42:37.666Z",
   "data_retention_days": 365,
-  "available_months": [
-    "2026-09"
-  ],
-  "available_days": [
-    "2026-09-10",
-    "2026-09-09",
-    "2026-09-08",
-    "2026-09-07",
-    "2026-09-06",
-    "2026-09-05",
-    "2026-09-04"
-  ],
+  "available_months": [],
+  "available_days": [],
   "available_reports": [
     "2026-09",
     "2026-08"
   ],
   "default_scopes": {
-    "latest_day": "2026-09-10",
-    "latest_month": "2026-09",
-    "latest_report": "2026-09",
-    "latest_range": {
-      "start": "2026-08-12",
-      "end": "2026-09-10"
-    }
+    "latest_report": "2026-09"
   },
   "summary": {
-    "total_seats": 85,
-    "active_seats_30d": 77,
-    "idle_seats_30d": 8,
-    "total_monthly_spend_usd": 2975,
-    "idle_waste_spend_usd": 312
+    "total_seats": 0,
+    "active_seats_30d": 0,
+    "idle_seats_30d": 0,
+    "total_monthly_spend_usd": 0,
+    "idle_waste_spend_usd": 0
   },
   "issues": [
     {
-      "id": "issue-1789654535200-487l3",
-      "timestamp": "2026-09-17T14:15:35.200Z",
+      "id": "issue-1789695757639-a5kbx",
+      "timestamp": "2026-09-18T01:42:37.639Z",
       "severity": "warning",
-      "category": "rate_limit",
-      "target": "api:copilot/metrics",
-      "message": "GitHub REST API rate limit approaching threshold (Remaining: 120/5000 requests)",
-      "details": "X-RateLimit-Remaining: 120\nX-RateLimit-Reset: 1725960000\nResource: /enterprises/proud-corp/copilot/metrics\nRecommendation: Increase polling interval or utilize caching.",
-      "http_status": 200,
-      "affected_fields": [
-        "copilot_ide_chat"
-      ]
-    },
-    {
-      "id": "issue-1789654535200-1gvqp",
-      "timestamp": "2026-09-17T14:15:35.200Z",
-      "severity": "error",
       "category": "api_auth",
-      "target": "org:proud-internal-sys",
-      "message": "HTTP 403 Forbidden: Missing admin read permissions for organization \"proud-internal-sys\"",
-      "details": "Status: 403 Forbidden\nEndpoint: GET https://api.github.com/orgs/proud-internal-sys/copilot/metrics\nResponse: {\"message\":\"Must have admin rights to Repository or Organization to view Copilot Metrics.\",\"documentation_url\":\"https://docs.github.com/rest/copilot/copilot-metrics\"}\nImpact: Metrics for proud-internal-sys were skipped and marked as unavailable.",
-      "http_status": 403,
-      "affected_fields": [
-        "copilot_ide_code_completions",
-        "copilot_ide_chat",
-        "top_languages"
-      ]
+      "target": "config:copilot-metrics",
+      "message": "COPILOT_ENTERPRISE and COPILOT_ORGS are both unset — skipping live Copilot Metrics collection.",
+      "details": "Set COPILOT_ENTERPRISE (enterprise-wide) or COPILOT_ORGS (comma-separated org slugs) as a repository/organization Actions variable to enable live metrics collection. Monthly Usage Report (CSV import) and other credential-independent features remain unaffected."
     },
     {
-      "id": "issue-1789654535211-0s5mq",
-      "timestamp": "2026-09-17T14:15:35.211Z",
+      "id": "issue-1789695757639-2ge50",
+      "timestamp": "2026-09-18T01:42:37.639Z",
       "severity": "warning",
-      "category": "data_integrity",
-      "target": "api:billing/cost-centers/cc-ent-9009",
-      "message": "Cost Center \"cc-ent-9009\" (Enterprise-IT) contains 3 unmapped user assignments",
-      "details": "Warning: 3 users could not be resolved against active enterprise seats.\nCost Center ID: cc-ent-9009\nFallback: Assigned to Default-CostCenter.",
-      "http_status": 200,
-      "affected_fields": [
-        "cost_center"
-      ]
+      "category": "api_auth",
+      "target": "config:copilot-billing-seats",
+      "message": "COPILOT_ENTERPRISE and COPILOT_ORGS are both unset — skipping live Copilot Seats collection.",
+      "details": "Set COPILOT_ENTERPRISE (enterprise-wide) or COPILOT_ORGS (comma-separated org slugs) as a repository/organization Actions variable to enable live seat collection. Monthly Usage Report (CSV import) and other credential-independent features remain unaffected."
     }
   ]
 }
