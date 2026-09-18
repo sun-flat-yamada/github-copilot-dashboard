@@ -64,11 +64,16 @@ The system must allow seamless switching and analysis of usage data and costs ac
 - Injected at runtime via GitHub Actions **Repository / Organization Variable (`COPILOT_USER_MAPPING`)** or **Secret (`COPILOT_USER_MAPPING`)**.
 - Fallback gracefully to "Unassigned" and GitHub login handles when mappings are omitted.
 
-### FR-3: Multi-Scope Analysis Switching
-The aggregation engine and dashboard must support rapid switching between time scopes:
-- **Daily Scope**: Daily active users, activity status, and prorated daily expense for any selected date.
-- **Monthly Scope**: Calendar month (YYYY-MM) cumulative costs, MAU, and idle seat expenses.
-- **Custom Date Range Scope**: Trend curves, acceptance rates, and cumulative costs across any user-defined start and end dates.
+### FR-3: Multi-Source & Multi-Scope Analysis Switching
+The aggregation engine and dashboard must support rapid switching between data sources and time scopes:
+1. **Active Data Source Switching (`ActiveDataSelector`)**:
+   - **Live Metrics (API-Synced Auto Collection)**: Rolling past 1 year (12 months) and rolling past 30 days daily metrics.
+   - **Monthly Usage Report**: Immutable persisted monthly usage reports (CSV-derived).
+   - **User Upload File (On-demand)**: In-browser memory analysis of user-provided CSV/JSON reports (Zero-Leakage).
+2. **Time Scope Switching**:
+   - **Daily Scope**: Daily active users, activity status, and prorated daily expense for any selected date in the past 30 days.
+   - **Monthly Scope**: Calendar month (YYYY-MM) cumulative costs, MAU, and idle seat expenses for the past 12 rolling months.
+   - **Custom Date Range Scope**: Trend curves, acceptance rates, and cumulative costs across 30-day or 1-year windows.
 
 ### FR-4: Cost Optimization & Idle Seat Detection
 - Identify seats with no activity for $N$ days (defaults: 14 / 30 days) as "Idle Seats", quantifying wasted monthly and annualized costs.
@@ -79,14 +84,36 @@ The aggregation engine and dashboard must support rapid switching between time s
 - Support manual triggers via `workflow_dispatch`.
 - Built as a high-speed client-side Single Page Application (SPA).
 
+### FR-6: Multi-Tag AND Filtering (`TagFilterBar`)
+- Dynamically extract distinct tags from user group mapping `tags` attribute (e.g. `["Full-time", "Remote", "AI-Champion"]`) and permit multi-tag selection.
+- Apply **AND logic (must match all selected tags)** to dynamically re-aggregate KPI summary cards, group allocations, rankings, detail tables, and deep analytics.
+
+### FR-7: Single-Column Vertical Stack Layout & Progressive Disclosure
+- Enforce a strict **single-column vertical stack (`flex flex-col space-y-6 w-full`)**, prohibiting horizontal multi-column splits (2-3 columns).
+- Implement progressive disclosure via accordion sections: Block 0 (Executive Summary) is expanded by default, subsequent blocks start collapsed showing title, icon, and summary chips.
+- Provide global `[Expand All]` and `[Collapse All]` controls.
+
+### FR-8: 7 Dedicated Analysis Views Navigation (`ViewNavigation`)
+- Transition from legacy mode switching to 7 dedicated purpose-built analysis views:
+  1. `overview` (Executive Overview)
+  2. `ranking` (Group & Individual Usage Rankings)
+  3. `users` (User Detail Table & Individual Trends)
+  4. `trend` (Usage & Acceptance Rate Trends)
+  5. `budget` (Cost Center Budget Tracking)
+  6. `deep_analysis` (Deep Diagnostics & Efficiency Modeling)
+  7. `model_radar` (AI Model Characteristic Benchmark Radar)
+- Dynamically enable or disable views according to the capabilities of the currently active data source.
+
 ---
 
 ## 4. Non-Functional Requirements
 
-### NFR-1: Fork-Safe Data Persistence (Orphan Branch & Append-Only)
+### NFR-1: Fork-Safe Data Persistence & Perpetual Accumulation (1-Year Rolling Scope)
 - Absolute zero commit conflicts when forks run `Sync Fork` or create PRs against upstream `main`.
 - Prohibit data commits to code branches (`main`).
-- Store data in a dedicated orphan branch (`copilot-data`) using immutable date-partitioned files (`data/raw/YYYY/MM/...`). Deploy to GitHub Pages via official artifact deployment (`actions/deploy-pages`).
+- Store data in a dedicated orphan branch (`copilot-data`) using immutable date-partitioned files with **perpetual unlimited accumulation**.
+- Present dashboard index (`index.json`) scoped to a **rolling 1-year window (past 12 months + past 30 days)**, backed by a pre-aggregated trend file (`trends/rolling-1year.json`) and monthly deep analysis archives (`deep-analysis/{YYYY-MM}.json`) to optimize SPA network payload and render latency.
+- Deploy to GitHub Pages via official artifact deployment (`actions/deploy-pages`).
 
 ### NFR-2: Security & Principle of Least Privilege
 - Restrict GitHub API credentials (Fine-grained PAT or GitHub App) to minimum required scopes (`copilot:read`, `enterprise_billing:read`, `org:read`).

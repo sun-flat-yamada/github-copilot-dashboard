@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   AnalysisScopeType,
-  DashboardAppMode,
+  DataSourceType,
   DataFetchIssue,
   IndexMetadata,
   MonthlyReportAggregatedData,
   ScopeAggregatedData,
+  GroupSummary,
 } from '../../../src/types/copilot';
 
 export interface RepoInfo {
@@ -15,30 +16,37 @@ export interface RepoInfo {
   isFork: boolean;
 }
 
-export function useDashboardData(appMode: DashboardAppMode) {
+export function useDashboardData(initialSource: DataSourceType = 'live_metrics') {
+  const [activeSource, setActiveSource] = useState<DataSourceType>(initialSource);
   const [indexMeta, setIndexMeta] = useState<IndexMetadata | null>(null);
+
+  // Live Metrics スコープ
   const [scopeType, setScopeType] = useState<AnalysisScopeType>('monthly');
   const [selectedKey, setSelectedKey] = useState<string>('2026-09');
-
   const [currentData, setCurrentData] = useState<ScopeAggregatedData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [noLiveData, setNoLiveData] = useState<boolean>(false);
 
-  // Live Metrics 用キャッシュ & 最新参照
+  // キャッシュ
   const currentDataRef = useRef<ScopeAggregatedData | null>(null);
   currentDataRef.current = currentData;
   const scopeDataCacheRef = useRef<Map<string, ScopeAggregatedData>>(new Map());
 
-  // Monthly Usage Report モード用ステート & キャッシュ & 最新参照
+  // Monthly Usage Report スコープ
   const [selectedReportMonth, setSelectedReportMonth] = useState<string>('2026-08');
   const [currentReportData, setCurrentReportData] = useState<MonthlyReportAggregatedData | null>(null);
   const [reportLoading, setReportLoading] = useState<boolean>(false);
   const [reportError, setReportError] = useState<string | null>(null);
-
   const currentReportDataRef = useRef<MonthlyReportAggregatedData | null>(null);
   currentReportDataRef.current = currentReportData;
   const reportCacheRef = useRef<Map<string, MonthlyReportAggregatedData>>(new Map());
+
+  // User Upload スコープ (On-demand)
+  const [uploadedData, setUploadedData] = useState<MonthlyReportAggregatedData | null>(null);
+
+  // タグANDフィルター
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   // 生成元 GitHub リポジトリ情報 (Fork セーフ・動的解決)
   const repoInfo: RepoInfo = useMemo(() => {
@@ -50,7 +58,6 @@ export function useDashboardData(appMode: DashboardAppMode) {
         isFork: !!indexMeta.repository.is_fork,
       };
     }
-    // GitHub Pages ホスト名から自動判定 (<owner>.github.io/<repo>/)
     if (typeof window !== 'undefined' && window.location.hostname.endsWith('.github.io')) {
       const owner = window.location.hostname.replace(/\.github\.io$/, '');
       const pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -75,7 +82,7 @@ export function useDashboardData(appMode: DashboardAppMode) {
     return indexMeta?.available_reports || ['2026-09', '2026-08'];
   }, [indexMeta]);
 
-  // 全体の異常一覧 (indexMeta と currentData から統合)
+  // 全体の異常一覧
   const allIssues: DataFetchIssue[] = useMemo(() => {
     const map = new Map<string, DataFetchIssue>();
     for (const issue of indexMeta?.issues || []) {
@@ -97,8 +104,7 @@ export function useDashboardData(appMode: DashboardAppMode) {
       const meta = (await res.json()) as IndexMetadata;
       setIndexMeta(meta);
 
-      // デフォルトスコープの適用
-      const defaultMonth = meta.default_scopes.latest_month;
+      const defaultMonth = meta.default_scopes.latest_month || meta.available_months?.[0];
       if (defaultMonth) {
         setSelectedKey(defaultMonth);
         setScopeType('monthly');
@@ -107,7 +113,6 @@ export function useDashboardData(appMode: DashboardAppMode) {
         setLoading(false);
       }
 
-      // デフォルトレポート月の適用
       const defaultReport = meta.default_scopes.latest_report || meta.available_reports?.[0];
       if (defaultReport) {
         setSelectedReportMonth(defaultReport);
@@ -122,11 +127,10 @@ export function useDashboardData(appMode: DashboardAppMode) {
     loadIndex();
   }, [loadIndex]);
 
-  // 2. 選択スコープ (Live Metrics) のデータ取得
+  // 2. Live Metrics データの取得
   useEffect(() => {
-    if (!indexMeta || noLiveData || !selectedKey || appMode !== 'live_metrics') return;
+    if (!indexMeta || noLiveData || !selectedKey) return;
 
-    // すでに同一スコープのデータがロード済みの場合は再フェッチをスキップ（モード切替時の画面ちらつき防止）
     if (
       currentDataRef.current?.scope_key === selectedKey &&
       currentDataRef.current?.scope_type === scopeType
@@ -186,18 +190,16 @@ export function useDashboardData(appMode: DashboardAppMode) {
     return () => {
       isCancelled = true;
     };
-  }, [scopeType, selectedKey, appMode, indexMeta, noLiveData]);
+  }, [scopeType, selectedKey, indexMeta, noLiveData]);
 
-  // 3. Monthly Usage Report データの取得 (無限ループ抑止・インメモリキャッシュ・レースコンディション防止)
+  // 3. Monthly Usage Report データの取得
   useEffect(() => {
     if (!selectedReportMonth) return;
 
-    // A. 既にステートに該当月がセットされている場合は何もしない（サーバー取得・ローカル読込問わずスキップ）
     if (currentReportDataRef.current?.report_month === selectedReportMonth) {
       return;
     }
 
-    // B. キャッシュに存在する場合は即時反映（ネットワーク通信・スピナーなし）
     const cached = reportCacheRef.current.get(selectedReportMonth);
     if (cached) {
       setCurrentReportData(cached);
@@ -241,31 +243,229 @@ export function useDashboardData(appMode: DashboardAppMode) {
     };
   }, [selectedReportMonth]);
 
-  const handleReportLoadedClientSide = useCallback((data: MonthlyReportAggregatedData) => {
-    reportCacheRef.current.set(data.report_month, data);
-    setCurrentReportData(data);
-    setSelectedReportMonth(data.report_month);
+  // アップロードファイル読み込みハンドラー
+  const handleUploadFileLoaded = useCallback((data: MonthlyReportAggregatedData) => {
+    setUploadedData(data);
+    setActiveSource('user_upload');
   }, []);
 
+  const handleClearUploadedFile = useCallback(() => {
+    setUploadedData(null);
+    if (activeSource === 'user_upload') {
+      setActiveSource('live_metrics');
+    }
+  }, [activeSource]);
+
+  // タグ操作ハンドラー
+  const handleToggleTag = useCallback((tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  }, []);
+
+  const handleClearTags = useCallback(() => {
+    setSelectedTags([]);
+  }, []);
+
+  // アクティブなレポートデータ (monthly_report または user_upload)
+  const activeReportData = useMemo(() => {
+    if (activeSource === 'user_upload') {
+      return uploadedData;
+    }
+    return currentReportData;
+  }, [activeSource, uploadedData, currentReportData]);
+
+  // 利用可能な全タグの抽出 (現在のデータソースから)
+  const availableTags = useMemo(() => {
+    const tagSet = new Set<string>();
+
+    if (activeSource === 'live_metrics' && currentData?.users) {
+      for (const u of currentData.users) {
+        for (const t of u.tags || []) {
+          if (t) tagSet.add(t);
+        }
+      }
+    } else if (activeReportData?.user_details) {
+      for (const u of activeReportData.user_details) {
+        for (const t of u.tags || []) {
+          if (t) tagSet.add(t);
+        }
+      }
+    }
+
+    return Array.from(tagSet).sort();
+  }, [activeSource, currentData, activeReportData]);
+
+  // タグANDフィルターを適用した Live Metrics データ
+  const filteredCurrentData = useMemo<ScopeAggregatedData | null>(() => {
+    if (!currentData) return null;
+    if (selectedTags.length === 0) return currentData;
+
+    // AND条件 (選択された全タグを保持しているユーザーのみ抽出)
+    const filteredUsers = currentData.users.filter(
+      (u) => u.tags && selectedTags.every((t) => u.tags!.includes(t))
+    );
+    const matchingLogins = new Set(filteredUsers.map((u) => u.login.toLowerCase()));
+
+    const filteredProfiles = currentData.user_profiles?.filter((p) =>
+      matchingLogins.has(p.login.toLowerCase())
+    );
+
+    const activeUsers = filteredUsers.filter(
+      (u) => u.status === 'active' || u.status === 'low_active'
+    ).length;
+    const idleUsers = filteredUsers.filter(
+      (u) => u.status === 'idle' || u.status === 'never_used'
+    ).length;
+    const totalSpend = filteredUsers.reduce((sum, u) => sum + u.monthly_cost_usd, 0);
+    const idleWaste = filteredUsers
+      .filter((u) => u.status === 'idle' || u.status === 'never_used')
+      .reduce((sum, u) => sum + u.monthly_cost_usd, 0);
+
+    // グループ別再集計
+    const buildFilteredGroups = (field: 'department' | 'cost_center' | 'organization') => {
+      const res: Record<string, GroupSummary> = {};
+      for (const u of filteredUsers) {
+        const key = u[field] || 'Unassigned';
+        if (!res[key]) {
+          res[key] = {
+            group_name: key,
+            total_seats: 0,
+            active_seats: 0,
+            idle_seats: 0,
+            total_cost_usd: 0,
+            potential_savings_usd: 0,
+            active_ratio: 0,
+            acceptance_rate: 0.35,
+            total_suggestions: 0,
+            total_acceptances: 0,
+            total_chats: 0,
+            total_pr_summaries: 0,
+          };
+        }
+        res[key].total_seats += 1;
+        if (u.status === 'active' || u.status === 'low_active') res[key].active_seats += 1;
+        if (u.status === 'idle' || u.status === 'never_used') {
+          res[key].idle_seats += 1;
+          res[key].potential_savings_usd += u.monthly_cost_usd;
+        }
+        res[key].total_cost_usd += u.monthly_cost_usd;
+      }
+      for (const g of Object.values(res)) {
+        g.active_ratio = g.total_seats > 0 ? Number((g.active_seats / g.total_seats).toFixed(2)) : 0;
+        g.total_cost_usd = Number(g.total_cost_usd.toFixed(2));
+        g.potential_savings_usd = Number(g.potential_savings_usd.toFixed(2));
+      }
+      return res;
+    };
+
+    return {
+      ...currentData,
+      overview: {
+        ...currentData.overview,
+        total_seats: filteredUsers.length,
+        active_users: activeUsers,
+        idle_seats: idleUsers,
+        total_spend_usd: Number(totalSpend.toFixed(2)),
+        idle_waste_usd: Number(idleWaste.toFixed(2)),
+        active_ratio: filteredUsers.length > 0 ? Number((activeUsers / filteredUsers.length).toFixed(2)) : 0,
+      },
+      users: filteredUsers,
+      user_profiles: filteredProfiles,
+      by_department: buildFilteredGroups('department'),
+      by_cost_center: buildFilteredGroups('cost_center'),
+      by_organization: buildFilteredGroups('organization'),
+    };
+  }, [currentData, selectedTags]);
+
+  // タグANDフィルターを適用したレポートデータ
+  const filteredActiveReportData = useMemo<MonthlyReportAggregatedData | null>(() => {
+    if (!activeReportData) return null;
+    if (selectedTags.length === 0) return activeReportData;
+
+    const filteredDetails = activeReportData.user_details.filter(
+      (u) => u.tags && selectedTags.every((t) => u.tags!.includes(t))
+    );
+
+    const totalSpend = filteredDetails.reduce((sum, u) => sum + u.total_spend_usd, 0);
+    const totalRequests = filteredDetails.reduce((sum, u) => sum + u.total_requests, 0);
+
+    const buildFilteredReportGroups = (field: 'department' | 'cost_center' | 'organization') => {
+      const res: Record<string, GroupSummary> = {};
+      for (const u of filteredDetails) {
+        const key = u[field] || 'Unassigned';
+        if (!res[key]) {
+          res[key] = {
+            group_name: key,
+            total_seats: 0,
+            active_seats: 0,
+            idle_seats: 0,
+            total_cost_usd: 0,
+            potential_savings_usd: 0,
+            active_ratio: 1.0,
+            acceptance_rate: 0.35,
+            total_suggestions: 0,
+            total_acceptances: 0,
+            total_chats: 0,
+            total_pr_summaries: 0,
+          };
+        }
+        res[key].total_seats += 1;
+        res[key].active_seats += 1;
+        res[key].total_cost_usd += u.total_spend_usd;
+        res[key].total_suggestions += u.total_requests;
+      }
+      for (const g of Object.values(res)) {
+        g.total_cost_usd = Number(g.total_cost_usd.toFixed(2));
+      }
+      return res;
+    };
+
+    return {
+      ...activeReportData,
+      overview: {
+        ...activeReportData.overview,
+        total_net_spend_usd: Number(totalSpend.toFixed(2)),
+        total_requests: totalRequests,
+        total_active_users: filteredDetails.length,
+      },
+      user_details: filteredDetails,
+      by_department: buildFilteredReportGroups('department'),
+      by_cost_center: buildFilteredReportGroups('cost_center'),
+      by_organization: buildFilteredReportGroups('organization'),
+    };
+  }, [activeReportData, selectedTags]);
+
   return {
+    activeSource,
+    setActiveSource,
     indexMeta,
     scopeType,
     setScopeType,
     selectedKey,
     setSelectedKey,
-    currentData,
+    currentData: filteredCurrentData,
+    rawCurrentData: currentData,
     loading,
     error,
     noLiveData,
     selectedReportMonth,
     setSelectedReportMonth,
-    currentReportData,
+    currentReportData: filteredActiveReportData,
+    rawCurrentReportData: activeReportData,
     reportLoading,
     reportError,
+    uploadedData,
+    handleUploadFileLoaded,
+    handleClearUploadedFile,
     repoInfo,
     availableReports,
     allIssues,
     hasErrors,
-    handleReportLoadedClientSide,
+    // タグANDフィルター
+    availableTags,
+    selectedTags,
+    handleToggleTag,
+    handleClearTags,
   };
 }

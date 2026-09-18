@@ -24,9 +24,10 @@ Standard dashboard views (Live Metrics, Monthly Report, Model Radar) focus on ma
 
 ## 2. Feature Placement & Invocation (UI / UX Architecture)
 
-### 2.1 Global Navigation (`ModeSwitcher`)
-- Adds the 4th mode **"Deep Analytics"** (`deep_analysis`) to the header `ModeSwitcher`.
+### 2.1 Global Navigation (`ViewNavigation`)
+- Adds the dedicated **"Deep Analytics"** (`deep_analysis`) view to the top `ViewNavigation` bar.
 - Icon: `BrainCircuit`. One-click transition to the deep analytics hub.
+- Data Storage & Partitioning: Diagnostic metrics are persisted as monthly archives (`data/processed/deep-analysis/{YYYY-MM}.json`) on the `copilot-data` branch with perpetual accumulation, rapidly queryable through the rolling 1-year metadata index.
 
 ### 2.2 Contextual Deep-Links
 - **User Detail Table (`UserDetailTable`)**: "Deep Analysis" action button in each user row opens the view with that user preselected.

@@ -160,6 +160,7 @@ export interface UserUsageProfile {
   total_cost_usd: number;
   model_usage_totals: Record<string, number>;
   daily_history: UserModelDailyUsage[];
+  tags?: string[];
 }
 
 // ==========================================
@@ -195,6 +196,7 @@ export interface EnrichedUserSeat {
   days_inactive: number;
   status: UserSeatStatus;
   notes?: string;
+  tags?: string[];
   is_data_unavailable?: boolean;
   cost_center_error?: boolean;
 }
@@ -271,6 +273,8 @@ export interface ScopeAggregatedData {
 
 export type DashboardAppMode = 'live_metrics' | 'monthly_report' | 'model_radar' | 'deep_analysis';
 
+export type DataSourceType = 'live_metrics' | 'monthly_report' | 'user_upload';
+
 export interface MonthlyUsageReportRawRecord {
   date: string; // YYYY-MM-DD
   username: string; // GitHub login
@@ -323,6 +327,7 @@ export interface ReportUserDetail {
   primary_model: string;
   last_activity_date?: string;
   surface?: string;
+  tags?: string[];
 }
 
 export interface MonthlyReportAggregatedData {
@@ -356,9 +361,12 @@ export interface IndexMetadata {
   };
   generated_at: string;
   data_retention_days: number;
-  available_months: string[];
+  available_months: string[]; // 過去1年ローリング表示対象月 (最大12カ月)
+  all_recorded_months?: string[]; // 全蓄積月（上限なく記録された月一覧）
   available_days: string[];
   available_reports?: string[]; // e.g. ["2026-09", "2026-08"]
+  rolling_1year_trend_file?: string; // e.g. "trends/rolling-1year.json"
+  deep_analysis_months?: string[]; // ディープ分析用アーカイブが存在する月一覧
   default_scopes: {
     // ライブ Copilot Metrics/Seats データが1件も無い場合 (認証情報未設定・
     // Enterprise Owner権限なし等) は捏造せず undefined とする。

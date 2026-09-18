@@ -65,11 +65,16 @@ GitHub Copilot（Copilot Business / Copilot Enterprise）の企業導入が進�
 - GitHub Actionsの **Repository / Organization Variable (`COPILOT_USER_MAPPING`)**、または **Secret (`COPILOT_USER_MAPPING`)** として注入すること。
 - マッピングが存在しないユーザーは「未分類 (Unassigned)」またはGitHubのログインIDを用いて安全にフォールバックすること。
 
-### FR-3: 多様な分析スコープの切り替え
-ダッシュボードおよび集計エンジンは、以下の時間スコープを即座に切り替えて参照できなければならない：
-- **日次スコープ (Daily)**: 任意の日付における利用状況、アクティブ率、日割り費用。
-- **月次スコープ (Monthly)**: 暦月（YYYY-MM）における月間累計費用、MAU、遊休コスト。
-- **指定期間スコープ (Custom Date Range)**: 任意の開始日〜終了日における推移トレンド、受諾率の推移、累積コスト。
+### FR-3: 多様なデータソース & 分析スコープの切り替え
+ダッシュボードおよび集計エンジンは、以下のデータソースと時間スコープを即座に切り替えて参照できなければならない：
+1. **アクティブデータソース切り替え (`ActiveDataSelector`)**:
+   - **Live Metrics (API連携自動収集)**: 過去1年間（直近12カ月）および直近30日の継続蓄積データ。
+   - **Monthly Usage Report**: 永続化された確定月次レポート（CSV由来）。
+   - **User Upload File (On-demand)**: 手元のCSV/JSONファイルをブラウザ内メモリでのみ即時解析・可視化（Zero-Leakage）。
+2. **時間スコープ切り替え**:
+   - **日次スコープ (Daily)**: 直近30日以内の指定日における利用状況、アクティブ率、日割り費用。
+   - **月次スコープ (Monthly)**: 過去1年間（直近12カ月）の暦月における月間累計費用、MAU、遊休コスト。
+   - **指定期間スコープ (Custom Date Range)**: 直近30日間、または1年間の推移トレンド。
 
 ### FR-4: コスト最適化・遊休シート検出 (Idle Seat Detection)
 - 過去N日間（デフォルト: 14日/30日）アクティビティがないシートを「遊休シート（Idle Seat）」として検出し、無駄になっている月額コストおよび年間換算コストを可視化すること。
@@ -80,14 +85,36 @@ GitHub Copilot（Copilot Business / Copilot Enterprise）の企業導入が進�
 - 手動トリガー（`workflow_dispatch`）による即時更新にも対応すること。
 - クライアントサイド（ブラウザ）上で高速に動作するSPA（Single Page Application）として構築すること。
 
+### FR-6: 複数タグの AND フィルター (`TagFilterBar`)
+- ユーザー属性定義の `tags` 属性（例: `["正社員", "リモート", "AI推進"]`）からユニークなタグ一覧を抽出し、複数タグの選択を可能とすること。
+- フィルター条件は **AND 条件（選択した全タグに合致するユーザーのみ抽出）** とし、KPIカード、グループ配賦、ランキング、明細テーブル、ディープ分析の全集計母数を即座に再集計すること。
+
+### FR-7: 1カラム垂直スタックレイアウト & アコーディオン逐次開示
+- 画面レイアウトは原則 **1カラム垂直スタック (`flex flex-col space-y-6 w-full`)** を厳守し、カードやグラフの横並び分割（2〜3カラム）を原則禁止とすること。
+- 各分析セクションはアコーディオン構造とし、Block 0（サマリー）のみ常時展開、以降のブロックは初期折りたたみ表示（タイトル、アイコン、サマリーチップ）とすること。
+- グローバルな `[すべて展開]` / `[すべて折りたたむ]` コントロールを提供すること。
+
+### FR-8: 7種の分析ビュー切り替え (`ViewNavigation`)
+- モード切り替えから、分析目的に応じた 7 種の専用ビューへの切り替え構成とすること：
+  1. `overview` (総合概要)
+  2. `ranking` (グループ・利用量ランキング)
+  3. `users` (ユーザー別利用明細 & 個別推移)
+  4. `trend` (推移トレンド・日次受諾率)
+  5. `budget` (Cost Center 予算管理)
+  6. `deep_analysis` (ディープ分析・高度診断)
+  7. `model_radar` (AIモデル特性レーダー)
+- 選択されているアクティブデータソースの機能互換性に応じて、利用可能なビューを自動制御すること。
+
 ---
 
 ## 4. 非機能要件 (Non-Functional Requirements)
 
-### NFR-1: Fork非競合データ永続化 (Fork Isolation & Append-Only)
+### NFR-1: Fork非競合データ永続化 & 無期限蓄積・1年ローリング表示
 - リポジトリがForkされた際、本家（Upstream）とのGit同期（Sync Fork）やPull Request作成時に**コミット競合が絶対に発生しない**設計とすること。
-- ソースコードブランチ（`main`）にデータファイルをコミットしない。
-- データ保存は専用ブランチ（`copilot-data`）への追記（Append-Only日付パーティショニング）とし、GitHub Pagesへのデプロイは公式のPages Artifactデプロイを使用すること。
+- ソースコードブランチ（`main`）にデータファイルを一切コミットしない。
+- データ保存は専用ブランチ（`copilot-data`）への追記（Append-Only日付パーティショニング）とし、**データ蓄積は上限なく無期限に継続**すること。
+- ダッシュボード表示およびインデックス（`index.json`）のスコープは**過去1年（直近12カ月＋直近30日）をローリング提供**し、集約トレンドファイル（`trends/rolling-1year.json`）および月次ディープアーカイブ（`deep-analysis/{YYYY-MM}.json`）によりSPAのダウンロード負荷と描画速度を最適化すること。
+- GitHub Pagesへのデプロイは公式のPages Artifactデプロイを使用すること。
 
 ### NFR-2: セキュリティ & 最小権限
 - GitHub APIアクセスには GitHub Personal Access Token (Fine-grained PAT) または GitHub App を使用し、必要最小限の権限（`copilot:read`, `enterprise_billing:read`, `org:read`）のみを要求すること。
