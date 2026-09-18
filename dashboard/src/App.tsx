@@ -62,6 +62,9 @@ export const App: React.FC = () => {
   const [currentData, setCurrentData] = useState<ScopeAggregatedData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  // ライブメトリクス(Copilot Metrics/Seats API)データが1件も無い状態
+  // (認証情報未設定・Enterprise Owner権限なし等)。エラーではなく想定内の状態として扱う。
+  const [noLiveData, setNoLiveData] = useState<boolean>(false);
 
   // Monthly Usage Report モード用ステート
   const [selectedReportMonth, setSelectedReportMonth] = useState<string>('2026-08');
@@ -137,14 +140,25 @@ export const App: React.FC = () => {
         const meta = (await res.json()) as IndexMetadata;
         setIndexMeta(meta);
 
-        // デフォルトスコープの適用
+        // デフォルトスコープの適用 (ライブメトリクスデータが存在する場合のみ)
         const defaultMonth = meta.default_scopes.latest_month;
-        setSelectedKey(defaultMonth);
-        setScopeType('monthly');
+        if (defaultMonth) {
+          setSelectedKey(defaultMonth);
+          setScopeType('monthly');
+        } else {
+          // COPILOT_READ_TOKEN / COPILOT_ENTERPRISE / COPILOT_ORGS が未設定、または
+          // Enterprise Owner 権限が無い等でライブ利用データが1件も無い状態。
+          // Monthly Usage Report や AIモデルベンチマークなど、認証情報に依存しない
+          // 機能は影響を受けず引き続き利用できる。
+          setNoLiveData(true);
+          setLoading(false);
+        }
 
-        // デフォルトレポート月の適用
-        const defaultReport = meta.default_scopes.latest_report || meta.available_reports?.[0] || '2026-08';
-        setSelectedReportMonth(defaultReport);
+        // デフォルトレポート月の適用 (レポートが存在する場合のみ)
+        const defaultReport = meta.default_scopes.latest_report || meta.available_reports?.[0];
+        if (defaultReport) {
+          setSelectedReportMonth(defaultReport);
+        }
       } catch (e: any) {
         console.error('Error fetching index:', e);
         setError(e.message || 'Failed to initialize analytics index');
@@ -155,7 +169,10 @@ export const App: React.FC = () => {
 
   // 2. 選択スコープ (Live Metrics) のデータ取得
   useEffect(() => {
-    if (!selectedKey || appMode !== 'live_metrics') return;
+    // indexMeta のロード完了(初回)前、およびライブ利用データが1件も無い場合は
+    // 存在しないファイルへのフェッチを試みない (index.json ロード前の初期値による
+    // 競合フェッチも防止する)
+    if (!indexMeta || noLiveData || !selectedKey || appMode !== 'live_metrics') return;
 
     async function loadScopeData() {
       setLoading(true);
@@ -187,7 +204,7 @@ export const App: React.FC = () => {
     }
 
     loadScopeData();
-  }, [scopeType, selectedKey, appMode]);
+  }, [scopeType, selectedKey, appMode, indexMeta, noLiveData]);
 
   // 3. Monthly Usage Report データの取得
   useEffect(() => {
@@ -540,7 +557,7 @@ export const App: React.FC = () => {
               </div>
             </div>
 
-            {/* ローディング / エラー表示 */}
+            {/* ローディング / エラー / データなし表示 */}
             {loading && (
               <div className="flex flex-col items-center justify-center py-20 space-y-3">
                 <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
@@ -548,7 +565,18 @@ export const App: React.FC = () => {
               </div>
             )}
 
-            {error && !loading && (
+            {!loading && noLiveData && (
+              <div className="p-4 bg-indigo-950/40 border border-indigo-800/60 rounded-xl text-indigo-200 text-xs space-y-1">
+                <p className="font-semibold">📡 ライブ利用データはまだありません</p>
+                <p className="mt-1">
+                  COPILOT_READ_TOKEN / COPILOT_ENTERPRISE(または COPILOT_ORGS)を設定すると、Copilot Metrics /
+                  Seats の集計が表示されます。Enterprise Owner 権限が無い場合でも、Monthly Usage Report や AI
+                  モデルベンチマークなど、認証情報に依存しない機能は引き続きご利用いただけます。
+                </p>
+              </div>
+            )}
+
+            {error && !loading && !noLiveData && (
               <div className="p-4 bg-red-950/50 border border-red-800/80 rounded-xl text-red-200 text-xs">
                 <p className="font-semibold">データの読み込みに失敗しました:</p>
                 <p className="mt-1 font-mono">{error}</p>

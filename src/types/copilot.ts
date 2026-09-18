@@ -359,10 +359,12 @@ export interface IndexMetadata {
   available_days: string[];
   available_reports?: string[]; // e.g. ["2026-09", "2026-08"]
   default_scopes: {
-    latest_day: string;
-    latest_month: string;
+    // ライブ Copilot Metrics/Seats データが1件も無い場合 (認証情報未設定・
+    // Enterprise Owner権限なし等) は捏造せず undefined とする。
+    latest_day?: string;
+    latest_month?: string;
     latest_report?: string; // e.g. "2026-08"
-    latest_range: {
+    latest_range?: {
       start: string;
       end: string;
     };

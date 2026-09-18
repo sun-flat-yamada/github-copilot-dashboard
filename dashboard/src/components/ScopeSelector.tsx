@@ -98,7 +98,10 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = ({
 
         {scopeType === 'custom' && (
           <div className="flex items-center space-x-2 text-xs text-indigo-300 bg-indigo-950/50 border border-indigo-800/60 px-3 py-1.5 rounded-lg">
-            <span>期間: {indexMeta?.default_scopes.latest_range.start} 〜 {indexMeta?.default_scopes.latest_range.end}</span>
+            <span>
+              期間: {indexMeta?.default_scopes.latest_range?.start ?? '—'} 〜{' '}
+              {indexMeta?.default_scopes.latest_range?.end ?? '—'}
+            </span>
           </div>
         )}
       </div>

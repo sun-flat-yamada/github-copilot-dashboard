@@ -37,24 +37,36 @@ async function main() {
     `✅ Data Fetched: ${metrics.length} daily metric records, ${seats.length} seats, ${costCenters.length} cost centers.`
   );
 
-  if (metrics.length === 0 || seats.length === 0) {
-    console.error('❌ Error: No metrics or seats retrieved. Aborting pipeline.');
-    process.exit(1);
+  // 実データ運用でメトリクス/シートが1件も取得できない場合(認証情報未設定、または
+  // Enterprise Owner権限が無い等)でも、捏造データで埋めたりパイプライン全体を
+  // 中断したりはしない。Live Metrics スコープの生成のみスキップし、Monthly Usage
+  // Report (CSV) や AI Model Benchmark など認証情報に依存しない機能は継続して動作させる。
+  const hasLiveMetrics = metrics.length > 0;
+  if (!hasLiveMetrics) {
+    console.warn(
+      '⚠️  No Copilot metrics retrieved (COPILOT_READ_TOKEN / COPILOT_ENTERPRISE / COPILOT_ORGS may be unset, ' +
+        'or the credential lacks Enterprise Owner permission). Continuing without live metrics — ' +
+        'Monthly Usage Report (CSV) and other credential-independent features remain available.'
+    );
   }
 
   // 3. 料金計算・エンリッチメント
-  const latestMetricDate = metrics[metrics.length - 1].date; // YYYY-MM-DD
-  const [currentYear, currentMonth] = latestMetricDate.split('-').map(Number);
+  //    ライブメトリクスが1件も無い場合は、実行時点のUTC日付を基準日として利用する
+  //    (架空の日付を捏造するのではなく、シート在籍期間・非アクティブ判定にのみ使用)
+  const referenceDate = hasLiveMetrics ? metrics[metrics.length - 1].date : new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const [currentYear, currentMonth] = referenceDate.split('-').map(Number);
   const daysInCurrentMonth = BillingCalculator.getDaysInMonth(currentYear, currentMonth);
 
-  const billingCalc = new BillingCalculator(resolver, costCenters, latestMetricDate);
+  const billingCalc = new BillingCalculator(resolver, costCenters, referenceDate);
   const enrichedSeats = billingCalc.enrichAllSeats(seats, daysInCurrentMonth);
 
   console.log(`💡 Enriched ${enrichedSeats.length} user seats with cost calculation and idle analysis.`);
 
-  // 4. Rawパーティション保存 (最新日のRawデータを保存)
-  const latestMetric = metrics[metrics.length - 1];
-  storage.saveRawDailyData(latestMetric.date, latestMetric, seats, costCenters);
+  // 4. Rawパーティション保存 (最新日のRawデータが存在する場合のみ保存)
+  if (hasLiveMetrics) {
+    const latestMetric = metrics[metrics.length - 1];
+    storage.saveRawDailyData(latestMetric.date, latestMetric, seats, costCenters);
+  }
 
   // 取得時のエラー・警告一覧の取得
   const issues = client.getIssues();
@@ -96,62 +108,71 @@ async function main() {
 
   console.log(`💰 Prepared ${costCenterBudgets.length} cost center budget(s) and ${userProfiles.length} user profile(s).`);
 
-  // 5. 日次スコープ集計の生成
+  // 5〜7. 日次・月次・カスタム期間スコープ集計の生成
+  //       ライブメトリクスが1件も無い場合は集計対象データが存在しないためスキップする。
+  //       index.json の available_days/available_months は空配列のままとなり、
+  //       フロントエンドは「ライブ利用データなし」を明示的に表示する(空データの捏造はしない)。
   const availableDays: string[] = [];
-  // 直近7日分の日次データを生成
-  const recentMetrics = metrics.slice(-7);
-  for (const m of recentMetrics) {
-    const dailyData = aggregator.aggregateScope(
-      'daily',
-      m.date,
-      [m],
+  let monthKey: string | undefined;
+  let startDate: string | undefined;
+  let endDate: string | undefined;
+
+  if (hasLiveMetrics) {
+    // 5. 日次スコープ集計の生成 (直近7日分)
+    const recentMetrics = metrics.slice(-7);
+    for (const m of recentMetrics) {
+      const dailyData = aggregator.aggregateScope(
+        'daily',
+        m.date,
+        [m],
+        enrichedSeats,
+        { start: m.date, end: m.date, days_count: 1 },
+        issues,
+        costCenterBudgets,
+        userProfiles
+      );
+      storage.saveProcessedScope(dailyData);
+      availableDays.push(m.date);
+    }
+
+    // 6. 月次スコープ集計の生成
+    monthKey = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+    const monthlyMetrics = metrics.filter((m) => m.date.startsWith(monthKey!));
+    const monthlyData = aggregator.aggregateScope(
+      'monthly',
+      monthKey,
+      monthlyMetrics,
       enrichedSeats,
-      { start: m.date, end: m.date, days_count: 1 },
+      {
+        start: `${monthKey}-01`,
+        end: referenceDate,
+        days_count: daysInCurrentMonth,
+      },
       issues,
       costCenterBudgets,
       userProfiles
     );
-    storage.saveProcessedScope(dailyData);
-    availableDays.push(m.date);
+    storage.saveProcessedScope(monthlyData);
+
+    // 7. カスタム期間 (直近30日) スコープ集計の生成
+    startDate = metrics[0].date;
+    endDate = referenceDate;
+    const customData = aggregator.aggregateScope(
+      'custom',
+      'latest-30d',
+      metrics,
+      enrichedSeats,
+      {
+        start: startDate,
+        end: endDate,
+        days_count: metrics.length,
+      },
+      issues,
+      costCenterBudgets,
+      userProfiles
+    );
+    storage.saveProcessedScope(customData);
   }
-
-  // 6. 月次スコープ集計の生成
-  const monthKey = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
-  const monthlyMetrics = metrics.filter((m) => m.date.startsWith(monthKey));
-  const monthlyData = aggregator.aggregateScope(
-    'monthly',
-    monthKey,
-    monthlyMetrics,
-    enrichedSeats,
-    {
-      start: `${monthKey}-01`,
-      end: latestMetricDate,
-      days_count: daysInCurrentMonth,
-    },
-    issues,
-    costCenterBudgets,
-    userProfiles
-  );
-  storage.saveProcessedScope(monthlyData);
-
-  // 7. カスタム期間 (直近30日) スコープ集計の生成
-  const startDate = metrics[0].date;
-  const endDate = latestMetricDate;
-  const customData = aggregator.aggregateScope(
-    'custom',
-    'latest-30d',
-    metrics,
-    enrichedSeats,
-    {
-      start: startDate,
-      end: endDate,
-      days_count: metrics.length,
-    },
-    issues,
-    costCenterBudgets,
-    userProfiles
-  );
-  storage.saveProcessedScope(customData);
 
   // 8. Monthly Usage Report (CSV) の検出・集計・保存
   console.log('📑 Processing Monthly Usage Reports (CSV)...');
@@ -204,17 +225,16 @@ async function main() {
     },
     generated_at: new Date().toISOString(),
     data_retention_days: 365,
-    available_months: [monthKey],
+    available_months: monthKey ? [monthKey] : [],
     available_days: availableDays.reverse(),
-    available_reports: availableReportMonths.length > 0 ? availableReportMonths : undefined,
+    // 空の場合は undefined ではなく [] を返す (フロントエンドが不使用ハードコード値に
+    // フォールバックせず、正しく「レポートなし」を表示できるようにするため)
+    available_reports: availableReportMonths,
     default_scopes: {
-      latest_day: latestMetricDate,
+      latest_day: hasLiveMetrics ? referenceDate : undefined,
       latest_month: monthKey,
       latest_report: availableReportMonths[0],
-      latest_range: {
-        start: startDate,
-        end: endDate,
-      },
+      latest_range: startDate && endDate ? { start: startDate, end: endDate } : undefined,
     },
     summary: {
       total_seats: enrichedSeats.length,
