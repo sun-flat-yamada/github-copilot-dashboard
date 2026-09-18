@@ -147,6 +147,42 @@ export class ReportParser {
   }
 
   /**
+   * 日付文字列を "YYYY-MM-DD" (ゼロ埋め) に正規化する。
+   *
+   * CSV の日付列はエクスポート元やスプレッドシートでの再編集によって
+   * "2026-8-1" (ゼロ埋めなし) や "2026/08/01" (区切り文字違い) のような
+   * 表記ゆれを含み得る。これを未正規化のまま文字列比較 (localeCompare) で
+   * ソートすると、桁数が揃っていない月/日の値が本来の暦日順とは異なる
+   * 位置に並んでしまう (例: 未ゼロ埋めの "8" は "09"/"10"/"11"/"12" の
+   * 先頭文字より大きいため、8月のレコードが9月以降より後ろに並ぶ)。
+   * 認識できない形式は捏造せず null を返し、呼び出し側でフォールバックさせる。
+   */
+  private normalizeDateString(raw: string): string | null {
+    const trimmed = raw.trim();
+    const match = trimmed.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+    if (!match) return null;
+
+    const [, year, month, day] = match;
+    const monthNum = Number(month);
+    const dayNum = Number(day);
+    if (monthNum < 1 || monthNum > 12 || dayNum < 1 || dayNum > 31) return null;
+
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+
+  /**
+   * 日付文字列同士を実際の暦日として比較する (localeCompare の文字列比較に頼らない)。
+   * 両方が解釈可能な日付であれば実時刻で比較し、解釈できない場合のみ
+   * 文字列比較にフォールバックする。
+   */
+  private compareDateStrings(a: string, b: string): number {
+    const ta = Date.parse(a);
+    const tb = Date.parse(b);
+    if (!isNaN(ta) && !isNaN(tb)) return ta - tb;
+    return a.localeCompare(b);
+  }
+
+  /**
    * CSV テキストから生レコード配列を抽出
    */
   public parseRecords(csvText: string): MonthlyUsageReportRawRecord[] {
@@ -167,11 +203,27 @@ export class ReportParser {
       if (!username) continue;
 
       // 日付の取得 (date または report_time の先頭 YYYY-MM-DD)
+      // 表記ゆれは normalizeDateString() で "YYYY-MM-DD" ゼロ埋め形式に正規化する。
+      // 正規化できない場合のみ、既存互換のため生の先頭10文字にフォールバックする
+      // (値の捏造はしないが、この場合は日付順ソートが崩れ得るため警告を出す)。
       let date = '';
-      if (headerMap.date !== undefined && row[headerMap.date]) {
-        date = row[headerMap.date].substring(0, 10);
-      } else if (headerMap.report_time !== undefined && row[headerMap.report_time]) {
-        date = row[headerMap.report_time].substring(0, 10);
+      const rawDateValue =
+        headerMap.date !== undefined && row[headerMap.date]
+          ? row[headerMap.date]
+          : headerMap.report_time !== undefined && row[headerMap.report_time]
+            ? row[headerMap.report_time]
+            : '';
+
+      if (rawDateValue) {
+        const normalized = this.normalizeDateString(rawDateValue);
+        if (normalized) {
+          date = normalized;
+        } else {
+          console.warn(
+            `⚠️ [ReportParser] Unrecognized date format "${rawDateValue}" at row ${r + 1} — falling back to raw substring. Chronological sort order may be affected.`
+          );
+          date = rawDateValue.substring(0, 10);
+        }
       } else {
         date = new Date().toISOString().substring(0, 10);
       }
@@ -277,7 +329,7 @@ export class ReportParser {
     for (const [login, dayMap] of byUserByDate.entries()) {
       const resolved = this.resolver.resolve(login);
       const seat = seatsByLogin?.get(login.toLowerCase());
-      const dailyHistory = Array.from(dayMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+      const dailyHistory = Array.from(dayMap.values()).sort((a, b) => this.compareDateStrings(a.date, b.date));
 
       const modelTotals: Record<string, number> = {};
       let totalChats = 0;
@@ -352,7 +404,19 @@ export class ReportParser {
     const skuMap = new Map<string, { quantity: number; spend: number; unitType: string }>();
     const dailyMap = new Map<string, { requests: number; spend: number; users: Set<string> }>();
 
+    let skippedOutOfMonth = 0;
+
     for (const rec of records) {
+      // reportMonth (YYYY-MM) に属さないレコードは除外する。
+      // 呼び出し元 (例: ReportDropzoneModal の月自動推測) が複数月にまたがる
+      // CSV をそのまま渡した場合、前月分のレコードが当月レポートの
+      // daily_trends / 集計値に混入し、月内トレンドの意味が壊れるのを防ぐ。
+      // 値の捏造はせず、対象外レコードは黙って集計から除外するのみ。
+      if (rec.date && !rec.date.startsWith(reportMonth)) {
+        skippedOutOfMonth++;
+        continue;
+      }
+
       const login = rec.username;
       uniqueUsers.add(login);
 
@@ -464,6 +528,12 @@ export class ReportParser {
       }
     }
 
+    if (skippedOutOfMonth > 0) {
+      console.warn(
+        `⚠️ [ReportParser] Skipped ${skippedOutOfMonth} record(s) whose date falls outside reportMonth "${reportMonth}" (file: ${fileName}).`
+      );
+    }
+
     // グループサマリーへの変換ヘルパー
     const buildGroupSummaries = (
       map: Map<string, { seats: Set<string>; requests: number; spend: number }>
@@ -519,7 +589,7 @@ export class ReportParser {
         spend_usd: Number(stat.spend.toFixed(2)),
         active_users: stat.users.size,
       }))
-      .sort((a, b) => a.date.localeCompare(b.date));
+      .sort((a, b) => this.compareDateStrings(a.date, b.date));
 
     // ユーザー別明細リストの生成
     const userDetails: ReportUserDetail[] = Array.from(userSummaryMap.values())
