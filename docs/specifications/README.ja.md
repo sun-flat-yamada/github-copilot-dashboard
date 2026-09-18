@@ -64,6 +64,7 @@ flowchart TD
 | **SDD-11** | 深い分析専用ビュー仕様書 | [JA](11_deep_analysis_view_spec.ja.md) \| [EN](11_deep_analysis_view_spec.md) | AI活用非効率パターン診断、AEDP自律駆動深度評価 | 正式運用 (2026.09) |
 | **SDD-12** | Fork先変更反映 & 運用保守仕様書 | [JA](12_fork_sync_and_customization_ops_spec.ja.md) \| [EN](12_fork_sync_and_customization_ops_spec.md) | 本家同期手順 (Web UI/CLI)、2層ブランチ運用、健全性診断 | 正式運用 (2026.09) |
 | **SDD-13** | Fork制限環境向けセットアップ手順書 | [JA](13_fork_restricted_environment_setup_guide.ja.md) \| [EN](13_fork_restricted_environment_setup_guide.md) | EMU・ポリシー制限によりGitHub Forkを使えない組織向けのミラー複製手順 | 正式運用 (2026.09) |
+| **SDD-14** | 開発運用ワークフロー & Git Ops 仕様書 | [JA](14_development_workflow_and_git_ops_spec.ja.md) \| [EN](14_development_workflow_and_git_ops_spec.md) | 複数AIエージェント並行Worktree運用、Issue起票、PR作成、Rebaseマージ、権限制御 | 正式運用 (2026.09) |
 
 ---
 

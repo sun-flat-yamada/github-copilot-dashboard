@@ -7,4 +7,5 @@ This repository enforces strict security and zero-leakage standards for all auto
 2. **Zero PII**: Do not write real user names, emails, or internal department structures into files. Use `COPILOT_USER_MAPPING` via environment variables.
 3. **Run Secret Scan**: Always run `npm run secret-scan` before committing or finalizing changes.
 4. **Data Isolation**: Never place data files into `main` branch. Maintain fork-isolation on `copilot-data`. Verify with `npm run fork:verify`.
-5. **Quality Gate**: Ensure `npm run fork:verify && npm run typecheck && npm test && npm run build` pass cleanly.
+5. **Quality Gate**: Ensure `npm run fork:verify && npm run typecheck && npm test && npm run secret-scan && npm run build` pass cleanly.
+6. **Change Workflow & Worktree Isolation**: For multi-agent development, never edit directly on the root workspace; provision a sibling worktree (`../<repo>-worktrees/<branch>`). Follow the `Issue -> Sibling Worktree -> Quality Gate -> PR -> Rebase Merge` lifecycle. In upstream `main`, direct push is strictly forbidden. See `.agents/rules/development-workflow.md` and `docs/specifications/14_development_workflow_and_git_ops_spec.md`.
