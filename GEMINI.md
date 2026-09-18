@@ -31,3 +31,11 @@ All AI coding assistants (Antigravity, Gemini, Claude Code, Cursor, Copilot Work
   - `npm test`
   - `npm run secret-scan`
   - `npm run build`
+
+---
+
+## 🔄 5. Multi-Agent Worktree & Change Workflow
+- **Multi-Agent Isolation**: Never edit directly on the root workspace. Always provision an isolated sibling worktree (`../github-copilot-dashboard-worktrees/<branch>`) to prevent concurrency race conditions.
+- **Strict Lifecycle**: `Issue -> Sibling Worktree -> Local Quality Gate -> PR -> Rebase Merge -> Clean`.
+- **Permission Boundary**: Direct commits/pushes to `main` are strictly forbidden on upstream (`sun-flat-yamada`). On downstream forks, direct commits are permitted when operationally necessary.
+- **Reference**: See `.agents/rules/development-workflow.md` and `docs/specifications/14_development_workflow_and_git_ops_spec.md`.

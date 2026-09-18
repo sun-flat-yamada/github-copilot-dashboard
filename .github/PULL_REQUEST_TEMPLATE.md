@@ -2,14 +2,15 @@
 
 Briefly describe the intent of this pull request and what problem it solves.
 
+- Closes #
 - Relates to Issue: #
 
 ## Type of Change
 
-- [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
 - [ ] ✨ New feature (non-breaking change which adds functionality)
-- [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] 📝 Documentation update
+- [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
+- [ ] 📝 Documentation update / SDD specification change
+- [ ] ♻️ Refactoring (no functional change)
 - [ ] 🧪 Tests / CI/CD pipeline improvement
 - [ ] 🎨 UI / Design refactor
 
@@ -18,16 +19,19 @@ Briefly describe the intent of this pull request and what problem it solves.
 - 
 - 
 
-## Verification & Testing
+## Verification & Quality Gate (Mandatory)
 
-Explain how you tested these changes:
+All checks must pass before merging:
+- [ ] `npm run fork:verify` passes (Code-Data Decoupling confirmed, SDD-05)
 - [ ] `npm run typecheck` passes with zero errors
 - [ ] `npm test` passes with all tests green
+- [ ] `npm run secret-scan` exits 0 with zero detected secrets or PII
 - [ ] `npm run build` generates production bundle successfully
-- [ ] Verified locally with `npm run pipeline:mock` and `npm run dev`
+- [ ] (If applicable) Tested in isolated Sibling Worktree environment
 
-## Security & PII Checklist
+## Git Ops & Rebase Checklist
 
-- [ ] **Zero PII Leakage**: Verified that no personal user mappings, enterprise secrets, or PAT tokens are included in commits.
-- [ ] **Data Isolation**: Confirmed that raw/aggregated data changes do not break orphan branch (`copilot-data`) persistence.
-- [ ] **Specification Compliance**: Changes adhere to specifications in `docs/specifications/`.
+- [ ] **Rebase Completed**: Branch is rebased cleanly onto the latest target base (`git rebase origin/main`).
+- [ ] **Linear History**: Commits follow Conventional Commits (`feat:`, `fix:`, `docs:`, etc.) without merge commits.
+- [ ] **Data Isolation**: Zero files inside `data/` or `dashboard/public/data/` are staged or committed.
+- [ ] **Merge Strategy**: Standard **Rebase & Merge** (`gh pr merge <pr> --rebase --delete-branch`) will be used.

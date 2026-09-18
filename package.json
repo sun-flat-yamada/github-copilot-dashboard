@@ -41,7 +41,10 @@
     "secret-scan": "tsx scripts/scan-secrets.ts",
     "upstream:audit": "tsx scripts/audit-upstream-contribution.ts",
     "fork:verify": "tsx scripts/verify-fork-health.ts",
-    "fork:status": "tsx scripts/verify-fork-health.ts --quick"
+    "fork:status": "tsx scripts/verify-fork-health.ts --quick",
+    "worktree:add": "tsx scripts/worktree-manage.ts add",
+    "worktree:list": "tsx scripts/worktree-manage.ts list",
+    "worktree:clean": "tsx scripts/worktree-manage.ts clean"
   },
   "dependencies": {
     "clsx": "^2.1.1",
