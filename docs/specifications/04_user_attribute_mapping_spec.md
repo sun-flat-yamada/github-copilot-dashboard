@@ -153,14 +153,16 @@ printed, but encryption/decryption still proceeds (since the GPG layer is format
 1. **Prepare the mapping file locally** (JSON format from Section 3 is recommended).
 2. **Encrypt it with GPG**:
    ```bash
-   npm run mapping:encrypt -- <input-file> [output-file] [--push]
+   npm run mapping:encrypt -- <input-file> [output-file] [--push] [--passphrase-env <VAR>]
    # Example:
    npm run mapping:encrypt -- _sensitive-data/copilot-user-mapping.draft.json
    ```
-   GnuPG will interactively prompt you to set a passphrase (symmetric encryption / AES256).
+   By default, GnuPG will interactively prompt you to set a passphrase (symmetric encryption / AES256).
    Remember this passphrase — it is required in Step 4.
    Adding `--push` automatically commits and pushes the encrypted file as
    `data/config/<filename>.gpg` to the `copilot-data` branch (skipping Step 3).
+   For non-interactive/CI use, pass `--passphrase-env <ENV_VAR_NAME>` to supply the passphrase from an
+   environment variable instead of an interactive prompt (mirrors `mapping:decrypt`'s existing option).
 3. **(If not using `--push`) Commit the encrypted file to the `copilot-data` branch only.**
    **Never commit it to code branches** such as `main` / `fork/custom`.
    ```bash
@@ -179,7 +181,7 @@ printed, but encryption/decryption still proceeds (since the GPG layer is format
 
 | Command | Purpose |
 |---|---|
-| `npm run mapping:encrypt -- <input> [output] [--push]` | GPG-encrypt a mapping file (optionally auto-commit & push to `copilot-data`) |
+| `npm run mapping:encrypt -- <input> [output] [--push] [--passphrase-env <VAR>]` | GPG-encrypt a mapping file (optionally auto-commit & push to `copilot-data`; non-interactive CI mode available) |
 | `npm run mapping:decrypt -- <input.gpg> <output> [--passphrase-env <VAR>]` | Decrypt an encrypted file (non-interactive CI mode, or interactive local verification) |
 
 ### 6.5 Security Notes
