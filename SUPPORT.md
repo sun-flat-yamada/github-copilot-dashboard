@@ -6,8 +6,9 @@ Thank you for using **github-copilot-dashboard**!
 
 ### 1. Documentation & Specifications
 Before asking for support, please review:
-- [README.md](README.md): Setup, configuration, and environment variable guide.
-- [SDD Specifications](docs/specifications/): Detailed architectural designs, billing models, and data storage specifications.
+- [Documentation Portal](docs/README.md): Central hub for specifications, setup manuals, and model pricing.
+- [README.md](README.md): Overview and 4-step quick start guide.
+- [SDD Specifications](docs/specifications/README.md): Detailed architectural designs, billing models, and data storage specifications.
 
 ### 2. Frequently Asked Questions (FAQ)
 

@@ -144,10 +144,23 @@ function printReport(result: UpstreamAuditResult): void {
     : '\n⛔ NOT safe to contribute upstream. Fix the violations above first.\n');
 }
 
+function resolveDefaultBaseRef(): string {
+  const candidates = ['upstream/main', 'origin/main', 'main'];
+  for (const ref of candidates) {
+    try {
+      runGit(`rev-parse --verify ${ref}`);
+      return ref;
+    } catch {
+      // try next candidate
+    }
+  }
+  return 'main';
+}
+
 // CLI 直接実行時: npm run upstream:audit -- [baseRef] [candidateRef]
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename)) {
   const args = process.argv.slice(2).filter((a) => a !== '--');
-  const baseRef = args[0] || 'upstream/main';
+  const baseRef = args[0] || resolveDefaultBaseRef();
   const candidateRef = args[1] || 'HEAD';
 
   const result = runUpstreamContributionAudit(baseRef, candidateRef);
