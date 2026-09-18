@@ -160,3 +160,18 @@ git push origin main
 | GitHub Importer (`github.com/new/import`) | ✅ 完全 | ✅ 可能（ミラー複製と同じ読み書き境界） | UI完結でローカルgit不要。ただし公式ドキュメントは主にGitHub以外のホスティングからの移行を想定 |
 | 社内Enterprise/Organization管理者へのエスカレーション | N/A | ❌ 通常不可 | Organizationレベルのforkingポリシー(第2章2行目)が原因の場合のみ有効。EMU制限には効果なし |
 | 私用の個人(非EMU)アカウントでFork後、Ownership Transfer | ✅ 完全 | ⚠️ 未確認 | EMU管理下のOrganizationが外部アカウントからの転送を受け付けるかは非公開情報であり、ミラー複製より再現性が低い |
+
+---
+
+## 7. ミラー複製とupstreamとの関係性を可視化する
+
+ミラー複製によって作られたリポジトリは真に独立したリポジトリ（GitHub API上 `isFork: false`, `parent: null`）であるため、GitHubネイティブのFork UI ― リポジトリ名下の「forked from」リンク、fork networkグラフ、fork間の `compare` ビュー ― は一切表示されません。意図的な対応をしない限り、訪問者や将来のメンテナーはこのリポジトリがupstreamを追跡していることを知る手段がありません。これらの対応はいずれも `main`（[SDD-12 §2.2](12_fork_sync_and_customization_ops_spec.ja.md#22-例外-コード改修ui独自機能が必要な場合の2層ブランチ戦略)により、バイト単位でfast-forwardのみ可能なミラーとして維持する必要がある）には一切適用せず、`fork/custom`（本リポジトリのデフォルト/デプロイブランチ）またはリポジトリメタデータのみに適用してください:
+
+1. **リポジトリのDescription・Topics**（gitリスクゼロ ― ファイルではなくサーバー側メタデータ）:
+   ```powershell
+   gh repo edit <owner>/<repo> --description "Downstream deployment of <upstream-owner>/<upstream-repo> (mirror-based fork; see docs/specifications/13_fork_restricted_environment_setup_guide.md)." --add-topic fork
+   ```
+2. **`fork/custom` 限定のREADMEバナー**: `README.md`/`README.ja.md` 冒頭の言語切り替え行の直後に、upstreamリポジトリのURL、デュアルブランチモデル（`main`=ミラー、`fork/custom`=カスタマイズ）、`isFork` が `false` になる理由を簡潔に記載したブロック引用を追加する。言語切り替え行とタイトル行という、めったに変更されない2つの基準行の間に自己完結したブロックとして配置することで、将来upstreamのREADME変更を `fork/custom` へ同期する際のマージコンフリクト発生範囲を最小化する。
+3. **`main` には追加しない**: upstream自身が含んでいない内容を `main` に少しでも加えると、第4章の同期手順（および[SDD-12](12_fork_sync_and_customization_ops_spec.ja.md)）が前提とする `git merge upstream/main --ff-only` の成立条件が永久に崩れる。
+
+これは純粋にドキュメント・発見性のための取り決めであり、git内部動作・Actions・Pagesの挙動には一切影響しない。
