@@ -88,6 +88,17 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
     return Array.from(set);
   }, [reportData]);
 
+  // 日別消費トレンド (日付昇順に防御的に再ソート)
+  // バックエンド (JSON) 側のデータ品質に依存せず、表示側でも常に暦日順を保証する。
+  const sortedDailyTrends = useMemo(() => {
+    return [...reportData.daily_trends].sort((a, b) => {
+      const ta = Date.parse(a.date);
+      const tb = Date.parse(b.date);
+      if (!isNaN(ta) && !isNaN(tb)) return ta - tb;
+      return a.date.localeCompare(b.date);
+    });
+  }, [reportData]);
+
   // フィルタ・ソートされたユーザー明細
   const filteredUsers = useMemo(() => {
     return reportData.user_details
@@ -444,7 +455,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
           </h3>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={reportData.daily_trends}>
+              <LineChart data={sortedDailyTrends}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                 <XAxis dataKey="date" stroke="#64748b" tickFormatter={(v) => v.substring(8)} textAnchor="middle" />
                 <YAxis yAxisId="left" stroke="#64748b" />

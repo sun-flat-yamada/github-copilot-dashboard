@@ -126,4 +126,46 @@ describe('ReportParser (Monthly Usage Report CSV)', () => {
     const parser = new ReportParser();
     assert.deepStrictEqual(parser.buildUserProfiles([]), []);
   });
+
+  it('normalizes unpadded date values and keeps daily_trends in true chronological order', () => {
+    const parser = new ReportParser();
+    // "2026-9-5" (ゼロ埋めなし) を混在させる。正規化・実日付比較なしの単純な文字列ソート
+    // (旧実装) だと "2026-9-5" は "2026-09-10" より後ろに並んでしまう(実際は9/5の方が早い)。
+    const csv = `date,username,quantity,net_amount
+2026-09-10,dev_alice,4,0.16
+2026-9-5,dev_alice,5,0.20
+2026-09-02,dev_alice,3,0.12
+`;
+    const records = parser.parseRecords(csv);
+    // 表記ゆれが "YYYY-MM-DD" ゼロ埋め形式に正規化されていること
+    assert.strictEqual(records[1].date, '2026-09-05');
+
+    const aggregated = parser.aggregate(records, '2026-09', 'unpadded-day.csv');
+    const dates = aggregated.daily_trends.map((t) => t.date);
+    assert.deepStrictEqual(dates, ['2026-09-02', '2026-09-05', '2026-09-10']);
+  });
+
+  it('excludes records outside reportMonth from aggregation and daily_trends (prevents cross-month contamination)', () => {
+    const parser = new ReportParser();
+    // ReportDropzoneModal の月自動推測などで、複数月にまたがる CSV がそのまま
+    // 渡されるケースを想定 (前月分レコードが混入するシナリオ)。
+    const csv = `date,username,quantity,net_amount
+2026-08-28,dev_alice,10,0.40
+2026-08-29,dev_alice,10,0.40
+2026-09-01,dev_alice,5,0.20
+2026-09-02,dev_alice,5,0.20
+`;
+    const records = parser.parseRecords(csv);
+    assert.strictEqual(records.length, 4);
+
+    const aggregated = parser.aggregate(records, '2026-09', 'cross-month.csv');
+
+    // 8月分の2件は集計から除外され、9月分の2件のみが反映される
+    assert.strictEqual(aggregated.overview.total_requests, 10); // 5 + 5 (8月分の20は含まれない)
+    assert.strictEqual(aggregated.overview.total_net_spend_usd, 0.4); // 0.20 + 0.20
+
+    const dates = aggregated.daily_trends.map((t) => t.date);
+    assert.deepStrictEqual(dates, ['2026-09-01', '2026-09-02']);
+    assert.ok(!dates.some((d) => d.startsWith('2026-08')));
+  });
 });
