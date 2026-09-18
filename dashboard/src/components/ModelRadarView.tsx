@@ -56,85 +56,19 @@ import {
   HelpCircle,
 } from 'lucide-react';
 
-import { normalizeModelId } from '../../../src/processor/benchmark-evaluator';
 import { RadarTableOfContents } from './RadarTableOfContents';
 import { ModelSelectorSidebar, SidebarDisplayMode } from './ModelSelectorSidebar';
 
-export interface ModelUsageStat {
-  modelId: string;
-  requests: number;
-  percentage: number;
-  hasUsage: boolean;
-}
+import {
+  ModelUsageStat,
+  computeModelUsage,
+  getTopUsageModelIds,
+} from './radar/radar-utils';
+import { PRESETS } from './radar/radar-constants';
+import { RadarDocReferences } from './radar/RadarDocReferences';
 
-/**
- * 組織内・分析対象データの実績集計 (未利用モデルも必ず 0% として保持)
- */
-export function computeModelUsage(
-  dataset: BenchmarkDataset | null,
-  aggregatedData?: ScopeAggregatedData | null,
-  monthlyReportData?: MonthlyReportAggregatedData | null
-): Record<string, ModelUsageStat> {
-  const rawCounts: Record<string, number> = {};
-  let totalRequests = 0;
-
-  // A. Live Metrics (aggregatedData) から集計
-  if (aggregatedData?.user_profiles && aggregatedData.user_profiles.length > 0) {
-    for (const p of aggregatedData.user_profiles) {
-      if (p.model_usage_totals) {
-        for (const [rawModel, count] of Object.entries(p.model_usage_totals)) {
-          const normId = normalizeModelId(rawModel);
-          rawCounts[normId] = (rawCounts[normId] || 0) + count;
-          totalRequests += count;
-        }
-      }
-    }
-  }
-
-  // B. Monthly Report (monthlyReportData) から集計 (Live Metricsが空または未連携の場合の補完)
-  if (totalRequests === 0 && monthlyReportData?.model_breakdown) {
-    for (const m of monthlyReportData.model_breakdown) {
-      const normId = normalizeModelId(m.model_name);
-      rawCounts[normId] = (rawCounts[normId] || 0) + m.total_requests;
-      totalRequests += m.total_requests;
-    }
-  }
-
-  const result: Record<string, ModelUsageStat> = {};
-  if (!dataset) return result;
-
-  for (const model of dataset.models) {
-    const count = rawCounts[model.id] || 0;
-    const pct = totalRequests > 0 ? Number(((count / totalRequests) * 100).toFixed(1)) : 0;
-    result[model.id] = {
-      modelId: model.id,
-      requests: count,
-      percentage: pct,
-      hasUsage: count > 0,
-    };
-  }
-
-  return result;
-}
-
-/**
- * 実績利用数上位のモデルIDリストを取得 (デフォルトTop3、データなし/0件時は空配列)
- */
-export function getTopUsageModelIds(
-  dataset: BenchmarkDataset,
-  usageStats: Record<string, ModelUsageStat>,
-  limit = 3
-): string[] {
-  const activeModels = dataset.models
-    .filter((m) => (usageStats[m.id]?.requests || 0) > 0)
-    .sort((a, b) => (usageStats[b.id]?.requests || 0) - (usageStats[a.id]?.requests || 0));
-
-  if (activeModels.length === 0) {
-    return [];
-  }
-
-  return activeModels.slice(0, limit).map((m) => m.id);
-}
+export { computeModelUsage, getTopUsageModelIds, PRESETS };
+export type { ModelUsageStat };
 
 interface ModelRadarViewProps {
   initialSelectedModelId?: string;
@@ -142,76 +76,6 @@ interface ModelRadarViewProps {
   aggregatedData?: ScopeAggregatedData | null;
   monthlyReportData?: MonthlyReportAggregatedData | null;
 }
-
-// プリセット定義 (2026年 GitHub Copilot公式モデル・カテゴリ別・メーカー別)
-export const PRESETS = [
-  {
-    id: 'flagship-2026',
-    name: '🌟 2026上 旗艦4選',
-    description: 'Claude Opus 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3 (2026年上期 各社最前線フラッグシップ — Powerful Tier 代表スナップショット)',
-    modelIds: ['claude-opus-5', 'gpt-6-astra', 'gemini-3-8-flash', 'kimi-k3'],
-  },
-  {
-    id: 'practical-high-value',
-    name: '💡 実用性能で高コスパ',
-    description: 'Claude Sonnet 5 / Gemini 3.8 Flash / GPT-5.6 Luna / Kimi K2.7 Code (実用コーディング性能と抜群の費用対効果を両立)',
-    modelIds: ['claude-sonnet-5', 'gemini-3-8-flash', 'gpt-5-6-luna', 'kimi-k2-7-code'],
-  },
-  {
-    id: 'recommended-code-review',
-    name: '🔍 コードレビュー利用に推奨',
-    description: 'Claude Opus 5 / Claude Sonnet 5 / Gemini 3.8 Flash (最高水準の推論・SWE性能を維持したコスト別上位3選)',
-    modelIds: ['claude-opus-5', 'claude-sonnet-5', 'gemini-3-8-flash'],
-  },
-  {
-    id: 'recommended-codebase-analysis',
-    name: '📂 コードベース分析に推奨',
-    description: 'Claude Opus 5 / Claude Sonnet 5 / Gemini 3.8 Flash (1Mコンテキスト・大域的設計把握のコスト別上位3選)',
-    modelIds: ['claude-opus-5', 'claude-sonnet-5', 'gemini-3-8-flash'],
-  },
-  {
-    id: 'recommended-architecture',
-    name: '🏛️ 設計に推奨',
-    description: 'GPT-6 Astra / Claude Sonnet 5 / Gemini 3.8 Flash (極限論理推論・アーキテクチャ把握のコスト別上位3選)',
-    modelIds: ['gpt-6-astra', 'claude-sonnet-5', 'gemini-3-8-flash'],
-  },
-  {
-    id: 'tier-powerful',
-    name: '⚡ Powerful (最上位推論)',
-    description: 'GPT-6 Astra / Claude Opus 5 / GPT-5.6 Sol / Kimi K3 (最高峰コーディング・推論群)',
-    modelIds: ['gpt-6-astra', 'claude-opus-5', 'gpt-5-6-sol', 'kimi-k3'],
-  },
-  {
-    id: 'tier-versatile',
-    name: '🛠️ Versatile (実務バランス)',
-    description: 'Claude Sonnet 5 / GPT-5.6 Terra / Gemini 3.8 Flash / Grok 4.6 (標準実務・俊敏性重視)',
-    modelIds: ['claude-sonnet-5', 'gpt-5-6-terra', 'gemini-3-8-flash', 'grok-4-6'],
-  },
-  {
-    id: 'tier-lightweight',
-    name: '🚀 Lightweight (超高速・低コスト)',
-    description: 'GPT-5.6 Luna / Gemini 3.5 Flash / MAI-Code-1.1-Flash / GPT-5.4 mini (日常インライン・超高速補完)',
-    modelIds: ['gpt-5-6-luna', 'gemini-3-5-flash', 'mai-code-1-1-flash', 'gpt-5-4-mini'],
-  },
-  {
-    id: 'vendor-anthropic',
-    name: '🟠 Anthropic 主力',
-    description: 'Claude Sonnet 5 / Claude Opus 5 / Claude Fable 5.1 / Claude Haiku 4.5 (Anthropic 2026最新)',
-    modelIds: ['claude-sonnet-5', 'claude-opus-5', 'claude-fable-5-1', 'claude-haiku-4-5'],
-  },
-  {
-    id: 'vendor-openai',
-    name: '🟢 OpenAI 主力',
-    description: 'GPT-6 Astra / GPT-5.6 Sol / GPT-5.6 Terra / GPT-5.6 Luna (OpenAI 2026最新ファミリ)',
-    modelIds: ['gpt-6-astra', 'gpt-5-6-sol', 'gpt-5-6-terra', 'gpt-5-6-luna'],
-  },
-  {
-    id: 'vendor-google',
-    name: '🔵 Google Gemini 3.x',
-    description: 'Gemini 3.8 Flash / Gemini 3.7 Flash / Gemini 3.6 Flash / Gemini 3.5 Flash (Google 最新1Mコンテキスト)',
-    modelIds: ['gemini-3-8-flash', 'gemini-3-7-flash', 'gemini-3-6-flash', 'gemini-3-5-flash'],
-  },
-];
 
 export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   initialSelectedModelId,
@@ -2274,75 +2138,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       </div>
 
       {/* 5. GitHub Copilot 公式ドキュメント・仕様リファレンス引用カード */}
-      <div id="radar-references" className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl scroll-mt-20">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3 mb-4">
-          <div className="flex items-center space-x-2 text-sm font-bold text-white">
-            <BookOpen className="w-4 h-4 text-indigo-400" />
-            <span>GitHub Copilot 公式ドキュメント・仕様リファレンス引用</span>
-          </div>
-          <span className="text-[11px] text-slate-400">
-            公式仕様・サポートモデル一覧・課金体系への直接リンク
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          {/* 引用1: サポートモデル一覧 */}
-          <div className="p-4 bg-slate-950/70 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3 hover:border-indigo-500/40 transition-colors">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                  <h4 className="font-bold text-white text-sm">GitHub Copilot サポートAIモデル一覧</h4>
-                </div>
-                <a
-                  href="https://docs.github.com/ja/copilot/reference/ai-models/supported-models"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-indigo-600 text-indigo-400 hover:text-white transition-colors flex items-center space-x-1"
-                  title="公式ドキュメントを開く"
-                >
-                  <span className="text-[11px] font-semibold">公式Doc</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              </div>
-              <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">
-                GitHub Copilot のエージェントモード、コード補完、Chat で利用可能な各社（Anthropic, OpenAI, Google, Microsoft, DeepSeek, xAI, Moonshot AI）の全モデル一覧と、Tier分類（Powerful, Versatile, Lightweight）、提供ステータス（GA, LTS, Preview）の公式リファレンスです。
-              </p>
-            </div>
-            <div className="pt-2 border-t border-slate-800/80 text-[11px] text-indigo-300/80 font-mono truncate">
-              URL: https://docs.github.com/ja/copilot/reference/ai-models/supported-models
-            </div>
-          </div>
-
-          {/* 引用2: モデル別課金・単価表 */}
-          <div className="p-4 bg-slate-950/70 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3 hover:border-indigo-500/40 transition-colors">
-            <div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                  <h4 className="font-bold text-white text-sm">GitHub Copilot モデル別課金・単価表 (Models and Pricing)</h4>
-                </div>
-                <a
-                  href="https://docs.github.com/ja/copilot/reference/copilot-billing/models-and-pricing"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-indigo-600 text-indigo-400 hover:text-white transition-colors flex items-center space-x-1"
-                  title="公式価格表を開く"
-                >
-                  <span className="text-[11px] font-semibold">公式価格表</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              </div>
-              <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">
-                各モデルの 100万トークン（1M tokens）あたりの Input / Output 課金単価、Prompt Caching（キャッシュ読み取り・書き込み）割引単価、超長文コンテキスト（Long Context &gt; 128K/200K）価格体系、およびコンテキスト窓容量（128K〜1M）の公式料金規定です。
-              </p>
-            </div>
-            <div className="pt-2 border-t border-slate-800/80 text-[11px] text-indigo-300/80 font-mono truncate">
-              URL: https://docs.github.com/ja/copilot/reference/copilot-billing/models-and-pricing
-            </div>
-          </div>
-        </div>
-      </div>
+      <RadarDocReferences />
         </div>
       </div>
     </div>
