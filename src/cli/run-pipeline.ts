@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import { GitHubCopilotClient } from '../collector/github-client.js';
 import { AttributeResolver } from '../collector/attribute-resolver.js';
+import { loadUserMappingFromFile } from '../collector/mapping-file-loader.js';
 import { MockDataGenerator } from '../collector/mock-generator.js';
 import { BillingCalculator } from '../processor/billing-calculator.js';
 import { MetricsAggregator } from '../processor/metrics-aggregator.js';
@@ -17,7 +18,9 @@ async function main() {
 
   // 1. 各モジュールの初期化
   const client = new GitHubCopilotClient({ mockMode: isMock });
-  const resolver = new AttributeResolver();
+  // 優先順位: COPILOT_USER_MAPPING_FILE (48KB超GPG復号ワークアラウンド等) > COPILOT_USER_MAPPING
+  //           > COPILOT_USER_MAPPING_BASE64 > 未設定時のフォールバック
+  const resolver = new AttributeResolver(loadUserMappingFromFile(process.env.COPILOT_USER_MAPPING_FILE));
   const aggregator = new MetricsAggregator();
   const storage = new ForkSafeStorage();
   const reportParser = new ReportParser(resolver);
