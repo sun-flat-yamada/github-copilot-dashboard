@@ -99,6 +99,8 @@ The parser automatically detects and normalizes major GitHub report formats:
 ### 3.3 Fallback & Error Handling
 - Unrecognized columns are gracefully ignored.
 - Rows missing critical keys (username, date, quantity/amount) trigger diagnostic warnings while salvaging valid records.
+- **Date normalization**: date values are normalized to zero-padded `YYYY-MM-DD` before being used as a sort key. This prevents inconsistent source formatting (e.g. an un-padded `2026-9-5` from a spreadsheet-edited export) from breaking the chronological ordering of `daily_trends` via plain string comparison. Values that cannot be parsed as a date fall back to the raw leading 10 characters (never fabricated) and log a warning.
+- **Report-month scoping**: `aggregate()` discards any record whose `date` does not fall within the target `reportMonth` (e.g. a CSV export spanning a rolling date range that crosses a month boundary). This keeps a given month's `daily_trends`/`overview`/`user_details` limited to that calendar month; skipped records are counted and logged as a warning, never silently included.
 
 ---
 
