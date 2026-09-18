@@ -193,7 +193,8 @@ export function checkDataIsolation(): HealthCheckResult[] {
 }
 
 /**
- * 4. Verify copilot-data Dedicated Branch
+ * 4. Verify copilot-data Dedicated Branch (real data) and copilot-data-mock
+ * (simulated/demo data) are properly separated.
  */
 export function checkCopilotDataBranch(): HealthCheckResult[] {
   const results: HealthCheckResult[] = [];
@@ -213,6 +214,27 @@ export function checkCopilotDataBranch(): HealthCheckResult[] {
       name: 'copilot-data Orphan Branch',
       status: 'info',
       message: "'copilot-data' branch not yet created on remote. It will be initialized upon the first pipeline run.",
+    });
+  }
+
+  // copilot-data-mock はモック/デモ用データ専用のブランチ。存在有無に関わらず
+  // 'info' に留め、実データブランチ(copilot-data)の健全性判定には一切影響させない。
+  const localMockBranch = runGit('branch --list copilot-data-mock') || '';
+  const remoteMockBranch = runGit('branch -r --list origin/copilot-data-mock') || '';
+
+  if (localMockBranch.length > 0 || remoteMockBranch.length > 0) {
+    results.push({
+      category: 'Storage Branch',
+      name: 'copilot-data-mock Orphan Branch (Mock/Demo Data Isolation)',
+      status: 'info',
+      message: `Mock/demo data branch 'copilot-data-mock' exists (${localMockBranch ? 'local' : ''}${localMockBranch && remoteMockBranch ? ', ' : ''}${remoteMockBranch ? 'remote' : ''}) and is fully isolated from real data on 'copilot-data'.`,
+    });
+  } else {
+    results.push({
+      category: 'Storage Branch',
+      name: 'copilot-data-mock Orphan Branch (Mock/Demo Data Isolation)',
+      status: 'info',
+      message: "'copilot-data-mock' branch not yet created. It is initialized only when the workflow is manually dispatched with mock_mode enabled, and never affects 'copilot-data'.",
     });
   }
 

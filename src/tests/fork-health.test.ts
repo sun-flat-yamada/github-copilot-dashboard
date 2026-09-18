@@ -41,6 +41,13 @@ test('Fork Health & Sync Diagnostics Tests', async (t) => {
     assert.ok(['pass', 'info'].includes(branchCheck.status));
   });
 
+  await t.test('checkCopilotDataBranch reports copilot-data-mock isolation as info-only (never fails)', () => {
+    const results = checkCopilotDataBranch();
+    const mockBranchCheck = results.find(r => r.name.startsWith('copilot-data-mock Orphan Branch'));
+    assert.ok(mockBranchCheck, 'Mock/demo data branch awareness check must be present');
+    assert.strictEqual(mockBranchCheck.status, 'info', 'Absence/presence of the mock branch must never fail health checks');
+  });
+
   await t.test('checkEnvironmentConfig validates user mapping safely without leaking PII', () => {
     const originalEnv = process.env.COPILOT_USER_MAPPING;
     try {
