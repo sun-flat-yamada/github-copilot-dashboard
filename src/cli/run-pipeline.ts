@@ -121,8 +121,8 @@ async function main() {
   let endDate: string | undefined;
 
   if (hasLiveMetrics) {
-    // 5. 日次スコープ集計の生成 (直近7日分)
-    const recentMetrics = metrics.slice(-7);
+    // 5. 日次スコープ集計の生成 (直近30日分)
+    const recentMetrics = metrics.slice(-30);
     for (const m of recentMetrics) {
       const dailyData = aggregator.aggregateScope(
         'daily',
@@ -156,6 +156,13 @@ async function main() {
       userProfiles
     );
     storage.saveProcessedScope(monthlyData);
+
+    // 6b. 月次ディープ分析アーカイブの保存
+    storage.saveDeepAnalysisArchive(monthKey, {
+      month: monthKey,
+      generated_at: new Date().toISOString(),
+      user_profiles: userProfiles,
+    });
 
     // 7. カスタム期間 (直近30日) スコープ集計の生成
     startDate = metrics[0].date;
@@ -215,6 +222,29 @@ async function main() {
     }
   }
 
+  // 8b. 過去1年ローリング月一覧 & 全蓄積月一覧の算出
+  const storedProcMonths = storage.getStoredProcessedMonths();
+  const allMonthsSet = new Set<string>();
+  if (monthKey) allMonthsSet.add(monthKey);
+  for (const m of storedProcMonths) allMonthsSet.add(m);
+  const allRecordedMonths = Array.from(allMonthsSet).sort().reverse();
+  const rolling12Months = allRecordedMonths.slice(0, 12);
+
+  // 過去1年間のマクロ推移トレンド (trends/rolling-1year.json) を構築・保存
+  const rollingTrendEntries = rolling12Months.map((m) => {
+    return {
+      month: m,
+      total_monthly_spend_usd: Number(enrichedSeats.reduce((sum, u) => sum + u.monthly_cost_usd, 0).toFixed(2)),
+      active_seats: enrichedSeats.filter((u) => u.status === 'active' || u.status === 'low_active').length,
+      total_seats: enrichedSeats.length,
+    };
+  });
+  storage.saveRolling1YearTrend({
+    generated_at: new Date().toISOString(),
+    months: rolling12Months,
+    trends: rollingTrendEntries,
+  });
+
   // 9. index.json メタデータの生成と保存
   const totalMonthlySpend = enrichedSeats.reduce((sum, u) => sum + u.monthly_cost_usd, 0);
   const idleSeats = enrichedSeats.filter((u) => u.status === 'idle' || u.status === 'never_used');
@@ -228,14 +258,15 @@ async function main() {
     },
     generated_at: new Date().toISOString(),
     data_retention_days: 365,
-    available_months: monthKey ? [monthKey] : [],
+    available_months: rolling12Months,
+    all_recorded_months: allRecordedMonths,
     available_days: availableDays.reverse(),
-    // 空の場合は undefined ではなく [] を返す (フロントエンドが不使用ハードコード値に
-    // フォールバックせず、正しく「レポートなし」を表示できるようにするため)
     available_reports: availableReportMonths,
+    rolling_1year_trend_file: 'trends/rolling-1year.json',
+    deep_analysis_months: storage.getStoredDeepAnalysisMonths(),
     default_scopes: {
       latest_day: hasLiveMetrics ? referenceDate : undefined,
-      latest_month: monthKey,
+      latest_month: monthKey || rolling12Months[0],
       latest_report: availableReportMonths[0],
       latest_range: startDate && endDate ? { start: startDate, end: endDate } : undefined,
     },

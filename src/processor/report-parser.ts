@@ -302,6 +302,7 @@ export class ReportParser {
         total_cost_usd: Number(totalCost.toFixed(2)),
         model_usage_totals: modelTotals,
         daily_history: dailyHistory,
+        tags: resolved.tags || seat?.tags,
       });
     }
 
@@ -558,6 +559,7 @@ export class ReportParser {
           primary_model: topM,
           last_activity_date: u.lastActivityDate,
           surface: u.surface || 'VS Code',
+          tags: this.resolver.resolve(u.login).tags,
         };
       })
       .sort((a, b) => b.total_spend_usd - a.total_spend_usd);

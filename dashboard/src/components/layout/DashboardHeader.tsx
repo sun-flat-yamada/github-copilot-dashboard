@@ -1,8 +1,11 @@
 import React from 'react';
 import {
-  DashboardAppMode,
+  DataSourceType,
+  AnalysisScopeType,
+  IndexMetadata,
+  MonthlyReportAggregatedData,
 } from '../../../../src/types/copilot';
-import { ModeSwitcher } from '../ModeSwitcher';
+import { ActiveDataSelector } from './ActiveDataSelector';
 import { RepoInfo } from '../../hooks/useDashboardData';
 import {
   Sparkles,
@@ -13,9 +16,18 @@ import {
 } from 'lucide-react';
 
 interface DashboardHeaderProps {
-  appMode: DashboardAppMode;
-  onModeChange: (mode: DashboardAppMode) => void;
-  availableReportsCount: number;
+  activeSource: DataSourceType;
+  onSelectSource: (source: DataSourceType) => void;
+  indexMeta: IndexMetadata | null;
+  scopeType: AnalysisScopeType;
+  selectedScopeKey: string;
+  onSelectLiveScope: (type: AnalysisScopeType, key: string) => void;
+  availableReports: string[];
+  selectedReportMonth: string;
+  onSelectReportMonth: (month: string) => void;
+  uploadedData: MonthlyReportAggregatedData | null;
+  onUploadFileLoaded: (data: MonthlyReportAggregatedData) => void;
+  onClearUploadedFile: () => void;
   repoInfo: RepoInfo;
   isStarred: boolean;
   onToggleStar: () => void;
@@ -26,9 +38,18 @@ interface DashboardHeaderProps {
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
-  appMode,
-  onModeChange,
-  availableReportsCount,
+  activeSource,
+  onSelectSource,
+  indexMeta,
+  scopeType,
+  selectedScopeKey,
+  onSelectLiveScope,
+  availableReports,
+  selectedReportMonth,
+  onSelectReportMonth,
+  uploadedData,
+  onUploadFileLoaded,
+  onClearUploadedFile,
   repoInfo,
   isStarred,
   onToggleStar,
@@ -65,12 +86,22 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           </div>
         </div>
 
-        {/* 右側アクション (モード切替、リポジトリリンク、エラー通知) */}
+        {/* 右側アクション (アクティブデータ選択、リポジトリリンク、エラー通知) */}
         <div className="flex items-center space-x-2 sm:space-x-3 text-xs min-w-0 flex-shrink justify-end">
-          <ModeSwitcher
-            currentMode={appMode}
-            onModeChange={onModeChange}
-            reportCount={availableReportsCount}
+          {/* アクティブデータセレクター (要件1: Live Metrics / Monthly Report / User Upload) */}
+          <ActiveDataSelector
+            activeSource={activeSource}
+            onSelectSource={onSelectSource}
+            indexMeta={indexMeta}
+            scopeType={scopeType}
+            selectedScopeKey={selectedScopeKey}
+            onSelectLiveScope={onSelectLiveScope}
+            availableReports={availableReports}
+            selectedReportMonth={selectedReportMonth}
+            onSelectReportMonth={onSelectReportMonth}
+            uploadedData={uploadedData}
+            onUploadFileLoaded={onUploadFileLoaded}
+            onClearUploadedFile={onClearUploadedFile}
           />
 
           {/* 生成元 GitHub リポジトリリンク & Star (Forkセーフ・動的解決) */}

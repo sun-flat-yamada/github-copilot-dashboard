@@ -73,32 +73,37 @@ This design was chosen over alternatives such as (a) a single shared branch with
 
 ## 2. Storage Directory Structure & Partitioning
 
-All data files are arranged immutably using append-only daily and monthly partitions:
+All data files are arranged immutably using append-only daily and monthly partitions, with **perpetual accumulation without upper limits**:
 
 ```
 data/
-├── raw/                              # Unprocessed raw API responses
+├── raw/                              # Unprocessed raw API responses (Perpetual append-only)
 │   └── 2026/
 │       ├── 09/
 │       │   ├── 2026-09-01-metrics.json
 │       │   ├── 2026-09-01-seats.json
 │       │   ├── 2026-09-01-cost-centers.json
 │       │   └── ...
-├── reports/                          # Exported GitHub Monthly Usage Report CSVs
+├── reports/                          # Exported GitHub Monthly Usage Report CSVs (Perpetual append-only)
 │   └── monthly/
 │       ├── 2026-08/
 │       │   └── copilot_monthly_usage_2026-08.csv
 │       └── 2026-09/
 │           └── copilot_monthly_usage_2026-09.csv
 ├── processed/                        # Precomputed data for dashboard scopes
-│   ├── daily/
-│   │   ├── 2026-09-01.json           # Daily 3-axis aggregated & allocated data
+│   ├── daily/                        # Daily 3-axis aggregated & allocated data (Rolling 30 days)
+│   │   ├── 2026-09-01.json
 │   │   └── ...
-│   ├── monthly/
-│   │   ├── 2026-08.json              # Monthly aggregated data
-│   │   └── 2026-09.json              # Current month-to-date aggregated data
+│   ├── monthly/                      # Perpetual monthly aggregated data
+│   │   ├── 2026-08.json
+│   │   └── 2026-09.json
 │   ├── custom/
 │   │   └── latest-30d.json           # Rolling 30-day trend data
+│   ├── trends/
+│   │   └── rolling-1year.json        # Pre-aggregated 1-year trends for instant SPA loading
+│   ├── deep-analysis/
+│   │   ├── 2026-08.json              # Monthly deep analytics archives
+│   │   └── 2026-09.json
 │   └── reports/
 │       ├── 2026-08.json              # Monthly report precomputed data
 │       └── 2026-09.json              # Monthly report precomputed data
@@ -109,7 +114,8 @@ data/
 
 ## 3. Metadata Index (`index.json`) Specification
 
-The entry metadata file loaded first by the dashboard SPA to provide available dates, months, and default scope parameters:
+The entry metadata file loaded first by the dashboard SPA to provide available dates, months, archives, and default scope parameters.
+`available_months` presents the rolling past 1 year (up to 12 months), while `all_recorded_months` retains all historically recorded months without truncation.
 
 ```json
 {
@@ -121,12 +127,15 @@ The entry metadata file loaded first by the dashboard SPA to provide available d
   "last_updated_at": "2026-09-10T00:30:00Z",
   "data_retention_days": 365,
   "available_months": ["2026-09", "2026-08", "2026-07"],
+  "all_recorded_months": ["2026-09", "2026-08", "2026-07", "2025-12", "2025-11"],
   "available_days": [
     "2026-09-09",
     "2026-09-08",
     "2026-09-07"
   ],
   "available_reports": ["2026-09", "2026-08"],
+  "rolling_1year_trend_file": "processed/trends/rolling-1year.json",
+  "deep_analysis_months": ["2026-09", "2026-08"],
   "default_scopes": {
     "latest_day": "2026-09-09",
     "latest_month": "2026-09",

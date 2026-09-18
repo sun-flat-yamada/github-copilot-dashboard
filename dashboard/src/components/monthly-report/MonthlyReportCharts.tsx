@@ -190,7 +190,7 @@ export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({ report
       </div>
 
       {/* 2. AI モデル別・SKU別分析 & 日別推移 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="flex flex-col space-y-6 w-full">
         {/* モデル別消費比率 */}
         <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-5 shadow-sm space-y-4">
           <h3 className="text-sm font-bold text-white flex items-center space-x-2">

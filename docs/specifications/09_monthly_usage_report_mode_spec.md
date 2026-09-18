@@ -161,15 +161,16 @@ export interface MonthlyReportAggregatedData {
 
 ## 5. Dashboard UI/UX Specifications
 
-1. **Header Mode Switcher (`ModeSwitcher`)**:
+1. **Header Active Data Selector (`ActiveDataSelector`)**:
    - `Live Metrics`: Real-time daily, monthly, and custom range API dashboard.
-   - `Monthly Usage Report`: Dedicated view for monthly billing CSV analysis.
-2. **Report Selector & Import Bar**:
+   - `Monthly Usage Report`: Dedicated view for monthly billing CSV analysis, with support for on-demand local CSV upload.
+2. **Report Selector & On-Demand Import**:
    - Switch rapidly between past reported months (`2026-08`, `2026-09`, etc.).
-   - "Import Local CSV" button opens client-side dropzone modal.
-3. **Five Analytics Sections**:
+   - Instant client-side drag-and-drop ingestion parsed in browser memory (Zero-Leakage).
+3. **Analytics Sections & View Integration**:
+   - Synchronized across dedicated analysis views (Overview, Ranking, Users, Trend, Model Radar).
    - 1. **KPI Cards**: Net spend, gross spend, total requests, active users, top model.
-   - 2. **3-Axis Allocation**: Donut and bar charts grouped by department, cost center, and organization.
+   - 2. **3-Axis Allocation**: Donut and bar charts grouped by department, cost center, and organization (single-column vertical stack).
    - 3. **Model & SKU Breakdown**: Request shares and expenditure percentages.
    - 4. **Daily Trends Chart**: Spending cadence and peak consumption days across the month.
-   - 5. **Per-User Usage Details Table**: Searchable, filterable, sortable table with CSV export.
+   - 5. **Per-User Usage Details Table**: Multi-tag AND filtering, searchable, filterable, sortable table with CSV export.
