@@ -24,13 +24,19 @@ Standard dashboard views (Live Metrics, Monthly Report, Model Radar) focus on ma
 
 ## 2. Feature Placement & Invocation (UI / UX Architecture)
 
-### 2.1 Global Navigation (`ViewNavigation`)
+### 2.1 Global Navigation (`ViewNavigation`) & Active Data Source Integration
 - Adds the dedicated **"Deep Analytics"** (`deep_analysis`) view to the top `ViewNavigation` bar.
 - Icon: `BrainCircuit`. One-click transition to the deep analytics hub.
-- Data Storage & Partitioning: Diagnostic metrics are persisted as monthly archives (`data/processed/deep-analysis/{YYYY-MM}.json`) on the `copilot-data` branch with perpetual accumulation, rapidly queryable through the rolling 1-year metadata index.
+- **Active Data Source Integration**:
+  - **Live Metrics**: Analyzes granular telemetry (prompt frequency, suggestions, acceptances, and daily history) for the currently selected scope.
+  - **Monthly Usage Report**: Prioritizes monthly deep-analysis archives (`data/processed/deep-analysis/{YYYY-MM}.json`) if available; otherwise dynamically adapts `MonthlyReportAggregatedData` (`ReportUserDetail` and `ReportDailyTrend`) into compliant `UserUsageProfile` records via `adaptReportToProfiles` for estimated behavioral diagnosis.
+  - **User Upload**: Dynamically parses and adapts user-dropped CSV/JSON datasets on-the-fly for immediate diagnostic analysis.
+  - **Tag AND Filtering**: Synchronizes with global tag filters to restrict the diagnostic cohort to matching developers.
+  - Displays a persistent Active Source Status Indicator (Confirmed Telemetry vs. Pro-rated Diagnostic Mode).
 
 ### 2.2 Contextual Deep-Links
 - **User Detail & Ranking Table (`UserDetailTable`)**: "Deep Analysis" action button in each user row opens the view with that user preselected.
+- **Monthly Report User Table (`MonthlyReportUserTable`)**: Action button in each user row allows direct navigation to Deep Analysis from monthly usage report tables.
 - **User Trend Viewer (`UserTrendViewer`)**: "Deep Analyze this User" button in the profile header.
 
 ### 2.3 Analysis Method Selector
