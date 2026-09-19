@@ -40,14 +40,4 @@ All AI coding assistants (Antigravity, Gemini, Claude Code, Cursor, Copilot Work
 - **Permission Boundary**: Direct commits/pushes to `main` are strictly forbidden on upstream (`sun-flat-yamada`). On downstream forks, direct commits are permitted when operationally necessary.
 - **Reference**: See `.agents/rules/development-workflow.md` and `docs/specifications/14_development_workflow_and_git_ops_spec.md`.
 
----
-
-## 🎯 6. Antigravity Two-Phase Governance & Deterministic Proceed Button
-- **Two-Phase Enforcement**: For non-trivial code modifications in Google Antigravity, agents must execute the two-phase consensus: `Pre-Execution Plan Consensus -> Post-Execution Walkthrough Sealing`.
-- **4 Golden Rules for Proceed Button**: When generating `implementation_plan.md`, agents **MUST 100% strictly comply** with the following to guarantee the Antigravity UI parser renders the `[Proceed]` button:
-  1. **Canonical brain Path**: `<appDataDir>\brain\<conversation-id>/implementation_plan.md`.
-  2. **Canonical English Headings**: Retain exact English headings (`# [Goal Description]`, `## User Review Required`, `## Open Questions`, `## Proposed Changes`, `## Verification Plan`, etc.). Never translate into Japanese or substitute with custom heading phrases.
-  3. **ArtifactMetadata**: Always set `RequestFeedback: true`, `UserFacing: true`, and `Summary`. Never invoke `ask_question` concurrently.
-  4. **Zero Code Edits, Official File Links & Immediate Turn End**: Never edit source code in the planning turn (`modifiedFileUris === 0` required by UI engine). Provide clickable `file:///` links for instant user review. Note that `[Proceed]` renders inside the artifact card. Conclude turn immediately without further tool calls.
-- **Reference**: Follow [.agents/skills/antigravity-two-phase-governance/SKILL.md](.agents/skills/antigravity-two-phase-governance/SKILL.md).
 
