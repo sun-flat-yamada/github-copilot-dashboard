@@ -2,7 +2,7 @@
  * Deep Analysis & Advanced Diagnostic Types (2026.09 Specification)
  */
 
-import { UserUsageProfile } from './copilot.js';
+import { UserUsageProfile, DataSourceType } from './copilot.js';
 
 // ==========================================
 // 1. Extensible Analysis Methods Architecture
@@ -124,4 +124,23 @@ export interface UserDiagnosticResult {
   };
   patterns: InefficiencyPatternResult[];
   drilldown: UserDiagnosticDrilldown;
+}
+
+// ==========================================
+// 4. Archive & Multi-Source Context Types
+// ==========================================
+
+export interface DeepAnalysisArchive {
+  month: string;
+  generated_at: string;
+  user_profiles: UserUsageProfile[];
+}
+
+export interface DeepAnalysisDataSourceInfo {
+  sourceType: DataSourceType;
+  label: string;
+  isEstimated: boolean;
+  monthOrFileName?: string;
+  totalUsers: number;
+  filteredUsers: number;
 }

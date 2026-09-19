@@ -1,13 +1,14 @@
-import React, { useState, useMemo } from 'react';
-import { ScopeAggregatedData } from '../../../src/types/copilot';
+import React, { useState, useMemo, useEffect } from 'react';
+import { ScopeAggregatedData, UserUsageProfile } from '../../../src/types/copilot';
 import {
   AnalysisMethodId,
   AnalysisPeriodScopeType,
   CustomDateRange,
+  DeepAnalysisDataSourceInfo,
   InefficiencyPatternId,
 } from '../../../src/types/deep-analysis';
 import { InefficiencyDiagnosticEngine } from '../../../src/processor/inefficiency-diagnostic';
-import { User } from 'lucide-react';
+import { User, Database, CheckCircle2, AlertCircle } from 'lucide-react';
 import { MethodSelector } from './deep-analysis/MethodSelector';
 import { UserPeriodControls } from './deep-analysis/UserPeriodControls';
 import { HealthScoreCard } from './deep-analysis/HealthScoreCard';
@@ -16,17 +17,24 @@ import { PatternDrilldownChart } from './deep-analysis/PatternDrilldownChart';
 import { PrescriptionList } from './deep-analysis/PrescriptionList';
 
 interface DeepAnalysisViewProps {
-  aggregatedData: ScopeAggregatedData;
+  aggregatedData?: ScopeAggregatedData | null;
+  userProfiles?: UserUsageProfile[];
+  sourceInfo?: DeepAnalysisDataSourceInfo;
   initialSelectedLogin?: string;
 }
 
 export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
   aggregatedData,
+  userProfiles,
+  sourceInfo,
   initialSelectedLogin,
 }) => {
   const profiles = useMemo(() => {
-    return aggregatedData.user_profiles || [];
-  }, [aggregatedData]);
+    if (userProfiles && userProfiles.length > 0) {
+      return userProfiles;
+    }
+    return aggregatedData?.user_profiles || [];
+  }, [userProfiles, aggregatedData]);
 
   // 1. 分析方式セレクターステート
   const [selectedMethodId, setSelectedMethodId] =
@@ -45,10 +53,31 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
     return interestingUser?.login || '';
   });
 
+  // プロファイル群が更新された場合の選択ユーザー追従
+  useEffect(() => {
+    if (initialSelectedLogin && profiles.some((p) => p.login === initialSelectedLogin)) {
+      setSelectedLogin(initialSelectedLogin);
+    } else if (profiles.length > 0 && !profiles.some((p) => p.login === selectedLogin)) {
+      const interestingUser =
+        profiles.find((p) => p.login === 'kenji-sato') ||
+        profiles.find((p) => p.login === 'yuki-takahashi') ||
+        profiles[0];
+      setSelectedLogin(interestingUser?.login || '');
+    }
+  }, [initialSelectedLogin, profiles, selectedLogin]);
+
   // 3. 対象区間選択ステート
   const [periodScope, setPeriodScope] = useState<AnalysisPeriodScopeType>('30d');
   const [customRange, setCustomRange] = useState<CustomDateRange>(() => {
-    const end = aggregatedData.date_range?.end || '2026-09-10';
+    let end = aggregatedData?.date_range?.end;
+    if (!end && profiles.length > 0) {
+      const allDates = profiles.flatMap((p) => (p.daily_history || []).map((d) => d.date));
+      if (allDates.length > 0) {
+        allDates.sort();
+        end = allDates[allDates.length - 1];
+      }
+    }
+    if (!end) end = '2026-09-10';
     const d = new Date(end);
     d.setDate(d.getDate() - 14);
     const start = d.toISOString().split('T')[0];
@@ -96,6 +125,41 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
 
   return (
     <div className="flex flex-col space-y-6 animate-fadeIn pb-12">
+      {/* 0. アクティブデータソース情報バッジ */}
+      {sourceInfo && (
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-slate-900/90 border border-slate-800/80 rounded-2xl shadow-sm">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="text-xs font-semibold text-slate-400">分析データソース:</span>
+            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-950/80 text-indigo-300 border border-indigo-700/60 flex items-center space-x-1.5 shadow-sm">
+              <Database className="w-3.5 h-3.5 text-indigo-400" />
+              <span>{sourceInfo.label}</span>
+            </span>
+            {sourceInfo.isEstimated ? (
+              <span
+                className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-950/70 text-amber-300 border border-amber-800/60 flex items-center space-x-1"
+                title="月次利用レポートから日次アクティビティを按分推定して診断しています"
+              >
+                <AlertCircle className="w-3 h-3 text-amber-400" />
+                <span>月次按分推定モード</span>
+              </span>
+            ) : (
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-950/70 text-emerald-300 border border-emerald-800/60 flex items-center space-x-1">
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                <span>確定テレメトリ</span>
+              </span>
+            )}
+          </div>
+          <div className="text-xs text-slate-400 font-mono">
+            診断対象: <strong className="text-slate-100">{profiles.length}</strong> 名
+            {sourceInfo.totalUsers > profiles.length && (
+              <span className="text-slate-500 ml-1.5">
+                (全体 {sourceInfo.totalUsers} 名中・フィルター適用)
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* 1. 専用ビュー ヘッダー & 分析方式セレクター */}
       <MethodSelector
         selectedMethodId={selectedMethodId}
