@@ -207,6 +207,8 @@ export interface GroupSummary {
   active_seats: number;
   idle_seats: number;
   total_cost_usd: number;
+  net_cost_usd?: number; // 従量課金 / 超過請求費用 (無料枠・割引適用後)
+  spending_limit_usd?: number; // Cost Center 等の上限Limit設定値
   potential_savings_usd: number;
   active_ratio: number; // 0.0 - 1.0
   acceptance_rate: number; // 0.0 - 1.0
@@ -230,6 +232,8 @@ export interface ScopeAggregatedData {
     active_users: number;
     idle_seats: number;
     total_spend_usd: number;
+    total_net_billable_usd?: number; // 従量課金 / 超過請求費用合計 (無料枠控除後の請求対象実額)
+    total_spending_limit_usd?: number; // 上限Limit設定値合計
     idle_waste_usd: number;
     active_ratio: number;
     overall_acceptance_rate: number;
@@ -324,6 +328,8 @@ export interface ReportUserDetail {
   organization: string;
   total_requests: number;
   total_spend_usd: number;
+  gross_spend_usd?: number; // 利用費用 (定価・割引前総額)
+  net_spend_usd?: number; // 超過請求費用 (無料Credit控除後実質請求額)
   primary_model: string;
   last_activity_date?: string;
   surface?: string;

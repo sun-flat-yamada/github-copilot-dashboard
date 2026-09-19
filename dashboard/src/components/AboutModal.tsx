@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { IndexMetadata } from '../../../src/types/copilot';
+import { isMockModeData } from './layout/DashboardHeader';
 import {
   X,
   Clock,
@@ -58,9 +59,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({
 
   const formattedDate = formatAnalysisDate(indexMeta?.generated_at);
 
-  const isMockMode =
-    indexMeta?.is_mock_mode ??
-    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_MOCK_MODE === 'true');
+  const isMockMode = isMockModeData(indexMeta, repoInfo);
 
   return (
     <div

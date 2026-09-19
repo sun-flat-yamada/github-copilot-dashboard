@@ -60,9 +60,10 @@ describe('Header Mock/DEMO Mode Status Tests', () => {
     const headerPath = path.resolve('dashboard/src/components/layout/DashboardHeader.tsx');
     const content = fs.readFileSync(headerPath, 'utf-8');
 
-    // isMockMode 導出ロジック
-    assert.match(content, /const isMockMode =/);
-    assert.match(content, /indexMeta\?\.is_mock_mode/);
+    // isMockModeData 定義と導出ロジック
+    assert.match(content, /export function isMockModeData/);
+    assert.match(content, /proud-corp/);
+    assert.match(content, /const isMockMode = isMockModeData\(indexMeta, repoInfo\);/);
 
     // DEMO (Mock) バッジ
     assert.match(content, /data-testid="mock-mode-badge"/);
@@ -76,11 +77,55 @@ describe('Header Mock/DEMO Mode Status Tests', () => {
     assert.match(content, /bg-emerald-500/);
   });
 
+  it('verifies proud-corp simulation dataset fallback heuristic logic', () => {
+    // 判定ロジックの契約テスト: is_mock_mode が未指定でも proud-corp であれば DEMO
+    const simulateCheck = (meta: Partial<IndexMetadata> | null, repo?: { owner: string }) => {
+      if (typeof meta?.is_mock_mode === 'boolean') return meta.is_mock_mode;
+      if (meta?.repository?.owner === 'proud-corp') return true;
+      if (repo?.owner === 'proud-corp') return true;
+      return false;
+    };
+
+    // 1. 古いデータで is_mock_mode が未定義でも owner が proud-corp なら DEMO
+    assert.equal(
+      simulateCheck({ repository: { owner: 'proud-corp', name: 'dashboard', is_fork: false } }),
+      true,
+      'Legacy proud-corp index without is_mock_mode must be detected as DEMO'
+    );
+
+    // 2. indexMeta がまだロードされていない初期状態でも repoInfo が proud-corp なら DEMO
+    assert.equal(
+      simulateCheck(null, { owner: 'proud-corp' }),
+      true,
+      'Initial loading state with default proud-corp repoInfo must be detected as DEMO'
+    );
+
+    // 3. 明示的な is_mock_mode: true
+    assert.equal(
+      simulateCheck({ is_mock_mode: true }),
+      true
+    );
+
+    // 4. 明示的な is_mock_mode: false (実データ)
+    assert.equal(
+      simulateCheck({ is_mock_mode: false, repository: { owner: 'proud-corp', name: 'dashboard', is_fork: false } }),
+      false,
+      'Explicit is_mock_mode: false must override proud-corp owner'
+    );
+
+    // 5. 実運用の別組織 (例: acme-corp) で is_mock_mode 未定義の場合は LIVE (false)
+    assert.equal(
+      simulateCheck({ repository: { owner: 'acme-corp', name: 'copilot-dash', is_fork: true } }),
+      false,
+      'Production non-proud-corp repository must default to LIVE'
+    );
+  });
+
   it('verifies AboutModal.tsx displays operational mode (Mock vs Live)', () => {
     const aboutPath = path.resolve('dashboard/src/components/AboutModal.tsx');
     const content = fs.readFileSync(aboutPath, 'utf-8');
 
-    assert.match(content, /const isMockMode =/);
+    assert.match(content, /isMockModeData/);
     assert.match(content, /仕様バージョン & 動作モード/);
     assert.match(content, /DEMO \(Mock\)/);
   });

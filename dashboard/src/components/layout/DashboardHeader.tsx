@@ -37,6 +37,43 @@ interface DashboardHeaderProps {
   onOpenAboutModal: () => void;
 }
 
+/**
+ * データが DEMO (モック・シミュレーション) 用か LIVE (実データ) かを判定する。
+ * 1. 明示的な is_mock_mode フラグを最優先。
+ * 2. 環境変数 VITE_MOCK_MODE === 'true' を考慮。
+ * 3. is_mock_mode が未指定 (古いデータやキャッシュ) の場合：
+ *    - repository.owner が 'proud-corp' (2026仕様シミュレーションモックの組織名)
+ *    - repoInfo.owner が 'proud-corp'
+ *    - issues に 'proud-' 関連のモック検証イシューが含まれる
+ *    これらを検知して確実に DEMO (Mock) として扱う。
+ */
+export function isMockModeData(
+  indexMeta: IndexMetadata | null,
+  repoInfo?: { owner: string; name: string }
+): boolean {
+  if (typeof indexMeta?.is_mock_mode === 'boolean') {
+    return indexMeta.is_mock_mode;
+  }
+
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_MOCK_MODE === 'true') {
+    return true;
+  }
+
+  if (indexMeta?.repository?.owner === 'proud-corp') {
+    return true;
+  }
+
+  if (repoInfo?.owner === 'proud-corp') {
+    return true;
+  }
+
+  if (indexMeta?.issues?.some((i) => i.target?.includes('proud-') || i.details?.includes('proud-corp'))) {
+    return true;
+  }
+
+  return false;
+}
+
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   activeSource,
   onSelectSource,
@@ -58,9 +95,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onOpenErrorModal,
   onOpenAboutModal,
 }) => {
-  const isMockMode =
-    indexMeta?.is_mock_mode ??
-    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_MOCK_MODE === 'true');
+  const isMockMode = isMockModeData(indexMeta, repoInfo);
 
   return (
     <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
