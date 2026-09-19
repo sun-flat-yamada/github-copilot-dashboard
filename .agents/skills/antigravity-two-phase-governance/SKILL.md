@@ -94,9 +94,10 @@ Antigravity の UI パーサーが `implementation_plan.md` を「実行可能�
      - `Summary: "<変更概要の簡潔な説明>"`
    - ※ `ask_question` ツールの併用呼び出しは禁止です。疑問点はすべて `## Open Questions` に記載し、承認は UI の `[Proceed]` ボタンに一任します。
 
-4. **計画出力直後のターン即時終了**:
-   - 計画アーティファクト作成後は、チャットで計画内容を長文再要約してはなりません（UI の状態機械が質問中と誤認しボタンを抑制するのを防ぐため）。
-   - 「実装計画を作成しました。内容をご確認いただき、よろしければ [Proceed] を押してください」等の簡潔な案内のみを出力し、**他のツール呼び出しを行わずにターンを終了** します。
+4. **チャットへのリンク・再要約の全面禁止 ＆ 即時ターン終了 (Immediate Turn End)**:
+   - **`file:///` リンク出力の全面禁止**: チャット内に `[implementation_plan.md](file:///...)` 等のリンクを出力してはなりません。Antigravity はアーティファクト作成時に専用 Plan ペイン（Artifact Preview）を自動展開するためリンクは不要であり、リンクをクリックすると VS Code 通常エディタタブとして開かれて Plan ペインとの連動が破損します。
+   - **計画の再要約・説明の全面禁止**: Antigravity システムプロンプト原典（`The user will automatically see any new and modified plans you create, so DO NOT re-summarize the plan in your request.`）に厳格に従い、計画の内容・背景・実施事項をチャットで一切解説・箇条書きしてはなりません。疑問点や確認事項はすべて計画内の `## User Review Required` および `## Open Questions` に記載してください。
+   - **極小合図と即時ターン終了**: 計画アーティファクト作成後は、チャットに余計な発話を行わず、定型合図（`実装計画を作成しました。内容をご確認いただき、よろしければ画面上の **[Proceed]** ボタンを押してください。`）の1行のみを出力し、**他のツール呼び出しを一切行わずに直ちにターンを終了（Stop calling tools to end your turn）** します。チャットに対話文やリンクを連ねると、UI 状態機械が「通常対話待機（Waiting for regular chat input）」へと遷移し、入力欄上部の `[Proceed]` ボタンが抑制（消滅）します。
 
 ---
 

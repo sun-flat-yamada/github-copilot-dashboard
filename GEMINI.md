@@ -48,6 +48,6 @@ All AI coding assistants (Antigravity, Gemini, Claude Code, Cursor, Copilot Work
   1. **Canonical brain Path**: `<appDataDir>\brain\<conversation-id>/implementation_plan.md`.
   2. **Canonical English Headings**: Retain exact English headings (`# [Goal Description]`, `## User Review Required`, `## Open Questions`, `## Proposed Changes`, `## Verification Plan`, etc.). Never translate into Japanese or substitute with custom heading phrases.
   3. **ArtifactMetadata**: Always set `RequestFeedback: true`, `UserFacing: true`, and `Summary`. Never invoke `ask_question` concurrently.
-  4. **Immediate Turn End**: Immediately conclude turn after plan generation with a concise call-to-action; do not re-summarize in chat.
+  4. **No Chat Links/Summaries & Immediate Turn End**: Never output `file:///` links or plan re-summaries in chat (the dedicated Plan tab renders automatically). Conclude turn immediately with at most a 1-line signal to prevent UI state machine disruption.
 - **Reference**: Follow [.agents/skills/antigravity-two-phase-governance/SKILL.md](.agents/skills/antigravity-two-phase-governance/SKILL.md).
 
