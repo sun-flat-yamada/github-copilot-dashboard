@@ -111,7 +111,7 @@
    - コード内に固定 URL をハードコードせず、実行時生成メタデータ (`indexMeta.repository`) またはアクセス元ホスト名 (`<owner>.github.io/<repo>/`) から動的に URL を解決。フォーク先で `Sync Fork` してもマージ競合が一切生じない。
    - 大画面では `owner/name`、小画面ではリポジトリ名またはコンパクトアイコンを表示。
 2. **ヘッダーアクティブデータセレクター (`ActiveDataSelector`) & 分析ビューナビゲーション (`ViewNavigation`)**:
-   - **ActiveDataSelector (ヘッダー)**: アクティブなデータソース（Live Metrics, Monthly Usage Report, User Upload File）をヘッダー中央に常時表示。クリック展開で直近1年の月次/日次スコープ、保持レポート、手元ファイル投入を即座に切り替え。
+   - **ActiveDataSelector (ヘッダー)**: アクティブなデータソース（Live Metrics, Monthly Usage Report, User Upload File）をヘッダー中央に常時表示。クリック展開で直近1年の月次/日次スコープ、保持レポート、手元ファイル投入を即座に切り替え。ポップアップモーダルは親ヘッダーの CSS `backdrop-filter` (`backdrop-blur`) による包含ブロック（Containing Block）制約や画面外はみ出しを防止するため、React Portal (`createPortal`) を用いて `document.body` 直下にマウントし、ブラウザの Viewport 全体を基準に中央配置 (`max-h-[90vh]` と内部スクロール) して安定描画する。
    - **ViewNavigation (ナビゲーションバー)**: 従来のモード切り替えから、分析目的に応じた 7 つの分析ビュー（`overview`, `ranking`, `users`, `trend`, `budget`, `deep_analysis`, `model_radar`）の切り替え構成へ刷新。アクティブデータソースの機能互換性（`capabilities`）に応じたビューの活性/非活性を自動制御。
 3. **About モーダル & 作成日時表示**:
    - `Fork-Safe Storage` バッジは廃止・削除。
