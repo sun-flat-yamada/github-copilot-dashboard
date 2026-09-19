@@ -250,6 +250,37 @@ jobs:
 
 ---
 
+### 3.4 DEMO データの初期導入・同期手順 (Fork DEMO Dataset Provisioning & Sync)
+GitHub UI から Fork を作成した場合、デフォルトで「Copy the main branch only」が有効となっているため、Fork 直後は `copilot-data` ブランチ（およびデータファイル全般）が存在しません。
+Fork 先でダッシュボードの表示確認や開発・テストを即座に行うため、本家リポジトリから Live Metrics DEMO データ（2026年最新仕様）を取り込むターンキーコマンドが提供されています。
+
+#### 3.4.1 ワンコマンド導入 (`npm run demo:setup`)
+```bash
+# 本家の copilot-data から data/demo/ を取得し、自リポジトリの copilot-data へ push
+npm run demo:setup -- --push
+```
+
+このスクリプトは以下の処理を自動実行します：
+1. 本家リポジトリ（`sun-flat-yamada/github-copilot-dashboard`）の `copilot-data` から `data/demo/` パーティションを取得
+2. ネットワーク遮断環境や本家到達不能時は、ローカル合成ジェネレータ（`scripts/generate-demo-data.ts`）にフォールバックして高忠実度デモデータを自動生成
+3. 一時作業ツリー経由で Fork 先の `copilot-data` ブランチを作成/更新し、`--push` が指定されていればリモート（`origin/copilot-data`）へプッシュ
+4. ローカル開発用公開ディレクトリ（`dashboard/public/data/demo/`）へ即時配置
+
+#### 3.4.2 主なコマンドオプション
+- `npm run demo:setup -- --push`: リモート `origin/copilot-data` への反映まで一括完了（推奨）
+- `npm run demo:setup -- --local`: ローカル開発・プレビュー専用（リモートにはコミット/プッシュしない）
+- `npm run demo:setup -- --upstream <git-url>`: 独自の本家/中間リポジトリからデモデータを取得する場合に指定
+- `npm run demo:import`: `demo:setup` のエイリアス
+
+#### 3.4.3 導入後の確認
+導入が完了したら、健全性診断を実行して `data/demo/` パーティションが正しく認識されていることを確認します：
+```bash
+npm run fork:verify
+```
+診断項目に `✅ DEMO Dataset Partition (data/demo/): Present` が表示されれば準備完了です。ローカルで `npm run preview` を起動し、ヘッダーの「DEMO (Mock)」バッジをクリックすることで即座にデモデータを閲覧できます。
+
+---
+
 ## 4. 同期後健全性検証チェックリスト (Post-Sync Health Check)
 
 同期が完了した後、運用者は以下の 5 項目を必ず確認します：

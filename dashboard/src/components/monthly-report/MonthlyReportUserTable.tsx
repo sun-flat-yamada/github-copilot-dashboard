@@ -1,12 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { Users, Search, Download, Trophy } from 'lucide-react';
+import { Users, Search, Download, Trophy, BrainCircuit } from 'lucide-react';
 import { MonthlyReportAggregatedData } from '../../../../src/types/copilot';
 
 interface MonthlyReportUserTableProps {
   reportData: MonthlyReportAggregatedData;
+  onSelectUserForDeepAnalysis?: (login: string) => void;
 }
 
-export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({ reportData }) => {
+export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
+  reportData,
+  onSelectUserForDeepAnalysis,
+}) => {
   const [userSearchQuery, setUserSearchQuery] = useState<string>('');
   const [selectedDeptFilter, setSelectedDeptFilter] = useState<string>('all');
   const [userSortBy, setUserSortBy] = useState<'spend' | 'requests'>('spend');
@@ -153,12 +157,13 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({ 
               <th className="py-2.5 px-3 text-right">総リクエスト</th>
               <th className="py-2.5 px-3 text-right">利用費用 / 超過請求 (USD)</th>
               <th className="py-2.5 px-3 text-right">最終利用日</th>
+              <th className="py-2.5 px-3 text-center w-24">アクション</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60">
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan={8} className="text-center py-8 text-slate-500">
+                <td colSpan={9} className="text-center py-8 text-slate-500">
                   該当するユーザーレコードがありません。
                 </td>
               </tr>
@@ -215,6 +220,19 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({ 
                     </td>
                     <td className="py-2.5 px-3 text-right text-slate-400 font-mono text-[11px]">
                       {u.last_activity_date || '-'}
+                    </td>
+                    <td className="py-2.5 px-3 text-center">
+                      {onSelectUserForDeepAnalysis && (
+                        <button
+                          type="button"
+                          onClick={() => onSelectUserForDeepAnalysis(u.login)}
+                          className="px-2 py-1 rounded bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 text-[10px] font-semibold inline-flex items-center space-x-1 transition-all shadow-sm"
+                          title="このユーザーの非効率パターン・高度診断を実行"
+                        >
+                          <BrainCircuit className="w-3 h-3" />
+                          <span>診断</span>
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );

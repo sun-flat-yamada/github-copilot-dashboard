@@ -7,6 +7,7 @@ import {
 import { AnalysisViewId } from '../../src/types/views';
 import { useDashboardData } from './hooks/useDashboardData';
 import { useAccordionGroup } from './hooks/useAccordionGroup';
+import { useDeepAnalysisData } from './hooks/useDeepAnalysisData';
 import { DashboardHeader } from './components/layout/DashboardHeader';
 import { ViewNavigation } from './components/layout/ViewNavigation';
 import { ScopeSelector } from './components/ScopeSelector';
@@ -85,6 +86,19 @@ export const App: React.FC = () => {
     isDemoMode,
     toggleDemoMode,
   } = useDashboardData('live_metrics');
+
+  // ディープ分析用データ統合フック (Live Metrics / Monthly Report / User Upload 全対応)
+  const {
+    profiles: deepAnalysisProfiles,
+    sourceInfo: deepAnalysisSourceInfo,
+  } = useDeepAnalysisData({
+    activeSource,
+    currentData,
+    selectedReportMonth,
+    currentReportData,
+    uploadedData,
+    selectedTags,
+  });
 
   // 2. 分析View選択 (要件4: モード切替からView切替への抜本移行)
   const [activeView, setActiveView] = useState<AnalysisViewId>('overview');
@@ -449,7 +463,10 @@ export const App: React.FC = () => {
                   isExpanded={isExpanded('report_users')}
                   onToggle={() => toggle('report_users')}
                 >
-                  <MonthlyReportUserTable reportData={currentReportData} />
+                  <MonthlyReportUserTable
+                    reportData={currentReportData}
+                    onSelectUserForDeepAnalysis={handleOpenDeepAnalysis}
+                  />
                 </CollapsibleSection>
               </>
             )}
@@ -469,7 +486,10 @@ export const App: React.FC = () => {
             )}
 
             {isReportSource && currentReportData && (
-              <MonthlyReportUserTable reportData={currentReportData} />
+              <MonthlyReportUserTable
+                reportData={currentReportData}
+                onSelectUserForDeepAnalysis={handleOpenDeepAnalysis}
+              />
             )}
           </div>
         )}
@@ -520,23 +540,12 @@ export const App: React.FC = () => {
         {/* View 6: ディープ分析 (Deep Analysis) */}
         {activeView === 'deep_analysis' && (
           <div className="flex flex-col space-y-6 w-full">
-            {activeSource === 'live_metrics' && currentData && (
-              <DeepAnalysisView
-                aggregatedData={currentData}
-                initialSelectedLogin={focusedUserLogin}
-              />
-            )}
-
-            {isReportSource && (
-              <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-2">
-                <BarChart3 className="w-8 h-8 text-cyan-400 mx-auto" />
-                <h4 className="text-sm font-bold text-white">ディープ分析 (高度行動診断)</h4>
-                <p className="text-xs text-slate-400 max-w-md mx-auto">
-                  日次プロンプト密度、Tab受諾率、自律駆動深度（AEDP）を総合診断するためには Live Metrics が必要です。
-                  ヘッダーのセレクターから「Live Metrics」を選択してください。
-                </p>
-              </div>
-            )}
+            <DeepAnalysisView
+              aggregatedData={currentData}
+              userProfiles={deepAnalysisProfiles}
+              sourceInfo={deepAnalysisSourceInfo}
+              initialSelectedLogin={focusedUserLogin}
+            />
           </div>
         )}
 

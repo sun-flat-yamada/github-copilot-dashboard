@@ -242,6 +242,37 @@ jobs:
 
 ---
 
+### 3.4 Initial DEMO Dataset Provisioning & Synchronization for Forks
+When creating a fork via GitHub's Web UI, "Copy the main branch only" is enabled by default. Consequently, newly created forks lack the `copilot-data` orphan branch and any pre-existing metric datasets.
+To enable immediate dashboard previews, local development, and QA testing in downstream forks without waiting for real production telemetry runs, a turnkey CLI script is provided.
+
+#### 3.4.1 Turnkey Provisioning Command (`npm run demo:setup`)
+```bash
+# Fetch data/demo/ from upstream and push to your fork's copilot-data branch
+npm run demo:setup -- --push
+```
+
+The setup script automatically performs the following:
+1. Connects to the upstream repository (`sun-flat-yamada/github-copilot-dashboard`) and extracts the `data/demo/` partition from `copilot-data`.
+2. Seamlessly falls back to the local synthesis engine (`scripts/generate-demo-data.ts`) if upstream is unreachable or network-restricted.
+3. Initializes or updates your fork's `copilot-data` branch in an isolated temporary worktree, and pushes to `origin/copilot-data` when `--push` is specified.
+4. Stages the demo dataset directly into `dashboard/public/data/demo/` for instant offline testing.
+
+#### 3.4.2 CLI Options & Flags
+- `npm run demo:setup -- --push`: Full end-to-end setup including remote push to `origin/copilot-data` (Recommended).
+- `npm run demo:setup -- --local`: Local development preview only (skips committing/pushing to remote branches).
+- `npm run demo:setup -- --upstream <git-url>`: Custom upstream repository URL override.
+- `npm run demo:import`: Direct alias for `demo:setup`.
+
+#### 3.4.3 Post-Import Verification
+Verify that the DEMO partition is properly provisioned using the diagnostic suite:
+```bash
+npm run fork:verify
+```
+When `✅ DEMO Dataset Partition (data/demo/): Present` is reported, you can launch `npm run preview` and toggle the "DEMO (Mock)" badge in the top navigation header to explore the live simulation metrics.
+
+---
+
 ## 4. Post-Sync Health Check Checklist
 
 Maintainers should verify these 5 checkpoints following synchronization:
