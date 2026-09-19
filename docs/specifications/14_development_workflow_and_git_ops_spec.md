@@ -8,9 +8,6 @@ In this repository, the operating model assumes that **multiple autonomous AI ag
 To eliminate file collision, untracked change leakage, and merge hazards between concurrent agents while preserving a pristine, auditable linear commit history, this specification formalizes the following core lifecycle:
 
 ```text
-[Step 0: Planning Consensus (Antigravity)]
-   │ (implementation_plan.md with canonical English headings & ArtifactMetadata -> [Proceed] approval)
-   ▼
 [Step 1: Issue Creation]
    │ (Define intent & acceptance criteria via gh issue create)
    ▼
@@ -44,19 +41,6 @@ Branch protection and direct push rules differ strictly between the **original u
 ---
 
 ## 3. Step-by-Step Operational Protocol
-
-### 3.0. Step 0: Planning & Pre-Execution Consensus (Google Antigravity)
-
-In Google Antigravity, before implementing non-trivial code modifications, the agent must formulate an implementation plan and acquire explicit human consensus via the UI `[Proceed]` button.
-
-#### Proceed Button Activation Requirements (The 4 Golden Rules)
-To ensure that the Antigravity UI parser deterministically recognizes the plan and displays the `[Proceed]` button:
-1. **Official brain Path**: Write directly to `<appDataDir>\brain\<conversation-id>/implementation_plan.md`.
-2. **Canonical English Headings**: Maintain exact required English headings (`# [Goal Description]`, `## User Review Required`, `## Open Questions`, `## Proposed Changes`, `## Verification Plan`, etc.). Never substitute or translate them into Japanese.
-3. **ArtifactMetadata**: Pass `ArtifactMetadata` with `RequestFeedback: true`, `UserFacing: true`, and `Summary`. Do NOT call `ask_question` concurrently.
-4. **Zero Code Edits, Official File Links & Immediate Turn End**: Never edit source code in the planning turn (`modifiedFileUris === 0` required by UI engine). Provide clickable `file:///` links for instant user access. The `[Proceed]` button renders inside the artifact card. Conclude turn immediately without further tool calls.
-
-Once approved (`[Proceed]` received), proceed to Step 1.
 
 ### 3.1. Step 1: Issue Creation (Issue-Driven Development)
 All changes start with a dedicated GitHub Issue.
