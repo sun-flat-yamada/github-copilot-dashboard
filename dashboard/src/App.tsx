@@ -641,6 +641,7 @@ export const App: React.FC = () => {
               userProfiles={deepAnalysisProfiles}
               sourceInfo={deepAnalysisSourceInfo}
               initialSelectedLogin={focusedUserLogin}
+              onSelectLogin={setFocusedUserLogin}
             />
           </div>
         )}
