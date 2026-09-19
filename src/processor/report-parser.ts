@@ -333,16 +333,17 @@ export class ReportParser {
         costCenter: string;
         organization: string;
         requests: number;
-        spendUsd: number;
+        spendUsd: number; // net spend
+        grossSpendUsd: number; // gross spend
         modelCounts: Record<string, number>;
         lastActivityDate?: string;
         surface?: string;
       }
     >();
 
-    const deptMap = new Map<string, { seats: Set<string>; requests: number; spend: number }>();
-    const ccMap = new Map<string, { seats: Set<string>; requests: number; spend: number }>();
-    const orgMap = new Map<string, { seats: Set<string>; requests: number; spend: number }>();
+    const deptMap = new Map<string, { seats: Set<string>; requests: number; spend: number; grossSpend: number }>();
+    const ccMap = new Map<string, { seats: Set<string>; requests: number; spend: number; grossSpend: number }>();
+    const orgMap = new Map<string, { seats: Set<string>; requests: number; spend: number; grossSpend: number }>();
 
     const modelMap = new Map<string, { requests: number; spend: number; users: Set<string> }>();
     const skuMap = new Map<string, { quantity: number; spend: number; unitType: string }>();
@@ -393,6 +394,7 @@ export class ReportParser {
           organization,
           requests: 0,
           spendUsd: 0,
+          grossSpendUsd: 0,
           modelCounts: {},
           lastActivityDate: rec.date || rec.last_activity_at?.substring(0, 10),
           surface: rec.last_surface_used,
@@ -401,6 +403,7 @@ export class ReportParser {
       }
       userStat.requests += reqCount;
       userStat.spendUsd += netSpend;
+      userStat.grossSpendUsd += grossSpend;
       userStat.modelCounts[model] = (userStat.modelCounts[model] || 0) + reqCount;
       if (rec.date && (!userStat.lastActivityDate || rec.date > userStat.lastActivityDate)) {
         userStat.lastActivityDate = rec.date;
@@ -412,32 +415,35 @@ export class ReportParser {
       // 3軸集計 (Department)
       let dStat = deptMap.get(department);
       if (!dStat) {
-        dStat = { seats: new Set(), requests: 0, spend: 0 };
+        dStat = { seats: new Set(), requests: 0, spend: 0, grossSpend: 0 };
         deptMap.set(department, dStat);
       }
       dStat.seats.add(login);
       dStat.requests += reqCount;
       dStat.spend += netSpend;
+      dStat.grossSpend += grossSpend;
 
       // 3軸集計 (Cost Center)
       let cStat = ccMap.get(costCenter);
       if (!cStat) {
-        cStat = { seats: new Set(), requests: 0, spend: 0 };
+        cStat = { seats: new Set(), requests: 0, spend: 0, grossSpend: 0 };
         ccMap.set(costCenter, cStat);
       }
       cStat.seats.add(login);
       cStat.requests += reqCount;
       cStat.spend += netSpend;
+      cStat.grossSpend += grossSpend;
 
       // 3軸集計 (Organization)
       let oStat = orgMap.get(organization);
       if (!oStat) {
-        oStat = { seats: new Set(), requests: 0, spend: 0 };
+        oStat = { seats: new Set(), requests: 0, spend: 0, grossSpend: 0 };
         orgMap.set(organization, oStat);
       }
       oStat.seats.add(login);
       oStat.requests += reqCount;
       oStat.spend += netSpend;
+      oStat.grossSpend += grossSpend;
 
       // モデル別集計
       let mStat = modelMap.get(model);
@@ -480,17 +486,19 @@ export class ReportParser {
 
     // グループサマリーへの変換ヘルパー
     const buildGroupSummaries = (
-      map: Map<string, { seats: Set<string>; requests: number; spend: number }>
+      map: Map<string, { seats: Set<string>; requests: number; spend: number; grossSpend: number }>
     ): Record<string, GroupSummary> => {
       const res: Record<string, GroupSummary> = {};
       map.forEach((val, name) => {
         const count = val.seats.size;
+        const gross = val.grossSpend > 0 ? val.grossSpend : val.spend;
         res[name] = {
           group_name: name,
           total_seats: count,
           active_seats: count,
           idle_seats: 0,
-          total_cost_usd: Number(val.spend.toFixed(2)),
+          total_cost_usd: Number(gross.toFixed(2)),
+          net_cost_usd: Number(val.spend.toFixed(2)),
           potential_savings_usd: 0,
           active_ratio: 1.0,
           acceptance_rate: 0.35, // レポートCSVからの推定値
@@ -548,6 +556,7 @@ export class ReportParser {
           }
         }
 
+        const gross = u.grossSpendUsd > 0 ? u.grossSpendUsd : u.spendUsd;
         return {
           login: u.login,
           display_name: u.displayName,
@@ -555,7 +564,9 @@ export class ReportParser {
           cost_center: u.costCenter,
           organization: u.organization,
           total_requests: u.requests,
-          total_spend_usd: Number(u.spendUsd.toFixed(2)),
+          total_spend_usd: Number(gross.toFixed(2)),
+          gross_spend_usd: Number(gross.toFixed(2)),
+          net_spend_usd: Number(u.spendUsd.toFixed(2)),
           primary_model: topM,
           last_activity_date: u.lastActivityDate,
           surface: u.surface || 'VS Code',
