@@ -115,7 +115,15 @@ GitHub Actions の Variables/Secrets は最大 48KB に制限されています�
 - `COPILOT_ENTERPRISE`: Enterprise スラッグ（例: `my-enterprise-slug`）
 - または `COPILOT_ORGS`: カンマ区切りの Organization 名一覧（例: `org-core,org-ai-labs`）
 
-### モックモード & 認証フォールバック
+### モックモード & DEMO データセットのセットアップ
+- **Fork 先での DEMO データ即時導入**: GitHub で Fork した直後（デフォルトで `main` のみ複製され `copilot-data` が存在しない場合等）でも、以下のコマンド 1 発で本家から DEMO データセット（30日分の日次・月次・トレンド・レポートデータ）を取り込めます：
+  ```bash
+  # 本家 copilot-data から DEMO データを自動取得・配置
+  npm run demo:setup
+
+  # Fork 先の GitHub Pages / Actions にも反映したい場合 (--push)
+  npm run demo:setup -- --push
+  ```
 - **モックシミュレーション**: Variable に `MOCK_MODE=true` を指定すると、実際のPATがなくても2026年仕様の全機能シミュレーションデータで即座にダッシュボードを起動・検証できます。
 - **グレースフル・デグラデーション**: 万一 Metrics API のトークン権限が未付与または一時停止された場合でも、パイプラインは停止せず、Seat情報や月次CSVレポート（Monthly Usage Report）を用いて集計を自動継続します。
 

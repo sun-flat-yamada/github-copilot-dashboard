@@ -117,7 +117,15 @@ Configure either variable under **Settings** > **Secrets and variables** > **Act
 - `COPILOT_ENTERPRISE`: Set to your Enterprise slug (e.g. `my-enterprise-slug`).
 - `COPILOT_ORGS`: Or specify a comma-separated list of organization names (e.g. `org-core,org-ai-labs`).
 
-### Mock Mode & Graceful Credentials
+### Mock Mode & DEMO Data Setup for Forks
+- **Instant DEMO Data Setup for Downstream Forks**: If you forked the repository with GitHub's default setting ("Copy the main branch only"), your fork will not initially include the `copilot-data` orphan branch. You can import the full 2026 LTS Live Metrics DEMO dataset with a single command:
+  ```bash
+  # Fetch and unpack DEMO data from upstream copilot-data
+  npm run demo:setup
+
+  # If you want to seed your fork's remote GitHub Pages / Actions with DEMO data (--push)
+  npm run demo:setup -- --push
+  ```
 - **Mock Simulation Mode**: Set variable `MOCK_MODE=true` to instantly test and demonstrate dashboard capabilities using 2026 synthetic simulation data.
 - **Graceful Degradation**: If Copilot Metrics credentials are temporarily unavailable or permissions are restricted, the pipeline automatically proceeds with seat data or monthly CSV reports without failing the workflow.
 
