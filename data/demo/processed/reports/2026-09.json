@@ -1,0 +1,465 @@
+{
+  "report_month": "2026-09",
+  "source_type": "persisted",
+  "file_name": "copilot_monthly_usage_2026-09.csv",
+  "parsed_at": "2026-09-19T08:15:04.795Z",
+  "overview": {
+    "total_net_spend_usd": 338.65,
+    "total_gross_spend_usd": 340.33,
+    "total_discount_usd": 1.68,
+    "total_requests": 2646,
+    "total_active_users": 10,
+    "top_model": "Claude 3.7 Sonnet",
+    "top_sku": "copilot_business"
+  },
+  "by_department": {
+    "未分類 (Unassigned)": {
+      "group_name": "未分類 (Unassigned)",
+      "total_seats": 10,
+      "active_seats": 10,
+      "idle_seats": 0,
+      "total_cost_usd": 340.33,
+      "net_cost_usd": 338.65,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 2646,
+      "total_acceptances": 926,
+      "total_chats": 529,
+      "total_pr_summaries": 0
+    }
+  },
+  "by_cost_center": {
+    "FinTech-Division": {
+      "group_name": "FinTech-Division",
+      "total_seats": 4,
+      "active_seats": 4,
+      "idle_seats": 0,
+      "total_cost_usd": 134.98,
+      "net_cost_usd": 134.21,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 1163,
+      "total_acceptances": 407,
+      "total_chats": 233,
+      "total_pr_summaries": 0
+    },
+    "IT-Infrastructure": {
+      "group_name": "IT-Infrastructure",
+      "total_seats": 4,
+      "active_seats": 4,
+      "idle_seats": 0,
+      "total_cost_usd": 129,
+      "net_cost_usd": 128.47,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 955,
+      "total_acceptances": 334,
+      "total_chats": 191,
+      "total_pr_summaries": 0
+    },
+    "Data-AI-Lab": {
+      "group_name": "Data-AI-Lab",
+      "total_seats": 2,
+      "active_seats": 2,
+      "idle_seats": 0,
+      "total_cost_usd": 76.35,
+      "net_cost_usd": 75.98,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 528,
+      "total_acceptances": 185,
+      "total_chats": 106,
+      "total_pr_summaries": 0
+    }
+  },
+  "by_organization": {
+    "proud-fintech": {
+      "group_name": "proud-fintech",
+      "total_seats": 4,
+      "active_seats": 4,
+      "idle_seats": 0,
+      "total_cost_usd": 134.98,
+      "net_cost_usd": 134.21,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 1163,
+      "total_acceptances": 407,
+      "total_chats": 233,
+      "total_pr_summaries": 0
+    },
+    "proud-internal-sys": {
+      "group_name": "proud-internal-sys",
+      "total_seats": 2,
+      "active_seats": 2,
+      "idle_seats": 0,
+      "total_cost_usd": 75.5,
+      "net_cost_usd": 75.27,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 500,
+      "total_acceptances": 175,
+      "total_chats": 100,
+      "total_pr_summaries": 0
+    },
+    "proud-marketing": {
+      "group_name": "proud-marketing",
+      "total_seats": 2,
+      "active_seats": 2,
+      "idle_seats": 0,
+      "total_cost_usd": 76.35,
+      "net_cost_usd": 75.98,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 528,
+      "total_acceptances": 185,
+      "total_chats": 106,
+      "total_pr_summaries": 0
+    },
+    "proud-core-api": {
+      "group_name": "proud-core-api",
+      "total_seats": 2,
+      "active_seats": 2,
+      "idle_seats": 0,
+      "total_cost_usd": 53.5,
+      "net_cost_usd": 53.19,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 455,
+      "total_acceptances": 159,
+      "total_chats": 91,
+      "total_pr_summaries": 0
+    }
+  },
+  "model_breakdown": [
+    {
+      "model_name": "Claude 3.7 Sonnet",
+      "total_requests": 755,
+      "total_spend_usd": 29.52,
+      "active_users": 10,
+      "percentage": 28.5
+    },
+    {
+      "model_name": "Gemini 2.0 Flash",
+      "total_requests": 728,
+      "total_spend_usd": 14.31,
+      "active_users": 10,
+      "percentage": 27.5
+    },
+    {
+      "model_name": "GPT-4o",
+      "total_requests": 604,
+      "total_spend_usd": 17.66,
+      "active_users": 10,
+      "percentage": 22.8
+    },
+    {
+      "model_name": "o1",
+      "total_requests": 549,
+      "total_spend_usd": 27.17,
+      "active_users": 10,
+      "percentage": 20.7
+    },
+    {
+      "model_name": "Standard Completion",
+      "total_requests": 10,
+      "total_spend_usd": 250,
+      "active_users": 10,
+      "percentage": 0.4
+    }
+  ],
+  "sku_breakdown": [
+    {
+      "sku_name": "copilot_business",
+      "total_quantity": 7,
+      "unit_type": "seats",
+      "total_spend_usd": 133,
+      "percentage": 39.3
+    },
+    {
+      "sku_name": "copilot_enterprise",
+      "total_quantity": 3,
+      "unit_type": "seats",
+      "total_spend_usd": 117,
+      "percentage": 34.5
+    },
+    {
+      "sku_name": "copilot_premium_request",
+      "total_quantity": 2636,
+      "unit_type": "requests",
+      "total_spend_usd": 88.65,
+      "percentage": 26.2
+    }
+  ],
+  "daily_trends": [
+    {
+      "date": "2026-09-01",
+      "requests": 139,
+      "spend_usd": 253.45,
+      "active_users": 10
+    },
+    {
+      "date": "2026-09-02",
+      "requests": 88,
+      "spend_usd": 2.9,
+      "active_users": 9
+    },
+    {
+      "date": "2026-09-03",
+      "requests": 134,
+      "spend_usd": 5.35,
+      "active_users": 9
+    },
+    {
+      "date": "2026-09-04",
+      "requests": 74,
+      "spend_usd": 2.44,
+      "active_users": 5
+    },
+    {
+      "date": "2026-09-07",
+      "requests": 125,
+      "spend_usd": 4.71,
+      "active_users": 6
+    },
+    {
+      "date": "2026-09-08",
+      "requests": 152,
+      "spend_usd": 5.8,
+      "active_users": 8
+    },
+    {
+      "date": "2026-09-09",
+      "requests": 152,
+      "spend_usd": 4.4,
+      "active_users": 9
+    },
+    {
+      "date": "2026-09-10",
+      "requests": 141,
+      "spend_usd": 4.41,
+      "active_users": 8
+    },
+    {
+      "date": "2026-09-11",
+      "requests": 89,
+      "spend_usd": 3.65,
+      "active_users": 7
+    },
+    {
+      "date": "2026-09-14",
+      "requests": 99,
+      "spend_usd": 3.39,
+      "active_users": 5
+    },
+    {
+      "date": "2026-09-15",
+      "requests": 198,
+      "spend_usd": 6.25,
+      "active_users": 9
+    },
+    {
+      "date": "2026-09-16",
+      "requests": 208,
+      "spend_usd": 7.47,
+      "active_users": 10
+    },
+    {
+      "date": "2026-09-17",
+      "requests": 80,
+      "spend_usd": 2.64,
+      "active_users": 6
+    },
+    {
+      "date": "2026-09-18",
+      "requests": 142,
+      "spend_usd": 5.07,
+      "active_users": 8
+    },
+    {
+      "date": "2026-09-21",
+      "requests": 99,
+      "spend_usd": 3.05,
+      "active_users": 7
+    },
+    {
+      "date": "2026-09-22",
+      "requests": 178,
+      "spend_usd": 6,
+      "active_users": 9
+    },
+    {
+      "date": "2026-09-23",
+      "requests": 199,
+      "spend_usd": 7.5,
+      "active_users": 9
+    },
+    {
+      "date": "2026-09-24",
+      "requests": 74,
+      "spend_usd": 2.29,
+      "active_users": 5
+    },
+    {
+      "date": "2026-09-25",
+      "requests": 168,
+      "spend_usd": 4.44,
+      "active_users": 9
+    },
+    {
+      "date": "2026-09-28",
+      "requests": 107,
+      "spend_usd": 3.45,
+      "active_users": 8
+    }
+  ],
+  "user_details": [
+    {
+      "login": "kenji-sato",
+      "display_name": "kenji-sato",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "total_requests": 327,
+      "total_spend_usd": 50.07,
+      "gross_spend_usd": 50.07,
+      "net_spend_usd": 49.96,
+      "primary_model": "Gemini 2.0 Flash",
+      "last_activity_date": "2026-09-28",
+      "surface": "VS Code"
+    },
+    {
+      "login": "daiki-suzuki",
+      "display_name": "daiki-suzuki",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "IT-Infrastructure",
+      "organization": "proud-internal-sys",
+      "total_requests": 247,
+      "total_spend_usd": 47.28,
+      "gross_spend_usd": 47.28,
+      "net_spend_usd": 47.1,
+      "primary_model": "Gemini 2.0 Flash",
+      "last_activity_date": "2026-09-28",
+      "surface": "VS Code"
+    },
+    {
+      "login": "ren-takahashi",
+      "display_name": "ren-takahashi",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Data-AI-Lab",
+      "organization": "proud-marketing",
+      "total_requests": 219,
+      "total_spend_usd": 46.34,
+      "gross_spend_usd": 46.34,
+      "net_spend_usd": 46.18,
+      "primary_model": "Claude 3.7 Sonnet",
+      "last_activity_date": "2026-09-28",
+      "surface": "VS Code"
+    },
+    {
+      "login": "mei-ito",
+      "display_name": "mei-ito",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Data-AI-Lab",
+      "organization": "proud-marketing",
+      "total_requests": 309,
+      "total_spend_usd": 30.01,
+      "gross_spend_usd": 30.01,
+      "net_spend_usd": 29.79,
+      "primary_model": "o1",
+      "last_activity_date": "2026-09-28",
+      "surface": "VS Code"
+    },
+    {
+      "login": "yuki-tanaka",
+      "display_name": "yuki-tanaka",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "total_requests": 292,
+      "total_spend_usd": 28.77,
+      "gross_spend_usd": 28.77,
+      "net_spend_usd": 28.55,
+      "primary_model": "Gemini 2.0 Flash",
+      "last_activity_date": "2026-09-28",
+      "surface": "VS Code"
+    },
+    {
+      "login": "sakura-watanabe",
+      "display_name": "sakura-watanabe",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "IT-Infrastructure",
+      "organization": "proud-internal-sys",
+      "total_requests": 253,
+      "total_spend_usd": 28.22,
+      "gross_spend_usd": 28.22,
+      "net_spend_usd": 28.18,
+      "primary_model": "GPT-4o",
+      "last_activity_date": "2026-09-24",
+      "surface": "VS Code"
+    },
+    {
+      "login": "external-contractor-01",
+      "display_name": "external-contractor-01",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "total_requests": 272,
+      "total_spend_usd": 28.07,
+      "gross_spend_usd": 28.07,
+      "net_spend_usd": 27.85,
+      "primary_model": "Gemini 2.0 Flash",
+      "last_activity_date": "2026-09-28",
+      "surface": "VS Code"
+    },
+    {
+      "login": "external-contractor-02",
+      "display_name": "external-contractor-02",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "total_requests": 272,
+      "total_spend_usd": 28.07,
+      "gross_spend_usd": 28.07,
+      "net_spend_usd": 27.85,
+      "primary_model": "Gemini 2.0 Flash",
+      "last_activity_date": "2026-09-28",
+      "surface": "VS Code"
+    },
+    {
+      "login": "kaito-nakamura",
+      "display_name": "kaito-nakamura",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "IT-Infrastructure",
+      "organization": "proud-core-api",
+      "total_requests": 236,
+      "total_spend_usd": 27.16,
+      "gross_spend_usd": 27.16,
+      "net_spend_usd": 27.01,
+      "primary_model": "GPT-4o",
+      "last_activity_date": "2026-09-25",
+      "surface": "VS Code"
+    },
+    {
+      "login": "aoi-kobayashi",
+      "display_name": "aoi-kobayashi",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "IT-Infrastructure",
+      "organization": "proud-core-api",
+      "total_requests": 219,
+      "total_spend_usd": 26.34,
+      "gross_spend_usd": 26.34,
+      "net_spend_usd": 26.18,
+      "primary_model": "Claude 3.7 Sonnet",
+      "last_activity_date": "2026-09-28",
+      "surface": "VS Code"
+    }
+  ]
+}

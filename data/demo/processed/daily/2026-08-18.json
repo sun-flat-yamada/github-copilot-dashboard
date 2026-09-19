@@ -1,0 +1,5039 @@
+{
+  "scope_type": "daily",
+  "scope_key": "2026-08-18",
+  "date_range": {
+    "start": "2026-08-18",
+    "end": "2026-08-18",
+    "days_count": 1
+  },
+  "overview": {
+    "total_seats": 85,
+    "active_users": 73,
+    "idle_seats": 12,
+    "total_spend_usd": 99.17,
+    "total_net_billable_usd": 2949,
+    "total_spending_limit_usd": 8700,
+    "idle_waste_usd": 14.93,
+    "active_ratio": 0.8588,
+    "overall_acceptance_rate": 0.3535,
+    "total_suggestions": 24518,
+    "total_acceptances": 8666,
+    "total_chats": 1792,
+    "total_pr_summaries": 54,
+    "total_cli_commands": 211,
+    "missing_metrics": [
+      "copilot_ide_chat",
+      "top_languages",
+      "copilot_ide_code_completions"
+    ]
+  },
+  "by_department": {
+    "未分類 (Unassigned)": {
+      "group_name": "未分類 (Unassigned)",
+      "total_seats": 85,
+      "active_seats": 73,
+      "idle_seats": 12,
+      "total_cost_usd": 99.17,
+      "potential_savings_usd": 14.93,
+      "active_ratio": 0.8588,
+      "acceptance_rate": 0.3535,
+      "total_suggestions": 24518,
+      "total_acceptances": 8666,
+      "total_chats": 1792,
+      "total_pr_summaries": 54
+    }
+  },
+  "by_cost_center": {
+    "FinTech-Division": {
+      "group_name": "FinTech-Division",
+      "total_seats": 29,
+      "active_seats": 28,
+      "idle_seats": 1,
+      "total_cost_usd": 33.7,
+      "net_cost_usd": 865,
+      "spending_limit_usd": 2500,
+      "potential_savings_usd": 1.3,
+      "active_ratio": 0.9655,
+      "acceptance_rate": 0.3535,
+      "total_suggestions": 8365,
+      "total_acceptances": 2957,
+      "total_chats": 611,
+      "total_pr_summaries": 18
+    },
+    "Cloud-Platform": {
+      "group_name": "Cloud-Platform",
+      "total_seats": 28,
+      "active_seats": 25,
+      "idle_seats": 3,
+      "total_cost_usd": 33.07,
+      "net_cost_usd": 695,
+      "spending_limit_usd": 3000,
+      "potential_savings_usd": 3.9,
+      "active_ratio": 0.8929,
+      "acceptance_rate": 0.3535,
+      "total_suggestions": 8077,
+      "total_acceptances": 2855,
+      "total_chats": 590,
+      "total_pr_summaries": 18
+    },
+    "Research-and-AI": {
+      "group_name": "Research-and-AI",
+      "total_seats": 28,
+      "active_seats": 20,
+      "idle_seats": 8,
+      "total_cost_usd": 32.4,
+      "net_cost_usd": 928,
+      "spending_limit_usd": 2000,
+      "potential_savings_usd": 9.73,
+      "active_ratio": 0.7143,
+      "acceptance_rate": 0.3535,
+      "total_suggestions": 8077,
+      "total_acceptances": 2855,
+      "total_chats": 590,
+      "total_pr_summaries": 18
+    }
+  },
+  "by_organization": {
+    "proud-fintech": {
+      "group_name": "proud-fintech",
+      "total_seats": 29,
+      "active_seats": 27,
+      "idle_seats": 2,
+      "total_cost_usd": 33.7,
+      "potential_savings_usd": 2.6,
+      "active_ratio": 0.931,
+      "acceptance_rate": 0.3535,
+      "total_suggestions": 8365,
+      "total_acceptances": 2957,
+      "total_chats": 611,
+      "total_pr_summaries": 18
+    },
+    "proud-cloud-core": {
+      "group_name": "proud-cloud-core",
+      "total_seats": 28,
+      "active_seats": 26,
+      "idle_seats": 2,
+      "total_cost_usd": 33.07,
+      "potential_savings_usd": 2.6,
+      "active_ratio": 0.9286,
+      "acceptance_rate": 0.3535,
+      "total_suggestions": 8077,
+      "total_acceptances": 2855,
+      "total_chats": 590,
+      "total_pr_summaries": 18
+    },
+    "proud-ai-labs": {
+      "group_name": "proud-ai-labs",
+      "total_seats": 28,
+      "active_seats": 20,
+      "idle_seats": 8,
+      "total_cost_usd": 32.4,
+      "potential_savings_usd": 9.73,
+      "active_ratio": 0.7143,
+      "acceptance_rate": 0.3535,
+      "total_suggestions": 8077,
+      "total_acceptances": 2855,
+      "total_chats": 590,
+      "total_pr_summaries": 18
+    }
+  },
+  "users": [
+    {
+      "login": "taro-tanaka",
+      "display_name": "taro-tanaka",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20000?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "business",
+      "monthly_cost_usd": 19,
+      "prorated_daily_cost_usd": 0.6333,
+      "created_at": "2026-06-08T00:00:00.000Z",
+      "last_activity_at": "2026-09-08T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
+      "days_inactive": 2,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "hanako-suzuki",
+      "display_name": "hanako-suzuki",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20001?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "last_activity_at": "2026-08-28T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
+      "days_inactive": 13,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "kenji-sato",
+      "display_name": "kenji-sato",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20002?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-30T00:00:00.000Z",
+      "last_activity_at": "2026-09-06T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "days_inactive": 4,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "yuki-takahashi",
+      "display_name": "yuki-takahashi",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20003?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-04-29T00:00:00.000Z",
+      "last_activity_at": "2026-08-07T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
+      "days_inactive": 34,
+      "status": "idle",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "mika-ito",
+      "display_name": "mika-ito",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20004?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-03-17T00:00:00.000Z",
+      "last_activity_at": "2026-09-05T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
+      "days_inactive": 5,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "alex-partner",
+      "display_name": "alex-partner",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20005?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "business",
+      "monthly_cost_usd": 19,
+      "prorated_daily_cost_usd": 0.6333,
+      "created_at": "2026-06-02T00:00:00.000Z",
+      "last_activity_at": "2026-09-07T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
+      "days_inactive": 3,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "daiki-yamada",
+      "display_name": "daiki-yamada",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20006?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-07-02T00:00:00.000Z",
+      "last_activity_at": "2026-08-20T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "days_inactive": 21,
+      "status": "low_active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-8",
+      "display_name": "developer-8",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20007?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-04-09T00:00:00.000Z",
+      "last_activity_at": "2026-09-07T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
+      "days_inactive": 3,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-9",
+      "display_name": "developer-9",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20008?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-04-14T00:00:00.000Z",
+      "last_activity_at": "2026-09-02T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
+      "days_inactive": 8,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-10",
+      "display_name": "developer-10",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20009?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-04-22T00:00:00.000Z",
+      "last_activity_at": "2026-09-07T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
+      "days_inactive": 3,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-11",
+      "display_name": "developer-11",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20010?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "business",
+      "monthly_cost_usd": 19,
+      "prorated_daily_cost_usd": 0.6333,
+      "created_at": "2026-03-25T00:00:00.000Z",
+      "last_activity_at": "2026-08-24T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "days_inactive": 17,
+      "status": "low_active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-12",
+      "display_name": "developer-12",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20011?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-04-26T00:00:00.000Z",
+      "last_activity_at": null,
+      "last_activity_editor": null,
+      "days_inactive": 999,
+      "status": "never_used",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-13",
+      "display_name": "developer-13",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20012?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-03-27T00:00:00.000Z",
+      "last_activity_at": "2026-09-08T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
+      "days_inactive": 2,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-14",
+      "display_name": "developer-14",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20013?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-05-11T00:00:00.000Z",
+      "last_activity_at": "2026-08-29T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
+      "days_inactive": 12,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-15",
+      "display_name": "developer-15",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20014?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-05-06T00:00:00.000Z",
+      "last_activity_at": "2026-09-10T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "days_inactive": 0,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-16",
+      "display_name": "developer-16",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20015?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "business",
+      "monthly_cost_usd": 19,
+      "prorated_daily_cost_usd": 0.6333,
+      "created_at": "2026-03-15T00:00:00.000Z",
+      "last_activity_at": "2026-09-03T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
+      "days_inactive": 7,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-17",
+      "display_name": "developer-17",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20016?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-04-08T00:00:00.000Z",
+      "last_activity_at": "2026-07-19T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
+      "days_inactive": 53,
+      "status": "idle",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-18",
+      "display_name": "developer-18",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20017?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-03T00:00:00.000Z",
+      "last_activity_at": "2026-09-07T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
+      "days_inactive": 3,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-19",
+      "display_name": "developer-19",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20018?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-23T00:00:00.000Z",
+      "last_activity_at": "2026-08-31T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "days_inactive": 10,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-20",
+      "display_name": "developer-20",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20019?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-16T00:00:00.000Z",
+      "last_activity_at": "2026-07-16T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
+      "days_inactive": 56,
+      "status": "idle",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-21",
+      "display_name": "developer-21",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20020?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "business",
+      "monthly_cost_usd": 19,
+      "prorated_daily_cost_usd": 0.6333,
+      "created_at": "2026-07-09T00:00:00.000Z",
+      "last_activity_at": "2026-08-23T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
+      "days_inactive": 18,
+      "status": "low_active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-22",
+      "display_name": "developer-22",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20021?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-04-10T00:00:00.000Z",
+      "last_activity_at": "2026-09-08T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
+      "days_inactive": 2,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-23",
+      "display_name": "developer-23",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20022?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-25T00:00:00.000Z",
+      "last_activity_at": "2026-08-25T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "days_inactive": 16,
+      "status": "low_active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-24",
+      "display_name": "developer-24",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20023?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-06T00:00:00.000Z",
+      "last_activity_at": null,
+      "last_activity_editor": null,
+      "days_inactive": 999,
+      "status": "never_used",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-25",
+      "display_name": "developer-25",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20024?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-27T00:00:00.000Z",
+      "last_activity_at": "2026-09-07T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
+      "days_inactive": 3,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-26",
+      "display_name": "developer-26",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20025?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "business",
+      "monthly_cost_usd": 19,
+      "prorated_daily_cost_usd": 0.6333,
+      "created_at": "2026-05-21T00:00:00.000Z",
+      "last_activity_at": "2026-08-31T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
+      "days_inactive": 10,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-27",
+      "display_name": "developer-27",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20026?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-05-03T00:00:00.000Z",
+      "last_activity_at": "2026-07-13T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "days_inactive": 59,
+      "status": "idle",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-28",
+      "display_name": "developer-28",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20027?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-05-10T00:00:00.000Z",
+      "last_activity_at": "2026-09-04T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
+      "days_inactive": 6,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-29",
+      "display_name": "developer-29",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20028?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-19T00:00:00.000Z",
+      "last_activity_at": "2026-08-12T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
+      "days_inactive": 29,
+      "status": "low_active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-30",
+      "display_name": "developer-30",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20029?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-03-19T00:00:00.000Z",
+      "last_activity_at": "2026-07-19T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
+      "days_inactive": 53,
+      "status": "idle",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-31",
+      "display_name": "developer-31",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20030?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "business",
+      "monthly_cost_usd": 19,
+      "prorated_daily_cost_usd": 0.6333,
+      "created_at": "2026-04-25T00:00:00.000Z",
+      "last_activity_at": "2026-08-29T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "days_inactive": 12,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-32",
+      "display_name": "developer-32",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20031?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-07-12T00:00:00.000Z",
+      "last_activity_at": "2026-08-31T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
+      "days_inactive": 10,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-33",
+      "display_name": "developer-33",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20032?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-04-11T00:00:00.000Z",
+      "last_activity_at": "2026-08-29T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
+      "days_inactive": 12,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-34",
+      "display_name": "developer-34",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20033?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-04-26T00:00:00.000Z",
+      "last_activity_at": "2026-08-15T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
+      "days_inactive": 26,
+      "status": "low_active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-35",
+      "display_name": "developer-35",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20034?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-05-03T00:00:00.000Z",
+      "last_activity_at": "2026-09-05T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "days_inactive": 5,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-36",
+      "display_name": "developer-36",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20035?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "business",
+      "monthly_cost_usd": 19,
+      "prorated_daily_cost_usd": 0.6333,
+      "created_at": "2026-04-15T00:00:00.000Z",
+      "last_activity_at": "2026-09-07T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
+      "days_inactive": 3,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-37",
+      "display_name": "developer-37",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20036?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-28T00:00:00.000Z",
+      "last_activity_at": "2026-09-05T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
+      "days_inactive": 5,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-38",
+      "display_name": "developer-38",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20037?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-22T00:00:00.000Z",
+      "last_activity_at": "2026-09-10T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
+      "days_inactive": 0,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-39",
+      "display_name": "developer-39",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20038?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-04-21T00:00:00.000Z",
+      "last_activity_at": "2026-08-30T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "days_inactive": 11,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-40",
+      "display_name": "developer-40",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20039?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-05-01T00:00:00.000Z",
+      "last_activity_at": "2026-09-06T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
+      "days_inactive": 4,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-41",
+      "display_name": "developer-41",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20040?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "business",
+      "monthly_cost_usd": 19,
+      "prorated_daily_cost_usd": 0.6333,
+      "created_at": "2026-06-26T00:00:00.000Z",
+      "last_activity_at": "2026-09-01T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
+      "days_inactive": 9,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-42",
+      "display_name": "developer-42",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20041?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-04-24T00:00:00.000Z",
+      "last_activity_at": null,
+      "last_activity_editor": null,
+      "days_inactive": 999,
+      "status": "never_used",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-43",
+      "display_name": "developer-43",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20042?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-07-03T00:00:00.000Z",
+      "last_activity_at": "2026-09-10T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "days_inactive": 0,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-44",
+      "display_name": "developer-44",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20043?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-05-08T00:00:00.000Z",
+      "last_activity_at": "2026-08-21T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
+      "days_inactive": 20,
+      "status": "low_active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-45",
+      "display_name": "developer-45",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20044?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-03-21T00:00:00.000Z",
+      "last_activity_at": "2026-09-01T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
+      "days_inactive": 9,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-46",
+      "display_name": "developer-46",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20045?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "business",
+      "monthly_cost_usd": 19,
+      "prorated_daily_cost_usd": 0.6333,
+      "created_at": "2026-05-20T00:00:00.000Z",
+      "last_activity_at": "2026-09-07T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
+      "days_inactive": 3,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-47",
+      "display_name": "developer-47",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20046?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-22T00:00:00.000Z",
+      "last_activity_at": "2026-08-30T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "days_inactive": 11,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-48",
+      "display_name": "developer-48",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20047?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-03T00:00:00.000Z",
+      "last_activity_at": "2026-09-08T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
+      "days_inactive": 2,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-49",
+      "display_name": "developer-49",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20048?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-04-14T00:00:00.000Z",
+      "last_activity_at": "2026-09-04T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
+      "days_inactive": 6,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-50",
+      "display_name": "developer-50",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20049?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-26T00:00:00.000Z",
+      "last_activity_at": "2026-08-31T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
+      "days_inactive": 10,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-51",
+      "display_name": "developer-51",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20050?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "business",
+      "monthly_cost_usd": 19,
+      "prorated_daily_cost_usd": 0.6333,
+      "created_at": "2026-06-25T00:00:00.000Z",
+      "last_activity_at": "2026-08-02T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "days_inactive": 39,
+      "status": "idle",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-52",
+      "display_name": "developer-52",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20051?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-07-02T00:00:00.000Z",
+      "last_activity_at": "2026-09-02T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
+      "days_inactive": 8,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-53",
+      "display_name": "developer-53",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20052?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-02T00:00:00.000Z",
+      "last_activity_at": "2026-09-08T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
+      "days_inactive": 2,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-54",
+      "display_name": "developer-54",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20053?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-04-30T00:00:00.000Z",
+      "last_activity_at": "2026-07-24T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
+      "days_inactive": 48,
+      "status": "idle",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-55",
+      "display_name": "developer-55",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20054?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-13T00:00:00.000Z",
+      "last_activity_at": "2026-08-29T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "days_inactive": 12,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-56",
+      "display_name": "developer-56",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20055?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "business",
+      "monthly_cost_usd": 19,
+      "prorated_daily_cost_usd": 0.6333,
+      "created_at": "2026-05-24T00:00:00.000Z",
+      "last_activity_at": "2026-09-02T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
+      "days_inactive": 8,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-57",
+      "display_name": "developer-57",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20056?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-05-06T00:00:00.000Z",
+      "last_activity_at": "2026-08-20T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
+      "days_inactive": 21,
+      "status": "low_active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-58",
+      "display_name": "developer-58",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20057?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-04-07T00:00:00.000Z",
+      "last_activity_at": "2026-09-02T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
+      "days_inactive": 8,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-59",
+      "display_name": "developer-59",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20058?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-07-04T00:00:00.000Z",
+      "last_activity_at": "2026-08-13T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "days_inactive": 28,
+      "status": "low_active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-60",
+      "display_name": "developer-60",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20059?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-05-06T00:00:00.000Z",
+      "last_activity_at": "2026-08-28T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
+      "days_inactive": 13,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-61",
+      "display_name": "developer-61",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20060?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "business",
+      "monthly_cost_usd": 19,
+      "prorated_daily_cost_usd": 0.6333,
+      "created_at": "2026-05-03T00:00:00.000Z",
+      "last_activity_at": "2026-08-29T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
+      "days_inactive": 12,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-62",
+      "display_name": "developer-62",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20061?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-03-28T00:00:00.000Z",
+      "last_activity_at": "2026-08-18T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
+      "days_inactive": 23,
+      "status": "low_active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-63",
+      "display_name": "developer-63",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20062?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-20T00:00:00.000Z",
+      "last_activity_at": "2026-09-02T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "days_inactive": 8,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-64",
+      "display_name": "developer-64",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20063?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-04-26T00:00:00.000Z",
+      "last_activity_at": "2026-09-08T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
+      "days_inactive": 2,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-65",
+      "display_name": "developer-65",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20064?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-07-09T00:00:00.000Z",
+      "last_activity_at": "2026-08-18T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
+      "days_inactive": 23,
+      "status": "low_active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-66",
+      "display_name": "developer-66",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20065?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "business",
+      "monthly_cost_usd": 19,
+      "prorated_daily_cost_usd": 0.6333,
+      "created_at": "2026-05-09T00:00:00.000Z",
+      "last_activity_at": "2026-08-22T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
+      "days_inactive": 19,
+      "status": "low_active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-67",
+      "display_name": "developer-67",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20066?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-05-01T00:00:00.000Z",
+      "last_activity_at": "2026-08-31T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "days_inactive": 10,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-68",
+      "display_name": "developer-68",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20067?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-03T00:00:00.000Z",
+      "last_activity_at": "2026-08-28T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
+      "days_inactive": 13,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-69",
+      "display_name": "developer-69",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20068?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-30T00:00:00.000Z",
+      "last_activity_at": "2026-08-14T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
+      "days_inactive": 27,
+      "status": "low_active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-70",
+      "display_name": "developer-70",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20069?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-04-12T00:00:00.000Z",
+      "last_activity_at": "2026-09-01T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
+      "days_inactive": 9,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-71",
+      "display_name": "developer-71",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20070?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "business",
+      "monthly_cost_usd": 19,
+      "prorated_daily_cost_usd": 0.6333,
+      "created_at": "2026-04-04T00:00:00.000Z",
+      "last_activity_at": "2026-09-05T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "days_inactive": 5,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-72",
+      "display_name": "developer-72",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20071?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-05-26T00:00:00.000Z",
+      "last_activity_at": "2026-08-03T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
+      "days_inactive": 38,
+      "status": "idle",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-73",
+      "display_name": "developer-73",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20072?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-11T00:00:00.000Z",
+      "last_activity_at": null,
+      "last_activity_editor": null,
+      "days_inactive": 999,
+      "status": "never_used",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-74",
+      "display_name": "developer-74",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20073?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-05-25T00:00:00.000Z",
+      "last_activity_at": "2026-09-05T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
+      "days_inactive": 5,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-75",
+      "display_name": "developer-75",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20074?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-06T00:00:00.000Z",
+      "last_activity_at": "2026-09-04T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "days_inactive": 6,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-76",
+      "display_name": "developer-76",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20075?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "business",
+      "monthly_cost_usd": 19,
+      "prorated_daily_cost_usd": 0.6333,
+      "created_at": "2026-05-01T00:00:00.000Z",
+      "last_activity_at": "2026-08-24T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
+      "days_inactive": 17,
+      "status": "low_active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-77",
+      "display_name": "developer-77",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20076?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-05-03T00:00:00.000Z",
+      "last_activity_at": "2026-08-29T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
+      "days_inactive": 12,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-78",
+      "display_name": "developer-78",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20077?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-27T00:00:00.000Z",
+      "last_activity_at": "2026-08-13T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
+      "days_inactive": 28,
+      "status": "low_active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-79",
+      "display_name": "developer-79",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20078?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-11T00:00:00.000Z",
+      "last_activity_at": "2026-09-05T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "days_inactive": 5,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-80",
+      "display_name": "developer-80",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20079?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-04-14T00:00:00.000Z",
+      "last_activity_at": "2026-09-08T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
+      "days_inactive": 2,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-81",
+      "display_name": "developer-81",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20080?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "business",
+      "monthly_cost_usd": 19,
+      "prorated_daily_cost_usd": 0.6333,
+      "created_at": "2026-04-09T00:00:00.000Z",
+      "last_activity_at": "2026-08-29T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
+      "days_inactive": 12,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-82",
+      "display_name": "developer-82",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20081?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-05-18T00:00:00.000Z",
+      "last_activity_at": "2026-08-17T00:00:00.000Z",
+      "last_activity_editor": "jetbrains/2026.2/copilot/1.95.0",
+      "days_inactive": 24,
+      "status": "low_active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-83",
+      "display_name": "developer-83",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20082?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-06-06T00:00:00.000Z",
+      "last_activity_at": "2026-08-19T00:00:00.000Z",
+      "last_activity_editor": "visualstudio/2026/copilot/1.30.0",
+      "days_inactive": 22,
+      "status": "low_active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-84",
+      "display_name": "developer-84",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20083?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-07-09T00:00:00.000Z",
+      "last_activity_at": "2026-08-17T00:00:00.000Z",
+      "last_activity_editor": "neovim/0.11.0/copilot.lua",
+      "days_inactive": 24,
+      "status": "low_active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    },
+    {
+      "login": "developer-85",
+      "display_name": "developer-85",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20084?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "monthly_cost_usd": 39,
+      "prorated_daily_cost_usd": 1.3,
+      "created_at": "2026-05-28T00:00:00.000Z",
+      "last_activity_at": "2026-08-29T00:00:00.000Z",
+      "last_activity_editor": "vscode/1.112.0/copilot/1.255.0",
+      "days_inactive": 12,
+      "status": "active",
+      "is_data_unavailable": false,
+      "cost_center_error": false
+    }
+  ],
+  "daily_trends": [
+    {
+      "date": "2026-08-18",
+      "active_users": 58,
+      "suggestions": 24518,
+      "acceptances": 8666,
+      "acceptance_rate": 0.3535,
+      "chats": 1792,
+      "pr_summaries": 54,
+      "daily_cost_usd": 99.17
+    }
+  ],
+  "top_languages": [
+    {
+      "name": "typescript",
+      "suggestions": 10336,
+      "acceptances": 3301,
+      "lines_accepted": 19806,
+      "acceptance_rate": 0.3194
+    },
+    {
+      "name": "python",
+      "suggestions": 7867,
+      "acceptances": 3057,
+      "lines_accepted": 15285,
+      "acceptance_rate": 0.3886
+    },
+    {
+      "name": "go",
+      "suggestions": 3640,
+      "acceptances": 1336,
+      "lines_accepted": 9352,
+      "acceptance_rate": 0.367
+    },
+    {
+      "name": "rust",
+      "suggestions": 2675,
+      "acceptances": 972,
+      "lines_accepted": 7776,
+      "acceptance_rate": 0.3634
+    }
+  ],
+  "issues": [
+    {
+      "id": "issue-1789805704479-ai4v8",
+      "timestamp": "2026-09-19T08:15:04.479Z",
+      "severity": "warning",
+      "category": "rate_limit",
+      "target": "api:copilot/metrics",
+      "message": "GitHub REST API rate limit approaching threshold (Remaining: 120/5000 requests)",
+      "details": "X-RateLimit-Remaining: 120\nX-RateLimit-Reset: 1725960000\nResource: /enterprises/proud-corp/copilot/metrics\nRecommendation: Increase polling interval or utilize caching.",
+      "http_status": 200,
+      "affected_fields": [
+        "copilot_ide_chat"
+      ]
+    },
+    {
+      "id": "issue-1789805704480-levxu",
+      "timestamp": "2026-09-19T08:15:04.480Z",
+      "severity": "error",
+      "category": "api_auth",
+      "target": "org:proud-internal-sys",
+      "message": "HTTP 403 Forbidden: Missing admin read permissions for organization \"proud-internal-sys\"",
+      "details": "Status: 403 Forbidden\nEndpoint: GET https://api.github.com/orgs/proud-internal-sys/copilot/metrics\nResponse: {\"message\":\"Must have admin rights to Repository or Organization to view Copilot Metrics.\",\"documentation_url\":\"https://docs.github.com/rest/copilot/copilot-metrics\"}\nImpact: Metrics for proud-internal-sys were skipped and marked as unavailable.",
+      "http_status": 403,
+      "affected_fields": [
+        "copilot_ide_code_completions",
+        "copilot_ide_chat",
+        "top_languages"
+      ]
+    },
+    {
+      "id": "issue-1789805704488-9vmfg",
+      "timestamp": "2026-09-19T08:15:04.488Z",
+      "severity": "warning",
+      "category": "data_integrity",
+      "target": "api:billing/cost-centers/cc-ent-9009",
+      "message": "Cost Center \"cc-ent-9009\" (Enterprise-IT) contains 3 unmapped user assignments",
+      "details": "Warning: 3 users could not be resolved against active enterprise seats.\nCost Center ID: cc-ent-9009\nFallback: Assigned to Default-CostCenter.",
+      "http_status": 200,
+      "affected_fields": [
+        "cost_center"
+      ]
+    }
+  ],
+  "cost_center_budgets": [
+    {
+      "cost_center_id": "cc-fin-1001",
+      "cost_center_name": "FinTech-Division",
+      "cost_center_code": "COST-1001",
+      "spending_limit_usd": 2500,
+      "free_tier_budget_usd": 300,
+      "current_spend_usd": 1165,
+      "net_billable_spend_usd": 865,
+      "remaining_budget_usd": 1635,
+      "budget_utilization_percent": 34.6,
+      "status": "normal"
+    },
+    {
+      "cost_center_id": "cc-inf-2002",
+      "cost_center_name": "Cloud-Platform",
+      "cost_center_code": "COST-2002",
+      "spending_limit_usd": 3000,
+      "free_tier_budget_usd": 400,
+      "current_spend_usd": 1095,
+      "net_billable_spend_usd": 695,
+      "remaining_budget_usd": 2305,
+      "budget_utilization_percent": 23.2,
+      "status": "normal"
+    },
+    {
+      "cost_center_id": "cc-ai-3003",
+      "cost_center_name": "Research-and-AI",
+      "cost_center_code": "COST-3003",
+      "spending_limit_usd": 2000,
+      "free_tier_budget_usd": 200,
+      "current_spend_usd": 1128,
+      "net_billable_spend_usd": 928,
+      "remaining_budget_usd": 1072,
+      "budget_utilization_percent": 46.4,
+      "status": "normal"
+    },
+    {
+      "cost_center_id": "cc-ent-9009",
+      "cost_center_name": "Enterprise-IT",
+      "cost_center_code": "COST-9009",
+      "spending_limit_usd": 1200,
+      "free_tier_budget_usd": 150,
+      "current_spend_usd": 611,
+      "net_billable_spend_usd": 461,
+      "remaining_budget_usd": 739,
+      "budget_utilization_percent": 38.4,
+      "status": "normal"
+    }
+  ],
+  "user_profiles": [
+    {
+      "login": "taro-tanaka",
+      "display_name": "田中 太郎",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20000?v=4",
+      "department": "コア決済基盤チーム",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "plan_type": "business",
+      "total_chats": 5,
+      "total_suggestions": 66,
+      "total_acceptances": 27,
+      "acceptance_rate": 0.4091,
+      "total_cost_usd": 0.63,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 1,
+        "gpt-4o": 1,
+        "o1": 2,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 5,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 1,
+            "gpt-4o": 1,
+            "o1": 2,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 66,
+          "acceptances": 27,
+          "lines_suggested": 462,
+          "lines_accepted": 162,
+          "acceptance_rate": 0.4091,
+          "daily_cost_usd": 0.63
+        }
+      ]
+    },
+    {
+      "login": "hanako-suzuki",
+      "display_name": "鈴木 花子",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20001?v=4",
+      "department": "LLM応用プロダクトG",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 15,
+      "total_suggestions": 44,
+      "total_acceptances": 12,
+      "acceptance_rate": 0.2727,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 9,
+        "gpt-4o": 3,
+        "o1": 1,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 15,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 9,
+            "gpt-4o": 3,
+            "o1": 1,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 44,
+          "acceptances": 12,
+          "lines_suggested": 308,
+          "lines_accepted": 72,
+          "acceptance_rate": 0.2727,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "kenji-sato",
+      "display_name": "佐藤 健二",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20002?v=4",
+      "department": "SRE & クラウド基盤部",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 18,
+      "total_suggestions": 96,
+      "total_acceptances": 7,
+      "acceptance_rate": 0.0729,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 11,
+        "gpt-4o": 3,
+        "o1": 2,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 18,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 11,
+            "gpt-4o": 3,
+            "o1": 2,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 96,
+          "acceptances": 7,
+          "lines_suggested": 672,
+          "lines_accepted": 42,
+          "acceptance_rate": 0.0729,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "yuki-takahashi",
+      "display_name": "高橋 悠希",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20003?v=4",
+      "department": "モバイルアプリ開発部",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 18,
+      "total_suggestions": 103,
+      "total_acceptances": 40,
+      "acceptance_rate": 0.3883,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 4,
+        "gpt-4o": 1,
+        "o1": 13,
+        "gemini-2-0-flash": 0
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 18,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 4,
+            "gpt-4o": 1,
+            "o1": 13,
+            "gemini-2-0-flash": 0
+          },
+          "suggestions": 103,
+          "acceptances": 40,
+          "lines_suggested": 721,
+          "lines_accepted": 240,
+          "acceptance_rate": 0.3883,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "mika-ito",
+      "display_name": "伊藤 美香",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20004?v=4",
+      "department": "業務システム改革推進室",
+      "cost_center": "Enterprise-IT",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 0,
+      "total_suggestions": 0,
+      "total_acceptances": 0,
+      "acceptance_rate": 0,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 0,
+        "gpt-4o": 0,
+        "o1": 0,
+        "gemini-2-0-flash": 0
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 0,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 0,
+            "gpt-4o": 0,
+            "o1": 0,
+            "gemini-2-0-flash": 0
+          },
+          "suggestions": 0,
+          "acceptances": 0,
+          "lines_suggested": 0,
+          "lines_accepted": 0,
+          "acceptance_rate": 0,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "alex-partner",
+      "display_name": "Alex Rivera (Partner)",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20005?v=4",
+      "department": "コア決済基盤チーム",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-ai-labs",
+      "plan_type": "business",
+      "total_chats": 4,
+      "total_suggestions": 51,
+      "total_acceptances": 17,
+      "acceptance_rate": 0.3333,
+      "total_cost_usd": 0.63,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 2,
+        "gpt-4o": 1,
+        "o1": 0,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 4,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 2,
+            "gpt-4o": 1,
+            "o1": 0,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 51,
+          "acceptances": 17,
+          "lines_suggested": 357,
+          "lines_accepted": 102,
+          "acceptance_rate": 0.3333,
+          "daily_cost_usd": 0.63
+        }
+      ]
+    },
+    {
+      "login": "daiki-yamada",
+      "display_name": "山田 大樹",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20006?v=4",
+      "department": "SRE & クラウド基盤部",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 25,
+      "total_suggestions": 126,
+      "total_acceptances": 45,
+      "acceptance_rate": 0.3571,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 11,
+        "gpt-4o": 7,
+        "o1": 4,
+        "gemini-2-0-flash": 3
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 25,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 11,
+            "gpt-4o": 7,
+            "o1": 4,
+            "gemini-2-0-flash": 3
+          },
+          "suggestions": 126,
+          "acceptances": 45,
+          "lines_suggested": 882,
+          "lines_accepted": 270,
+          "acceptance_rate": 0.3571,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-8",
+      "display_name": "developer-8",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20007?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 12,
+      "total_suggestions": 112,
+      "total_acceptances": 33,
+      "acceptance_rate": 0.2946,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 6,
+        "gpt-4o": 3,
+        "o1": 1,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 12,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 6,
+            "gpt-4o": 3,
+            "o1": 1,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 112,
+          "acceptances": 33,
+          "lines_suggested": 784,
+          "lines_accepted": 198,
+          "acceptance_rate": 0.2946,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-9",
+      "display_name": "developer-9",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20008?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 6,
+      "total_suggestions": 54,
+      "total_acceptances": 18,
+      "acceptance_rate": 0.3333,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 2,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 6,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 2,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 54,
+          "acceptances": 18,
+          "lines_suggested": 378,
+          "lines_accepted": 108,
+          "acceptance_rate": 0.3333,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-10",
+      "display_name": "developer-10",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20009?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 12,
+      "total_suggestions": 75,
+      "total_acceptances": 23,
+      "acceptance_rate": 0.3067,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 5,
+        "gpt-4o": 3,
+        "o1": 2,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 12,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 5,
+            "gpt-4o": 3,
+            "o1": 2,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 75,
+          "acceptances": 23,
+          "lines_suggested": 525,
+          "lines_accepted": 138,
+          "acceptance_rate": 0.3067,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-11",
+      "display_name": "developer-11",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20010?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "business",
+      "total_chats": 4,
+      "total_suggestions": 97,
+      "total_acceptances": 30,
+      "acceptance_rate": 0.3093,
+      "total_cost_usd": 0.63,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 2,
+        "gpt-4o": 1,
+        "o1": 0,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 4,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 2,
+            "gpt-4o": 1,
+            "o1": 0,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 97,
+          "acceptances": 30,
+          "lines_suggested": 679,
+          "lines_accepted": 180,
+          "acceptance_rate": 0.3093,
+          "daily_cost_usd": 0.63
+        }
+      ]
+    },
+    {
+      "login": "developer-12",
+      "display_name": "developer-12",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20011?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 14,
+      "total_suggestions": 55,
+      "total_acceptances": 20,
+      "acceptance_rate": 0.3636,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 6,
+        "gpt-4o": 4,
+        "o1": 2,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 14,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 6,
+            "gpt-4o": 4,
+            "o1": 2,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 55,
+          "acceptances": 20,
+          "lines_suggested": 385,
+          "lines_accepted": 120,
+          "acceptance_rate": 0.3636,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-13",
+      "display_name": "developer-13",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20012?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 5,
+      "total_suggestions": 22,
+      "total_acceptances": 6,
+      "acceptance_rate": 0.2727,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 2,
+        "gpt-4o": 1,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 5,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 2,
+            "gpt-4o": 1,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 22,
+          "acceptances": 6,
+          "lines_suggested": 154,
+          "lines_accepted": 36,
+          "acceptance_rate": 0.2727,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-14",
+      "display_name": "developer-14",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20013?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 8,
+      "total_suggestions": 51,
+      "total_acceptances": 17,
+      "acceptance_rate": 0.3333,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 4,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 8,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 4,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 51,
+          "acceptances": 17,
+          "lines_suggested": 357,
+          "lines_accepted": 102,
+          "acceptance_rate": 0.3333,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-15",
+      "display_name": "developer-15",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20014?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 2,
+      "total_suggestions": 45,
+      "total_acceptances": 14,
+      "acceptance_rate": 0.3111,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 0,
+        "gpt-4o": 1,
+        "o1": 0,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 2,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 0,
+            "gpt-4o": 1,
+            "o1": 0,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 45,
+          "acceptances": 14,
+          "lines_suggested": 315,
+          "lines_accepted": 84,
+          "acceptance_rate": 0.3111,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-16",
+      "display_name": "developer-16",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20015?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "business",
+      "total_chats": 9,
+      "total_suggestions": 87,
+      "total_acceptances": 28,
+      "acceptance_rate": 0.3218,
+      "total_cost_usd": 0.63,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 5,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 9,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 5,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 87,
+          "acceptances": 28,
+          "lines_suggested": 609,
+          "lines_accepted": 168,
+          "acceptance_rate": 0.3218,
+          "daily_cost_usd": 0.63
+        }
+      ]
+    },
+    {
+      "login": "developer-17",
+      "display_name": "developer-17",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20016?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 15,
+      "total_suggestions": 55,
+      "total_acceptances": 18,
+      "acceptance_rate": 0.3273,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 8,
+        "gpt-4o": 3,
+        "o1": 2,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 15,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 8,
+            "gpt-4o": 3,
+            "o1": 2,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 55,
+          "acceptances": 18,
+          "lines_suggested": 385,
+          "lines_accepted": 108,
+          "acceptance_rate": 0.3273,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-18",
+      "display_name": "developer-18",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20017?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 11,
+      "total_suggestions": 50,
+      "total_acceptances": 15,
+      "acceptance_rate": 0.3,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 5,
+        "gpt-4o": 3,
+        "o1": 1,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 11,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 5,
+            "gpt-4o": 3,
+            "o1": 1,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 50,
+          "acceptances": 15,
+          "lines_suggested": 350,
+          "lines_accepted": 90,
+          "acceptance_rate": 0.3,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-19",
+      "display_name": "developer-19",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20018?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 13,
+      "total_suggestions": 29,
+      "total_acceptances": 8,
+      "acceptance_rate": 0.2759,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 6,
+        "gpt-4o": 3,
+        "o1": 2,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 13,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 6,
+            "gpt-4o": 3,
+            "o1": 2,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 29,
+          "acceptances": 8,
+          "lines_suggested": 203,
+          "lines_accepted": 48,
+          "acceptance_rate": 0.2759,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-20",
+      "display_name": "developer-20",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20019?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 2,
+      "total_suggestions": 57,
+      "total_acceptances": 16,
+      "acceptance_rate": 0.2807,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 1,
+        "gpt-4o": 0,
+        "o1": 0,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 2,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 1,
+            "gpt-4o": 0,
+            "o1": 0,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 57,
+          "acceptances": 16,
+          "lines_suggested": 399,
+          "lines_accepted": 96,
+          "acceptance_rate": 0.2807,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-21",
+      "display_name": "developer-21",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20020?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "business",
+      "total_chats": 7,
+      "total_suggestions": 79,
+      "total_acceptances": 24,
+      "acceptance_rate": 0.3038,
+      "total_cost_usd": 0.63,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 3,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 7,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 3,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 79,
+          "acceptances": 24,
+          "lines_suggested": 553,
+          "lines_accepted": 144,
+          "acceptance_rate": 0.3038,
+          "daily_cost_usd": 0.63
+        }
+      ]
+    },
+    {
+      "login": "developer-22",
+      "display_name": "developer-22",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20021?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 4,
+      "total_suggestions": 54,
+      "total_acceptances": 19,
+      "acceptance_rate": 0.3519,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 2,
+        "gpt-4o": 1,
+        "o1": 0,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 4,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 2,
+            "gpt-4o": 1,
+            "o1": 0,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 54,
+          "acceptances": 19,
+          "lines_suggested": 378,
+          "lines_accepted": 114,
+          "acceptance_rate": 0.3519,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-23",
+      "display_name": "developer-23",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20022?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 6,
+      "total_suggestions": 18,
+      "total_acceptances": 5,
+      "acceptance_rate": 0.2778,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 2,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 6,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 2,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 18,
+          "acceptances": 5,
+          "lines_suggested": 126,
+          "lines_accepted": 30,
+          "acceptance_rate": 0.2778,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-24",
+      "display_name": "developer-24",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20023?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 9,
+      "total_suggestions": 63,
+      "total_acceptances": 22,
+      "acceptance_rate": 0.3492,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 4,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 9,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 4,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 63,
+          "acceptances": 22,
+          "lines_suggested": 441,
+          "lines_accepted": 132,
+          "acceptance_rate": 0.3492,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-25",
+      "display_name": "developer-25",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20024?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 7,
+      "total_suggestions": 104,
+      "total_acceptances": 40,
+      "acceptance_rate": 0.3846,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 3,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 7,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 3,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 104,
+          "acceptances": 40,
+          "lines_suggested": 728,
+          "lines_accepted": 240,
+          "acceptance_rate": 0.3846,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-26",
+      "display_name": "developer-26",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20025?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "business",
+      "total_chats": 6,
+      "total_suggestions": 96,
+      "total_acceptances": 34,
+      "acceptance_rate": 0.3542,
+      "total_cost_usd": 0.63,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 2,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 6,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 2,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 96,
+          "acceptances": 34,
+          "lines_suggested": 672,
+          "lines_accepted": 204,
+          "acceptance_rate": 0.3542,
+          "daily_cost_usd": 0.63
+        }
+      ]
+    },
+    {
+      "login": "developer-27",
+      "display_name": "developer-27",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20026?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 7,
+      "total_suggestions": 46,
+      "total_acceptances": 17,
+      "acceptance_rate": 0.3696,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 3,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 7,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 3,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 46,
+          "acceptances": 17,
+          "lines_suggested": 322,
+          "lines_accepted": 102,
+          "acceptance_rate": 0.3696,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-28",
+      "display_name": "developer-28",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20027?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 0,
+      "total_suggestions": 0,
+      "total_acceptances": 0,
+      "acceptance_rate": 0,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 0,
+        "gpt-4o": 0,
+        "o1": 0,
+        "gemini-2-0-flash": 0
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 0,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 0,
+            "gpt-4o": 0,
+            "o1": 0,
+            "gemini-2-0-flash": 0
+          },
+          "suggestions": 0,
+          "acceptances": 0,
+          "lines_suggested": 0,
+          "lines_accepted": 0,
+          "acceptance_rate": 0,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-29",
+      "display_name": "developer-29",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20028?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 4,
+      "total_suggestions": 53,
+      "total_acceptances": 16,
+      "acceptance_rate": 0.3019,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 2,
+        "gpt-4o": 1,
+        "o1": 0,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 4,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 2,
+            "gpt-4o": 1,
+            "o1": 0,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 53,
+          "acceptances": 16,
+          "lines_suggested": 371,
+          "lines_accepted": 96,
+          "acceptance_rate": 0.3019,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-30",
+      "display_name": "developer-30",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20029?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 8,
+      "total_suggestions": 38,
+      "total_acceptances": 14,
+      "acceptance_rate": 0.3684,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 4,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 8,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 4,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 38,
+          "acceptances": 14,
+          "lines_suggested": 266,
+          "lines_accepted": 84,
+          "acceptance_rate": 0.3684,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-31",
+      "display_name": "developer-31",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20030?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "business",
+      "total_chats": 16,
+      "total_suggestions": 42,
+      "total_acceptances": 16,
+      "acceptance_rate": 0.381,
+      "total_cost_usd": 0.63,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 8,
+        "gpt-4o": 4,
+        "o1": 2,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 16,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 8,
+            "gpt-4o": 4,
+            "o1": 2,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 42,
+          "acceptances": 16,
+          "lines_suggested": 294,
+          "lines_accepted": 96,
+          "acceptance_rate": 0.381,
+          "daily_cost_usd": 0.63
+        }
+      ]
+    },
+    {
+      "login": "developer-32",
+      "display_name": "developer-32",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20031?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 8,
+      "total_suggestions": 80,
+      "total_acceptances": 31,
+      "acceptance_rate": 0.3875,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 4,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 8,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 4,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 80,
+          "acceptances": 31,
+          "lines_suggested": 560,
+          "lines_accepted": 186,
+          "acceptance_rate": 0.3875,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-33",
+      "display_name": "developer-33",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20032?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 5,
+      "total_suggestions": 58,
+      "total_acceptances": 19,
+      "acceptance_rate": 0.3276,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 2,
+        "gpt-4o": 1,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 5,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 2,
+            "gpt-4o": 1,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 58,
+          "acceptances": 19,
+          "lines_suggested": 406,
+          "lines_accepted": 114,
+          "acceptance_rate": 0.3276,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-34",
+      "display_name": "developer-34",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20033?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 5,
+      "total_suggestions": 24,
+      "total_acceptances": 8,
+      "acceptance_rate": 0.3333,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 3,
+        "gpt-4o": 1,
+        "o1": 0,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 5,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 3,
+            "gpt-4o": 1,
+            "o1": 0,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 24,
+          "acceptances": 8,
+          "lines_suggested": 168,
+          "lines_accepted": 48,
+          "acceptance_rate": 0.3333,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-35",
+      "display_name": "developer-35",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20034?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 28,
+      "total_suggestions": 53,
+      "total_acceptances": 16,
+      "acceptance_rate": 0.3019,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 14,
+        "gpt-4o": 7,
+        "o1": 4,
+        "gemini-2-0-flash": 3
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 28,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 14,
+            "gpt-4o": 7,
+            "o1": 4,
+            "gemini-2-0-flash": 3
+          },
+          "suggestions": 53,
+          "acceptances": 16,
+          "lines_suggested": 371,
+          "lines_accepted": 96,
+          "acceptance_rate": 0.3019,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-36",
+      "display_name": "developer-36",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20035?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "business",
+      "total_chats": 26,
+      "total_suggestions": 130,
+      "total_acceptances": 48,
+      "acceptance_rate": 0.3692,
+      "total_cost_usd": 0.63,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 12,
+        "gpt-4o": 7,
+        "o1": 4,
+        "gemini-2-0-flash": 3
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 26,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 12,
+            "gpt-4o": 7,
+            "o1": 4,
+            "gemini-2-0-flash": 3
+          },
+          "suggestions": 130,
+          "acceptances": 48,
+          "lines_suggested": 910,
+          "lines_accepted": 288,
+          "acceptance_rate": 0.3692,
+          "daily_cost_usd": 0.63
+        }
+      ]
+    },
+    {
+      "login": "developer-37",
+      "display_name": "developer-37",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20036?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 13,
+      "total_suggestions": 141,
+      "total_acceptances": 51,
+      "acceptance_rate": 0.3617,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 8,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 13,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 8,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 141,
+          "acceptances": 51,
+          "lines_suggested": 987,
+          "lines_accepted": 306,
+          "acceptance_rate": 0.3617,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-38",
+      "display_name": "developer-38",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20037?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 8,
+      "total_suggestions": 31,
+      "total_acceptances": 11,
+      "acceptance_rate": 0.3548,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 4,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 8,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 4,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 31,
+          "acceptances": 11,
+          "lines_suggested": 217,
+          "lines_accepted": 66,
+          "acceptance_rate": 0.3548,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-39",
+      "display_name": "developer-39",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20038?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 13,
+      "total_suggestions": 45,
+      "total_acceptances": 13,
+      "acceptance_rate": 0.2889,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 6,
+        "gpt-4o": 3,
+        "o1": 2,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 13,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 6,
+            "gpt-4o": 3,
+            "o1": 2,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 45,
+          "acceptances": 13,
+          "lines_suggested": 315,
+          "lines_accepted": 78,
+          "acceptance_rate": 0.2889,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-40",
+      "display_name": "developer-40",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20039?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 10,
+      "total_suggestions": 62,
+      "total_acceptances": 21,
+      "acceptance_rate": 0.3387,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 5,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 10,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 5,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 62,
+          "acceptances": 21,
+          "lines_suggested": 434,
+          "lines_accepted": 126,
+          "acceptance_rate": 0.3387,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-41",
+      "display_name": "developer-41",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20040?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "business",
+      "total_chats": 10,
+      "total_suggestions": 95,
+      "total_acceptances": 33,
+      "acceptance_rate": 0.3474,
+      "total_cost_usd": 0.63,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 4,
+        "gpt-4o": 3,
+        "o1": 1,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 10,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 4,
+            "gpt-4o": 3,
+            "o1": 1,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 95,
+          "acceptances": 33,
+          "lines_suggested": 665,
+          "lines_accepted": 198,
+          "acceptance_rate": 0.3474,
+          "daily_cost_usd": 0.63
+        }
+      ]
+    },
+    {
+      "login": "developer-42",
+      "display_name": "developer-42",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20041?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 11,
+      "total_suggestions": 77,
+      "total_acceptances": 27,
+      "acceptance_rate": 0.3506,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 6,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 11,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 6,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 77,
+          "acceptances": 27,
+          "lines_suggested": 539,
+          "lines_accepted": 162,
+          "acceptance_rate": 0.3506,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-43",
+      "display_name": "developer-43",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20042?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 0,
+      "total_suggestions": 0,
+      "total_acceptances": 0,
+      "acceptance_rate": 0,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 0,
+        "gpt-4o": 0,
+        "o1": 0,
+        "gemini-2-0-flash": 0
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 0,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 0,
+            "gpt-4o": 0,
+            "o1": 0,
+            "gemini-2-0-flash": 0
+          },
+          "suggestions": 0,
+          "acceptances": 0,
+          "lines_suggested": 0,
+          "lines_accepted": 0,
+          "acceptance_rate": 0,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-44",
+      "display_name": "developer-44",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20043?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 3,
+      "total_suggestions": 24,
+      "total_acceptances": 9,
+      "acceptance_rate": 0.375,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 1,
+        "gpt-4o": 1,
+        "o1": 0,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 3,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 1,
+            "gpt-4o": 1,
+            "o1": 0,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 24,
+          "acceptances": 9,
+          "lines_suggested": 168,
+          "lines_accepted": 54,
+          "acceptance_rate": 0.375,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-45",
+      "display_name": "developer-45",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20044?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 8,
+      "total_suggestions": 47,
+      "total_acceptances": 13,
+      "acceptance_rate": 0.2766,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 4,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 8,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 4,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 47,
+          "acceptances": 13,
+          "lines_suggested": 329,
+          "lines_accepted": 78,
+          "acceptance_rate": 0.2766,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-46",
+      "display_name": "developer-46",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20045?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "business",
+      "total_chats": 26,
+      "total_suggestions": 47,
+      "total_acceptances": 16,
+      "acceptance_rate": 0.3404,
+      "total_cost_usd": 0.63,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 14,
+        "gpt-4o": 6,
+        "o1": 3,
+        "gemini-2-0-flash": 3
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 26,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 14,
+            "gpt-4o": 6,
+            "o1": 3,
+            "gemini-2-0-flash": 3
+          },
+          "suggestions": 47,
+          "acceptances": 16,
+          "lines_suggested": 329,
+          "lines_accepted": 96,
+          "acceptance_rate": 0.3404,
+          "daily_cost_usd": 0.63
+        }
+      ]
+    },
+    {
+      "login": "developer-47",
+      "display_name": "developer-47",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20046?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 8,
+      "total_suggestions": 34,
+      "total_acceptances": 11,
+      "acceptance_rate": 0.3235,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 4,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 8,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 4,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 34,
+          "acceptances": 11,
+          "lines_suggested": 238,
+          "lines_accepted": 66,
+          "acceptance_rate": 0.3235,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-48",
+      "display_name": "developer-48",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20047?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 5,
+      "total_suggestions": 95,
+      "total_acceptances": 34,
+      "acceptance_rate": 0.3579,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 2,
+        "gpt-4o": 1,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 5,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 2,
+            "gpt-4o": 1,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 95,
+          "acceptances": 34,
+          "lines_suggested": 665,
+          "lines_accepted": 204,
+          "acceptance_rate": 0.3579,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-49",
+      "display_name": "developer-49",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20048?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 8,
+      "total_suggestions": 115,
+      "total_acceptances": 40,
+      "acceptance_rate": 0.3478,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 4,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 8,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 4,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 115,
+          "acceptances": 40,
+          "lines_suggested": 805,
+          "lines_accepted": 240,
+          "acceptance_rate": 0.3478,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-50",
+      "display_name": "developer-50",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20049?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 26,
+      "total_suggestions": 71,
+      "total_acceptances": 22,
+      "acceptance_rate": 0.3099,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 12,
+        "gpt-4o": 7,
+        "o1": 4,
+        "gemini-2-0-flash": 3
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 26,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 12,
+            "gpt-4o": 7,
+            "o1": 4,
+            "gemini-2-0-flash": 3
+          },
+          "suggestions": 71,
+          "acceptances": 22,
+          "lines_suggested": 497,
+          "lines_accepted": 132,
+          "acceptance_rate": 0.3099,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-51",
+      "display_name": "developer-51",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20050?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "business",
+      "total_chats": 5,
+      "total_suggestions": 77,
+      "total_acceptances": 22,
+      "acceptance_rate": 0.2857,
+      "total_cost_usd": 0.63,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 3,
+        "gpt-4o": 1,
+        "o1": 0,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 5,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 3,
+            "gpt-4o": 1,
+            "o1": 0,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 77,
+          "acceptances": 22,
+          "lines_suggested": 539,
+          "lines_accepted": 132,
+          "acceptance_rate": 0.2857,
+          "daily_cost_usd": 0.63
+        }
+      ]
+    },
+    {
+      "login": "developer-52",
+      "display_name": "developer-52",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20051?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 6,
+      "total_suggestions": 141,
+      "total_acceptances": 49,
+      "acceptance_rate": 0.3475,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 3,
+        "gpt-4o": 1,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 6,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 3,
+            "gpt-4o": 1,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 141,
+          "acceptances": 49,
+          "lines_suggested": 987,
+          "lines_accepted": 294,
+          "acceptance_rate": 0.3475,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-53",
+      "display_name": "developer-53",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20052?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 10,
+      "total_suggestions": 24,
+      "total_acceptances": 8,
+      "acceptance_rate": 0.3333,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 5,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 10,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 5,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 24,
+          "acceptances": 8,
+          "lines_suggested": 168,
+          "lines_accepted": 48,
+          "acceptance_rate": 0.3333,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-54",
+      "display_name": "developer-54",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20053?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 4,
+      "total_suggestions": 60,
+      "total_acceptances": 17,
+      "acceptance_rate": 0.2833,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 1,
+        "gpt-4o": 1,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 4,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 1,
+            "gpt-4o": 1,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 60,
+          "acceptances": 17,
+          "lines_suggested": 420,
+          "lines_accepted": 102,
+          "acceptance_rate": 0.2833,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-55",
+      "display_name": "developer-55",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20054?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 19,
+      "total_suggestions": 111,
+      "total_acceptances": 43,
+      "acceptance_rate": 0.3874,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 11,
+        "gpt-4o": 4,
+        "o1": 2,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 19,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 11,
+            "gpt-4o": 4,
+            "o1": 2,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 111,
+          "acceptances": 43,
+          "lines_suggested": 777,
+          "lines_accepted": 258,
+          "acceptance_rate": 0.3874,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-56",
+      "display_name": "developer-56",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20055?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "business",
+      "total_chats": 11,
+      "total_suggestions": 48,
+      "total_acceptances": 14,
+      "acceptance_rate": 0.2917,
+      "total_cost_usd": 0.63,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 6,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 11,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 6,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 48,
+          "acceptances": 14,
+          "lines_suggested": 336,
+          "lines_accepted": 84,
+          "acceptance_rate": 0.2917,
+          "daily_cost_usd": 0.63
+        }
+      ]
+    },
+    {
+      "login": "developer-57",
+      "display_name": "developer-57",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20056?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 21,
+      "total_suggestions": 110,
+      "total_acceptances": 30,
+      "acceptance_rate": 0.2727,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 11,
+        "gpt-4o": 5,
+        "o1": 3,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 21,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 11,
+            "gpt-4o": 5,
+            "o1": 3,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 110,
+          "acceptances": 30,
+          "lines_suggested": 770,
+          "lines_accepted": 180,
+          "acceptance_rate": 0.2727,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-58",
+      "display_name": "developer-58",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20057?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 23,
+      "total_suggestions": 94,
+      "total_acceptances": 36,
+      "acceptance_rate": 0.383,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 11,
+        "gpt-4o": 6,
+        "o1": 3,
+        "gemini-2-0-flash": 3
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 23,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 11,
+            "gpt-4o": 6,
+            "o1": 3,
+            "gemini-2-0-flash": 3
+          },
+          "suggestions": 94,
+          "acceptances": 36,
+          "lines_suggested": 658,
+          "lines_accepted": 216,
+          "acceptance_rate": 0.383,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-59",
+      "display_name": "developer-59",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20058?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 9,
+      "total_suggestions": 27,
+      "total_acceptances": 9,
+      "acceptance_rate": 0.3333,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 5,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 9,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 5,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 27,
+          "acceptances": 9,
+          "lines_suggested": 189,
+          "lines_accepted": 54,
+          "acceptance_rate": 0.3333,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-60",
+      "display_name": "developer-60",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20059?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 4,
+      "total_suggestions": 53,
+      "total_acceptances": 16,
+      "acceptance_rate": 0.3019,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 2,
+        "gpt-4o": 1,
+        "o1": 0,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 4,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 2,
+            "gpt-4o": 1,
+            "o1": 0,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 53,
+          "acceptances": 16,
+          "lines_suggested": 371,
+          "lines_accepted": 96,
+          "acceptance_rate": 0.3019,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-61",
+      "display_name": "developer-61",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20060?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "business",
+      "total_chats": 7,
+      "total_suggestions": 64,
+      "total_acceptances": 18,
+      "acceptance_rate": 0.2813,
+      "total_cost_usd": 0.63,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 4,
+        "gpt-4o": 1,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 7,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 4,
+            "gpt-4o": 1,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 64,
+          "acceptances": 18,
+          "lines_suggested": 448,
+          "lines_accepted": 108,
+          "acceptance_rate": 0.2813,
+          "daily_cost_usd": 0.63
+        }
+      ]
+    },
+    {
+      "login": "developer-62",
+      "display_name": "developer-62",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20061?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 3,
+      "total_suggestions": 65,
+      "total_acceptances": 20,
+      "acceptance_rate": 0.3077,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 1,
+        "gpt-4o": 1,
+        "o1": 0,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 3,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 1,
+            "gpt-4o": 1,
+            "o1": 0,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 65,
+          "acceptances": 20,
+          "lines_suggested": 455,
+          "lines_accepted": 120,
+          "acceptance_rate": 0.3077,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-63",
+      "display_name": "developer-63",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20062?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 8,
+      "total_suggestions": 27,
+      "total_acceptances": 10,
+      "acceptance_rate": 0.3704,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 5,
+        "gpt-4o": 1,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 8,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 5,
+            "gpt-4o": 1,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 27,
+          "acceptances": 10,
+          "lines_suggested": 189,
+          "lines_accepted": 60,
+          "acceptance_rate": 0.3704,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-64",
+      "display_name": "developer-64",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20063?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 12,
+      "total_suggestions": 41,
+      "total_acceptances": 13,
+      "acceptance_rate": 0.3171,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 6,
+        "gpt-4o": 3,
+        "o1": 1,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 12,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 6,
+            "gpt-4o": 3,
+            "o1": 1,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 41,
+          "acceptances": 13,
+          "lines_suggested": 287,
+          "lines_accepted": 78,
+          "acceptance_rate": 0.3171,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-65",
+      "display_name": "developer-65",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20064?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 5,
+      "total_suggestions": 45,
+      "total_acceptances": 16,
+      "acceptance_rate": 0.3556,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 2,
+        "gpt-4o": 1,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 5,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 2,
+            "gpt-4o": 1,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 45,
+          "acceptances": 16,
+          "lines_suggested": 315,
+          "lines_accepted": 96,
+          "acceptance_rate": 0.3556,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-66",
+      "display_name": "developer-66",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20065?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "business",
+      "total_chats": 15,
+      "total_suggestions": 79,
+      "total_acceptances": 28,
+      "acceptance_rate": 0.3544,
+      "total_cost_usd": 0.63,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 9,
+        "gpt-4o": 3,
+        "o1": 1,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 15,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 9,
+            "gpt-4o": 3,
+            "o1": 1,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 79,
+          "acceptances": 28,
+          "lines_suggested": 553,
+          "lines_accepted": 168,
+          "acceptance_rate": 0.3544,
+          "daily_cost_usd": 0.63
+        }
+      ]
+    },
+    {
+      "login": "developer-67",
+      "display_name": "developer-67",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20066?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 13,
+      "total_suggestions": 129,
+      "total_acceptances": 40,
+      "acceptance_rate": 0.3101,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 7,
+        "gpt-4o": 3,
+        "o1": 1,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 13,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 7,
+            "gpt-4o": 3,
+            "o1": 1,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 129,
+          "acceptances": 40,
+          "lines_suggested": 903,
+          "lines_accepted": 240,
+          "acceptance_rate": 0.3101,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-68",
+      "display_name": "developer-68",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20067?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 6,
+      "total_suggestions": 25,
+      "total_acceptances": 7,
+      "acceptance_rate": 0.28,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 2,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 6,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 2,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 25,
+          "acceptances": 7,
+          "lines_suggested": 175,
+          "lines_accepted": 42,
+          "acceptance_rate": 0.28,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-69",
+      "display_name": "developer-69",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20068?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 8,
+      "total_suggestions": 59,
+      "total_acceptances": 19,
+      "acceptance_rate": 0.322,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 3,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 8,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 3,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 59,
+          "acceptances": 19,
+          "lines_suggested": 413,
+          "lines_accepted": 114,
+          "acceptance_rate": 0.322,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-70",
+      "display_name": "developer-70",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20069?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 6,
+      "total_suggestions": 36,
+      "total_acceptances": 10,
+      "acceptance_rate": 0.2778,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 3,
+        "gpt-4o": 1,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 6,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 3,
+            "gpt-4o": 1,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 36,
+          "acceptances": 10,
+          "lines_suggested": 252,
+          "lines_accepted": 60,
+          "acceptance_rate": 0.2778,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-71",
+      "display_name": "developer-71",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20070?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "business",
+      "total_chats": 4,
+      "total_suggestions": 115,
+      "total_acceptances": 39,
+      "acceptance_rate": 0.3391,
+      "total_cost_usd": 0.63,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 2,
+        "gpt-4o": 1,
+        "o1": 0,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 4,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 2,
+            "gpt-4o": 1,
+            "o1": 0,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 115,
+          "acceptances": 39,
+          "lines_suggested": 805,
+          "lines_accepted": 234,
+          "acceptance_rate": 0.3391,
+          "daily_cost_usd": 0.63
+        }
+      ]
+    },
+    {
+      "login": "developer-72",
+      "display_name": "developer-72",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20071?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 20,
+      "total_suggestions": 78,
+      "total_acceptances": 28,
+      "acceptance_rate": 0.359,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 9,
+        "gpt-4o": 5,
+        "o1": 3,
+        "gemini-2-0-flash": 3
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 20,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 9,
+            "gpt-4o": 5,
+            "o1": 3,
+            "gemini-2-0-flash": 3
+          },
+          "suggestions": 78,
+          "acceptances": 28,
+          "lines_suggested": 546,
+          "lines_accepted": 168,
+          "acceptance_rate": 0.359,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-73",
+      "display_name": "developer-73",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20072?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 12,
+      "total_suggestions": 44,
+      "total_acceptances": 15,
+      "acceptance_rate": 0.3409,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 7,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 12,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 7,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 44,
+          "acceptances": 15,
+          "lines_suggested": 308,
+          "lines_accepted": 90,
+          "acceptance_rate": 0.3409,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-74",
+      "display_name": "developer-74",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20073?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 5,
+      "total_suggestions": 121,
+      "total_acceptances": 38,
+      "acceptance_rate": 0.314,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 2,
+        "gpt-4o": 1,
+        "o1": 1,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 5,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 2,
+            "gpt-4o": 1,
+            "o1": 1,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 121,
+          "acceptances": 38,
+          "lines_suggested": 847,
+          "lines_accepted": 228,
+          "acceptance_rate": 0.314,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-75",
+      "display_name": "developer-75",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20074?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 12,
+      "total_suggestions": 28,
+      "total_acceptances": 8,
+      "acceptance_rate": 0.2857,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 7,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 12,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 7,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 28,
+          "acceptances": 8,
+          "lines_suggested": 196,
+          "lines_accepted": 48,
+          "acceptance_rate": 0.2857,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-76",
+      "display_name": "developer-76",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20075?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "business",
+      "total_chats": 3,
+      "total_suggestions": 69,
+      "total_acceptances": 22,
+      "acceptance_rate": 0.3188,
+      "total_cost_usd": 0.63,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 1,
+        "gpt-4o": 1,
+        "o1": 0,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 3,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 1,
+            "gpt-4o": 1,
+            "o1": 0,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 69,
+          "acceptances": 22,
+          "lines_suggested": 483,
+          "lines_accepted": 132,
+          "acceptance_rate": 0.3188,
+          "daily_cost_usd": 0.63
+        }
+      ]
+    },
+    {
+      "login": "developer-77",
+      "display_name": "developer-77",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20076?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 17,
+      "total_suggestions": 59,
+      "total_acceptances": 16,
+      "acceptance_rate": 0.2712,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 10,
+        "gpt-4o": 3,
+        "o1": 2,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 17,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 10,
+            "gpt-4o": 3,
+            "o1": 2,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 59,
+          "acceptances": 16,
+          "lines_suggested": 413,
+          "lines_accepted": 96,
+          "acceptance_rate": 0.2712,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-78",
+      "display_name": "developer-78",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20077?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 3,
+      "total_suggestions": 36,
+      "total_acceptances": 10,
+      "acceptance_rate": 0.2778,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 1,
+        "gpt-4o": 1,
+        "o1": 0,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 3,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 1,
+            "gpt-4o": 1,
+            "o1": 0,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 36,
+          "acceptances": 10,
+          "lines_suggested": 252,
+          "lines_accepted": 60,
+          "acceptance_rate": 0.2778,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-79",
+      "display_name": "developer-79",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20078?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 0,
+      "total_suggestions": 0,
+      "total_acceptances": 0,
+      "acceptance_rate": 0,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 0,
+        "gpt-4o": 0,
+        "o1": 0,
+        "gemini-2-0-flash": 0
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 0,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 0,
+            "gpt-4o": 0,
+            "o1": 0,
+            "gemini-2-0-flash": 0
+          },
+          "suggestions": 0,
+          "acceptances": 0,
+          "lines_suggested": 0,
+          "lines_accepted": 0,
+          "acceptance_rate": 0,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-80",
+      "display_name": "developer-80",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20079?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 3,
+      "total_suggestions": 74,
+      "total_acceptances": 25,
+      "acceptance_rate": 0.3378,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 1,
+        "gpt-4o": 1,
+        "o1": 0,
+        "gemini-2-0-flash": 1
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 3,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 1,
+            "gpt-4o": 1,
+            "o1": 0,
+            "gemini-2-0-flash": 1
+          },
+          "suggestions": 74,
+          "acceptances": 25,
+          "lines_suggested": 518,
+          "lines_accepted": 150,
+          "acceptance_rate": 0.3378,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-81",
+      "display_name": "developer-81",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20080?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "business",
+      "total_chats": 16,
+      "total_suggestions": 108,
+      "total_acceptances": 40,
+      "acceptance_rate": 0.3704,
+      "total_cost_usd": 0.63,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 9,
+        "gpt-4o": 3,
+        "o1": 2,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 16,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 9,
+            "gpt-4o": 3,
+            "o1": 2,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 108,
+          "acceptances": 40,
+          "lines_suggested": 756,
+          "lines_accepted": 240,
+          "acceptance_rate": 0.3704,
+          "daily_cost_usd": 0.63
+        }
+      ]
+    },
+    {
+      "login": "developer-82",
+      "display_name": "developer-82",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20081?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 14,
+      "total_suggestions": 110,
+      "total_acceptances": 43,
+      "acceptance_rate": 0.3909,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 8,
+        "gpt-4o": 3,
+        "o1": 1,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 14,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 8,
+            "gpt-4o": 3,
+            "o1": 1,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 110,
+          "acceptances": 43,
+          "lines_suggested": 770,
+          "lines_accepted": 258,
+          "acceptance_rate": 0.3909,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-83",
+      "display_name": "developer-83",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20082?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-cloud-core",
+      "plan_type": "enterprise",
+      "total_chats": 0,
+      "total_suggestions": 0,
+      "total_acceptances": 0,
+      "acceptance_rate": 0,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 0,
+        "gpt-4o": 0,
+        "o1": 0,
+        "gemini-2-0-flash": 0
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 0,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 0,
+            "gpt-4o": 0,
+            "o1": 0,
+            "gemini-2-0-flash": 0
+          },
+          "suggestions": 0,
+          "acceptances": 0,
+          "lines_suggested": 0,
+          "lines_accepted": 0,
+          "acceptance_rate": 0,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-84",
+      "display_name": "developer-84",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20083?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-ai-labs",
+      "plan_type": "enterprise",
+      "total_chats": 9,
+      "total_suggestions": 80,
+      "total_acceptances": 28,
+      "acceptance_rate": 0.35,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 4,
+        "gpt-4o": 2,
+        "o1": 1,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 9,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 4,
+            "gpt-4o": 2,
+            "o1": 1,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 80,
+          "acceptances": 28,
+          "lines_suggested": 560,
+          "lines_accepted": 168,
+          "acceptance_rate": 0.35,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    },
+    {
+      "login": "developer-85",
+      "display_name": "developer-85",
+      "avatar_url": "https://avatars.githubusercontent.com/u/20084?v=4",
+      "department": "未分類 (Unassigned)",
+      "cost_center": "Default-CostCenter",
+      "organization": "proud-fintech",
+      "plan_type": "enterprise",
+      "total_chats": 12,
+      "total_suggestions": 63,
+      "total_acceptances": 23,
+      "acceptance_rate": 0.3651,
+      "total_cost_usd": 1.3,
+      "model_usage_totals": {
+        "claude-3-7-sonnet": 5,
+        "gpt-4o": 3,
+        "o1": 2,
+        "gemini-2-0-flash": 2
+      },
+      "daily_history": [
+        {
+          "date": "2026-08-18",
+          "total_chats": 12,
+          "model_breakdown": {
+            "claude-3-7-sonnet": 5,
+            "gpt-4o": 3,
+            "o1": 2,
+            "gemini-2-0-flash": 2
+          },
+          "suggestions": 63,
+          "acceptances": 23,
+          "lines_suggested": 441,
+          "lines_accepted": 138,
+          "acceptance_rate": 0.3651,
+          "daily_cost_usd": 1.3
+        }
+      ]
+    }
+  ]
+}

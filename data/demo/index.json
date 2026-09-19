@@ -1,0 +1,115 @@
+{
+  "repository": {
+    "owner": "proud-corp",
+    "name": "github-copilot-dashboard",
+    "is_fork": false
+  },
+  "generated_at": "2026-09-19T08:15:04.804Z",
+  "data_retention_days": 365,
+  "available_months": [
+    "2026-09"
+  ],
+  "all_recorded_months": [
+    "2026-09"
+  ],
+  "available_days": [
+    "2026-09-10",
+    "2026-09-09",
+    "2026-09-08",
+    "2026-09-07",
+    "2026-09-06",
+    "2026-09-05",
+    "2026-09-04",
+    "2026-09-03",
+    "2026-09-02",
+    "2026-09-01",
+    "2026-08-31",
+    "2026-08-30",
+    "2026-08-29",
+    "2026-08-28",
+    "2026-08-27",
+    "2026-08-26",
+    "2026-08-25",
+    "2026-08-24",
+    "2026-08-23",
+    "2026-08-22",
+    "2026-08-21",
+    "2026-08-20",
+    "2026-08-19",
+    "2026-08-18",
+    "2026-08-17",
+    "2026-08-16",
+    "2026-08-15",
+    "2026-08-14",
+    "2026-08-13",
+    "2026-08-12"
+  ],
+  "available_reports": [
+    "2026-09",
+    "2026-08"
+  ],
+  "rolling_1year_trend_file": "trends/rolling-1year.json",
+  "deep_analysis_months": [
+    "2026-09"
+  ],
+  "is_mock_mode": true,
+  "default_scopes": {
+    "latest_day": "2026-09-10",
+    "latest_month": "2026-09",
+    "latest_report": "2026-09",
+    "latest_range": {
+      "start": "2026-08-12",
+      "end": "2026-09-10"
+    }
+  },
+  "summary": {
+    "total_seats": 85,
+    "active_seats_30d": 73,
+    "idle_seats_30d": 12,
+    "total_monthly_spend_usd": 2975,
+    "idle_waste_spend_usd": 448
+  },
+  "issues": [
+    {
+      "id": "issue-1789805704479-ai4v8",
+      "timestamp": "2026-09-19T08:15:04.479Z",
+      "severity": "warning",
+      "category": "rate_limit",
+      "target": "api:copilot/metrics",
+      "message": "GitHub REST API rate limit approaching threshold (Remaining: 120/5000 requests)",
+      "details": "X-RateLimit-Remaining: 120\nX-RateLimit-Reset: 1725960000\nResource: /enterprises/proud-corp/copilot/metrics\nRecommendation: Increase polling interval or utilize caching.",
+      "http_status": 200,
+      "affected_fields": [
+        "copilot_ide_chat"
+      ]
+    },
+    {
+      "id": "issue-1789805704480-levxu",
+      "timestamp": "2026-09-19T08:15:04.480Z",
+      "severity": "error",
+      "category": "api_auth",
+      "target": "org:proud-internal-sys",
+      "message": "HTTP 403 Forbidden: Missing admin read permissions for organization \"proud-internal-sys\"",
+      "details": "Status: 403 Forbidden\nEndpoint: GET https://api.github.com/orgs/proud-internal-sys/copilot/metrics\nResponse: {\"message\":\"Must have admin rights to Repository or Organization to view Copilot Metrics.\",\"documentation_url\":\"https://docs.github.com/rest/copilot/copilot-metrics\"}\nImpact: Metrics for proud-internal-sys were skipped and marked as unavailable.",
+      "http_status": 403,
+      "affected_fields": [
+        "copilot_ide_code_completions",
+        "copilot_ide_chat",
+        "top_languages"
+      ]
+    },
+    {
+      "id": "issue-1789805704488-9vmfg",
+      "timestamp": "2026-09-19T08:15:04.488Z",
+      "severity": "warning",
+      "category": "data_integrity",
+      "target": "api:billing/cost-centers/cc-ent-9009",
+      "message": "Cost Center \"cc-ent-9009\" (Enterprise-IT) contains 3 unmapped user assignments",
+      "details": "Warning: 3 users could not be resolved against active enterprise seats.\nCost Center ID: cc-ent-9009\nFallback: Assigned to Default-CostCenter.",
+      "http_status": 200,
+      "affected_fields": [
+        "cost_center"
+      ]
+    }
+  ]
+}
