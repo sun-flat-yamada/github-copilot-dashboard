@@ -2,7 +2,6 @@ import { DataSourceType } from './copilot.js';
 
 export type AnalysisViewId =
   | 'overview'
-  | 'ranking'
   | 'users'
   | 'trend'
   | 'budget'
@@ -42,22 +41,13 @@ export const ANALYSIS_VIEW_REGISTRY: AnalysisViewDefinition[] = [
     requiredCapabilities: ['kpi_summary', 'cost_allocation'],
   },
   {
-    id: 'ranking',
-    title: 'グループ内 使用量ランキング',
-    shortTitle: 'ランキング',
-    description: '所属グループ内の利用量・受諾数・チャット実績ランキング',
-    iconName: 'Trophy',
-    supportedDataSources: ['live_metrics', 'monthly_report', 'user_upload'],
-    requiredCapabilities: ['group_ranking'],
-  },
-  {
     id: 'users',
-    title: 'ユーザー別利用明細 & 状態',
+    title: 'ユーザー別利用明細 & 活用ランキング',
     shortTitle: 'ユーザー明細',
-    description: '全ユーザーの利用ステータス、推計費用、最終利用日の一覧',
+    description: '全ユーザーの稼働状況・推計費用・AI活用度ランキングの一覧',
     iconName: 'Users2',
     supportedDataSources: ['live_metrics', 'monthly_report', 'user_upload'],
-    requiredCapabilities: ['user_table'],
+    requiredCapabilities: ['user_table', 'group_ranking'],
   },
   {
     id: 'trend',
