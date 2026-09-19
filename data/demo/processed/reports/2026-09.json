@@ -2,47 +2,242 @@
   "report_month": "2026-09",
   "source_type": "persisted",
   "file_name": "copilot_monthly_usage_2026-09.csv",
-  "parsed_at": "2026-09-19T08:15:04.795Z",
+  "parsed_at": "2026-09-19T23:36:08.022Z",
   "overview": {
-    "total_net_spend_usd": 338.65,
-    "total_gross_spend_usd": 340.33,
-    "total_discount_usd": 1.68,
-    "total_requests": 2646,
-    "total_active_users": 10,
+    "total_net_spend_usd": 544.48,
+    "total_gross_spend_usd": 547.27,
+    "total_discount_usd": 2.79,
+    "total_requests": 4200,
+    "total_active_users": 16,
     "top_model": "Claude 3.7 Sonnet",
     "top_sku": "copilot_business"
   },
   "by_department": {
-    "未分類 (Unassigned)": {
-      "group_name": "未分類 (Unassigned)",
-      "total_seats": 10,
-      "active_seats": 10,
+    "コア決済基盤チーム": {
+      "group_name": "コア決済基盤チーム",
+      "total_seats": 4,
+      "active_seats": 4,
       "idle_seats": 0,
-      "total_cost_usd": 340.33,
-      "net_cost_usd": 338.65,
+      "total_cost_usd": 112.89,
+      "net_cost_usd": 112.05,
       "potential_savings_usd": 0,
       "active_ratio": 1,
       "acceptance_rate": 0.35,
-      "total_suggestions": 2646,
-      "total_acceptances": 926,
-      "total_chats": 529,
+      "total_suggestions": 1103,
+      "total_acceptances": 386,
+      "total_chats": 221,
+      "total_pr_summaries": 0
+    },
+    "LLM応用プロダクトG": {
+      "group_name": "LLM応用プロダクトG",
+      "total_seats": 1,
+      "active_seats": 1,
+      "idle_seats": 0,
+      "total_cost_usd": 46.34,
+      "net_cost_usd": 46.18,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 219,
+      "total_acceptances": 77,
+      "total_chats": 44,
+      "total_pr_summaries": 0
+    },
+    "SRE & クラウド基盤部": {
+      "group_name": "SRE & クラウド基盤部",
+      "total_seats": 2,
+      "active_seats": 2,
+      "idle_seats": 0,
+      "total_cost_usd": 77.35,
+      "net_cost_usd": 77.06,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 574,
+      "total_acceptances": 201,
+      "total_chats": 115,
+      "total_pr_summaries": 0
+    },
+    "モバイルアプリ開発部": {
+      "group_name": "モバイルアプリ開発部",
+      "total_seats": 1,
+      "active_seats": 1,
+      "idle_seats": 0,
+      "total_cost_usd": 47.16,
+      "net_cost_usd": 47.01,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 236,
+      "total_acceptances": 83,
+      "total_chats": 47,
+      "total_pr_summaries": 0
+    },
+    "業務システム改革推進室": {
+      "group_name": "業務システム改革推進室",
+      "total_seats": 1,
+      "active_seats": 1,
+      "idle_seats": 0,
+      "total_cost_usd": 30.11,
+      "net_cost_usd": 29.89,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 313,
+      "total_acceptances": 110,
+      "total_chats": 63,
+      "total_pr_summaries": 0
+    },
+    "クラウドインフラ統括部": {
+      "group_name": "クラウドインフラ統括部",
+      "total_seats": 2,
+      "active_seats": 2,
+      "idle_seats": 0,
+      "total_cost_usd": 75.35,
+      "net_cost_usd": 74.95,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 519,
+      "total_acceptances": 182,
+      "total_chats": 104,
+      "total_pr_summaries": 0
+    },
+    "IT運用管理部": {
+      "group_name": "IT運用管理部",
+      "total_seats": 1,
+      "active_seats": 1,
+      "idle_seats": 0,
+      "total_cost_usd": 28.22,
+      "net_cost_usd": 28.18,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 253,
+      "total_acceptances": 89,
+      "total_chats": 51,
+      "total_pr_summaries": 0
+    },
+    "マーケティングDX推進部": {
+      "group_name": "マーケティングDX推進部",
+      "total_seats": 1,
+      "active_seats": 1,
+      "idle_seats": 0,
+      "total_cost_usd": 46.34,
+      "net_cost_usd": 46.18,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 219,
+      "total_acceptances": 77,
+      "total_chats": 44,
+      "total_pr_summaries": 0
+    },
+    "データAI推進室": {
+      "group_name": "データAI推進室",
+      "total_seats": 1,
+      "active_seats": 1,
+      "idle_seats": 0,
+      "total_cost_usd": 30.01,
+      "net_cost_usd": 29.79,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 309,
+      "total_acceptances": 108,
+      "total_chats": 62,
+      "total_pr_summaries": 0
+    },
+    "APIプラットフォーム部": {
+      "group_name": "APIプラットフォーム部",
+      "total_seats": 1,
+      "active_seats": 1,
+      "idle_seats": 0,
+      "total_cost_usd": 27.16,
+      "net_cost_usd": 27.01,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 236,
+      "total_acceptances": 83,
+      "total_chats": 47,
+      "total_pr_summaries": 0
+    },
+    "セキュリティ基盤部": {
+      "group_name": "セキュリティ基盤部",
+      "total_seats": 1,
+      "active_seats": 1,
+      "idle_seats": 0,
+      "total_cost_usd": 26.34,
+      "net_cost_usd": 26.18,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 219,
+      "total_acceptances": 77,
+      "total_chats": 44,
       "total_pr_summaries": 0
     }
   },
   "by_cost_center": {
     "FinTech-Division": {
       "group_name": "FinTech-Division",
-      "total_seats": 4,
-      "active_seats": 4,
+      "total_seats": 6,
+      "active_seats": 6,
       "idle_seats": 0,
-      "total_cost_usd": 134.98,
-      "net_cost_usd": 134.21,
+      "total_cost_usd": 188.12,
+      "net_cost_usd": 186.91,
       "potential_savings_usd": 0,
       "active_ratio": 1,
       "acceptance_rate": 0.35,
-      "total_suggestions": 1163,
-      "total_acceptances": 407,
-      "total_chats": 233,
+      "total_suggestions": 1611,
+      "total_acceptances": 564,
+      "total_chats": 322,
+      "total_pr_summaries": 0
+    },
+    "Research-and-AI": {
+      "group_name": "Research-and-AI",
+      "total_seats": 1,
+      "active_seats": 1,
+      "idle_seats": 0,
+      "total_cost_usd": 46.34,
+      "net_cost_usd": 46.18,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 219,
+      "total_acceptances": 77,
+      "total_chats": 44,
+      "total_pr_summaries": 0
+    },
+    "Cloud-Platform": {
+      "group_name": "Cloud-Platform",
+      "total_seats": 2,
+      "active_seats": 2,
+      "idle_seats": 0,
+      "total_cost_usd": 77.35,
+      "net_cost_usd": 77.06,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 574,
+      "total_acceptances": 201,
+      "total_chats": 115,
+      "total_pr_summaries": 0
+    },
+    "Enterprise-IT": {
+      "group_name": "Enterprise-IT",
+      "total_seats": 1,
+      "active_seats": 1,
+      "idle_seats": 0,
+      "total_cost_usd": 30.11,
+      "net_cost_usd": 29.89,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 313,
+      "total_acceptances": 110,
+      "total_chats": 63,
       "total_pr_summaries": 0
     },
     "IT-Infrastructure": {
@@ -79,32 +274,62 @@
   "by_organization": {
     "proud-fintech": {
       "group_name": "proud-fintech",
-      "total_seats": 4,
-      "active_seats": 4,
+      "total_seats": 5,
+      "active_seats": 5,
       "idle_seats": 0,
-      "total_cost_usd": 134.98,
-      "net_cost_usd": 134.21,
+      "total_cost_usd": 160.05,
+      "net_cost_usd": 159.06,
       "potential_savings_usd": 0,
       "active_ratio": 1,
       "acceptance_rate": 0.35,
-      "total_suggestions": 1163,
-      "total_acceptances": 407,
-      "total_chats": 233,
+      "total_suggestions": 1339,
+      "total_acceptances": 469,
+      "total_chats": 268,
+      "total_pr_summaries": 0
+    },
+    "proud-ai-labs": {
+      "group_name": "proud-ai-labs",
+      "total_seats": 1,
+      "active_seats": 1,
+      "idle_seats": 0,
+      "total_cost_usd": 46.34,
+      "net_cost_usd": 46.18,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 219,
+      "total_acceptances": 77,
+      "total_chats": 44,
+      "total_pr_summaries": 0
+    },
+    "proud-cloud-core": {
+      "group_name": "proud-cloud-core",
+      "total_seats": 3,
+      "active_seats": 3,
+      "idle_seats": 0,
+      "total_cost_usd": 105.42,
+      "net_cost_usd": 104.91,
+      "potential_savings_usd": 0,
+      "active_ratio": 1,
+      "acceptance_rate": 0.35,
+      "total_suggestions": 846,
+      "total_acceptances": 296,
+      "total_chats": 169,
       "total_pr_summaries": 0
     },
     "proud-internal-sys": {
       "group_name": "proud-internal-sys",
-      "total_seats": 2,
-      "active_seats": 2,
+      "total_seats": 3,
+      "active_seats": 3,
       "idle_seats": 0,
-      "total_cost_usd": 75.5,
-      "net_cost_usd": 75.27,
+      "total_cost_usd": 105.61,
+      "net_cost_usd": 105.16,
       "potential_savings_usd": 0,
       "active_ratio": 1,
       "acceptance_rate": 0.35,
-      "total_suggestions": 500,
-      "total_acceptances": 175,
-      "total_chats": 100,
+      "total_suggestions": 813,
+      "total_acceptances": 285,
+      "total_chats": 163,
       "total_pr_summaries": 0
     },
     "proud-marketing": {
@@ -141,204 +366,209 @@
   "model_breakdown": [
     {
       "model_name": "Claude 3.7 Sonnet",
-      "total_requests": 755,
-      "total_spend_usd": 29.52,
-      "active_users": 10,
-      "percentage": 28.5
+      "total_requests": 1187,
+      "total_spend_usd": 46.54,
+      "active_users": 16,
+      "percentage": 28.3
     },
     {
       "model_name": "Gemini 2.0 Flash",
-      "total_requests": 728,
-      "total_spend_usd": 14.31,
-      "active_users": 10,
-      "percentage": 27.5
+      "total_requests": 1136,
+      "total_spend_usd": 22.3,
+      "active_users": 16,
+      "percentage": 27
     },
     {
       "model_name": "GPT-4o",
-      "total_requests": 604,
-      "total_spend_usd": 17.66,
-      "active_users": 10,
-      "percentage": 22.8
+      "total_requests": 999,
+      "total_spend_usd": 29.19,
+      "active_users": 16,
+      "percentage": 23.8
     },
     {
       "model_name": "o1",
-      "total_requests": 549,
-      "total_spend_usd": 27.17,
-      "active_users": 10,
-      "percentage": 20.7
+      "total_requests": 862,
+      "total_spend_usd": 42.46,
+      "active_users": 16,
+      "percentage": 20.5
     },
     {
       "model_name": "Standard Completion",
-      "total_requests": 10,
-      "total_spend_usd": 250,
-      "active_users": 10,
+      "total_requests": 16,
+      "total_spend_usd": 404,
+      "active_users": 16,
       "percentage": 0.4
     }
   ],
   "sku_breakdown": [
     {
       "sku_name": "copilot_business",
-      "total_quantity": 7,
+      "total_quantity": 11,
       "unit_type": "seats",
-      "total_spend_usd": 133,
-      "percentage": 39.3
+      "total_spend_usd": 209,
+      "percentage": 38.4
     },
     {
       "sku_name": "copilot_enterprise",
-      "total_quantity": 3,
+      "total_quantity": 5,
       "unit_type": "seats",
-      "total_spend_usd": 117,
-      "percentage": 34.5
+      "total_spend_usd": 195,
+      "percentage": 35.8
     },
     {
       "sku_name": "copilot_premium_request",
-      "total_quantity": 2636,
+      "total_quantity": 4184,
       "unit_type": "requests",
-      "total_spend_usd": 88.65,
-      "percentage": 26.2
+      "total_spend_usd": 140.48,
+      "percentage": 25.8
     }
   ],
   "daily_trends": [
     {
       "date": "2026-09-01",
-      "requests": 139,
-      "spend_usd": 253.45,
-      "active_users": 10
+      "requests": 188,
+      "spend_usd": 408.79,
+      "active_users": 16
     },
     {
       "date": "2026-09-02",
-      "requests": 88,
-      "spend_usd": 2.9,
-      "active_users": 9
+      "requests": 169,
+      "spend_usd": 6.29,
+      "active_users": 15
     },
     {
       "date": "2026-09-03",
-      "requests": 134,
-      "spend_usd": 5.35,
-      "active_users": 9
+      "requests": 208,
+      "spend_usd": 7.63,
+      "active_users": 15
     },
     {
       "date": "2026-09-04",
-      "requests": 74,
-      "spend_usd": 2.44,
-      "active_users": 5
+      "requests": 116,
+      "spend_usd": 4.04,
+      "active_users": 8
     },
     {
       "date": "2026-09-07",
-      "requests": 125,
-      "spend_usd": 4.71,
-      "active_users": 6
+      "requests": 198,
+      "spend_usd": 7,
+      "active_users": 9
     },
     {
       "date": "2026-09-08",
-      "requests": 152,
-      "spend_usd": 5.8,
-      "active_users": 8
+      "requests": 259,
+      "spend_usd": 9.51,
+      "active_users": 13
     },
     {
       "date": "2026-09-09",
-      "requests": 152,
-      "spend_usd": 4.4,
-      "active_users": 9
+      "requests": 211,
+      "spend_usd": 6.52,
+      "active_users": 14
     },
     {
       "date": "2026-09-10",
-      "requests": 141,
-      "spend_usd": 4.41,
-      "active_users": 8
+      "requests": 209,
+      "spend_usd": 7.06,
+      "active_users": 13
     },
     {
       "date": "2026-09-11",
-      "requests": 89,
-      "spend_usd": 3.65,
-      "active_users": 7
+      "requests": 152,
+      "spend_usd": 5.21,
+      "active_users": 11
     },
     {
       "date": "2026-09-14",
-      "requests": 99,
-      "spend_usd": 3.39,
-      "active_users": 5
+      "requests": 156,
+      "spend_usd": 5.61,
+      "active_users": 8
     },
     {
       "date": "2026-09-15",
-      "requests": 198,
-      "spend_usd": 6.25,
-      "active_users": 9
+      "requests": 338,
+      "spend_usd": 10.08,
+      "active_users": 15
     },
     {
       "date": "2026-09-16",
-      "requests": 208,
-      "spend_usd": 7.47,
-      "active_users": 10
+      "requests": 322,
+      "spend_usd": 11.3,
+      "active_users": 15
     },
     {
       "date": "2026-09-17",
-      "requests": 80,
-      "spend_usd": 2.64,
-      "active_users": 6
+      "requests": 118,
+      "spend_usd": 3.83,
+      "active_users": 9
     },
     {
       "date": "2026-09-18",
-      "requests": 142,
-      "spend_usd": 5.07,
-      "active_users": 8
+      "requests": 199,
+      "spend_usd": 7.5,
+      "active_users": 13
     },
     {
       "date": "2026-09-21",
-      "requests": 99,
-      "spend_usd": 3.05,
-      "active_users": 7
+      "requests": 157,
+      "spend_usd": 4.94,
+      "active_users": 11
     },
     {
       "date": "2026-09-22",
-      "requests": 178,
-      "spend_usd": 6,
-      "active_users": 9
+      "requests": 294,
+      "spend_usd": 10.54,
+      "active_users": 15
     },
     {
       "date": "2026-09-23",
-      "requests": 199,
-      "spend_usd": 7.5,
-      "active_users": 9
+      "requests": 333,
+      "spend_usd": 11.58,
+      "active_users": 15
     },
     {
       "date": "2026-09-24",
-      "requests": 74,
-      "spend_usd": 2.29,
-      "active_users": 5
+      "requests": 121,
+      "spend_usd": 3.74,
+      "active_users": 8
     },
     {
       "date": "2026-09-25",
-      "requests": 168,
-      "spend_usd": 4.44,
-      "active_users": 9
+      "requests": 288,
+      "spend_usd": 7.96,
+      "active_users": 15
     },
     {
       "date": "2026-09-28",
-      "requests": 107,
-      "spend_usd": 3.45,
-      "active_users": 8
+      "requests": 164,
+      "spend_usd": 5.36,
+      "active_users": 13
     }
   ],
   "user_details": [
     {
       "login": "kenji-sato",
-      "display_name": "kenji-sato",
-      "department": "未分類 (Unassigned)",
-      "cost_center": "FinTech-Division",
-      "organization": "proud-fintech",
+      "display_name": "佐藤 健二",
+      "department": "SRE & クラウド基盤部",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
       "total_requests": 327,
       "total_spend_usd": 50.07,
       "gross_spend_usd": 50.07,
       "net_spend_usd": 49.96,
       "primary_model": "Gemini 2.0 Flash",
       "last_activity_date": "2026-09-28",
-      "surface": "VS Code"
+      "surface": "VS Code",
+      "tags": [
+        "正社員",
+        "SRE",
+        "インフラ"
+      ]
     },
     {
       "login": "daiki-suzuki",
-      "display_name": "daiki-suzuki",
-      "department": "未分類 (Unassigned)",
+      "display_name": "鈴木 大樹",
+      "department": "クラウドインフラ統括部",
       "cost_center": "IT-Infrastructure",
       "organization": "proud-internal-sys",
       "total_requests": 247,
@@ -347,12 +577,52 @@
       "net_spend_usd": 47.1,
       "primary_model": "Gemini 2.0 Flash",
       "last_activity_date": "2026-09-28",
-      "surface": "VS Code"
+      "surface": "VS Code",
+      "tags": [
+        "正社員",
+        "インフラ"
+      ]
+    },
+    {
+      "login": "yuki-takahashi",
+      "display_name": "高橋 悠希",
+      "department": "モバイルアプリ開発部",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "total_requests": 236,
+      "total_spend_usd": 47.16,
+      "gross_spend_usd": 47.16,
+      "net_spend_usd": 47.01,
+      "primary_model": "GPT-4o",
+      "last_activity_date": "2026-09-25",
+      "surface": "VS Code",
+      "tags": [
+        "正社員",
+        "モバイル"
+      ]
+    },
+    {
+      "login": "hanako-suzuki",
+      "display_name": "鈴木 花子",
+      "department": "LLM応用プロダクトG",
+      "cost_center": "Research-and-AI",
+      "organization": "proud-ai-labs",
+      "total_requests": 219,
+      "total_spend_usd": 46.34,
+      "gross_spend_usd": 46.34,
+      "net_spend_usd": 46.18,
+      "primary_model": "Claude 3.7 Sonnet",
+      "last_activity_date": "2026-09-28",
+      "surface": "VS Code",
+      "tags": [
+        "正社員",
+        "AI推進"
+      ]
     },
     {
       "login": "ren-takahashi",
-      "display_name": "ren-takahashi",
-      "department": "未分類 (Unassigned)",
+      "display_name": "高橋 蓮",
+      "department": "マーケティングDX推進部",
       "cost_center": "Data-AI-Lab",
       "organization": "proud-marketing",
       "total_requests": 219,
@@ -361,12 +631,34 @@
       "net_spend_usd": 46.18,
       "primary_model": "Claude 3.7 Sonnet",
       "last_activity_date": "2026-09-28",
-      "surface": "VS Code"
+      "surface": "VS Code",
+      "tags": [
+        "正社員",
+        "AI推進"
+      ]
+    },
+    {
+      "login": "mika-ito",
+      "display_name": "伊藤 美香",
+      "department": "業務システム改革推進室",
+      "cost_center": "Enterprise-IT",
+      "organization": "proud-internal-sys",
+      "total_requests": 313,
+      "total_spend_usd": 30.11,
+      "gross_spend_usd": 30.11,
+      "net_spend_usd": 29.89,
+      "primary_model": "o1",
+      "last_activity_date": "2026-09-28",
+      "surface": "VS Code",
+      "tags": [
+        "正社員",
+        "社内DX"
+      ]
     },
     {
       "login": "mei-ito",
-      "display_name": "mei-ito",
-      "department": "未分類 (Unassigned)",
+      "display_name": "伊藤 芽依",
+      "department": "データAI推進室",
       "cost_center": "Data-AI-Lab",
       "organization": "proud-marketing",
       "total_requests": 309,
@@ -375,12 +667,16 @@
       "net_spend_usd": 29.79,
       "primary_model": "o1",
       "last_activity_date": "2026-09-28",
-      "surface": "VS Code"
+      "surface": "VS Code",
+      "tags": [
+        "正社員",
+        "AI推進"
+      ]
     },
     {
-      "login": "yuki-tanaka",
-      "display_name": "yuki-tanaka",
-      "department": "未分類 (Unassigned)",
+      "login": "taro-tanaka",
+      "display_name": "田中 太郎",
+      "department": "コア決済基盤チーム",
       "cost_center": "FinTech-Division",
       "organization": "proud-fintech",
       "total_requests": 292,
@@ -389,12 +685,35 @@
       "net_spend_usd": 28.55,
       "primary_model": "Gemini 2.0 Flash",
       "last_activity_date": "2026-09-28",
-      "surface": "VS Code"
+      "surface": "VS Code",
+      "tags": [
+        "正社員",
+        "リード",
+        "決済"
+      ]
+    },
+    {
+      "login": "yuki-tanaka",
+      "display_name": "田中 幸雄",
+      "department": "コア決済基盤チーム",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "total_requests": 292,
+      "total_spend_usd": 28.77,
+      "gross_spend_usd": 28.77,
+      "net_spend_usd": 28.55,
+      "primary_model": "Gemini 2.0 Flash",
+      "last_activity_date": "2026-09-28",
+      "surface": "VS Code",
+      "tags": [
+        "正社員",
+        "決済"
+      ]
     },
     {
       "login": "sakura-watanabe",
-      "display_name": "sakura-watanabe",
-      "department": "未分類 (Unassigned)",
+      "display_name": "渡辺 さくら",
+      "department": "IT運用管理部",
       "cost_center": "IT-Infrastructure",
       "organization": "proud-internal-sys",
       "total_requests": 253,
@@ -403,12 +722,16 @@
       "net_spend_usd": 28.18,
       "primary_model": "GPT-4o",
       "last_activity_date": "2026-09-24",
-      "surface": "VS Code"
+      "surface": "VS Code",
+      "tags": [
+        "正社員",
+        "社内DX"
+      ]
     },
     {
       "login": "external-contractor-01",
-      "display_name": "external-contractor-01",
-      "department": "未分類 (Unassigned)",
+      "display_name": "外部パートナー 01",
+      "department": "コア決済基盤チーム",
       "cost_center": "FinTech-Division",
       "organization": "proud-fintech",
       "total_requests": 272,
@@ -417,26 +740,71 @@
       "net_spend_usd": 27.85,
       "primary_model": "Gemini 2.0 Flash",
       "last_activity_date": "2026-09-28",
-      "surface": "VS Code"
+      "surface": "VS Code",
+      "tags": [
+        "業務委託",
+        "リモート"
+      ]
     },
     {
       "login": "external-contractor-02",
-      "display_name": "external-contractor-02",
-      "department": "未分類 (Unassigned)",
+      "display_name": "外部パートナー 02",
+      "department": "クラウドインフラ統括部",
       "cost_center": "FinTech-Division",
-      "organization": "proud-fintech",
+      "organization": "proud-cloud-core",
       "total_requests": 272,
       "total_spend_usd": 28.07,
       "gross_spend_usd": 28.07,
       "net_spend_usd": 27.85,
       "primary_model": "Gemini 2.0 Flash",
       "last_activity_date": "2026-09-28",
-      "surface": "VS Code"
+      "surface": "VS Code",
+      "tags": [
+        "業務委託"
+      ]
+    },
+    {
+      "login": "alex-partner",
+      "display_name": "Alex Rivera (Partner)",
+      "department": "コア決済基盤チーム",
+      "cost_center": "FinTech-Division",
+      "organization": "proud-fintech",
+      "total_requests": 247,
+      "total_spend_usd": 27.28,
+      "gross_spend_usd": 27.28,
+      "net_spend_usd": 27.1,
+      "primary_model": "Gemini 2.0 Flash",
+      "last_activity_date": "2026-09-28",
+      "surface": "VS Code",
+      "tags": [
+        "業務委託",
+        "リモート",
+        "決済"
+      ]
+    },
+    {
+      "login": "daiki-yamada",
+      "display_name": "山田 大樹",
+      "department": "SRE & クラウド基盤部",
+      "cost_center": "Cloud-Platform",
+      "organization": "proud-cloud-core",
+      "total_requests": 247,
+      "total_spend_usd": 27.28,
+      "gross_spend_usd": 27.28,
+      "net_spend_usd": 27.1,
+      "primary_model": "Gemini 2.0 Flash",
+      "last_activity_date": "2026-09-28",
+      "surface": "VS Code",
+      "tags": [
+        "正社員",
+        "SRE",
+        "Kubernetes"
+      ]
     },
     {
       "login": "kaito-nakamura",
-      "display_name": "kaito-nakamura",
-      "department": "未分類 (Unassigned)",
+      "display_name": "中村 海斗",
+      "department": "APIプラットフォーム部",
       "cost_center": "IT-Infrastructure",
       "organization": "proud-core-api",
       "total_requests": 236,
@@ -445,12 +813,16 @@
       "net_spend_usd": 27.01,
       "primary_model": "GPT-4o",
       "last_activity_date": "2026-09-25",
-      "surface": "VS Code"
+      "surface": "VS Code",
+      "tags": [
+        "正社員",
+        "API"
+      ]
     },
     {
       "login": "aoi-kobayashi",
-      "display_name": "aoi-kobayashi",
-      "department": "未分類 (Unassigned)",
+      "display_name": "小林 葵",
+      "department": "セキュリティ基盤部",
       "cost_center": "IT-Infrastructure",
       "organization": "proud-core-api",
       "total_requests": 219,
@@ -459,7 +831,11 @@
       "net_spend_usd": 26.18,
       "primary_model": "Claude 3.7 Sonnet",
       "last_activity_date": "2026-09-28",
-      "surface": "VS Code"
+      "surface": "VS Code",
+      "tags": [
+        "正社員",
+        "セキュリティ"
+      ]
     }
   ]
 }

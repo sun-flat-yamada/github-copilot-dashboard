@@ -1,5 +1,11 @@
 date,username,product,sku,model,quantity,unit_type,applied_cost_per_quantity,gross_amount,discount_amount,net_amount,organization,cost_center_name
-2026-09-01,kenji-sato,copilot,copilot_enterprise,,1,seats,39.00,39.00,0.00,39.00,proud-fintech,FinTech-Division
+2026-09-01,taro-tanaka,copilot,copilot_business,,1,seats,19.00,19.00,0.00,19.00,proud-fintech,FinTech-Division
+2026-09-01,hanako-suzuki,copilot,copilot_enterprise,,1,seats,39.00,39.00,0.00,39.00,proud-ai-labs,Research-and-AI
+2026-09-01,kenji-sato,copilot,copilot_enterprise,,1,seats,39.00,39.00,0.00,39.00,proud-cloud-core,Cloud-Platform
+2026-09-01,yuki-takahashi,copilot,copilot_enterprise,,1,seats,39.00,39.00,0.00,39.00,proud-fintech,FinTech-Division
+2026-09-01,mika-ito,copilot,copilot_business,,1,seats,19.00,19.00,0.00,19.00,proud-internal-sys,Enterprise-IT
+2026-09-01,alex-partner,copilot,copilot_business,,1,seats,19.00,19.00,0.00,19.00,proud-fintech,FinTech-Division
+2026-09-01,daiki-yamada,copilot,copilot_business,,1,seats,19.00,19.00,0.00,19.00,proud-cloud-core,Cloud-Platform
 2026-09-01,yuki-tanaka,copilot,copilot_business,,1,seats,19.00,19.00,0.00,19.00,proud-fintech,FinTech-Division
 2026-09-01,daiki-suzuki,copilot,copilot_enterprise,,1,seats,39.00,39.00,0.00,39.00,proud-internal-sys,IT-Infrastructure
 2026-09-01,sakura-watanabe,copilot,copilot_business,,1,seats,19.00,19.00,0.00,19.00,proud-internal-sys,IT-Infrastructure
@@ -8,15 +14,25 @@ date,username,product,sku,model,quantity,unit_type,applied_cost_per_quantity,gro
 2026-09-01,kaito-nakamura,copilot,copilot_business,,1,seats,19.00,19.00,0.00,19.00,proud-core-api,IT-Infrastructure
 2026-09-01,aoi-kobayashi,copilot,copilot_business,,1,seats,19.00,19.00,0.00,19.00,proud-core-api,IT-Infrastructure
 2026-09-01,external-contractor-01,copilot,copilot_business,,1,seats,19.00,19.00,0.00,19.00,proud-fintech,FinTech-Division
-2026-09-01,external-contractor-02,copilot,copilot_business,,1,seats,19.00,19.00,0.00,19.00,proud-fintech,FinTech-Division
-2026-09-01,kenji-sato,copilot,copilot_premium_request,"Gemini 2.0 Flash",28,requests,0.0200,0.5600,0.0000,0.5600,proud-fintech,FinTech-Division
+2026-09-01,external-contractor-02,copilot,copilot_business,,1,seats,19.00,19.00,0.00,19.00,proud-cloud-core,Cloud-Platform
+2026-09-01,taro-tanaka,copilot,copilot_premium_request,"Claude 3.7 Sonnet",5,requests,0.0400,0.2000,0.0000,0.2000,proud-fintech,FinTech-Division
+2026-09-01,kenji-sato,copilot,copilot_premium_request,"Gemini 2.0 Flash",28,requests,0.0200,0.5600,0.0000,0.5600,proud-cloud-core,Cloud-Platform
+2026-09-01,mika-ito,copilot,copilot_premium_request,"GPT-4o",24,requests,0.0300,0.7200,0.0000,0.7200,proud-internal-sys,Enterprise-IT
+2026-09-01,alex-partner,copilot,copilot_premium_request,"GPT-4o",7,requests,0.0300,0.2100,0.0000,0.2100,proud-fintech,FinTech-Division
+2026-09-01,daiki-yamada,copilot,copilot_premium_request,"GPT-4o",7,requests,0.0300,0.2100,0.0000,0.2100,proud-cloud-core,Cloud-Platform
 2026-09-01,yuki-tanaka,copilot,copilot_premium_request,"Claude 3.7 Sonnet",5,requests,0.0400,0.2000,0.0000,0.2000,proud-fintech,FinTech-Division
 2026-09-01,daiki-suzuki,copilot,copilot_premium_request,"GPT-4o",7,requests,0.0300,0.2100,0.0000,0.2100,proud-internal-sys,IT-Infrastructure
 2026-09-01,sakura-watanabe,copilot,copilot_premium_request,"Claude 3.7 Sonnet",13,requests,0.0400,0.5200,0.0000,0.5200,proud-internal-sys,IT-Infrastructure
 2026-09-01,mei-ito,copilot,copilot_premium_request,"Claude 3.7 Sonnet",22,requests,0.0400,0.8800,0.0000,0.8800,proud-marketing,Data-AI-Lab
 2026-09-01,external-contractor-01,copilot,copilot_premium_request,"Gemini 2.0 Flash",27,requests,0.0200,0.5400,0.0000,0.5400,proud-fintech,FinTech-Division
-2026-09-01,external-contractor-02,copilot,copilot_premium_request,"Gemini 2.0 Flash",27,requests,0.0200,0.5400,0.0000,0.5400,proud-fintech,FinTech-Division
-2026-09-02,kenji-sato,copilot,copilot_premium_request,"Claude 3.7 Sonnet",6,requests,0.0400,0.2400,0.0000,0.2400,proud-fintech,FinTech-Division
+2026-09-01,external-contractor-02,copilot,copilot_premium_request,"Gemini 2.0 Flash",27,requests,0.0200,0.5400,0.0000,0.5400,proud-cloud-core,Cloud-Platform
+2026-09-02,taro-tanaka,copilot,copilot_premium_request,"GPT-4o",8,requests,0.0300,0.2400,0.0000,0.2400,proud-fintech,FinTech-Division
+2026-09-02,hanako-suzuki,copilot,copilot_premium_request,"Gemini 2.0 Flash",12,requests,0.0200,0.2400,0.0000,0.2400,proud-ai-labs,Research-and-AI
+2026-09-02,kenji-sato,copilot,copilot_premium_request,"Claude 3.7 Sonnet",6,requests,0.0400,0.2400,0.0000,0.2400,proud-cloud-core,Cloud-Platform
+2026-09-02,yuki-takahashi,copilot,copilot_premium_request,"Claude 3.7 Sonnet",14,requests,0.0400,0.5600,0.0000,0.5600,proud-fintech,FinTech-Division
+2026-09-02,mika-ito,copilot,copilot_premium_request,"o1",27,requests,0.0500,1.3500,0.0000,1.3500,proud-internal-sys,Enterprise-IT
+2026-09-02,alex-partner,copilot,copilot_premium_request,"o1",10,requests,0.0500,0.5000,0.0000,0.5000,proud-fintech,FinTech-Division
+2026-09-02,daiki-yamada,copilot,copilot_premium_request,"o1",10,requests,0.0500,0.5000,0.0000,0.5000,proud-cloud-core,Cloud-Platform
 2026-09-02,yuki-tanaka,copilot,copilot_premium_request,"GPT-4o",8,requests,0.0300,0.2400,0.0000,0.2400,proud-fintech,FinTech-Division
 2026-09-02,daiki-suzuki,copilot,copilot_premium_request,"o1",10,requests,0.0500,0.5000,0.0000,0.5000,proud-internal-sys,IT-Infrastructure
 2026-09-02,sakura-watanabe,copilot,copilot_premium_request,"GPT-4o",16,requests,0.0300,0.4800,0.0000,0.4800,proud-internal-sys,IT-Infrastructure
@@ -24,7 +40,13 @@ date,username,product,sku,model,quantity,unit_type,applied_cost_per_quantity,gro
 2026-09-02,kaito-nakamura,copilot,copilot_premium_request,"Claude 3.7 Sonnet",14,requests,0.0400,0.5600,0.0000,0.5600,proud-core-api,IT-Infrastructure
 2026-09-02,aoi-kobayashi,copilot,copilot_premium_request,"Gemini 2.0 Flash",12,requests,0.0200,0.2400,0.0000,0.2400,proud-core-api,IT-Infrastructure
 2026-09-02,external-contractor-01,copilot,copilot_premium_request,"Claude 3.7 Sonnet",5,requests,0.0400,0.2000,0.0000,0.2000,proud-fintech,FinTech-Division
-2026-09-02,external-contractor-02,copilot,copilot_premium_request,"Claude 3.7 Sonnet",5,requests,0.0400,0.2000,0.0000,0.2000,proud-fintech,FinTech-Division
+2026-09-02,external-contractor-02,copilot,copilot_premium_request,"Claude 3.7 Sonnet",5,requests,0.0400,0.2000,0.0000,0.2000,proud-cloud-core,Cloud-Platform
+2026-09-03,taro-tanaka,copilot,copilot_premium_request,"o1",11,requests,0.0500,0.5500,0.0000,0.5500,proud-fintech,FinTech-Division
+2026-09-03,hanako-suzuki,copilot,copilot_premium_request,"Claude 3.7 Sonnet",15,requests,0.0400,0.6000,0.0000,0.6000,proud-ai-labs,Research-and-AI
+2026-09-03,yuki-takahashi,copilot,copilot_premium_request,"GPT-4o",17,requests,0.0300,0.5100,0.0000,0.5100,proud-fintech,FinTech-Division
+2026-09-03,mika-ito,copilot,copilot_premium_request,"Gemini 2.0 Flash",5,requests,0.0200,0.1000,0.0000,0.1000,proud-internal-sys,Enterprise-IT
+2026-09-03,alex-partner,copilot,copilot_premium_request,"Gemini 2.0 Flash",13,requests,0.0200,0.2600,0.0000,0.2600,proud-fintech,FinTech-Division
+2026-09-03,daiki-yamada,copilot,copilot_premium_request,"Gemini 2.0 Flash",13,requests,0.0200,0.2600,0.0000,0.2600,proud-cloud-core,Cloud-Platform
 2026-09-03,yuki-tanaka,copilot,copilot_premium_request,"o1",11,requests,0.0500,0.5500,0.0000,0.5500,proud-fintech,FinTech-Division
 2026-09-03,daiki-suzuki,copilot,copilot_premium_request,"Gemini 2.0 Flash",13,requests,0.0200,0.2600,0.0000,0.2600,proud-internal-sys,IT-Infrastructure
 2026-09-03,sakura-watanabe,copilot,copilot_premium_request,"o1",19,requests,0.0500,0.9500,0.0000,0.9500,proud-internal-sys,IT-Infrastructure
@@ -33,27 +55,43 @@ date,username,product,sku,model,quantity,unit_type,applied_cost_per_quantity,gro
 2026-09-03,kaito-nakamura,copilot,copilot_premium_request,"GPT-4o",17,requests,0.0300,0.5100,0.0000,0.5100,proud-core-api,IT-Infrastructure
 2026-09-03,aoi-kobayashi,copilot,copilot_premium_request,"Claude 3.7 Sonnet",15,requests,0.0400,0.6000,0.0000,0.6000,proud-core-api,IT-Infrastructure
 2026-09-03,external-contractor-01,copilot,copilot_premium_request,"GPT-4o",8,requests,0.0300,0.2400,0.0000,0.2400,proud-fintech,FinTech-Division
-2026-09-03,external-contractor-02,copilot,copilot_premium_request,"GPT-4o",8,requests,0.0300,0.2400,0.0000,0.2400,proud-fintech,FinTech-Division
-2026-09-04,kenji-sato,copilot,copilot_premium_request,"o1",12,requests,0.0500,0.6000,0.0000,0.6000,proud-fintech,FinTech-Division
+2026-09-03,external-contractor-02,copilot,copilot_premium_request,"GPT-4o",8,requests,0.0300,0.2400,0.0000,0.2400,proud-cloud-core,Cloud-Platform
+2026-09-04,taro-tanaka,copilot,copilot_premium_request,"Gemini 2.0 Flash",14,requests,0.0200,0.2800,0.0000,0.2800,proud-fintech,FinTech-Division
+2026-09-04,kenji-sato,copilot,copilot_premium_request,"o1",12,requests,0.0500,0.6000,0.0000,0.6000,proud-cloud-core,Cloud-Platform
+2026-09-04,yuki-takahashi,copilot,copilot_premium_request,"o1",20,requests,0.0500,1.0000,0.0000,1.0000,proud-fintech,FinTech-Division
+2026-09-04,mika-ito,copilot,copilot_premium_request,"Claude 3.7 Sonnet",8,requests,0.0400,0.3200,0.0000,0.3200,proud-internal-sys,Enterprise-IT
 2026-09-04,yuki-tanaka,copilot,copilot_premium_request,"Gemini 2.0 Flash",14,requests,0.0200,0.2800,0.0000,0.2800,proud-fintech,FinTech-Division
 2026-09-04,sakura-watanabe,copilot,copilot_premium_request,"Gemini 2.0 Flash",22,requests,0.0200,0.4400,0.0000,0.4400,proud-internal-sys,IT-Infrastructure
 2026-09-04,mei-ito,copilot,copilot_premium_request,"Gemini 2.0 Flash",6,requests,0.0200,0.1200,0.0000,0.1200,proud-marketing,Data-AI-Lab
 2026-09-04,kaito-nakamura,copilot,copilot_premium_request,"o1",20,requests,0.0500,1.0000,0.0000,1.0000,proud-core-api,IT-Infrastructure
-2026-09-07,kenji-sato,copilot,copilot_premium_request,"GPT-4o",21,requests,0.0300,0.6300,0.0000,0.6300,proud-fintech,FinTech-Division
+2026-09-07,hanako-suzuki,copilot,copilot_premium_request,"Claude 3.7 Sonnet",27,requests,0.0400,1.0800,0.0000,1.0800,proud-ai-labs,Research-and-AI
+2026-09-07,kenji-sato,copilot,copilot_premium_request,"GPT-4o",21,requests,0.0300,0.6300,0.0000,0.6300,proud-cloud-core,Cloud-Platform
+2026-09-07,yuki-takahashi,copilot,copilot_premium_request,"GPT-4o",29,requests,0.0300,0.8700,0.0000,0.8700,proud-fintech,FinTech-Division
+2026-09-07,mika-ito,copilot,copilot_premium_request,"Gemini 2.0 Flash",17,requests,0.0200,0.3400,0.0000,0.3400,proud-internal-sys,Enterprise-IT
 2026-09-07,sakura-watanabe,copilot,copilot_premium_request,"o1",6,requests,0.0500,0.3000,0.0000,0.3000,proud-internal-sys,IT-Infrastructure
 2026-09-07,ren-takahashi,copilot,copilot_premium_request,"Claude 3.7 Sonnet",27,requests,0.0400,1.0800,0.0000,1.0800,proud-marketing,Data-AI-Lab
 2026-09-07,mei-ito,copilot,copilot_premium_request,"o1",15,requests,0.0500,0.7500,0.0000,0.7500,proud-marketing,Data-AI-Lab
 2026-09-07,kaito-nakamura,copilot,copilot_premium_request,"GPT-4o",29,requests,0.0300,0.8700,0.0000,0.8700,proud-core-api,IT-Infrastructure
 2026-09-07,aoi-kobayashi,copilot,copilot_premium_request,"Claude 3.7 Sonnet",27,requests,0.0400,1.0800,0.0000,1.0800,proud-core-api,IT-Infrastructure
-2026-09-08,kenji-sato,copilot,copilot_premium_request,"o1",24,requests,0.0500,1.2000,0.0000,1.2000,proud-fintech,FinTech-Division
+2026-09-08,taro-tanaka,copilot,copilot_premium_request,"Gemini 2.0 Flash",26,requests,0.0200,0.5200,0.0000,0.5200,proud-fintech,FinTech-Division
+2026-09-08,hanako-suzuki,copilot,copilot_premium_request,"GPT-4o",5,requests,0.0300,0.1500,0.0000,0.1500,proud-ai-labs,Research-and-AI
+2026-09-08,kenji-sato,copilot,copilot_premium_request,"o1",24,requests,0.0500,1.2000,0.0000,1.2000,proud-cloud-core,Cloud-Platform
+2026-09-08,mika-ito,copilot,copilot_premium_request,"Claude 3.7 Sonnet",20,requests,0.0400,0.8000,0.0000,0.8000,proud-internal-sys,Enterprise-IT
+2026-09-08,alex-partner,copilot,copilot_premium_request,"Claude 3.7 Sonnet",28,requests,0.0400,1.1200,0.0000,1.1200,proud-fintech,FinTech-Division
+2026-09-08,daiki-yamada,copilot,copilot_premium_request,"Claude 3.7 Sonnet",28,requests,0.0400,1.1200,0.0000,1.1200,proud-cloud-core,Cloud-Platform
 2026-09-08,yuki-tanaka,copilot,copilot_premium_request,"Gemini 2.0 Flash",26,requests,0.0200,0.5200,0.0000,0.5200,proud-fintech,FinTech-Division
 2026-09-08,daiki-suzuki,copilot,copilot_premium_request,"Claude 3.7 Sonnet",28,requests,0.0400,1.1200,0.0000,1.1200,proud-internal-sys,IT-Infrastructure
 2026-09-08,ren-takahashi,copilot,copilot_premium_request,"GPT-4o",5,requests,0.0300,0.1500,0.0000,0.1500,proud-marketing,Data-AI-Lab
 2026-09-08,mei-ito,copilot,copilot_premium_request,"Gemini 2.0 Flash",18,requests,0.0200,0.3600,0.0000,0.3600,proud-marketing,Data-AI-Lab
 2026-09-08,aoi-kobayashi,copilot,copilot_premium_request,"GPT-4o",5,requests,0.0300,0.1500,0.0000,0.1500,proud-core-api,IT-Infrastructure
 2026-09-08,external-contractor-01,copilot,copilot_premium_request,"o1",23,requests,0.0500,1.1500,0.0000,1.1500,proud-fintech,FinTech-Division
-2026-09-08,external-contractor-02,copilot,copilot_premium_request,"o1",23,requests,0.0500,1.1500,0.0000,1.1500,proud-fintech,FinTech-Division
-2026-09-09,kenji-sato,copilot,copilot_premium_request,"Gemini 2.0 Flash",27,requests,0.0200,0.5400,0.0000,0.5400,proud-fintech,FinTech-Division
+2026-09-08,external-contractor-02,copilot,copilot_premium_request,"o1",23,requests,0.0500,1.1500,0.0000,1.1500,proud-cloud-core,Cloud-Platform
+2026-09-09,taro-tanaka,copilot,copilot_premium_request,"Claude 3.7 Sonnet",29,requests,0.0400,1.1600,0.0000,1.1600,proud-fintech,FinTech-Division
+2026-09-09,hanako-suzuki,copilot,copilot_premium_request,"o1",8,requests,0.0500,0.4000,0.0000,0.4000,proud-ai-labs,Research-and-AI
+2026-09-09,kenji-sato,copilot,copilot_premium_request,"Gemini 2.0 Flash",27,requests,0.0200,0.5400,0.0000,0.5400,proud-cloud-core,Cloud-Platform
+2026-09-09,yuki-takahashi,copilot,copilot_premium_request,"Gemini 2.0 Flash",10,requests,0.0200,0.2000,0.0000,0.2000,proud-fintech,FinTech-Division
+2026-09-09,alex-partner,copilot,copilot_premium_request,"GPT-4o",6,requests,0.0300,0.1800,0.0000,0.1800,proud-fintech,FinTech-Division
+2026-09-09,daiki-yamada,copilot,copilot_premium_request,"GPT-4o",6,requests,0.0300,0.1800,0.0000,0.1800,proud-cloud-core,Cloud-Platform
 2026-09-09,yuki-tanaka,copilot,copilot_premium_request,"Claude 3.7 Sonnet",29,requests,0.0400,1.1600,0.0000,1.1600,proud-fintech,FinTech-Division
 2026-09-09,daiki-suzuki,copilot,copilot_premium_request,"GPT-4o",6,requests,0.0300,0.1800,0.0000,0.1800,proud-internal-sys,IT-Infrastructure
 2026-09-09,sakura-watanabe,copilot,copilot_premium_request,"Claude 3.7 Sonnet",12,requests,0.0400,0.4800,0.0000,0.4800,proud-internal-sys,IT-Infrastructure
@@ -61,7 +99,12 @@ date,username,product,sku,model,quantity,unit_type,applied_cost_per_quantity,gro
 2026-09-09,kaito-nakamura,copilot,copilot_premium_request,"Gemini 2.0 Flash",10,requests,0.0200,0.2000,0.0000,0.2000,proud-core-api,IT-Infrastructure
 2026-09-09,aoi-kobayashi,copilot,copilot_premium_request,"o1",8,requests,0.0500,0.4000,0.0000,0.4000,proud-core-api,IT-Infrastructure
 2026-09-09,external-contractor-01,copilot,copilot_premium_request,"Gemini 2.0 Flash",26,requests,0.0200,0.5200,0.0000,0.5200,proud-fintech,FinTech-Division
-2026-09-09,external-contractor-02,copilot,copilot_premium_request,"Gemini 2.0 Flash",26,requests,0.0200,0.5200,0.0000,0.5200,proud-fintech,FinTech-Division
+2026-09-09,external-contractor-02,copilot,copilot_premium_request,"Gemini 2.0 Flash",26,requests,0.0200,0.5200,0.0000,0.5200,proud-cloud-core,Cloud-Platform
+2026-09-10,hanako-suzuki,copilot,copilot_premium_request,"Gemini 2.0 Flash",11,requests,0.0200,0.2200,0.0220,0.1980,proud-ai-labs,Research-and-AI
+2026-09-10,yuki-takahashi,copilot,copilot_premium_request,"Claude 3.7 Sonnet",13,requests,0.0400,0.5200,0.0520,0.4680,proud-fintech,FinTech-Division
+2026-09-10,mika-ito,copilot,copilot_premium_request,"o1",26,requests,0.0500,1.3000,0.1300,1.1700,proud-internal-sys,Enterprise-IT
+2026-09-10,alex-partner,copilot,copilot_premium_request,"o1",9,requests,0.0500,0.4500,0.0450,0.4050,proud-fintech,FinTech-Division
+2026-09-10,daiki-yamada,copilot,copilot_premium_request,"o1",9,requests,0.0500,0.4500,0.0450,0.4050,proud-cloud-core,Cloud-Platform
 2026-09-10,daiki-suzuki,copilot,copilot_premium_request,"o1",9,requests,0.0500,0.4500,0.0450,0.4050,proud-internal-sys,IT-Infrastructure
 2026-09-10,sakura-watanabe,copilot,copilot_premium_request,"GPT-4o",15,requests,0.0300,0.4500,0.0450,0.4050,proud-internal-sys,IT-Infrastructure
 2026-09-10,ren-takahashi,copilot,copilot_premium_request,"Gemini 2.0 Flash",11,requests,0.0200,0.2200,0.0220,0.1980,proud-marketing,Data-AI-Lab
@@ -69,20 +112,33 @@ date,username,product,sku,model,quantity,unit_type,applied_cost_per_quantity,gro
 2026-09-10,kaito-nakamura,copilot,copilot_premium_request,"Claude 3.7 Sonnet",13,requests,0.0400,0.5200,0.0520,0.4680,proud-core-api,IT-Infrastructure
 2026-09-10,aoi-kobayashi,copilot,copilot_premium_request,"Gemini 2.0 Flash",11,requests,0.0200,0.2200,0.0220,0.1980,proud-core-api,IT-Infrastructure
 2026-09-10,external-contractor-01,copilot,copilot_premium_request,"Claude 3.7 Sonnet",29,requests,0.0400,1.1600,0.1160,1.0440,proud-fintech,FinTech-Division
-2026-09-10,external-contractor-02,copilot,copilot_premium_request,"Claude 3.7 Sonnet",29,requests,0.0400,1.1600,0.1160,1.0440,proud-fintech,FinTech-Division
-2026-09-11,kenji-sato,copilot,copilot_premium_request,"GPT-4o",8,requests,0.0300,0.2400,0.0000,0.2400,proud-fintech,FinTech-Division
+2026-09-10,external-contractor-02,copilot,copilot_premium_request,"Claude 3.7 Sonnet",29,requests,0.0400,1.1600,0.1160,1.0440,proud-cloud-core,Cloud-Platform
+2026-09-11,taro-tanaka,copilot,copilot_premium_request,"o1",10,requests,0.0500,0.5000,0.0000,0.5000,proud-fintech,FinTech-Division
+2026-09-11,kenji-sato,copilot,copilot_premium_request,"GPT-4o",8,requests,0.0300,0.2400,0.0000,0.2400,proud-cloud-core,Cloud-Platform
+2026-09-11,mika-ito,copilot,copilot_premium_request,"Gemini 2.0 Flash",29,requests,0.0200,0.5800,0.0000,0.5800,proud-internal-sys,Enterprise-IT
+2026-09-11,alex-partner,copilot,copilot_premium_request,"Gemini 2.0 Flash",12,requests,0.0200,0.2400,0.0000,0.2400,proud-fintech,FinTech-Division
+2026-09-11,daiki-yamada,copilot,copilot_premium_request,"Gemini 2.0 Flash",12,requests,0.0200,0.2400,0.0000,0.2400,proud-cloud-core,Cloud-Platform
 2026-09-11,yuki-tanaka,copilot,copilot_premium_request,"o1",10,requests,0.0500,0.5000,0.0000,0.5000,proud-fintech,FinTech-Division
 2026-09-11,daiki-suzuki,copilot,copilot_premium_request,"Gemini 2.0 Flash",12,requests,0.0200,0.2400,0.0000,0.2400,proud-internal-sys,IT-Infrastructure
 2026-09-11,sakura-watanabe,copilot,copilot_premium_request,"o1",18,requests,0.0500,0.9000,0.0000,0.9000,proud-internal-sys,IT-Infrastructure
 2026-09-11,mei-ito,copilot,copilot_premium_request,"o1",27,requests,0.0500,1.3500,0.0000,1.3500,proud-marketing,Data-AI-Lab
 2026-09-11,external-contractor-01,copilot,copilot_premium_request,"GPT-4o",7,requests,0.0300,0.2100,0.0000,0.2100,proud-fintech,FinTech-Division
-2026-09-11,external-contractor-02,copilot,copilot_premium_request,"GPT-4o",7,requests,0.0300,0.2100,0.0000,0.2100,proud-fintech,FinTech-Division
-2026-09-14,kenji-sato,copilot,copilot_premium_request,"Claude 3.7 Sonnet",17,requests,0.0400,0.6800,0.0000,0.6800,proud-fintech,FinTech-Division
+2026-09-11,external-contractor-02,copilot,copilot_premium_request,"GPT-4o",7,requests,0.0300,0.2100,0.0000,0.2100,proud-cloud-core,Cloud-Platform
+2026-09-14,taro-tanaka,copilot,copilot_premium_request,"GPT-4o",19,requests,0.0300,0.5700,0.0000,0.5700,proud-fintech,FinTech-Division
+2026-09-14,kenji-sato,copilot,copilot_premium_request,"Claude 3.7 Sonnet",17,requests,0.0400,0.6800,0.0000,0.6800,proud-cloud-core,Cloud-Platform
+2026-09-14,yuki-takahashi,copilot,copilot_premium_request,"Claude 3.7 Sonnet",25,requests,0.0400,1.0000,0.0000,1.0000,proud-fintech,FinTech-Division
+2026-09-14,mika-ito,copilot,copilot_premium_request,"o1",13,requests,0.0500,0.6500,0.0000,0.6500,proud-internal-sys,Enterprise-IT
 2026-09-14,yuki-tanaka,copilot,copilot_premium_request,"GPT-4o",19,requests,0.0300,0.5700,0.0000,0.5700,proud-fintech,FinTech-Division
 2026-09-14,sakura-watanabe,copilot,copilot_premium_request,"GPT-4o",27,requests,0.0300,0.8100,0.0000,0.8100,proud-internal-sys,IT-Infrastructure
 2026-09-14,mei-ito,copilot,copilot_premium_request,"GPT-4o",11,requests,0.0300,0.3300,0.0000,0.3300,proud-marketing,Data-AI-Lab
 2026-09-14,kaito-nakamura,copilot,copilot_premium_request,"Claude 3.7 Sonnet",25,requests,0.0400,1.0000,0.0000,1.0000,proud-core-api,IT-Infrastructure
-2026-09-15,kenji-sato,copilot,copilot_premium_request,"GPT-4o",20,requests,0.0300,0.6000,0.0600,0.5400,proud-fintech,FinTech-Division
+2026-09-15,taro-tanaka,copilot,copilot_premium_request,"o1",22,requests,0.0500,1.1000,0.1100,0.9900,proud-fintech,FinTech-Division
+2026-09-15,hanako-suzuki,copilot,copilot_premium_request,"Claude 3.7 Sonnet",26,requests,0.0400,1.0400,0.1040,0.9360,proud-ai-labs,Research-and-AI
+2026-09-15,kenji-sato,copilot,copilot_premium_request,"GPT-4o",20,requests,0.0300,0.6000,0.0600,0.5400,proud-cloud-core,Cloud-Platform
+2026-09-15,yuki-takahashi,copilot,copilot_premium_request,"GPT-4o",28,requests,0.0300,0.8400,0.0840,0.7560,proud-fintech,FinTech-Division
+2026-09-15,mika-ito,copilot,copilot_premium_request,"Gemini 2.0 Flash",16,requests,0.0200,0.3200,0.0320,0.2880,proud-internal-sys,Enterprise-IT
+2026-09-15,alex-partner,copilot,copilot_premium_request,"Gemini 2.0 Flash",24,requests,0.0200,0.4800,0.0480,0.4320,proud-fintech,FinTech-Division
+2026-09-15,daiki-yamada,copilot,copilot_premium_request,"Gemini 2.0 Flash",24,requests,0.0200,0.4800,0.0480,0.4320,proud-cloud-core,Cloud-Platform
 2026-09-15,yuki-tanaka,copilot,copilot_premium_request,"o1",22,requests,0.0500,1.1000,0.1100,0.9900,proud-fintech,FinTech-Division
 2026-09-15,daiki-suzuki,copilot,copilot_premium_request,"Gemini 2.0 Flash",24,requests,0.0200,0.4800,0.0480,0.4320,proud-internal-sys,IT-Infrastructure
 2026-09-15,ren-takahashi,copilot,copilot_premium_request,"Claude 3.7 Sonnet",26,requests,0.0400,1.0400,0.1040,0.9360,proud-marketing,Data-AI-Lab
@@ -90,8 +146,13 @@ date,username,product,sku,model,quantity,unit_type,applied_cost_per_quantity,gro
 2026-09-15,kaito-nakamura,copilot,copilot_premium_request,"GPT-4o",28,requests,0.0300,0.8400,0.0840,0.7560,proud-core-api,IT-Infrastructure
 2026-09-15,aoi-kobayashi,copilot,copilot_premium_request,"Claude 3.7 Sonnet",26,requests,0.0400,1.0400,0.1040,0.9360,proud-core-api,IT-Infrastructure
 2026-09-15,external-contractor-01,copilot,copilot_premium_request,"GPT-4o",19,requests,0.0300,0.5700,0.0570,0.5130,proud-fintech,FinTech-Division
-2026-09-15,external-contractor-02,copilot,copilot_premium_request,"GPT-4o",19,requests,0.0300,0.5700,0.0570,0.5130,proud-fintech,FinTech-Division
-2026-09-16,kenji-sato,copilot,copilot_premium_request,"o1",23,requests,0.0500,1.1500,0.0000,1.1500,proud-fintech,FinTech-Division
+2026-09-15,external-contractor-02,copilot,copilot_premium_request,"GPT-4o",19,requests,0.0300,0.5700,0.0570,0.5130,proud-cloud-core,Cloud-Platform
+2026-09-16,taro-tanaka,copilot,copilot_premium_request,"Gemini 2.0 Flash",25,requests,0.0200,0.5000,0.0000,0.5000,proud-fintech,FinTech-Division
+2026-09-16,hanako-suzuki,copilot,copilot_premium_request,"GPT-4o",29,requests,0.0300,0.8700,0.0000,0.8700,proud-ai-labs,Research-and-AI
+2026-09-16,kenji-sato,copilot,copilot_premium_request,"o1",23,requests,0.0500,1.1500,0.0000,1.1500,proud-cloud-core,Cloud-Platform
+2026-09-16,yuki-takahashi,copilot,copilot_premium_request,"o1",6,requests,0.0500,0.3000,0.0000,0.3000,proud-fintech,FinTech-Division
+2026-09-16,alex-partner,copilot,copilot_premium_request,"Claude 3.7 Sonnet",27,requests,0.0400,1.0800,0.0000,1.0800,proud-fintech,FinTech-Division
+2026-09-16,daiki-yamada,copilot,copilot_premium_request,"Claude 3.7 Sonnet",27,requests,0.0400,1.0800,0.0000,1.0800,proud-cloud-core,Cloud-Platform
 2026-09-16,yuki-tanaka,copilot,copilot_premium_request,"Gemini 2.0 Flash",25,requests,0.0200,0.5000,0.0000,0.5000,proud-fintech,FinTech-Division
 2026-09-16,daiki-suzuki,copilot,copilot_premium_request,"Claude 3.7 Sonnet",27,requests,0.0400,1.0800,0.0000,1.0800,proud-internal-sys,IT-Infrastructure
 2026-09-16,sakura-watanabe,copilot,copilot_premium_request,"Gemini 2.0 Flash",8,requests,0.0200,0.1600,0.0000,0.1600,proud-internal-sys,IT-Infrastructure
@@ -100,29 +161,47 @@ date,username,product,sku,model,quantity,unit_type,applied_cost_per_quantity,gro
 2026-09-16,kaito-nakamura,copilot,copilot_premium_request,"o1",6,requests,0.0500,0.3000,0.0000,0.3000,proud-core-api,IT-Infrastructure
 2026-09-16,aoi-kobayashi,copilot,copilot_premium_request,"GPT-4o",29,requests,0.0300,0.8700,0.0000,0.8700,proud-core-api,IT-Infrastructure
 2026-09-16,external-contractor-01,copilot,copilot_premium_request,"o1",22,requests,0.0500,1.1000,0.0000,1.1000,proud-fintech,FinTech-Division
-2026-09-16,external-contractor-02,copilot,copilot_premium_request,"o1",22,requests,0.0500,1.1000,0.0000,1.1000,proud-fintech,FinTech-Division
-2026-09-17,kenji-sato,copilot,copilot_premium_request,"Gemini 2.0 Flash",26,requests,0.0200,0.5200,0.0000,0.5200,proud-fintech,FinTech-Division
+2026-09-16,external-contractor-02,copilot,copilot_premium_request,"o1",22,requests,0.0500,1.1000,0.0000,1.1000,proud-cloud-core,Cloud-Platform
+2026-09-17,hanako-suzuki,copilot,copilot_premium_request,"o1",7,requests,0.0500,0.3500,0.0000,0.3500,proud-ai-labs,Research-and-AI
+2026-09-17,kenji-sato,copilot,copilot_premium_request,"Gemini 2.0 Flash",26,requests,0.0200,0.5200,0.0000,0.5200,proud-cloud-core,Cloud-Platform
+2026-09-17,yuki-takahashi,copilot,copilot_premium_request,"Gemini 2.0 Flash",9,requests,0.0200,0.1800,0.0000,0.1800,proud-fintech,FinTech-Division
+2026-09-17,mika-ito,copilot,copilot_premium_request,"GPT-4o",22,requests,0.0300,0.6600,0.0000,0.6600,proud-internal-sys,Enterprise-IT
 2026-09-17,sakura-watanabe,copilot,copilot_premium_request,"Claude 3.7 Sonnet",11,requests,0.0400,0.4400,0.0000,0.4400,proud-internal-sys,IT-Infrastructure
 2026-09-17,ren-takahashi,copilot,copilot_premium_request,"o1",7,requests,0.0500,0.3500,0.0000,0.3500,proud-marketing,Data-AI-Lab
 2026-09-17,mei-ito,copilot,copilot_premium_request,"Claude 3.7 Sonnet",20,requests,0.0400,0.8000,0.0000,0.8000,proud-marketing,Data-AI-Lab
 2026-09-17,kaito-nakamura,copilot,copilot_premium_request,"Gemini 2.0 Flash",9,requests,0.0200,0.1800,0.0000,0.1800,proud-core-api,IT-Infrastructure
 2026-09-17,aoi-kobayashi,copilot,copilot_premium_request,"o1",7,requests,0.0500,0.3500,0.0000,0.3500,proud-core-api,IT-Infrastructure
-2026-09-18,kenji-sato,copilot,copilot_premium_request,"Claude 3.7 Sonnet",29,requests,0.0400,1.1600,0.0000,1.1600,proud-fintech,FinTech-Division
+2026-09-18,taro-tanaka,copilot,copilot_premium_request,"GPT-4o",6,requests,0.0300,0.1800,0.0000,0.1800,proud-fintech,FinTech-Division
+2026-09-18,hanako-suzuki,copilot,copilot_premium_request,"Gemini 2.0 Flash",10,requests,0.0200,0.2000,0.0000,0.2000,proud-ai-labs,Research-and-AI
+2026-09-18,kenji-sato,copilot,copilot_premium_request,"Claude 3.7 Sonnet",29,requests,0.0400,1.1600,0.0000,1.1600,proud-cloud-core,Cloud-Platform
+2026-09-18,mika-ito,copilot,copilot_premium_request,"o1",25,requests,0.0500,1.2500,0.0000,1.2500,proud-internal-sys,Enterprise-IT
+2026-09-18,alex-partner,copilot,copilot_premium_request,"o1",8,requests,0.0500,0.4000,0.0000,0.4000,proud-fintech,FinTech-Division
+2026-09-18,daiki-yamada,copilot,copilot_premium_request,"o1",8,requests,0.0500,0.4000,0.0000,0.4000,proud-cloud-core,Cloud-Platform
 2026-09-18,yuki-tanaka,copilot,copilot_premium_request,"GPT-4o",6,requests,0.0300,0.1800,0.0000,0.1800,proud-fintech,FinTech-Division
 2026-09-18,daiki-suzuki,copilot,copilot_premium_request,"o1",8,requests,0.0500,0.4000,0.0000,0.4000,proud-internal-sys,IT-Infrastructure
 2026-09-18,ren-takahashi,copilot,copilot_premium_request,"Gemini 2.0 Flash",10,requests,0.0200,0.2000,0.0000,0.2000,proud-marketing,Data-AI-Lab
 2026-09-18,mei-ito,copilot,copilot_premium_request,"GPT-4o",23,requests,0.0300,0.6900,0.0000,0.6900,proud-marketing,Data-AI-Lab
 2026-09-18,aoi-kobayashi,copilot,copilot_premium_request,"Gemini 2.0 Flash",10,requests,0.0200,0.2000,0.0000,0.2000,proud-core-api,IT-Infrastructure
 2026-09-18,external-contractor-01,copilot,copilot_premium_request,"Claude 3.7 Sonnet",28,requests,0.0400,1.1200,0.0000,1.1200,proud-fintech,FinTech-Division
-2026-09-18,external-contractor-02,copilot,copilot_premium_request,"Claude 3.7 Sonnet",28,requests,0.0400,1.1200,0.0000,1.1200,proud-fintech,FinTech-Division
-2026-09-21,kenji-sato,copilot,copilot_premium_request,"Gemini 2.0 Flash",13,requests,0.0200,0.2600,0.0000,0.2600,proud-fintech,FinTech-Division
+2026-09-18,external-contractor-02,copilot,copilot_premium_request,"Claude 3.7 Sonnet",28,requests,0.0400,1.1200,0.0000,1.1200,proud-cloud-core,Cloud-Platform
+2026-09-21,taro-tanaka,copilot,copilot_premium_request,"Claude 3.7 Sonnet",15,requests,0.0400,0.6000,0.0000,0.6000,proud-fintech,FinTech-Division
+2026-09-21,kenji-sato,copilot,copilot_premium_request,"Gemini 2.0 Flash",13,requests,0.0200,0.2600,0.0000,0.2600,proud-cloud-core,Cloud-Platform
+2026-09-21,mika-ito,copilot,copilot_premium_request,"GPT-4o",9,requests,0.0300,0.2700,0.0000,0.2700,proud-internal-sys,Enterprise-IT
+2026-09-21,alex-partner,copilot,copilot_premium_request,"GPT-4o",17,requests,0.0300,0.5100,0.0000,0.5100,proud-fintech,FinTech-Division
+2026-09-21,daiki-yamada,copilot,copilot_premium_request,"GPT-4o",17,requests,0.0300,0.5100,0.0000,0.5100,proud-cloud-core,Cloud-Platform
 2026-09-21,yuki-tanaka,copilot,copilot_premium_request,"Claude 3.7 Sonnet",15,requests,0.0400,0.6000,0.0000,0.6000,proud-fintech,FinTech-Division
 2026-09-21,daiki-suzuki,copilot,copilot_premium_request,"GPT-4o",17,requests,0.0300,0.5100,0.0000,0.5100,proud-internal-sys,IT-Infrastructure
 2026-09-21,sakura-watanabe,copilot,copilot_premium_request,"Claude 3.7 Sonnet",23,requests,0.0400,0.9200,0.0000,0.9200,proud-internal-sys,IT-Infrastructure
 2026-09-21,mei-ito,copilot,copilot_premium_request,"Claude 3.7 Sonnet",7,requests,0.0400,0.2800,0.0000,0.2800,proud-marketing,Data-AI-Lab
 2026-09-21,external-contractor-01,copilot,copilot_premium_request,"Gemini 2.0 Flash",12,requests,0.0200,0.2400,0.0000,0.2400,proud-fintech,FinTech-Division
-2026-09-21,external-contractor-02,copilot,copilot_premium_request,"Gemini 2.0 Flash",12,requests,0.0200,0.2400,0.0000,0.2400,proud-fintech,FinTech-Division
-2026-09-22,kenji-sato,copilot,copilot_premium_request,"Claude 3.7 Sonnet",16,requests,0.0400,0.6400,0.0000,0.6400,proud-fintech,FinTech-Division
+2026-09-21,external-contractor-02,copilot,copilot_premium_request,"Gemini 2.0 Flash",12,requests,0.0200,0.2400,0.0000,0.2400,proud-cloud-core,Cloud-Platform
+2026-09-22,taro-tanaka,copilot,copilot_premium_request,"GPT-4o",18,requests,0.0300,0.5400,0.0000,0.5400,proud-fintech,FinTech-Division
+2026-09-22,hanako-suzuki,copilot,copilot_premium_request,"Gemini 2.0 Flash",22,requests,0.0200,0.4400,0.0000,0.4400,proud-ai-labs,Research-and-AI
+2026-09-22,kenji-sato,copilot,copilot_premium_request,"Claude 3.7 Sonnet",16,requests,0.0400,0.6400,0.0000,0.6400,proud-cloud-core,Cloud-Platform
+2026-09-22,yuki-takahashi,copilot,copilot_premium_request,"Claude 3.7 Sonnet",24,requests,0.0400,0.9600,0.0000,0.9600,proud-fintech,FinTech-Division
+2026-09-22,mika-ito,copilot,copilot_premium_request,"o1",12,requests,0.0500,0.6000,0.0000,0.6000,proud-internal-sys,Enterprise-IT
+2026-09-22,alex-partner,copilot,copilot_premium_request,"o1",20,requests,0.0500,1.0000,0.0000,1.0000,proud-fintech,FinTech-Division
+2026-09-22,daiki-yamada,copilot,copilot_premium_request,"o1",20,requests,0.0500,1.0000,0.0000,1.0000,proud-cloud-core,Cloud-Platform
 2026-09-22,yuki-tanaka,copilot,copilot_premium_request,"GPT-4o",18,requests,0.0300,0.5400,0.0000,0.5400,proud-fintech,FinTech-Division
 2026-09-22,daiki-suzuki,copilot,copilot_premium_request,"o1",20,requests,0.0500,1.0000,0.0000,1.0000,proud-internal-sys,IT-Infrastructure
 2026-09-22,sakura-watanabe,copilot,copilot_premium_request,"GPT-4o",26,requests,0.0300,0.7800,0.0000,0.7800,proud-internal-sys,IT-Infrastructure
@@ -130,7 +209,13 @@ date,username,product,sku,model,quantity,unit_type,applied_cost_per_quantity,gro
 2026-09-22,kaito-nakamura,copilot,copilot_premium_request,"Claude 3.7 Sonnet",24,requests,0.0400,0.9600,0.0000,0.9600,proud-core-api,IT-Infrastructure
 2026-09-22,aoi-kobayashi,copilot,copilot_premium_request,"Gemini 2.0 Flash",22,requests,0.0200,0.4400,0.0000,0.4400,proud-core-api,IT-Infrastructure
 2026-09-22,external-contractor-01,copilot,copilot_premium_request,"Claude 3.7 Sonnet",15,requests,0.0400,0.6000,0.0000,0.6000,proud-fintech,FinTech-Division
-2026-09-22,external-contractor-02,copilot,copilot_premium_request,"Claude 3.7 Sonnet",15,requests,0.0400,0.6000,0.0000,0.6000,proud-fintech,FinTech-Division
+2026-09-22,external-contractor-02,copilot,copilot_premium_request,"Claude 3.7 Sonnet",15,requests,0.0400,0.6000,0.0000,0.6000,proud-cloud-core,Cloud-Platform
+2026-09-23,taro-tanaka,copilot,copilot_premium_request,"o1",21,requests,0.0500,1.0500,0.0000,1.0500,proud-fintech,FinTech-Division
+2026-09-23,hanako-suzuki,copilot,copilot_premium_request,"Claude 3.7 Sonnet",25,requests,0.0400,1.0000,0.0000,1.0000,proud-ai-labs,Research-and-AI
+2026-09-23,yuki-takahashi,copilot,copilot_premium_request,"GPT-4o",27,requests,0.0300,0.8100,0.0000,0.8100,proud-fintech,FinTech-Division
+2026-09-23,mika-ito,copilot,copilot_premium_request,"Gemini 2.0 Flash",15,requests,0.0200,0.3000,0.0000,0.3000,proud-internal-sys,Enterprise-IT
+2026-09-23,alex-partner,copilot,copilot_premium_request,"Gemini 2.0 Flash",23,requests,0.0200,0.4600,0.0000,0.4600,proud-fintech,FinTech-Division
+2026-09-23,daiki-yamada,copilot,copilot_premium_request,"Gemini 2.0 Flash",23,requests,0.0200,0.4600,0.0000,0.4600,proud-cloud-core,Cloud-Platform
 2026-09-23,yuki-tanaka,copilot,copilot_premium_request,"o1",21,requests,0.0500,1.0500,0.0000,1.0500,proud-fintech,FinTech-Division
 2026-09-23,daiki-suzuki,copilot,copilot_premium_request,"Gemini 2.0 Flash",23,requests,0.0200,0.4600,0.0000,0.4600,proud-internal-sys,IT-Infrastructure
 2026-09-23,sakura-watanabe,copilot,copilot_premium_request,"o1",29,requests,0.0500,1.4500,0.0000,1.4500,proud-internal-sys,IT-Infrastructure
@@ -139,13 +224,22 @@ date,username,product,sku,model,quantity,unit_type,applied_cost_per_quantity,gro
 2026-09-23,kaito-nakamura,copilot,copilot_premium_request,"GPT-4o",27,requests,0.0300,0.8100,0.0000,0.8100,proud-core-api,IT-Infrastructure
 2026-09-23,aoi-kobayashi,copilot,copilot_premium_request,"Claude 3.7 Sonnet",25,requests,0.0400,1.0000,0.0000,1.0000,proud-core-api,IT-Infrastructure
 2026-09-23,external-contractor-01,copilot,copilot_premium_request,"GPT-4o",18,requests,0.0300,0.5400,0.0000,0.5400,proud-fintech,FinTech-Division
-2026-09-23,external-contractor-02,copilot,copilot_premium_request,"GPT-4o",18,requests,0.0300,0.5400,0.0000,0.5400,proud-fintech,FinTech-Division
-2026-09-24,kenji-sato,copilot,copilot_premium_request,"o1",22,requests,0.0500,1.1000,0.0000,1.1000,proud-fintech,FinTech-Division
+2026-09-23,external-contractor-02,copilot,copilot_premium_request,"GPT-4o",18,requests,0.0300,0.5400,0.0000,0.5400,proud-cloud-core,Cloud-Platform
+2026-09-24,taro-tanaka,copilot,copilot_premium_request,"Gemini 2.0 Flash",24,requests,0.0200,0.4800,0.0000,0.4800,proud-fintech,FinTech-Division
+2026-09-24,kenji-sato,copilot,copilot_premium_request,"o1",22,requests,0.0500,1.1000,0.0000,1.1000,proud-cloud-core,Cloud-Platform
+2026-09-24,yuki-takahashi,copilot,copilot_premium_request,"o1",5,requests,0.0500,0.2500,0.0000,0.2500,proud-fintech,FinTech-Division
+2026-09-24,mika-ito,copilot,copilot_premium_request,"Claude 3.7 Sonnet",18,requests,0.0400,0.7200,0.0000,0.7200,proud-internal-sys,Enterprise-IT
 2026-09-24,yuki-tanaka,copilot,copilot_premium_request,"Gemini 2.0 Flash",24,requests,0.0200,0.4800,0.0000,0.4800,proud-fintech,FinTech-Division
 2026-09-24,sakura-watanabe,copilot,copilot_premium_request,"Gemini 2.0 Flash",7,requests,0.0200,0.1400,0.0000,0.1400,proud-internal-sys,IT-Infrastructure
 2026-09-24,mei-ito,copilot,copilot_premium_request,"Gemini 2.0 Flash",16,requests,0.0200,0.3200,0.0000,0.3200,proud-marketing,Data-AI-Lab
 2026-09-24,kaito-nakamura,copilot,copilot_premium_request,"o1",5,requests,0.0500,0.2500,0.0000,0.2500,proud-core-api,IT-Infrastructure
-2026-09-25,kenji-sato,copilot,copilot_premium_request,"Gemini 2.0 Flash",25,requests,0.0200,0.5000,0.0500,0.4500,proud-fintech,FinTech-Division
+2026-09-25,taro-tanaka,copilot,copilot_premium_request,"Claude 3.7 Sonnet",27,requests,0.0400,1.0800,0.1080,0.9720,proud-fintech,FinTech-Division
+2026-09-25,hanako-suzuki,copilot,copilot_premium_request,"o1",6,requests,0.0500,0.3000,0.0300,0.2700,proud-ai-labs,Research-and-AI
+2026-09-25,kenji-sato,copilot,copilot_premium_request,"Gemini 2.0 Flash",25,requests,0.0200,0.5000,0.0500,0.4500,proud-cloud-core,Cloud-Platform
+2026-09-25,yuki-takahashi,copilot,copilot_premium_request,"Gemini 2.0 Flash",8,requests,0.0200,0.1600,0.0160,0.1440,proud-fintech,FinTech-Division
+2026-09-25,mika-ito,copilot,copilot_premium_request,"GPT-4o",21,requests,0.0300,0.6300,0.0630,0.5670,proud-internal-sys,Enterprise-IT
+2026-09-25,alex-partner,copilot,copilot_premium_request,"GPT-4o",29,requests,0.0300,0.8700,0.0870,0.7830,proud-fintech,FinTech-Division
+2026-09-25,daiki-yamada,copilot,copilot_premium_request,"GPT-4o",29,requests,0.0300,0.8700,0.0870,0.7830,proud-cloud-core,Cloud-Platform
 2026-09-25,yuki-tanaka,copilot,copilot_premium_request,"Claude 3.7 Sonnet",27,requests,0.0400,1.0800,0.1080,0.9720,proud-fintech,FinTech-Division
 2026-09-25,daiki-suzuki,copilot,copilot_premium_request,"GPT-4o",29,requests,0.0300,0.8700,0.0870,0.7830,proud-internal-sys,IT-Infrastructure
 2026-09-25,ren-takahashi,copilot,copilot_premium_request,"o1",6,requests,0.0500,0.3000,0.0300,0.2700,proud-marketing,Data-AI-Lab
@@ -153,12 +247,17 @@ date,username,product,sku,model,quantity,unit_type,applied_cost_per_quantity,gro
 2026-09-25,kaito-nakamura,copilot,copilot_premium_request,"Gemini 2.0 Flash",8,requests,0.0200,0.1600,0.0160,0.1440,proud-core-api,IT-Infrastructure
 2026-09-25,aoi-kobayashi,copilot,copilot_premium_request,"o1",6,requests,0.0500,0.3000,0.0300,0.2700,proud-core-api,IT-Infrastructure
 2026-09-25,external-contractor-01,copilot,copilot_premium_request,"Gemini 2.0 Flash",24,requests,0.0200,0.4800,0.0480,0.4320,proud-fintech,FinTech-Division
-2026-09-25,external-contractor-02,copilot,copilot_premium_request,"Gemini 2.0 Flash",24,requests,0.0200,0.4800,0.0480,0.4320,proud-fintech,FinTech-Division
-2026-09-28,kenji-sato,copilot,copilot_premium_request,"o1",9,requests,0.0500,0.4500,0.0000,0.4500,proud-fintech,FinTech-Division
+2026-09-25,external-contractor-02,copilot,copilot_premium_request,"Gemini 2.0 Flash",24,requests,0.0200,0.4800,0.0480,0.4320,proud-cloud-core,Cloud-Platform
+2026-09-28,taro-tanaka,copilot,copilot_premium_request,"Gemini 2.0 Flash",11,requests,0.0200,0.2200,0.0000,0.2200,proud-fintech,FinTech-Division
+2026-09-28,hanako-suzuki,copilot,copilot_premium_request,"GPT-4o",15,requests,0.0300,0.4500,0.0000,0.4500,proud-ai-labs,Research-and-AI
+2026-09-28,kenji-sato,copilot,copilot_premium_request,"o1",9,requests,0.0500,0.4500,0.0000,0.4500,proud-cloud-core,Cloud-Platform
+2026-09-28,mika-ito,copilot,copilot_premium_request,"Claude 3.7 Sonnet",5,requests,0.0400,0.2000,0.0000,0.2000,proud-internal-sys,Enterprise-IT
+2026-09-28,alex-partner,copilot,copilot_premium_request,"Claude 3.7 Sonnet",13,requests,0.0400,0.5200,0.0000,0.5200,proud-fintech,FinTech-Division
+2026-09-28,daiki-yamada,copilot,copilot_premium_request,"Claude 3.7 Sonnet",13,requests,0.0400,0.5200,0.0000,0.5200,proud-cloud-core,Cloud-Platform
 2026-09-28,yuki-tanaka,copilot,copilot_premium_request,"Gemini 2.0 Flash",11,requests,0.0200,0.2200,0.0000,0.2200,proud-fintech,FinTech-Division
 2026-09-28,daiki-suzuki,copilot,copilot_premium_request,"Claude 3.7 Sonnet",13,requests,0.0400,0.5200,0.0000,0.5200,proud-internal-sys,IT-Infrastructure
 2026-09-28,ren-takahashi,copilot,copilot_premium_request,"GPT-4o",15,requests,0.0300,0.4500,0.0000,0.4500,proud-marketing,Data-AI-Lab
 2026-09-28,mei-ito,copilot,copilot_premium_request,"Gemini 2.0 Flash",28,requests,0.0200,0.5600,0.0000,0.5600,proud-marketing,Data-AI-Lab
 2026-09-28,aoi-kobayashi,copilot,copilot_premium_request,"GPT-4o",15,requests,0.0300,0.4500,0.0000,0.4500,proud-core-api,IT-Infrastructure
 2026-09-28,external-contractor-01,copilot,copilot_premium_request,"o1",8,requests,0.0500,0.4000,0.0000,0.4000,proud-fintech,FinTech-Division
-2026-09-28,external-contractor-02,copilot,copilot_premium_request,"o1",8,requests,0.0500,0.4000,0.0000,0.4000,proud-fintech,FinTech-Division
+2026-09-28,external-contractor-02,copilot,copilot_premium_request,"o1",8,requests,0.0500,0.4000,0.0000,0.4000,proud-cloud-core,Cloud-Platform
