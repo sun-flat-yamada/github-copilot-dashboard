@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import * as fs from 'fs';
 import * as path from 'path';
 
-describe('ActiveDataSelector Viewport Overflow & React Portal Tests', () => {
+describe('ActiveDataSelector Viewport Layout, Pinned Offset & React Portal Tests', () => {
   const componentPath = path.resolve(
     process.cwd(),
     'dashboard/src/components/layout/ActiveDataSelector.tsx'
@@ -45,21 +45,48 @@ describe('ActiveDataSelector Viewport Overflow & React Portal Tests', () => {
     );
   });
 
-  it('verifies ActiveDataSelector modal enforces viewport overflow prevention constraints', () => {
+  it('verifies ActiveDataSelector pins top offset and avoids viewport vertical centering', () => {
     const content = fs.readFileSync(componentPath, 'utf-8');
-    // max-h constraint on modal dialog to prevent clipping on small viewports
+    // Must use items-start to pin top offset instead of items-center
     assert.match(
       content,
-      /max-h-\[90vh\]/,
-      'Modal card must enforce max-h-[90vh] to stay within viewport bounds'
+      /items-start/,
+      'Modal container must use items-start to pin top offset and prevent jitter on tab switch'
     );
-    // overflow-y-auto on backdrop/overlay or card to ensure accessibility
+    assert.doesNotMatch(
+      content,
+      /items-center justify-center.*bg-black/,
+      'Must not vertically center the backdrop container to avoid vertical shifting'
+    );
+    // Top padding offset
     assert.match(
       content,
-      /overflow-y-auto/,
-      'Modal card or backdrop must support vertical scrolling'
+      /pt-16\s+sm:pt-20/,
+      'Modal container must have top padding offset (pt-16 sm:pt-20)'
     );
-    // dialog accessibility semantics
+  });
+
+  it('verifies ActiveDataSelector fixes modal card height and enables internal scrolling', () => {
+    const content = fs.readFileSync(componentPath, 'utf-8');
+    // Fixed vertical height
+    assert.match(
+      content,
+      /h-\[600px\]/,
+      'Modal card must enforce fixed vertical height h-[600px] to prevent height jumping'
+    );
+    // Fixed headers, tabs and footers
+    assert.match(
+      content,
+      /flex-shrink-0/,
+      'Header, tabs and footer must set flex-shrink-0'
+    );
+    // Internal body scroll container
+    assert.match(
+      content,
+      /flex-1\s+min-h-0\s+overflow-y-auto/,
+      'Modal body must have flex-1 min-h-0 overflow-y-auto for internal scrolling'
+    );
+    // Dialog accessibility semantics
     assert.match(
       content,
       /role=["']dialog["']/,
@@ -72,7 +99,7 @@ describe('ActiveDataSelector Viewport Overflow & React Portal Tests', () => {
     );
   });
 
-  it('verifies SDD specifications reflect createPortal isolation and viewport layout', () => {
+  it('verifies SDD specifications reflect pinned top offset and fixed height layout', () => {
     const jaContent = fs.readFileSync(specJaPath, 'utf-8');
     const enContent = fs.readFileSync(specEnPath, 'utf-8');
 
@@ -83,8 +110,13 @@ describe('ActiveDataSelector Viewport Overflow & React Portal Tests', () => {
     );
     assert.match(
       jaContent,
-      /backdrop-filter/,
-      '07_dashboard_ui_ux_spec.ja.md must mention Containing Block prevention'
+      /items-start pt-16 sm:pt-20/,
+      '07_dashboard_ui_ux_spec.ja.md must document pinned top offset'
+    );
+    assert.match(
+      jaContent,
+      /h-\[600px\]/,
+      '07_dashboard_ui_ux_spec.ja.md must document fixed modal height'
     );
 
     assert.match(
@@ -94,8 +126,13 @@ describe('ActiveDataSelector Viewport Overflow & React Portal Tests', () => {
     );
     assert.match(
       enContent,
-      /backdrop-filter/,
-      '07_dashboard_ui_ux_spec.md must mention Containing Block prevention'
+      /items-start pt-16 sm:pt-20/,
+      '07_dashboard_ui_ux_spec.md must document pinned top offset'
+    );
+    assert.match(
+      enContent,
+      /h-\[600px\]/,
+      '07_dashboard_ui_ux_spec.md must document fixed modal height'
     );
   });
 });

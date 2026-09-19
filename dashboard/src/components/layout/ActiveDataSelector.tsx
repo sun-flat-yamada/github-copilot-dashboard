@@ -221,7 +221,7 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
         typeof document !== 'undefined' &&
         createPortal(
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150"
+            className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-16 sm:pt-20 bg-black/75 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150"
             role="dialog"
             aria-modal="true"
             aria-labelledby="active-data-selector-title"
@@ -232,9 +232,9 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
               aria-hidden="true"
             />
 
-            <div className="relative bg-slate-900 border border-slate-700/90 rounded-2xl w-full max-w-2xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col z-10 my-auto animate-in zoom-in-95 duration-150">
+            <div className="relative bg-slate-900 border border-slate-700/90 rounded-2xl w-full max-w-2xl h-[600px] max-h-[calc(100vh-5.5rem)] shadow-2xl overflow-hidden flex flex-col z-10 animate-in zoom-in-95 duration-150">
               {/* モーダルヘッダー */}
-              <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/70">
+              <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/70 flex-shrink-0">
                 <div className="flex items-center space-x-2.5">
                   <div className="p-2 rounded-xl bg-indigo-950/80 border border-indigo-800 text-indigo-400">
                     <Sparkles className="w-5 h-5" />
@@ -259,7 +259,7 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
               </div>
 
             {/* ソース切り替えタブ (a / b / c) */}
-            <div className="flex border-b border-slate-800 bg-slate-950/40 p-1.5 gap-1.5">
+            <div className="flex border-b border-slate-800 bg-slate-950/40 p-1.5 gap-1.5 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => setActiveTab('live_metrics')}
@@ -310,7 +310,7 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
             </div>
 
             {/* モーダルコンテンツ */}
-            <div className="p-6 space-y-5 max-h-[65vh] overflow-y-auto">
+            <div className="p-6 space-y-5 flex-1 min-h-0 overflow-y-auto">
               {/* --- タブ A: Live Metrics --- */}
               {activeTab === 'live_metrics' && (
                 <div className="space-y-4">
@@ -591,7 +591,7 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
             </div>
 
             {/* モーダルフッター */}
-            <div className="px-6 py-3 border-t border-slate-800 bg-slate-950/60 flex justify-end">
+            <div className="px-6 py-3 border-t border-slate-800 bg-slate-950/60 flex justify-end flex-shrink-0">
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
