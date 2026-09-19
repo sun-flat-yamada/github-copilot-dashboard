@@ -52,6 +52,8 @@ export const CostAllocationCharts: React.FC<CostAllocationChartsProps> = ({
     .map((g) => ({
       name: g.group_name,
       cost: g.total_cost_usd,
+      netCost: g.net_cost_usd,
+      limit: g.spending_limit_usd,
       seats: g.total_seats,
       activeSeats: g.active_seats,
       idleSeats: g.idle_seats,
@@ -64,11 +66,20 @@ export const CostAllocationCharts: React.FC<CostAllocationChartsProps> = ({
     <div className="flex flex-col space-y-6 w-full">
       {/* 1. コスト配賦 ドーナツチャート */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <h3 className="text-sm font-semibold text-slate-200">
             {groupingLabel} 別 コスト配賦 (USD)
           </h3>
-          <span className="text-xs text-slate-400">Total: ${data.overview.total_spend_usd.toLocaleString()}</span>
+          <div className="flex items-center space-x-2 text-xs">
+            <span className="text-slate-400">
+              利用費用: <strong className="font-mono text-slate-200">${data.overview.total_spend_usd.toLocaleString()}</strong>
+            </span>
+            {data.overview.total_net_billable_usd !== undefined && (
+              <span className="px-2 py-0.5 rounded bg-amber-950/60 border border-amber-800/40 text-amber-300 font-mono text-[11px]">
+                超過請求: ${data.overview.total_net_billable_usd.toLocaleString()}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="h-64 w-full">
@@ -88,13 +99,33 @@ export const CostAllocationCharts: React.FC<CostAllocationChartsProps> = ({
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value: any) => [`$${Number(value || 0).toLocaleString()}`, '費用']}
-                contentStyle={{
-                  backgroundColor: '#161b22',
-                  borderColor: '#30363d',
-                  borderRadius: '8px',
-                  color: '#f0f6fc',
-                  fontSize: '12px',
+                content={({ active, payload }) => {
+                  if (!active || !payload || !payload.length) return null;
+                  const d = payload[0].payload;
+                  return (
+                    <div className="bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs shadow-xl text-slate-200 space-y-1">
+                      <p className="font-semibold text-white mb-1.5">{d.name}</p>
+                      <div className="flex justify-between space-x-4">
+                        <span className="text-slate-400">利用費用:</span>
+                        <span className="font-mono font-bold text-slate-100">${Number(d.cost || 0).toLocaleString()}</span>
+                      </div>
+                      {d.netCost !== undefined && (
+                        <div className="flex justify-between space-x-4">
+                          <span className="text-amber-400">超過請求費用:</span>
+                          <span className="font-mono font-bold text-amber-300">${Number(d.netCost || 0).toLocaleString()}</span>
+                        </div>
+                      )}
+                      {d.limit !== undefined && d.limit > 0 && (
+                        <div className="flex justify-between space-x-4 text-slate-400">
+                          <span>Limit設定値:</span>
+                          <span className="font-mono">${Number(d.limit || 0).toLocaleString()}</span>
+                        </div>
+                      )}
+                      <p className="text-[10px] text-slate-500 pt-1 border-t border-slate-800/80">
+                        稼働 {d.activeSeats} / 総シート {d.seats} 席
+                      </p>
+                    </div>
+                  );
                 }}
               />
             </PieChart>
@@ -104,13 +135,20 @@ export const CostAllocationCharts: React.FC<CostAllocationChartsProps> = ({
         {/* 凡例リスト */}
         <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
           {chartData.slice(0, 6).map((item, idx) => (
-            <div key={item.name} className="flex items-center space-x-2 truncate">
-              <span
-                className="w-2.5 h-2.5 rounded-full shrink-0"
-                style={{ backgroundColor: COLORS[idx % COLORS.length] }}
-              />
-              <span className="text-slate-300 truncate font-medium">{item.name}:</span>
-              <span className="text-slate-400 font-mono">${item.cost.toLocaleString()}</span>
+            <div key={item.name} className="flex items-center justify-between space-x-2 truncate">
+              <div className="flex items-center space-x-1.5 truncate">
+                <span
+                  className="w-2.5 h-2.5 rounded-full shrink-0"
+                  style={{ backgroundColor: COLORS[idx % COLORS.length] }}
+                />
+                <span className="text-slate-300 truncate font-medium">{item.name}</span>
+              </div>
+              <div className="flex items-center space-x-1 font-mono text-slate-400 shrink-0">
+                <span>${item.cost.toLocaleString()}</span>
+                {item.netCost !== undefined && (
+                  <span className="text-[10px] text-amber-400" title="超過請求費用">(${item.netCost.toLocaleString()})</span>
+                )}
+              </div>
             </div>
           ))}
         </div>

@@ -9,27 +9,33 @@ interface MonthlyReportKpisProps {
 export const MonthlyReportKpis: React.FC<MonthlyReportKpisProps> = ({ reportData }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-      {/* カード 1: 請求実額 */}
+      {/* カード 1: 利用費用 & 超過請求費用 */}
       <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm relative overflow-hidden">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-400">月間実費用 (Net Spend)</span>
+          <span className="text-xs font-medium text-slate-400">費用サマリー (Cost Overview)</span>
           <div className="p-1.5 rounded-lg bg-emerald-950 border border-emerald-800/60 text-emerald-400">
             <DollarSign className="w-4 h-4" />
           </div>
         </div>
-        <div className="mt-2 flex items-baseline space-x-2">
-          <span className="text-2xl font-black text-white tracking-tight">
-            ${reportData.overview.total_net_spend_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-          </span>
-        </div>
-        <div className="mt-1 text-[11px] text-slate-400 flex items-center space-x-1.5">
-          <span>定価: ${reportData.overview.total_gross_spend_usd.toFixed(2)}</span>
-          {reportData.overview.total_discount_usd > 0 && (
-            <span className="text-emerald-400">
-              (-${reportData.overview.total_discount_usd.toFixed(2)})
+        <div className="mt-2 space-y-1.5">
+          <div>
+            <span className="text-[10px] text-slate-400 block font-medium">利用費用 (総額):</span>
+            <span className="text-xl font-black text-white tracking-tight">
+              ${reportData.overview.total_gross_spend_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </span>
-          )}
+          </div>
+          <div className="pt-1.5 border-t border-slate-800/80 flex items-center justify-between">
+            <span className="text-[11px] text-amber-400 font-medium">超過請求費用:</span>
+            <span className="font-mono font-bold text-amber-300 text-sm">
+              ${reportData.overview.total_net_spend_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </span>
+          </div>
         </div>
+        {reportData.overview.total_discount_usd > 0 && (
+          <div className="mt-1 text-[10px] text-emerald-400/90 text-right">
+            無料枠控除: -${reportData.overview.total_discount_usd.toFixed(2)}
+          </div>
+        )}
       </div>
 
       {/* カード 2: 総リクエスト数 */}

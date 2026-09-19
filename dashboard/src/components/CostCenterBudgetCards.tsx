@@ -45,9 +45,9 @@ export const CostCenterBudgetCards: React.FC<CostCenterBudgetCardsProps> = ({ bu
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs shrink-0">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs shrink-0">
           <div className="bg-slate-950/70 border border-slate-800/80 p-3 rounded-xl">
-            <span className="text-slate-400 block mb-0.5">総 上限Budget額</span>
+            <span className="text-slate-400 block mb-0.5">総 Limit設定値</span>
             <span className="text-base font-bold text-slate-100 font-mono">${totalLimit.toLocaleString()}</span>
           </div>
           <div className="bg-slate-950/70 border border-slate-800/80 p-3 rounded-xl">
@@ -58,8 +58,12 @@ export const CostCenterBudgetCards: React.FC<CostCenterBudgetCardsProps> = ({ bu
             <span className="text-base font-bold text-emerald-300 font-mono">${totalFree.toLocaleString()}</span>
           </div>
           <div className="bg-slate-950/70 border border-slate-800/80 p-3 rounded-xl">
-            <span className="text-slate-400 block mb-0.5">現在 使用済み額</span>
+            <span className="text-slate-400 block mb-0.5">総 利用費用</span>
             <span className="text-base font-bold text-slate-200 font-mono">${totalCurrent.toLocaleString()}</span>
+          </div>
+          <div className="bg-slate-950/70 border border-slate-800/80 p-3 rounded-xl">
+            <span className="text-amber-400 block mb-0.5 font-medium">超過請求費用</span>
+            <span className="text-base font-bold text-amber-300 font-mono">${totalNetBillable.toLocaleString()}</span>
           </div>
           <div className="bg-slate-950/70 border border-slate-800/80 p-3 rounded-xl">
             <span className="text-indigo-400 block mb-0.5">総 残余枠</span>
@@ -120,7 +124,7 @@ export const CostCenterBudgetCards: React.FC<CostCenterBudgetCardsProps> = ({ bu
                   <div className="flex items-center justify-between text-slate-300">
                     <span className="text-slate-400 flex items-center space-x-1">
                       <DollarSign className="w-3.5 h-3.5 text-slate-500" />
-                      <span>上限Budget額:</span>
+                      <span>Limit設定値:</span>
                     </span>
                     <strong className="font-mono text-slate-100">${b.spending_limit_usd.toLocaleString()}</strong>
                   </div>
@@ -128,7 +132,7 @@ export const CostCenterBudgetCards: React.FC<CostCenterBudgetCardsProps> = ({ bu
                   <div className="flex items-center justify-between text-emerald-300">
                     <span className="text-slate-400 flex items-center space-x-1">
                       <Gift className="w-3.5 h-3.5 text-emerald-500" />
-                      <span>無料Budget額:</span>
+                      <span>無料枠 (Credit):</span>
                     </span>
                     <span className="font-mono font-medium text-emerald-400">-${b.free_tier_budget_usd.toLocaleString()}</span>
                   </div>
@@ -136,14 +140,14 @@ export const CostCenterBudgetCards: React.FC<CostCenterBudgetCardsProps> = ({ bu
                   <div className="flex items-center justify-between text-slate-200">
                     <span className="text-slate-400 flex items-center space-x-1">
                       <TrendingUp className="w-3.5 h-3.5 text-slate-500" />
-                      <span>現在使用済み額:</span>
+                      <span>利用費用 (使用済):</span>
                     </span>
                     <span className="font-mono font-bold text-slate-200">${b.current_spend_usd.toLocaleString()}</span>
                   </div>
 
-                  <div className="flex items-center justify-between text-slate-400 text-[11px] pt-1 border-t border-slate-800/60">
-                    <span>課金対象額 (実費):</span>
-                    <span className="font-mono text-slate-300">${b.net_billable_spend_usd.toLocaleString()}</span>
+                  <div className="flex items-center justify-between text-amber-300 text-xs pt-1 border-t border-slate-800/60 font-medium">
+                    <span>超過請求費用:</span>
+                    <span className="font-mono font-bold text-amber-400">${b.net_billable_spend_usd.toLocaleString()}</span>
                   </div>
 
                   <div className="flex items-center justify-between text-indigo-300 font-semibold text-xs pt-0.5">

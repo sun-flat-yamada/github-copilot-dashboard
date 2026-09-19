@@ -54,6 +54,7 @@ export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({ report
     return groupSummaries.map((g: any) => ({
       name: g.group_name,
       value: g.total_cost_usd,
+      netCost: g.net_cost_usd,
       requests: g.total_suggestions,
       users: g.total_seats,
     }));
@@ -137,8 +138,12 @@ export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({ report
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(val: any) => [`$${Number(val || 0).toFixed(2)}`, '費用']}
-                  contentStyle={{ backgroundColor: '#090d13', borderColor: '#334155', borderRadius: 8 }}
+                  formatter={(val: any, _name: any, item: any) => {
+                    const g = item?.payload;
+                    const excess = g?.netCost !== undefined ? `$${Number(g.netCost).toFixed(2)}` : `$${Number(val || 0).toFixed(2)}`;
+                    return [`利用費用: $${Number(val || 0).toFixed(2)} (超過請求: ${excess})`, '金額'];
+                  }}
+                  contentStyle={{ backgroundColor: '#090d13', borderColor: '#334155', borderRadius: 8, fontSize: '11px' }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -153,7 +158,7 @@ export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({ report
                   <th className="py-2 px-3">グループ名</th>
                   <th className="py-2 px-3 text-right">人数</th>
                   <th className="py-2 px-3 text-right">リクエスト数</th>
-                  <th className="py-2 px-3 text-right">合計金額 (USD)</th>
+                  <th className="py-2 px-3 text-right">利用費用 / 超過請求 (USD)</th>
                   <th className="py-2 px-3 text-right">シェア</th>
                 </tr>
               </thead>
@@ -176,8 +181,11 @@ export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({ report
                       <td className="py-2.5 px-3 text-right text-slate-300">
                         {g.total_suggestions.toLocaleString()}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-semibold text-emerald-400">
-                        ${g.total_cost_usd.toFixed(2)}
+                      <td className="py-2.5 px-3 text-right">
+                        <div className="font-semibold text-slate-100">${g.total_cost_usd.toFixed(2)}</div>
+                        <div className="text-[10px] text-amber-400 font-mono">
+                          超過: ${Number(g.net_cost_usd ?? g.total_cost_usd).toFixed(2)}
+                        </div>
                       </td>
                       <td className="py-2.5 px-3 text-right text-slate-400">{percent}%</td>
                     </tr>

@@ -136,7 +136,8 @@ export class MetricsAggregator {
       totalSuggestions,
       totalAcceptances,
       totalChats,
-      totalPrSummaries
+      totalPrSummaries,
+      costCenterBudgets
     );
 
     const byOrganization = this.calculateGroupSummaries(
@@ -158,10 +159,10 @@ export class MetricsAggregator {
     if (affectedFields.includes('copilot_ide_code_completions')) missingMetrics.push('copilot_ide_code_completions');
 
     // スコープに応じたプロファイルの調整
-    const scopedUserProfiles: UserUsageProfile[] = userProfiles.map((p) => {
-      const historyInScope = p.daily_history.filter(
-        (h) => h.date >= dateRange.start && h.date <= dateRange.end
-      );
+    const scopedUserProfiles = userProfiles.map((p) => {
+      const historyInScope = p.daily_history.filter((h) => {
+        return h.date >= dateRange.start && h.date <= dateRange.end;
+      });
       const totalChats = historyInScope.reduce((sum, h) => sum + h.total_chats, 0);
       const totalSugg = historyInScope.reduce((sum, h) => sum + h.suggestions, 0);
       const totalAcc = historyInScope.reduce((sum, h) => sum + h.acceptances, 0);
@@ -188,6 +189,13 @@ export class MetricsAggregator {
       };
     });
 
+    const totalNetBillable = costCenterBudgets.length > 0
+      ? Number(costCenterBudgets.reduce((sum, b) => sum + b.net_billable_spend_usd, 0).toFixed(2))
+      : undefined;
+    const totalSpendingLimit = costCenterBudgets.length > 0
+      ? Number(costCenterBudgets.reduce((sum, b) => sum + b.spending_limit_usd, 0).toFixed(2))
+      : undefined;
+
     return {
       scope_type: scopeType,
       scope_key: scopeKey,
@@ -197,6 +205,8 @@ export class MetricsAggregator {
         active_users: activeSeatsCount,
         idle_seats: idleSeatsCount,
         total_spend_usd: Number(totalSpend.toFixed(2)),
+        total_net_billable_usd: totalNetBillable,
+        total_spending_limit_usd: totalSpendingLimit,
         idle_waste_usd: Number(idleWaste.toFixed(2)),
         active_ratio: totalSeats > 0 ? Number((activeSeatsCount / totalSeats).toFixed(4)) : 0,
         overall_acceptance_rate: overallAcceptanceRate,
@@ -230,7 +240,8 @@ export class MetricsAggregator {
     globalSuggestions: number,
     globalAcceptances: number,
     globalChats: number,
-    globalPr: number
+    globalPr: number,
+    costCenterBudgets?: CostCenterBudget[]
   ): Record<string, GroupSummary> {
     const map: Record<string, EnrichedUserSeat[]> = {};
 
@@ -270,12 +281,18 @@ export class MetricsAggregator {
       const estimatedSuggestions = Math.round(globalSuggestions * ratio);
       const estimatedAcceptances = Math.round(globalAcceptances * ratio);
 
+      const matchedBudget = costCenterBudgets?.find(
+        (b) => b.cost_center_name.toLowerCase() === groupName.toLowerCase() || b.cost_center_id === groupName
+      );
+
       summaries[groupName] = {
         group_name: groupName,
         total_seats: seatCount,
         active_seats: activeCount,
         idle_seats: idleCount,
         total_cost_usd: Number(cost.toFixed(2)),
+        net_cost_usd: matchedBudget ? matchedBudget.net_billable_spend_usd : undefined,
+        spending_limit_usd: matchedBudget ? matchedBudget.spending_limit_usd : undefined,
         potential_savings_usd: Number(potentialSavings.toFixed(2)),
         active_ratio: seatCount > 0 ? Number((activeCount / seatCount).toFixed(4)) : 0,
         acceptance_rate: estimatedSuggestions > 0 ? Number((estimatedAcceptances / estimatedSuggestions).toFixed(4)) : 0,

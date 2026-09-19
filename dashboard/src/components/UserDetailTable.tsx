@@ -311,7 +311,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                   <th className="px-4 py-3 text-right">AIチャット</th>
                 </>
               )}
-              <th className="px-4 py-3 text-right">費用 ({scope_type === 'daily' ? '日割り' : '月額'})</th>
+              <th className="px-4 py-3 text-right">費用 / 超過請求 ({scope_type === 'daily' ? '日割り' : '月額'})</th>
               <th className="px-4 py-3 text-center w-24">アクション</th>
             </tr>
           </thead>
@@ -426,8 +426,13 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                       </>
                     )}
 
-                    <td className="px-4 py-3 text-right font-mono font-semibold text-slate-200">
-                      ${(scope_type === 'daily' ? u.prorated_daily_cost_usd : u.monthly_cost_usd).toFixed(2)}
+                    <td className="px-4 py-3 text-right">
+                      <div className="font-mono font-semibold text-slate-200">
+                        ${(scope_type === 'daily' ? u.prorated_daily_cost_usd : u.monthly_cost_usd).toFixed(2)}
+                      </div>
+                      <div className="text-[10px] text-amber-400 font-mono">
+                        超過: ${(scope_type === 'daily' ? u.prorated_daily_cost_usd : u.monthly_cost_usd).toFixed(2)}
+                      </div>
                     </td>
 
                     <td className="px-4 py-3 text-center">
