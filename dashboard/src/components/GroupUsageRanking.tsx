@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { GroupingDimension, ScopeAggregatedData } from '../../../src/types/copilot';
 import {
-  Trophy,
+  Users,
   Briefcase,
   Landmark,
   Building2,
@@ -106,14 +106,14 @@ export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800 pb-5">
         <div>
           <div className="flex items-center space-x-2">
-            <Trophy className="w-5 h-5 text-amber-400" />
-            <h3 className="text-base font-bold text-white tracking-tight">グループ内 使用量・貢献ランキング</h3>
+            <Users className="w-5 h-5 text-indigo-400" />
+            <h3 className="text-base font-bold text-white tracking-tight">グループ内 使用量・活用状況</h3>
             <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-indigo-950 text-indigo-300 border border-indigo-800">
               {scopeLabel}
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            ページ共通の集計軸（{dimensionLabel}）および選択グループの範囲内で、AI活用度・受諾数を比較・順位付けします。
+            ページ共通の集計軸（{dimensionLabel}）および選択グループの範囲内で、AI活用度・受諾数を比較・一覧表示します。
           </p>
         </div>
 
@@ -163,7 +163,7 @@ export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
         {/* ソート指標切り替え */}
         <div className="flex items-center space-x-2">
           <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-xs text-slate-400">ランキング基準:</span>
+          <span className="text-xs text-slate-400">並び替え基準:</span>
           <div className="inline-flex rounded-lg bg-slate-900 border border-slate-700 p-0.5 text-xs">
             <button
               onClick={() => setSortBy('acceptances')}
@@ -209,12 +209,12 @@ export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
         </div>
       </div>
 
-      {/* 3. ランキングテーブル */}
+      {/* 3. ユーザー利用明細テーブル */}
       <div className="overflow-x-auto rounded-xl border border-slate-800">
         <table className="w-full text-left text-xs text-slate-300">
           <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
             <tr>
-              <th className="px-4 py-3 text-center w-14">順位</th>
+              <th className="px-4 py-3 text-center w-14">#</th>
               <th className="px-4 py-3">ユーザー / 表示名</th>
               <th className="px-4 py-3">{dimensionLabel}</th>
               <th className="px-4 py-3 text-right">AIコード提案数</th>
@@ -234,28 +234,10 @@ export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
               </tr>
             ) : (
               rankedUsers.map((u, index) => {
-                const isTop1 = index === 0;
-                const isTop2 = index === 1;
-                const isTop3 = index === 2;
-
                 return (
                   <tr key={u.login} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="px-4 py-3 text-center font-bold">
-                      {isTop1 ? (
-                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs">
-                          🥇
-                        </span>
-                      ) : isTop2 ? (
-                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-400/20 text-slate-200 border border-slate-400/40 text-xs">
-                          🥈
-                        </span>
-                      ) : isTop3 ? (
-                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-700/20 text-amber-400 border border-amber-700/40 text-xs">
-                          🥉
-                        </span>
-                      ) : (
-                        <span className="text-slate-500 font-mono">{index + 1}</span>
-                      )}
+                    <td className="px-4 py-3 text-center text-slate-500 font-mono text-xs">
+                      {index + 1}
                     </td>
 
                     <td className="px-4 py-3">

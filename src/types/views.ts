@@ -42,9 +42,9 @@ export const ANALYSIS_VIEW_REGISTRY: AnalysisViewDefinition[] = [
   },
   {
     id: 'users',
-    title: 'ユーザー別利用明細 & 活用ランキング',
+    title: 'ユーザー別利用明細',
     shortTitle: 'ユーザー明細',
-    description: '全ユーザーの稼働状況・推計費用・AI活用度ランキングの一覧',
+    description: '全ユーザーの稼働状況・推計費用・AI活用度の一覧',
     iconName: 'Users2',
     supportedDataSources: ['live_metrics', 'monthly_report', 'user_upload'],
     requiredCapabilities: ['user_table', 'group_ranking'],

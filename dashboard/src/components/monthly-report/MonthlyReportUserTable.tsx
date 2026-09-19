@@ -1,7 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { Users, Search, Download, Trophy, BrainCircuit, ChevronDown, ChevronUp, LineChart } from 'lucide-react';
+import { Users, Search, Download, ArrowUpDown, BrainCircuit, ChevronDown, ChevronUp, LineChart } from 'lucide-react';
 import { GroupingDimension, MonthlyReportAggregatedData, UserUsageProfile } from '../../../../src/types/copilot';
 import { adaptReportToProfiles } from '../../utils/deepAnalysisAdapter';
+import { formatElapsedActivity } from '../../utils/dateFormatters';
+import { ActionColumnHeader } from '../common/ActionColumnHeader';
 import { UserDrilldownPanel } from '../UserDrilldownPanel';
 
 interface MonthlyReportUserTableProps {
@@ -105,7 +107,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
   // CSV エクスポート
   const handleExportCsv = () => {
     const headers = [
-      '順位',
+      '#',
       'GitHub User',
       'Display Name',
       'Department',
@@ -150,9 +152,9 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
         <div>
           <h3 className="text-sm font-bold text-white flex items-center space-x-2">
             <Users className="w-4 h-4 text-indigo-400" />
-            <span>ユーザー別 利用・費用明細 & ランキング ({filteredUsers.length}名)</span>
-            <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800">
-              <Trophy className="w-3 h-3 text-amber-400" />
+            <span>ユーザー別 利用・費用明細 ({filteredUsers.length}名)</span>
+            <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
+              <ArrowUpDown className="w-3 h-3 text-slate-400" />
               <span>{userSortBy === 'spend' ? '利用費用順' : 'リクエスト順'}</span>
             </span>
           </h3>
@@ -218,7 +220,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b border-slate-800 text-slate-400 font-semibold bg-slate-950/40">
-              <th className="py-2.5 px-3 text-center w-14">順位</th>
+              <th className="py-2.5 px-3 text-center w-14">#</th>
               <th className="py-2.5 px-3">GitHub ユーザー</th>
               <th className="py-2.5 px-3">部署 / 仕訳グループ</th>
               <th className="py-2.5 px-3">Cost Center</th>
@@ -227,7 +229,9 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
               <th className="py-2.5 px-3 text-right">総リクエスト</th>
               <th className="py-2.5 px-3 text-right">利用費用 / 超過請求 (USD)</th>
               <th className="py-2.5 px-3 text-right">最終利用日</th>
-              <th className="py-2.5 px-3 text-center w-24">アクション</th>
+              <th className="py-2.5 px-3 text-center w-24">
+                <ActionColumnHeader />
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60">
@@ -239,9 +243,6 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
               </tr>
             ) : (
               filteredUsers.map((u, index) => {
-                const isTop1 = index === 0;
-                const isTop2 = index === 1;
-                const isTop3 = index === 2;
                 const isSelected = selectedUserLogin === u.login;
                 const prof = profileMap.get(u.login.toLowerCase());
 
@@ -255,22 +256,8 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                           : 'hover:bg-slate-800/40'
                       }`}
                     >
-                      <td className="py-2.5 px-3 text-center font-bold">
-                        {isTop1 ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs">
-                            🥇
-                          </span>
-                        ) : isTop2 ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-400/20 text-slate-200 border border-slate-400/40 text-xs">
-                            🥈
-                          </span>
-                        ) : isTop3 ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-700/20 text-amber-400 border border-amber-700/40 text-xs">
-                            🥉
-                          </span>
-                        ) : (
-                          <span className="text-slate-500 font-mono">{index + 1}</span>
-                        )}
+                      <td className="py-2.5 px-3 text-center text-slate-500 font-mono text-xs">
+                        {index + 1}
                       </td>
                       <td className="py-2.5 px-3">
                         <div className="flex items-center space-x-1.5">
@@ -310,8 +297,19 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                           超過: ${(u.net_spend_usd ?? u.total_spend_usd).toFixed(2)}
                         </div>
                       </td>
-                      <td className="py-2.5 px-3 text-right text-slate-400 font-mono text-[11px]">
-                        {u.last_activity_date || '-'}
+                      <td className="py-2.5 px-3 text-right font-mono text-[11px]">
+                        {u.last_activity_date ? (
+                          <div className="flex items-center justify-end space-x-1.5 whitespace-nowrap">
+                            <span className="text-slate-200">{u.last_activity_date}</span>
+                            {formatElapsedActivity(u.last_activity_date) && (
+                              <span className="text-[10px] text-slate-400 font-sans">
+                                ({formatElapsedActivity(u.last_activity_date)})
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-slate-500">-</span>
+                        )}
                       </td>
                       <td className="py-2.5 px-3 text-center">
                         <div className="flex items-center justify-center space-x-1.5">
@@ -321,15 +319,15 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                               e.stopPropagation();
                               handleToggleUserDrilldown(u.login);
                             }}
-                            className={`px-2 py-1 rounded text-[10px] font-semibold flex items-center space-x-1 transition-all shadow-sm cursor-pointer ${
+                            className={`p-1.5 rounded transition-all shadow-sm cursor-pointer ${
                               isSelected
                                 ? 'bg-indigo-600 text-white border border-indigo-400'
                                 : 'bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60'
                             }`}
-                            title={isSelected ? 'ドリルダウンを閉じる' : 'このユーザーの利用実態・AI健全度をドリルダウン分析'}
+                            title={isSelected ? 'ドリルダウンを閉じる' : '詳細分析 (利用実態・AI健全度をドリルダウン分析)'}
+                            aria-label={isSelected ? '閉じる' : '詳細分析'}
                           >
-                            {isSelected ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                            <span>{isSelected ? '閉じる' : '詳細分析'}</span>
+                            {isSelected ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                           </button>
                           {onSelectUserForTrend && (
                             <button
@@ -338,11 +336,11 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                                 e.stopPropagation();
                                 onSelectUserForTrend(u.login);
                               }}
-                              className="px-2 py-1 rounded bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 text-[10px] font-semibold inline-flex items-center space-x-1 transition-all shadow-sm cursor-pointer"
-                              title="日次利用トレンド・モデル内訳を確認"
+                              className="p-1.5 rounded bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 transition-all shadow-sm cursor-pointer inline-flex items-center justify-center"
+                              title="トレンド (日次利用トレンド・モデル内訳を確認)"
+                              aria-label="トレンド"
                             >
-                              <LineChart className="w-3 h-3" />
-                              <span>トレンド</span>
+                              <LineChart className="w-3.5 h-3.5" />
                             </button>
                           )}
                           {onSelectUserForDeepAnalysis && (
@@ -352,11 +350,11 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                                 e.stopPropagation();
                                 onSelectUserForDeepAnalysis(u.login);
                               }}
-                              className="px-2 py-1 rounded bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 text-[10px] font-semibold inline-flex items-center space-x-1 transition-all shadow-sm cursor-pointer"
-                              title="このユーザーの非効率パターン・高度診断を実行"
+                              className="p-1.5 rounded bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 transition-all shadow-sm cursor-pointer inline-flex items-center justify-center"
+                              title="診断 (非効率パターン・高度診断を実行)"
+                              aria-label="診断"
                             >
-                              <BrainCircuit className="w-3 h-3" />
-                              <span>診断</span>
+                              <BrainCircuit className="w-3.5 h-3.5" />
                             </button>
                           )}
                         </div>
