@@ -13,7 +13,10 @@ import {
   Trophy,
   ArrowUpDown,
   Users as UsersIcon,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
+import { UserDrilldownPanel } from './UserDrilldownPanel';
 
 export type UserSortMetric =
   | 'default'
@@ -26,6 +29,8 @@ export type UserSortMetric =
 
 interface UserDetailTableProps {
   data: ScopeAggregatedData;
+  userProfiles?: UserUsageProfile[];
+  initialSelectedLogin?: string;
   filterStatus?: UserSeatStatus | 'all';
   onSelectUserForTrend?: (login: string) => void;
   onSelectUserForDeepAnalysis?: (login: string) => void;
@@ -33,6 +38,8 @@ interface UserDetailTableProps {
 
 export const UserDetailTable: React.FC<UserDetailTableProps> = ({
   data,
+  userProfiles,
+  initialSelectedLogin,
   filterStatus: initialStatus = 'all',
   onSelectUserForTrend,
   onSelectUserForDeepAnalysis,
@@ -41,6 +48,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
   const [statusFilter, setStatusFilter] = useState<UserSeatStatus | 'all'>(initialStatus);
   const [selectedDept, setSelectedDept] = useState<string>('all');
   const [sortBy, setSortBy] = useState<UserSortMetric>('default');
+  const [selectedUserLogin, setSelectedUserLogin] = useState<string | null>(initialSelectedLogin || null);
 
   const { users, scope_type } = data;
 
@@ -50,16 +58,26 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
     return Array.from(set).sort();
   }, [users]);
 
+  // 利用可能なプロファイル一覧 (明示指定またはデータ内包)
+  const effectiveProfiles = useMemo(() => {
+    if (userProfiles && userProfiles.length > 0) return userProfiles;
+    return data.user_profiles || [];
+  }, [userProfiles, data.user_profiles]);
+
   // 利用実績プロファイルのマップ作成
   const profileMap = useMemo(() => {
     const map = new Map<string, UserUsageProfile>();
-    for (const p of data.user_profiles || []) {
+    for (const p of effectiveProfiles) {
       map.set(p.login.toLowerCase(), p);
     }
     return map;
-  }, [data.user_profiles]);
+  }, [effectiveProfiles]);
 
-  const hasUsageMetrics = (data.user_profiles && data.user_profiles.length > 0);
+  const hasUsageMetrics = effectiveProfiles.length > 0;
+
+  const handleToggleUserDrilldown = (login: string) => {
+    setSelectedUserLogin((prev) => (prev === login ? null : login));
+  };
 
   // フィルタリング & ソート
   const filteredUsers = useMemo(() => {
@@ -328,138 +346,206 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                 const isTop2 = index === 1;
                 const isTop3 = index === 2;
                 const prof = profileMap.get(u.login.toLowerCase());
+                const isSelected = selectedUserLogin === u.login;
 
                 return (
-                  <tr key={u.login} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="px-4 py-3 text-center font-bold">
-                      {isTop1 ? (
-                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs">
-                          🥇
-                        </span>
-                      ) : isTop2 ? (
-                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-400/20 text-slate-200 border border-slate-400/40 text-xs">
-                          🥈
-                        </span>
-                      ) : isTop3 ? (
-                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-700/20 text-amber-400 border border-amber-700/40 text-xs">
-                          🥉
-                        </span>
-                      ) : (
-                        <span className="text-slate-500 font-mono">{index + 1}</span>
-                      )}
-                    </td>
+                  <React.Fragment key={u.login}>
+                    <tr
+                      onClick={() => handleToggleUserDrilldown(u.login)}
+                      className={`cursor-pointer transition-colors ${
+                        isSelected
+                          ? 'bg-indigo-950/60 border-l-4 border-indigo-500'
+                          : 'hover:bg-slate-800/40'
+                      }`}
+                    >
+                      <td className="px-4 py-3 text-center font-bold">
+                        {isTop1 ? (
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs">
+                            🥇
+                          </span>
+                        ) : isTop2 ? (
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-400/20 text-slate-200 border border-slate-400/40 text-xs">
+                            🥈
+                          </span>
+                        ) : isTop3 ? (
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-700/20 text-amber-400 border border-amber-700/40 text-xs">
+                            🥉
+                          </span>
+                        ) : (
+                          <span className="text-slate-500 font-mono">{index + 1}</span>
+                        )}
+                      </td>
 
-                    <td className="px-4 py-3">
-                      <div className="flex items-center space-x-2.5">
-                        <img
-                          src={u.avatar_url || 'https://github.com/ghost.png'}
-                          alt={u.login}
-                          className="w-6 h-6 rounded-full border border-slate-700 bg-slate-800"
-                        />
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-slate-200">{u.display_name}</span>
-                          <span className="text-[11px] text-slate-400 font-mono">@{u.login}</span>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center space-x-2.5">
+                          <img
+                            src={u.avatar_url || 'https://github.com/ghost.png'}
+                            alt={u.login}
+                            className="w-6 h-6 rounded-full border border-slate-700 bg-slate-800"
+                          />
+                          <div className="flex flex-col">
+                            <div className="flex items-center space-x-1.5">
+                              <span className="font-semibold text-slate-200">{u.display_name}</span>
+                              {isSelected && (
+                                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-500 text-white">
+                                  分析中
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] text-slate-400 font-mono">@{u.login}</span>
+                          </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td className="px-4 py-3">
-                      <span className="inline-block px-2 py-0.5 rounded-md text-[11px] font-medium bg-purple-950/80 text-purple-300 border border-purple-800/60">
-                        {u.department}
-                      </span>
-                    </td>
-
-                    <td className="px-4 py-3">
-                      {u.cost_center_error ? (
-                        <span
-                          className="inline-flex items-center space-x-1 text-rose-400 bg-rose-950/70 border border-rose-800/60 px-2 py-0.5 rounded text-[11px] font-semibold"
-                          title="Cost Center APIの取得失敗または未紐付けのためデータ不明"
-                        >
-                          <AlertCircle className="w-3 h-3 text-rose-400 shrink-0" />
-                          <span>不明 (API制限/エラー)</span>
+                      <td className="px-4 py-3">
+                        <span className="inline-block px-2 py-0.5 rounded-md text-[11px] font-medium bg-purple-950/80 text-purple-300 border border-purple-800/60">
+                          {u.department}
                         </span>
-                      ) : (
-                        <span className="text-slate-300 font-medium">{u.cost_center}</span>
-                      )}
-                    </td>
+                      </td>
 
-                    <td className="px-4 py-3">
-                      {u.is_data_unavailable ? (
+                      <td className="px-4 py-3">
+                        {u.cost_center_error ? (
+                          <span
+                            className="inline-flex items-center space-x-1 text-rose-400 bg-rose-950/70 border border-rose-800/60 px-2 py-0.5 rounded text-[11px] font-semibold"
+                            title="Cost Center APIの取得失敗または未紐付けのためデータ不明"
+                          >
+                            <AlertCircle className="w-3 h-3 text-rose-400 shrink-0" />
+                            <span>不明 (API制限/エラー)</span>
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 font-medium">{u.cost_center}</span>
+                        )}
+                      </td>
+
+                      <td className="px-4 py-3">
+                        {u.is_data_unavailable ? (
+                          <span
+                            className="inline-flex items-center space-x-1 text-rose-400 bg-rose-950/70 border border-rose-800/60 px-2 py-0.5 rounded text-[11px] font-mono font-semibold"
+                            title="Org権限不足(HTTP 403)のため詳細メトリクス取得不能"
+                          >
+                            <AlertTriangle className="w-3 h-3 text-rose-400 shrink-0" />
+                            <span>{u.organization} (権限不足)</span>
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 font-mono text-[11px]">{u.organization}</span>
+                        )}
+                      </td>
+
+                      <td className="px-4 py-3">
                         <span
-                          className="inline-flex items-center space-x-1 text-rose-400 bg-rose-950/70 border border-rose-800/60 px-2 py-0.5 rounded text-[11px] font-mono font-semibold"
-                          title="Org権限不足(HTTP 403)のため詳細メトリクス取得不能"
+                          className={`text-[11px] font-bold uppercase ${
+                            u.plan_type === 'enterprise' ? 'text-indigo-400' : 'text-slate-400'
+                          }`}
                         >
-                          <AlertTriangle className="w-3 h-3 text-rose-400 shrink-0" />
-                          <span>{u.organization} (権限不足)</span>
+                          {u.plan_type}
                         </span>
-                      ) : (
-                        <span className="text-slate-400 font-mono text-[11px]">{u.organization}</span>
+                      </td>
+
+                      <td className="px-4 py-3">{getStatusBadge(u.status, u.days_inactive)}</td>
+
+                      {hasUsageMetrics && (
+                        <>
+                          <td className="px-4 py-3 text-right font-mono text-slate-300">
+                            {prof ? prof.total_suggestions.toLocaleString() : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono font-bold text-emerald-400">
+                            {prof ? prof.total_acceptances.toLocaleString() : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono font-semibold text-purple-300">
+                            {prof ? `${(prof.acceptance_rate * 100).toFixed(1)}%` : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono text-indigo-300">
+                            {prof ? prof.total_chats.toLocaleString() : '-'}
+                          </td>
+                        </>
                       )}
-                    </td>
 
-                    <td className="px-4 py-3">
-                      <span
-                        className={`text-[11px] font-bold uppercase ${
-                          u.plan_type === 'enterprise' ? 'text-indigo-400' : 'text-slate-400'
-                        }`}
-                      >
-                        {u.plan_type}
-                      </span>
-                    </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="font-mono font-semibold text-slate-200">
+                          ${(scope_type === 'daily' ? u.prorated_daily_cost_usd : u.monthly_cost_usd).toFixed(2)}
+                        </div>
+                        <div className="text-[10px] text-amber-400 font-mono">
+                          超過: ${(scope_type === 'daily' ? u.prorated_daily_cost_usd : u.monthly_cost_usd).toFixed(2)}
+                        </div>
+                      </td>
 
-                    <td className="px-4 py-3">{getStatusBadge(u.status, u.days_inactive)}</td>
-
-                    {hasUsageMetrics && (
-                      <>
-                        <td className="px-4 py-3 text-right font-mono text-slate-300">
-                          {prof ? prof.total_suggestions.toLocaleString() : '-'}
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center space-x-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleUserDrilldown(u.login);
+                            }}
+                            className={`px-2 py-1 rounded text-[10px] font-semibold flex items-center space-x-1 transition-all shadow-sm cursor-pointer ${
+                              isSelected
+                                ? 'bg-indigo-600 text-white border border-indigo-400'
+                                : 'bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60'
+                            }`}
+                            title={isSelected ? 'ドリルダウンを閉じる' : 'このユーザーの利用実態・AI健全度をドリルダウン分析'}
+                          >
+                            {isSelected ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                            <span>{isSelected ? '閉じる' : '詳細分析'}</span>
+                          </button>
+                          {onSelectUserForTrend && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectUserForTrend(u.login);
+                              }}
+                              className="px-2 py-1 rounded bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 text-[10px] font-semibold flex items-center space-x-1 transition-all cursor-pointer"
+                              title="日次利用トレンド・モデル内訳を確認"
+                            >
+                              <LineChart className="w-3 h-3" />
+                              <span>トレンド</span>
+                            </button>
+                          )}
+                          {onSelectUserForDeepAnalysis && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectUserForDeepAnalysis(u.login);
+                              }}
+                              className="px-2 py-1 rounded bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 text-[10px] font-semibold flex items-center space-x-1 transition-all shadow-sm cursor-pointer"
+                              title="非効率パターン診断・高度分析を実行"
+                            >
+                              <BrainCircuit className="w-3 h-3" />
+                              <span>診断</span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                    {isSelected && (
+                      <tr key={`${u.login}-drilldown`} className="bg-slate-950">
+                        <td colSpan={hasUsageMetrics ? 13 : 9} className="p-0 border-b-2 border-indigo-500/60">
+                          <UserDrilldownPanel
+                            login={u.login}
+                            displayName={u.display_name}
+                            avatarUrl={u.avatar_url}
+                            department={u.department}
+                            costCenter={u.cost_center}
+                            organization={u.organization}
+                            planType={u.plan_type}
+                            statusBadge={getStatusBadge(u.status, u.days_inactive)}
+                            lastActivity={u.last_activity_at}
+                            editor={u.last_activity_editor}
+                            daysInactive={u.days_inactive}
+                            monthlyCostUsd={u.monthly_cost_usd}
+                            proratedCostUsd={u.prorated_daily_cost_usd}
+                            excessBillingUsd={scope_type === 'daily' ? u.prorated_daily_cost_usd : u.monthly_cost_usd}
+                            profile={prof}
+                            allProfiles={effectiveProfiles}
+                            onSelectUserForTrend={onSelectUserForTrend}
+                            onSelectUserForDeepAnalysis={onSelectUserForDeepAnalysis}
+                            onClose={() => setSelectedUserLogin(null)}
+                          />
                         </td>
-                        <td className="px-4 py-3 text-right font-mono font-bold text-emerald-400">
-                          {prof ? prof.total_acceptances.toLocaleString() : '-'}
-                        </td>
-                        <td className="px-4 py-3 text-right font-mono font-semibold text-purple-300">
-                          {prof ? `${(prof.acceptance_rate * 100).toFixed(1)}%` : '-'}
-                        </td>
-                        <td className="px-4 py-3 text-right font-mono text-indigo-300">
-                          {prof ? prof.total_chats.toLocaleString() : '-'}
-                        </td>
-                      </>
+                      </tr>
                     )}
-
-                    <td className="px-4 py-3 text-right">
-                      <div className="font-mono font-semibold text-slate-200">
-                        ${(scope_type === 'daily' ? u.prorated_daily_cost_usd : u.monthly_cost_usd).toFixed(2)}
-                      </div>
-                      <div className="text-[10px] text-amber-400 font-mono">
-                        超過: ${(scope_type === 'daily' ? u.prorated_daily_cost_usd : u.monthly_cost_usd).toFixed(2)}
-                      </div>
-                    </td>
-
-                    <td className="px-4 py-3 text-center">
-                      <div className="flex items-center justify-center space-x-1.5">
-                        {onSelectUserForTrend && (
-                          <button
-                            onClick={() => onSelectUserForTrend(u.login)}
-                            className="px-2 py-1 rounded bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 text-[10px] font-semibold flex items-center space-x-1 transition-all"
-                            title="日次利用トレンド・モデル内訳を確認"
-                          >
-                            <LineChart className="w-3 h-3" />
-                            <span>トレンド</span>
-                          </button>
-                        )}
-                        {onSelectUserForDeepAnalysis && (
-                          <button
-                            onClick={() => onSelectUserForDeepAnalysis(u.login)}
-                            className="px-2 py-1 rounded bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 text-[10px] font-semibold flex items-center space-x-1 transition-all shadow-sm"
-                            title="非効率パターン診断・高度分析を実行"
-                          >
-                            <BrainCircuit className="w-3 h-3" />
-                            <span>診断</span>
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+                  </React.Fragment>
                 );
               })
             )}
