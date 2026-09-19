@@ -8,7 +8,11 @@ import {
   ScopeAggregatedData,
   GroupSummary,
 } from '../../../src/types/copilot';
-import { resolveDataPath } from '../utils/pathResolver';
+import {
+  resolveDataPath,
+  getCandidateDataUrls,
+  fetchDataWithFallback,
+} from '../utils/pathResolver';
 
 export interface RepoInfo {
   owner: string;
@@ -274,26 +278,14 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
           fileName = `${selectedKey.replace(/[:\/]/g, '_')}.json`;
         }
 
-        const primaryUrl = resolveDataPath(`${dataBaseDir}/${subDir}/${fileName}`);
-        let res = await fetch(primaryUrl);
+        const candidateUrls = getCandidateDataUrls(dataBaseDir, subDir, fileName);
+        const { res, finalUrl } = await fetchDataWithFallback(candidateUrls);
 
-        // 双方向フォールバック: 失敗した場合はもう一方のパス (./data <=> ./data/demo) を自動試行
         if (!res.ok) {
-          const altBaseDir = dataBaseDir === './data/demo' ? './data' : './data/demo';
-          try {
-            const fallbackUrl = resolveDataPath(`${altBaseDir}/${subDir}/${fileName}`);
-            const fallbackRes = await fetch(fallbackUrl);
-            if (fallbackRes.ok) {
-              res = fallbackRes;
-              setIsDemoMode(altBaseDir === './data/demo');
-            }
-          } catch {
-            // ignore fallback error
-          }
+          throw new Error(`Data for scope ${scopeType} (${selectedKey}) not found at ${candidateUrls[0]}`);
         }
-
-        if (!res.ok) {
-          throw new Error(`Data for scope ${scopeType} (${selectedKey}) not found at ${primaryUrl}`);
+        if (finalUrl.includes('/demo/') && !isDemoMode) {
+          setIsDemoMode(true);
         }
         const data = (await res.json()) as ScopeAggregatedData;
         if (!isCancelled) {
@@ -353,26 +345,14 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
       setReportLoading(true);
       setReportError(null);
       try {
-        const primaryUrl = resolveDataPath(`${dataBaseDir}/reports/${selectedReportMonth}.json`);
-        let res = await fetch(primaryUrl);
+        const candidateUrls = getCandidateDataUrls(dataBaseDir, 'reports', `${selectedReportMonth}.json`);
+        const { res, finalUrl } = await fetchDataWithFallback(candidateUrls);
 
-        // 双方向フォールバック: 失敗した場合はもう一方のパス (./data <=> ./data/demo) を自動試行
         if (!res.ok) {
-          const altBaseDir = dataBaseDir === './data/demo' ? './data' : './data/demo';
-          try {
-            const fallbackUrl = resolveDataPath(`${altBaseDir}/reports/${selectedReportMonth}.json`);
-            const fallbackRes = await fetch(fallbackUrl);
-            if (fallbackRes.ok) {
-              res = fallbackRes;
-              setIsDemoMode(altBaseDir === './data/demo');
-            }
-          } catch {
-            // ignore fallback error
-          }
+          throw new Error(`Monthly report for ${selectedReportMonth} not found at ${candidateUrls[0]}`);
         }
-
-        if (!res.ok) {
-          throw new Error(`Monthly report for ${selectedReportMonth} not found at ${primaryUrl}`);
+        if (finalUrl.includes('/demo/') && !isDemoMode) {
+          setIsDemoMode(true);
         }
         const data = (await res.json()) as MonthlyReportAggregatedData;
         if (!isCancelled) {

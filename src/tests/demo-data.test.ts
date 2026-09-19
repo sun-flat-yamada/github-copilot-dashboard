@@ -9,7 +9,7 @@ import {
   MonthlyReportAggregatedData,
 } from '../types/copilot.js';
 import { checkIsDemoMode } from '../../dashboard/src/hooks/useDashboardData.js';
-import { resolveDataPath } from '../../dashboard/src/utils/pathResolver.js';
+import { resolveDataPath, getCandidateDataUrls } from '../../dashboard/src/utils/pathResolver.js';
 import { checkDataIsolation } from '../../scripts/verify-fork-health.js';
 import { setupForkDemoData } from '../../scripts/setup-fork-demo.js';
 
@@ -312,5 +312,42 @@ describe('Live Metrics DEMO Data & Referencing Tests', () => {
       /cp -r data\/demo\/\* dashboard\/public\/data\/demo\//,
       'Workflow must copy data/demo to dashboard/public/data/demo'
     );
+    assert.match(
+      workflowContent,
+      /cp -r data\/demo\/processed\/\* dashboard\/public\/data\/demo\//,
+      'Workflow must copy data/demo/processed to dashboard/public/data/demo'
+    );
+  });
+
+  it('verifies getCandidateDataUrls generates multi-tier fallback paths including processed directory', () => {
+    const originalWindow = global.window;
+    try {
+      (global as any).window = {
+        location: {
+          pathname: '/github-copilot-dashboard/',
+        },
+      };
+
+      const candidates = getCandidateDataUrls('./data/demo', 'monthly', '2026-09.json');
+      assert.ok(candidates.length >= 2, 'Must provide multiple fallback candidates');
+      assert.ok(
+        candidates.includes('/github-copilot-dashboard/data/demo/monthly/2026-09.json'),
+        'Must include direct flat demo path'
+      );
+      assert.ok(
+        candidates.includes('/github-copilot-dashboard/data/demo/processed/monthly/2026-09.json'),
+        'Must include processed fallback demo path'
+      );
+      assert.ok(
+        candidates.includes('/github-copilot-dashboard/data/monthly/2026-09.json'),
+        'Must include live alternate path'
+      );
+    } finally {
+      if (originalWindow === undefined) {
+        delete (global as any).window;
+      } else {
+        global.window = originalWindow;
+      }
+    }
   });
 });

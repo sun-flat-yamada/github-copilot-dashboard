@@ -58,3 +58,65 @@ export function getAlternateDataPath(primaryPath: string): string {
   }
   return primaryPath;
 }
+
+/**
+ * スコープデータやレポートファイルの解決候補 URL 一覧を生成
+ * (直下パス -> processed/ 階層パス -> 反対モードの直下パス -> 反対モードの processed/ 階層パス)
+ */
+export function getCandidateDataUrls(
+  baseDir: string,
+  subDir: string,
+  fileName: string
+): string[] {
+  const isDemo = baseDir.includes('/demo') || baseDir.endsWith('demo');
+  const altBaseDir = isDemo ? './data' : './data/demo';
+
+  const candidates = [
+    // 1. 指定ベースディレクトリ直下のパス (標準SPA配置)
+    resolveDataPath(`${baseDir}/${subDir}/${fileName}`),
+    // 2. 永続ストレージの processed/ サブディレクトリ配下 (copilot-data 同期時の後方互換)
+    resolveDataPath(`${baseDir}/processed/${subDir}/${fileName}`),
+    // 3. 代替モードの直下パス (DEMO <=> LIVE 双方向フォールバック)
+    resolveDataPath(`${altBaseDir}/${subDir}/${fileName}`),
+    // 4. 代替モードの processed/ パス
+    resolveDataPath(`${altBaseDir}/processed/${subDir}/${fileName}`),
+  ];
+
+  // 重複を除去して返す
+  return Array.from(new Set(candidates));
+}
+
+/**
+ * 複数の候補 URL を順次フェッチし、最初に応答成功 (200 OK) した結果を返すヘルパー
+ */
+export async function fetchDataWithFallback(candidateUrls: string[]): Promise<{
+  res: Response;
+  finalUrl: string;
+  isFallback: boolean;
+}> {
+  let lastRes: Response | null = null;
+  for (let i = 0; i < candidateUrls.length; i++) {
+    const url = candidateUrls[i];
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        return {
+          res,
+          finalUrl: url,
+          isFallback: i > 0,
+        };
+      }
+      lastRes = res;
+    } catch {
+      // ネットワーク例外は次の候補へフォールバック
+    }
+  }
+  if (lastRes) {
+    return {
+      res: lastRes,
+      finalUrl: candidateUrls[0],
+      isFallback: false,
+    };
+  }
+  throw new Error(`Failed to fetch from all candidates: ${candidateUrls.join(', ')}`);
+}
