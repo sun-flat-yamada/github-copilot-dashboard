@@ -168,9 +168,21 @@ export interface MonthlyReportAggregatedData {
    - Switch rapidly between past reported months (`2026-08`, `2026-09`, etc.).
    - Instant client-side drag-and-drop ingestion parsed in browser memory (Zero-Leakage).
 3. **Analytics Sections & View Integration**:
-   - Synchronized across dedicated analysis views (Overview, Users, Trend, Model Radar).
+   - Synchronized across dedicated analysis views (Overview, Users, Trend, Model Radar, Budget).
    - 1. **KPI Cards**: Net spend, gross spend, total requests, active users, top model.
-   - 2. **3-Axis Allocation**: Donut and bar charts grouped by department, cost center, and organization (single-column vertical stack).
+   - 2. **3-Axis Allocation (`MonthlyReportCharts`)**:
+     - Dedicated axis selector for Department (`department`), Cost Center (`cost_center`), and Organization (`organization`).
+     - Bi-directionally synchronized with the top control bar for active group filtering.
    - 3. **Model & SKU Breakdown**: Request shares and expenditure percentages.
    - 4. **Daily Trends Chart**: Spending cadence and peak consumption days across the month.
-   - 5. **Per-User Usage Details Table**: Multi-tag AND filtering, searchable, filterable, sortable table with CSV export.
+   - 5. **Per-User Usage Details Table (`MonthlyReportUserTable`)**:
+     - Explicit `Organization` column alongside Cost Center and Department.
+     - Group filter dropdown dynamically adapts options based on the active grouping axis (Department / Cost Center / Organization).
+     - Row-click interaction triggers inline deep analysis drilldown (`UserDrilldownPanel`).
+   - 6. **Cost Center Budget Tracking (View 5: Budget & Cost Center)**:
+     - Automatically computes budget cards (`CostCenterBudgetCards`) from `by_cost_center` in monthly report mode.
+   - 7. **Per-User Model Trend Viewer (View 3: Trend & Model Usage)**:
+     - Fully supported across Monthly Usage Reports and User Uploads using pre-computed monthly archives or daily-trend-synthesized profiles.
+     - Dynamically detects all active AI models for stacked bar charts and displays an explicit data source badge in the header.
+     - Seamlessly connects with the "トレンド" button in `MonthlyReportUserTable`.
+

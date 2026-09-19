@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   AnalysisScopeType,
+  CostCenterBudget,
   GroupingDimension,
   UserSeatStatus,
 } from '../../src/types/copilot';
@@ -34,7 +35,6 @@ import {
   PieChart as PieIcon,
   Users2,
   Landmark,
-  Bot,
   BarChart3,
   AlertTriangle,
   AlertCircle,
@@ -208,6 +208,59 @@ export const App: React.FC = () => {
   }, [activeSource, currentData, currentReportData]);
 
   const isReportSource = activeSource === 'monthly_report' || activeSource === 'user_upload';
+
+  // 月次レポート用 Cost Center 予算データの合成 (マスター枠との突合 or 実績ベース)
+  const reportBudgets = useMemo<CostCenterBudget[]>(() => {
+    if (!currentReportData?.by_cost_center) return [];
+
+    const masterBudgets = rawCurrentData?.cost_center_budgets || [];
+    const masterMap = new Map<string, CostCenterBudget>();
+    masterBudgets.forEach((b) => masterMap.set(b.cost_center_name, b));
+
+    const result: CostCenterBudget[] = [];
+    const processedNames = new Set<string>();
+
+    // 1. レポートに存在する各 Cost Center について予算を算出
+    Object.entries(currentReportData.by_cost_center).forEach(([ccName, gs], idx) => {
+      processedNames.add(ccName);
+      const master = masterMap.get(ccName);
+      const actualSpend = gs.total_cost_usd;
+      const spendingLimit = master ? master.spending_limit_usd : 0;
+      const freeTier = master ? master.free_tier_budget_usd : 0;
+      const netBillable = Math.max(0, actualSpend - freeTier);
+      const remaining = spendingLimit > 0 ? Math.max(0, spendingLimit - netBillable) : 0;
+      const utilization = spendingLimit > 0 ? (netBillable / spendingLimit) * 100 : 0;
+
+      result.push({
+        cost_center_id: master?.cost_center_id || `cc-report-${idx + 1}`,
+        cost_center_name: ccName,
+        cost_center_code: master?.cost_center_code || ccName.toUpperCase().replace(/[^A-Z0-9]/g, '-'),
+        spending_limit_usd: spendingLimit,
+        free_tier_budget_usd: freeTier,
+        current_spend_usd: actualSpend,
+        net_billable_spend_usd: netBillable,
+        remaining_budget_usd: remaining,
+        budget_utilization_percent: Number(utilization.toFixed(1)),
+        status: spendingLimit > 0 && utilization >= 100 ? 'exceeded' : spendingLimit > 0 && utilization >= 80 ? 'warning' : 'normal',
+      });
+    });
+
+    // 2. レポートには未登場だがマスターに存在する Cost Center
+    masterBudgets.forEach((b) => {
+      if (!processedNames.has(b.cost_center_name)) {
+        result.push({
+          ...b,
+          current_spend_usd: 0,
+          net_billable_spend_usd: 0,
+          remaining_budget_usd: b.spending_limit_usd,
+          budget_utilization_percent: 0,
+          status: 'normal',
+        });
+      }
+    });
+
+    return result.sort((a, b) => b.current_spend_usd - a.current_spend_usd);
+  }, [currentReportData, rawCurrentData]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-indigo-500 selection:text-white transition-colors duration-200">
@@ -467,7 +520,12 @@ export const App: React.FC = () => {
                   isExpanded={isExpanded('report_charts')}
                   onToggle={() => toggle('report_charts')}
                 >
-                  <MonthlyReportCharts reportData={currentReportData} />
+                  <MonthlyReportCharts
+                  reportData={currentReportData}
+                  grouping={currentGrouping}
+                  onGroupingChange={handleGroupingChange}
+                  selectedGroup={selectedGroup}
+                />
                 </CollapsibleSection>
 
                 <CollapsibleSection
@@ -487,6 +545,9 @@ export const App: React.FC = () => {
                     reportData={currentReportData}
                     userProfiles={deepAnalysisProfiles}
                     initialSelectedLogin={focusedUserLogin}
+                    grouping={currentGrouping}
+                    selectedGroup={selectedGroup}
+                    onGroupChange={setSelectedGroup}
                     onSelectUserForDeepAnalysis={handleOpenDeepAnalysis}
                     onSelectUserForTrend={handleSelectUserForTrend}
                   />
@@ -515,6 +576,9 @@ export const App: React.FC = () => {
                 reportData={currentReportData}
                 userProfiles={deepAnalysisProfiles}
                 initialSelectedLogin={focusedUserLogin}
+                grouping={currentGrouping}
+                selectedGroup={selectedGroup}
+                onGroupChange={setSelectedGroup}
                 onSelectUserForDeepAnalysis={handleOpenDeepAnalysis}
                 onSelectUserForTrend={handleSelectUserForTrend}
               />
@@ -525,25 +589,13 @@ export const App: React.FC = () => {
         {/* View 3: ユーザー別推移 (Trend) */}
         {activeView === 'trend' && (
           <div className="flex flex-col space-y-6 w-full">
-            {activeSource === 'live_metrics' && currentData && (
-              <UserTrendViewer
-                profiles={currentData.user_profiles}
-                initialSelectedLogin={focusedUserLogin}
-                onOpenRadar={handleOpenRadar}
-                onOpenDeepAnalysis={handleOpenDeepAnalysis}
-              />
-            )}
-
-            {isReportSource && (
-              <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-2">
-                <Bot className="w-8 h-8 text-indigo-400 mx-auto" />
-                <h4 className="text-sm font-bold text-white">日次モデル推移ビュー</h4>
-                <p className="text-xs text-slate-400 max-w-md mx-auto">
-                  このビューは日次アクティビティ履歴を含む Live Metrics データで詳細表示されます。
-                  ヘッダーのデータセレクターから「Live Metrics」に切り替えてご覧ください。
-                </p>
-              </div>
-            )}
+            <UserTrendViewer
+              profiles={deepAnalysisProfiles.length > 0 ? deepAnalysisProfiles : (currentData?.user_profiles || [])}
+              initialSelectedLogin={focusedUserLogin}
+              sourceInfo={deepAnalysisSourceInfo}
+              onOpenRadar={handleOpenRadar}
+              onOpenDeepAnalysis={handleOpenDeepAnalysis}
+            />
           </div>
         )}
 
@@ -559,7 +611,23 @@ export const App: React.FC = () => {
 
             {isReportSource && currentReportData && (
               <div className="flex flex-col space-y-6 w-full">
-                <MonthlyReportCharts reportData={currentReportData} />
+                <CostCenterBudgetCards budgets={reportBudgets} />
+                <MonthlyReportCharts
+                  reportData={currentReportData}
+                  grouping="cost_center"
+                  onGroupingChange={handleGroupingChange}
+                  selectedGroup={selectedGroup}
+                />
+                <MonthlyReportUserTable
+                  reportData={currentReportData}
+                  userProfiles={deepAnalysisProfiles}
+                  initialSelectedLogin={focusedUserLogin}
+                  grouping="cost_center"
+                  selectedGroup={selectedGroup}
+                  onGroupChange={setSelectedGroup}
+                  onSelectUserForDeepAnalysis={handleOpenDeepAnalysis}
+                  onSelectUserForTrend={handleSelectUserForTrend}
+                />
               </div>
             )}
           </div>

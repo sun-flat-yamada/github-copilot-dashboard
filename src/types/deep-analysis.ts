@@ -140,6 +140,8 @@ export interface DeepAnalysisDataSourceInfo {
   sourceType: DataSourceType;
   label: string;
   isEstimated: boolean;
+  isSynthesized?: boolean;
+  details?: string;
   monthOrFileName?: string;
   totalUsers: number;
   filteredUsers: number;

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Users, Search, Download, Trophy, BrainCircuit, ChevronDown, ChevronUp, LineChart } from 'lucide-react';
-import { MonthlyReportAggregatedData, UserUsageProfile } from '../../../../src/types/copilot';
+import { GroupingDimension, MonthlyReportAggregatedData, UserUsageProfile } from '../../../../src/types/copilot';
 import { adaptReportToProfiles } from '../../utils/deepAnalysisAdapter';
 import { UserDrilldownPanel } from '../UserDrilldownPanel';
 
@@ -8,6 +8,9 @@ interface MonthlyReportUserTableProps {
   reportData: MonthlyReportAggregatedData;
   userProfiles?: UserUsageProfile[];
   initialSelectedLogin?: string;
+  grouping?: GroupingDimension;
+  selectedGroup?: string;
+  onGroupChange?: (group: string) => void;
   onSelectUserForDeepAnalysis?: (login: string) => void;
   onSelectUserForTrend?: (login: string) => void;
 }
@@ -16,13 +19,40 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
   reportData,
   userProfiles,
   initialSelectedLogin,
+  grouping = 'department',
+  selectedGroup,
+  onGroupChange,
   onSelectUserForDeepAnalysis,
   onSelectUserForTrend,
 }) => {
   const [userSearchQuery, setUserSearchQuery] = useState<string>('');
-  const [selectedDeptFilter, setSelectedDeptFilter] = useState<string>('all');
+  const [localGroupFilter, setLocalGroupFilter] = useState<string>('all');
   const [userSortBy, setUserSortBy] = useState<'spend' | 'requests'>('spend');
   const [selectedUserLogin, setSelectedUserLogin] = useState<string | null>(initialSelectedLogin || null);
+
+  const activeGroup = selectedGroup !== undefined ? selectedGroup : localGroupFilter;
+
+  // 集計軸に応じたグループ一覧 (フィルター用)
+  const availableGroups = useMemo(() => {
+    const set = new Set<string>();
+    reportData.user_details.forEach((u) => {
+      if (grouping === 'cost_center') {
+        if (u.cost_center) set.add(u.cost_center);
+      } else if (grouping === 'organization') {
+        if (u.organization) set.add(u.organization);
+      } else {
+        if (u.department) set.add(u.department);
+      }
+    });
+    return Array.from(set).sort();
+  }, [reportData, grouping]);
+
+  const handleGroupFilterChange = (val: string) => {
+    setLocalGroupFilter(val);
+    if (onGroupChange) {
+      onGroupChange(val);
+    }
+  };
 
   // 利用可能なプロファイル一覧 (渡されたプロファイルまたはレポートからの動的アダプト)
   const effectiveProfiles = useMemo(() => {
@@ -43,13 +73,6 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
     setSelectedUserLogin((prev) => (prev === login ? null : login));
   };
 
-  // 部署一覧 (フィルター用)
-  const departmentsList = useMemo(() => {
-    const set = new Set<string>();
-    reportData.user_details.forEach((u) => set.add(u.department));
-    return Array.from(set);
-  }, [reportData]);
-
   // フィルタ・ソートされたユーザー明細
   const filteredUsers = useMemo(() => {
     return reportData.user_details
@@ -57,15 +80,27 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
         const matchesSearch =
           u.login.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
           u.display_name.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
-          u.cost_center.toLowerCase().includes(userSearchQuery.toLowerCase());
-        const matchesDept = selectedDeptFilter === 'all' || u.department === selectedDeptFilter;
-        return matchesSearch && matchesDept;
+          u.cost_center.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+          (u.organization && u.organization.toLowerCase().includes(userSearchQuery.toLowerCase())) ||
+          u.department.toLowerCase().includes(userSearchQuery.toLowerCase());
+
+        let matchesGroup = true;
+        if (activeGroup && activeGroup !== 'all') {
+          if (grouping === 'cost_center') {
+            matchesGroup = u.cost_center === activeGroup;
+          } else if (grouping === 'organization') {
+            matchesGroup = u.organization === activeGroup;
+          } else {
+            matchesGroup = u.department === activeGroup;
+          }
+        }
+        return matchesSearch && matchesGroup;
       })
       .sort((a, b) => {
         if (userSortBy === 'spend') return b.total_spend_usd - a.total_spend_usd;
         return b.total_requests - a.total_requests;
       });
-  }, [reportData, userSearchQuery, selectedDeptFilter, userSortBy]);
+  }, [reportData, userSearchQuery, activeGroup, grouping, userSortBy]);
 
   // CSV エクスポート
   const handleExportCsv = () => {
@@ -140,14 +175,20 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
           </div>
 
           <select
-            value={selectedDeptFilter}
-            onChange={(e) => setSelectedDeptFilter(e.target.value)}
+            value={activeGroup}
+            onChange={(e) => handleGroupFilterChange(e.target.value)}
             className="bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none"
           >
-            <option value="all">全グループ</option>
-            {departmentsList.map((d) => (
-              <option key={d} value={d}>
-                {d}
+            <option value="all">
+              {grouping === 'cost_center'
+                ? '全 Cost Center'
+                : grouping === 'organization'
+                ? '全 Organization'
+                : '全 部署'}
+            </option>
+            {availableGroups.map((g) => (
+              <option key={g} value={g}>
+                {g}
               </option>
             ))}
           </select>
@@ -181,6 +222,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
               <th className="py-2.5 px-3">GitHub ユーザー</th>
               <th className="py-2.5 px-3">部署 / 仕訳グループ</th>
               <th className="py-2.5 px-3">Cost Center</th>
+              <th className="py-2.5 px-3">Organization</th>
               <th className="py-2.5 px-3">主利用モデル</th>
               <th className="py-2.5 px-3 text-right">総リクエスト</th>
               <th className="py-2.5 px-3 text-right">利用費用 / 超過請求 (USD)</th>
@@ -191,7 +233,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
           <tbody className="divide-y divide-slate-800/60">
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan={9} className="text-center py-8 text-slate-500">
+                <td colSpan={10} className="text-center py-8 text-slate-500">
                   該当するユーザーレコードがありません。
                 </td>
               </tr>
@@ -247,6 +289,11 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                         </span>
                       </td>
                       <td className="py-2.5 px-3 text-slate-400 font-mono text-[11px]">{u.cost_center}</td>
+                      <td className="py-2.5 px-3 text-slate-400 font-mono text-[11px]">
+                        <span className="px-1.5 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-slate-300">
+                          {u.organization}
+                        </span>
+                      </td>
                       <td className="py-2.5 px-3">
                         <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-purple-950/60 text-purple-300 border border-purple-800/50">
                           {u.primary_model}
@@ -291,7 +338,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                                 e.stopPropagation();
                                 onSelectUserForTrend(u.login);
                               }}
-                              className="px-2 py-1 rounded bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 text-[10px] font-semibold flex items-center space-x-1 transition-all cursor-pointer"
+                              className="px-2 py-1 rounded bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 text-[10px] font-semibold inline-flex items-center space-x-1 transition-all shadow-sm cursor-pointer"
                               title="日次利用トレンド・モデル内訳を確認"
                             >
                               <LineChart className="w-3 h-3" />
@@ -317,7 +364,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                     </tr>
                     {isSelected && (
                       <tr key={`${u.login}-drilldown`} className="bg-slate-950">
-                        <td colSpan={9} className="p-0 border-b-2 border-indigo-500/60">
+                        <td colSpan={10} className="p-0 border-b-2 border-indigo-500/60">
                           <UserDrilldownPanel
                             login={u.login}
                             displayName={u.display_name}

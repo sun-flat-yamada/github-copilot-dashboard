@@ -35,10 +35,26 @@ export const REPORT_CHART_COLORS = [
 
 interface MonthlyReportChartsProps {
   reportData: MonthlyReportAggregatedData;
+  grouping?: GroupingDimension;
+  onGroupingChange?: (grouping: GroupingDimension) => void;
+  selectedGroup?: string;
 }
 
-export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({ reportData }) => {
-  const [currentGrouping, setCurrentGrouping] = useState<GroupingDimension>('department');
+export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({
+  reportData,
+  grouping: externalGrouping,
+  onGroupingChange,
+  selectedGroup = 'all',
+}) => {
+  const [internalGrouping, setInternalGrouping] = useState<GroupingDimension>('department');
+  const currentGrouping = externalGrouping || internalGrouping;
+
+  const handleGroupingSelect = (dim: GroupingDimension) => {
+    setInternalGrouping(dim);
+    if (onGroupingChange) {
+      onGroupingChange(dim);
+    }
+  };
 
   // グループ集計データの整形
   const groupSummaries = useMemo(() => {
@@ -87,7 +103,7 @@ export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({ report
 
           <div className="inline-flex rounded-lg bg-slate-950 p-1 border border-slate-800 text-xs">
             <button
-              onClick={() => setCurrentGrouping('department')}
+              onClick={() => handleGroupingSelect('department')}
               className={`px-3 py-1 rounded-md font-medium transition ${
                 currentGrouping === 'department'
                   ? 'bg-emerald-600 text-white shadow'
@@ -97,7 +113,7 @@ export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({ report
               部署 (Department)
             </button>
             <button
-              onClick={() => setCurrentGrouping('cost_center')}
+              onClick={() => handleGroupingSelect('cost_center')}
               className={`px-3 py-1 rounded-md font-medium transition ${
                 currentGrouping === 'cost_center'
                   ? 'bg-emerald-600 text-white shadow'
@@ -107,7 +123,7 @@ export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({ report
               Cost Center
             </button>
             <button
-              onClick={() => setCurrentGrouping('organization')}
+              onClick={() => handleGroupingSelect('organization')}
               className={`px-3 py-1 rounded-md font-medium transition ${
                 currentGrouping === 'organization'
                   ? 'bg-emerald-600 text-white shadow'
@@ -168,14 +184,27 @@ export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({ report
                     reportData.overview.total_net_spend_usd > 0
                       ? ((g.total_cost_usd / reportData.overview.total_net_spend_usd) * 100).toFixed(1)
                       : '0.0';
+                  const isSelected = selectedGroup !== 'all' && selectedGroup === g.group_name;
                   return (
-                    <tr key={g.group_name} className="hover:bg-slate-800/40 transition">
+                    <tr
+                      key={g.group_name}
+                      className={`transition ${
+                        isSelected
+                          ? 'bg-emerald-950/60 border-l-4 border-emerald-500'
+                          : 'hover:bg-slate-800/40'
+                      }`}
+                    >
                       <td className="py-2.5 px-3 font-medium text-white flex items-center space-x-2">
                         <span
                           className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                           style={{ backgroundColor: REPORT_CHART_COLORS[idx % REPORT_CHART_COLORS.length] }}
                         />
                         <span className="truncate max-w-[200px]">{g.group_name}</span>
+                        {isSelected && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                            選択中
+                          </span>
+                        )}
                       </td>
                       <td className="py-2.5 px-3 text-right text-slate-300">{g.total_seats}名</td>
                       <td className="py-2.5 px-3 text-right text-slate-300">

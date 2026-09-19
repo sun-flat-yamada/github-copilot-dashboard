@@ -170,9 +170,21 @@ export interface MonthlyReportAggregatedData {
    - 過去の利用可能月（`2026-08`, `2026-09` 等）を即座に切り替え。
    - 手元の CSV ファイルをドラッグ＆ドロップで即時投入・ブラウザ内メモリ解析（Zero-Leakage）。
 3. **分析セクション & ビュー連動**:
-   - 各分析ビュー（Overview, Users, Trend, Model Radar）に完全連動。
+   - 各分析ビュー（Overview, Users, Trend, Model Radar, Budget）に完全連動。
    - ① **KPI カード**: 総費用、総リクエスト、アクティブ人数、トップモデル
-   - ② **3軸費用・リクエスト配賦**: 部署 / Cost Center / 組織別の配賦チャート（垂直1カラム）
+   - ② **3軸費用・リクエスト配賦 (`MonthlyReportCharts`)**:
+     - 部署 (`department`) / Cost Center (`cost_center`) / 組織 (`organization`) の3軸切り替えセレクターを配備。
+     - 選択された軸および個別グループ（例: 特定のCostCenterやOrganization）と親画面コントロールバーが双方向連動。
    - ③ **モデル別 & SKU別分析**: モデルごとのリクエストシェア・費用比率
    - ④ **日別推移チャート**: 月内の消費ペースとピーク日
-   - ⑤ **ユーザー別利用明細テーブル**: 複数タグANDフィルター、検索、並び替え、CSVエクスポート
+   - ⑤ **ユーザー別利用明細テーブル (`MonthlyReportUserTable`)**:
+     - `Organization` 列を明示表示し、所属組織と Cost Center を一目で確認可能。
+     - フィルタードロップダウンがアクティブな集計軸（部署 / Cost Center / 組織）に連動して候補を切り替え。
+     - 行クリックによるインライン・ディープ分析ドリルダウン (`UserDrilldownPanel`) に対応。
+   - ⑥ **Cost Center 予算管理 (View 5: Budget & Cost Center)**:
+     - 月次レポート選択時にも `by_cost_center` から実績費用を集計し、Cost Center 予算カード (`CostCenterBudgetCards`) を動的生成・表示。
+   - ⑦ **ユーザー別モデル推移 (View 3: Trend & Model Usage)**:
+     - 月次レポートおよびユーザーアップロード選択時にも、月次アーカイブまたは日別按分合成されたユーザープロファイルを供給。
+     - 全AIモデルの動的検出・積上描画を行い、分析データソース情報バッジをヘッダーに常時明示。
+     - 月次明細テーブルの「トレンド」ボタンから対象ユーザーが選択された状態でシームレスに遷移可能。
+

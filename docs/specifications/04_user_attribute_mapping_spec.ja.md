@@ -187,3 +187,22 @@ GPGによる暗号化/復号そのものは任意のファイル (バイト列) 
   リポジトリやアーティファクトとしては保存されない。
 - パスフレーズは `COPILOT_USER_MAPPING_PASSPHRASE` という名前で Secret としてのみ登録し、
   ソースコードやログに出力しないこと。
+
+---
+
+## 7. DEMO環境専用の暗号化マッピングフィクスチャ (DEMO Mapping Fixture)
+
+### 7.1 目的と背景
+DEMO / Mock モード実行時や、公開フォーク環境において、本物の個人情報（PII）を一切含めることなく、リアルな「部署」「CostCenter」「Organization」「タグ」の分類・按分・予算対比を検証可能にする。
+
+### 7.2 アーキテクチャと仕様
+1. **リポジトリ内フィクスチャ**:
+   - `fixtures/demo/copilot-user-mapping.demo.json.gpg`
+   - 94名の合成モックユーザー（Live Metrics 85名 + Monthly Usage Report ユーザー）を完全網羅。
+   - AES256 GPG対称暗号化（デフォルトパスフレーズ: `copilot-demo-secret-passphrase-2026`）。
+2. **自動配置・デプロイ**:
+   - `scripts/generate-demo-data.ts` 実行時に暗号化ファイルを `data/demo/config/` および `dashboard/public/data/demo/config/` へ自動配置。
+3. **自動復号フォールバック**:
+   - `src/cli/run-pipeline.ts` は `--mock` または `MOCK_DATA=true` 実行時、`COPILOT_USER_MAPPING` や `COPILOT_USER_MAPPING_FILE` が未指定の場合、`src/collector/demo-mapping-loader.ts` の `loadDemoUserMapping()` を自動呼出し。
+   - `$TMPDIR` 配下に一時平文ファイルを安全に作成して `AttributeResolver` に引き渡すため、DEMOデータ生成時に全ユーザーが「未分類 (Unassigned)」にフォールバックすることなく、CostCenter / Organization / 部署に適切に仕訳される。
+
