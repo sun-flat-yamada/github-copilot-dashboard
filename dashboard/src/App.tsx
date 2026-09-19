@@ -8,6 +8,7 @@ import { AnalysisViewId } from '../../src/types/views';
 import { useDashboardData } from './hooks/useDashboardData';
 import { useAccordionGroup } from './hooks/useAccordionGroup';
 import { useDeepAnalysisData } from './hooks/useDeepAnalysisData';
+import { useTheme } from './hooks/useTheme';
 import { DashboardHeader } from './components/layout/DashboardHeader';
 import { ViewNavigation } from './components/layout/ViewNavigation';
 import { ScopeSelector } from './components/ScopeSelector';
@@ -121,6 +122,9 @@ export const App: React.FC = () => {
     allIds: ALL_SECTION_IDS,
   });
 
+  // 6. 表示テーマ管理 (Darkモードデフォルト & Lightモード切り替え)
+  const { theme, toggleTheme } = useTheme();
+
   // Starボタン状態
   const [isStarred, setIsStarred] = useState<boolean>(false);
   const handleToggleStar = () => {
@@ -206,7 +210,7 @@ export const App: React.FC = () => {
   const isReportSource = activeSource === 'monthly_report' || activeSource === 'user_upload';
 
   return (
-    <div className="min-h-screen bg-[#090d13] text-slate-100 flex flex-col selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-indigo-500 selection:text-white transition-colors duration-200">
       {/* 1. トップナビゲーションバー (ヘッダー部にアクティブデータ選択を統合 ★要件1) */}
       <DashboardHeader
         activeSource={activeSource}
@@ -230,6 +234,8 @@ export const App: React.FC = () => {
         onOpenAboutModal={() => setIsAboutModalOpen(true)}
         isDemoMode={isDemoMode}
         onToggleDemoMode={toggleDemoMode}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       {/* 2. 分析Viewナビゲーションバー (6つのView切り替え ★要件4) */}

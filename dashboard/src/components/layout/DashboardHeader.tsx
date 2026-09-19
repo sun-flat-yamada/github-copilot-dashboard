@@ -13,7 +13,10 @@ import {
   Star,
   AlertCircle,
   AlertTriangle,
+  Sun,
+  Moon,
 } from 'lucide-react';
+import { Theme } from '../../hooks/useTheme';
 
 interface DashboardHeaderProps {
   activeSource: DataSourceType;
@@ -37,6 +40,8 @@ interface DashboardHeaderProps {
   onOpenAboutModal: () => void;
   isDemoMode?: boolean;
   onToggleDemoMode?: () => void;
+  theme?: Theme;
+  onToggleTheme?: () => void;
 }
 
 /**
@@ -114,6 +119,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onOpenAboutModal,
   isDemoMode,
   onToggleDemoMode,
+  theme = 'dark',
+  onToggleTheme,
 }) => {
   const isMockMode = isMockModeData(indexMeta, repoInfo);
   const showDemoBadge = isDemoMode !== undefined ? isDemoMode : isMockMode;
@@ -222,6 +229,24 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               <Star className={`w-4 h-4 ${isStarred ? 'fill-amber-400 text-amber-400' : 'transition-colors'}`} />
             </button>
           </div>
+
+          {/* 表示モード切替ボタン (Darkモード / Lightモード) */}
+          {onToggleTheme && (
+            <button
+              type="button"
+              onClick={onToggleTheme}
+              data-testid="theme-toggle-button"
+              className="flex items-center justify-center p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-amber-400 hover:bg-slate-800 transition-all cursor-pointer shadow-sm flex-shrink-0"
+              title={theme === 'dark' ? 'ライトモードに切り替え' : 'ダークモードに切り替え'}
+              aria-label={theme === 'dark' ? 'ライトモードに切り替え' : 'ダークモードに切り替え'}
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-4 h-4 transition-transform hover:rotate-45 text-amber-400" />
+              ) : (
+                <Moon className="w-4 h-4 transition-transform hover:-rotate-12 text-indigo-400" />
+              )}
+            </button>
+          )}
 
           {/* 異常検出 (Error / Warning) アイコンボタン */}
           {allIssuesCount > 0 && (
