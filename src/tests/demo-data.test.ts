@@ -10,6 +10,7 @@ import {
 } from '../types/copilot.js';
 import { checkIsDemoMode } from '../../dashboard/src/hooks/useDashboardData.js';
 import { checkDataIsolation } from '../../scripts/verify-fork-health.js';
+import { setupForkDemoData } from '../../scripts/setup-fork-demo.js';
 
 describe('Live Metrics DEMO Data & Referencing Tests', () => {
   const projectRoot = path.resolve(import.meta.dirname, '../..');
@@ -172,5 +173,12 @@ describe('Live Metrics DEMO Data & Referencing Tests', () => {
     for (const r of isolationResults) {
       assert.equal(r.status, 'pass', `Data isolation check must pass: ${r.name} - ${r.message}`);
     }
+  });
+
+  it('verifies setupForkDemoData synthesizes valid DEMO partitions in local mode', () => {
+    const success = setupForkDemoData({ localOnly: true, push: false });
+    assert.equal(success, true, 'setupForkDemoData in local mode must succeed');
+    assert.ok(fs.existsSync(path.join(demoDataDir, 'index.json')));
+    assert.ok(fs.existsSync(path.join(publicDemoDir, 'index.json')));
   });
 });
