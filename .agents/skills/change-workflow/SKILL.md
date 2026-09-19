@@ -23,9 +23,16 @@ Before executing changes, identify whether this workspace is:
 
 ## 🛠️ Execution Lifecycle
 
+### Step 0: Pre-Execution Consensus (Google Antigravity)
+
+In Google Antigravity, non-trivial changes require plan consensus via `implementation_plan.md` before implementation.
+- Strictly adhere to the 4 Golden Rules defined in [antigravity-two-phase-governance](../antigravity-two-phase-governance/SKILL.md) to ensure the `[Proceed]` button renders reliably.
+- Await user approval (`[Proceed]` button) before provisioning worktrees and applying edits.
+
 ### Step 1: Issue Definition & Scoping
 
 Create or reference a GitHub Issue with clear intent and Acceptance Criteria:
+
 
 ```bash
 gh issue create \
