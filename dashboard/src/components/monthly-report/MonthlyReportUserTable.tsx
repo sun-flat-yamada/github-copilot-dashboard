@@ -46,7 +46,8 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({ 
       'Organization',
       'Primary Model',
       'Total Requests',
-      'Total Spend (USD)',
+      'Usage Cost Gross (USD)',
+      'Excess Billable Cost Net (USD)',
       'Last Activity',
       'Surface',
     ];
@@ -59,7 +60,8 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({ 
       u.organization,
       `"${u.primary_model}"`,
       u.total_requests,
-      u.total_spend_usd.toFixed(2),
+      (u.gross_spend_usd ?? u.total_spend_usd).toFixed(2),
+      (u.net_spend_usd ?? u.total_spend_usd).toFixed(2),
       u.last_activity_date || '',
       `"${u.surface || ''}"`,
     ]);
@@ -138,7 +140,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({ 
         </div>
       </div>
 
-      {/* テーブル */}
+      {/* ユーザー一覧テーブル */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
@@ -149,7 +151,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({ 
               <th className="py-2.5 px-3">Cost Center</th>
               <th className="py-2.5 px-3">主利用モデル</th>
               <th className="py-2.5 px-3 text-right">総リクエスト</th>
-              <th className="py-2.5 px-3 text-right">利用費用 (USD)</th>
+              <th className="py-2.5 px-3 text-right">利用費用 / 超過請求 (USD)</th>
               <th className="py-2.5 px-3 text-right">最終利用日</th>
             </tr>
           </thead>
@@ -203,8 +205,13 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({ 
                     <td className="py-2.5 px-3 text-right font-medium text-slate-200">
                       {u.total_requests.toLocaleString()}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold text-emerald-400">
-                      ${u.total_spend_usd.toFixed(2)}
+                    <td className="py-2.5 px-3 text-right">
+                      <div className="font-bold text-slate-100">
+                        ${(u.gross_spend_usd ?? u.total_spend_usd).toFixed(2)}
+                      </div>
+                      <div className="text-[10px] text-amber-400 font-mono">
+                        超過: ${(u.net_spend_usd ?? u.total_spend_usd).toFixed(2)}
+                      </div>
                     </td>
                     <td className="py-2.5 px-3 text-right text-slate-400 font-mono text-[11px]">
                       {u.last_activity_date || '-'}

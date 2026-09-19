@@ -494,7 +494,7 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
                         <div>
                           <p className="text-xs font-bold text-white">{uploadedData.file_name}</p>
                           <p className="text-[11px] text-cyan-300">
-                            {uploadedData.report_month} • {uploadedData.overview.total_requests.toLocaleString()} requests • ${uploadedData.overview.total_net_spend_usd.toFixed(2)} USD
+                            {uploadedData.report_month} • {uploadedData.overview.total_requests.toLocaleString()} req • 利用: ${uploadedData.overview.total_gross_spend_usd.toFixed(2)} (超過請求: ${uploadedData.overview.total_net_spend_usd.toFixed(2)})
                           </p>
                         </div>
                       </div>

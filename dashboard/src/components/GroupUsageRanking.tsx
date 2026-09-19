@@ -91,6 +91,15 @@ export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
       ? `月次集計 (${scope_key})`
       : `期間指定 (${date_range.start} 〜 ${date_range.end})`;
 
+  // 選択中の Cost Center の予算情報 (該当する場合)
+  const currentCostCenterBudget = useMemo(() => {
+    if (grouping !== 'cost_center' || !data.cost_center_budgets) return null;
+    if (selectedGroup === 'all') return null;
+    return data.cost_center_budgets.find(
+      (b) => b.cost_center_name.toLowerCase() === selectedGroup.toLowerCase() || b.cost_center_id === selectedGroup
+    );
+  }, [grouping, selectedGroup, data.cost_center_budgets]);
+
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg flex flex-col space-y-6">
       {/* 1. コントロールヘッダー */}
@@ -108,9 +117,18 @@ export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
           </p>
         </div>
 
-        {/* ページ全体と連動した集計単位の表示インジケーター */}
-        <div className="flex items-center space-x-2.5 shrink-0">
-          <span className="text-xs text-slate-400 font-semibold">集計単位:</span>
+        {/* ページ全体と連動した集計単位の表示インジケーター & Cost Center Limit */}
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          {currentCostCenterBudget && (
+            <div className="flex items-center space-x-2 px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-[11px]">
+              <span className="text-slate-400">Limit設定:</span>
+              <span className="font-mono font-bold text-slate-200">${currentCostCenterBudget.spending_limit_usd.toLocaleString()}</span>
+              <span className="text-slate-600">|</span>
+              <span className="text-amber-400">超過請求:</span>
+              <span className="font-mono font-bold text-amber-300">${currentCostCenterBudget.net_billable_spend_usd.toLocaleString()}</span>
+            </div>
+          )}
+
           <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-purple-950/60 border border-purple-800/80 text-purple-200 text-xs font-semibold shadow-sm">
             <DimensionIcon className="w-3.5 h-3.5 text-purple-400" />
             <span>{dimensionLabel}</span>
@@ -203,7 +221,7 @@ export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
               <th className="px-4 py-3 text-right">受諾採用数</th>
               <th className="px-4 py-3 text-right">受諾率</th>
               <th className="px-4 py-3 text-right">AIチャット数</th>
-              <th className="px-4 py-3 text-right">利用料金</th>
+              <th className="px-4 py-3 text-right">利用料金 / 超過請求</th>
               <th className="px-4 py-3 text-center w-24">アクション</th>
             </tr>
           </thead>
@@ -278,8 +296,13 @@ export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
                       {u.total_chats.toLocaleString()}
                     </td>
 
-                    <td className="px-4 py-3 text-right font-mono font-semibold text-slate-200">
-                      ${u.total_cost_usd.toFixed(2)}
+                    <td className="px-4 py-3 text-right">
+                      <div className="font-mono font-semibold text-slate-200">
+                        ${u.total_cost_usd.toFixed(2)}
+                      </div>
+                      <div className="text-[10px] text-amber-400 font-mono">
+                        超過: ${u.total_cost_usd.toFixed(2)}
+                      </div>
                     </td>
 
                     <td className="px-4 py-3 text-center">
