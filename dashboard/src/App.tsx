@@ -557,7 +557,7 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* View 2: ユーザー明細 & ランキング (Users) */}
+        {/* View 2: ユーザー明細 (Users) */}
         {activeView === 'users' && (
           <div className="flex flex-col space-y-6 w-full">
             {activeSource === 'live_metrics' && currentData && (
