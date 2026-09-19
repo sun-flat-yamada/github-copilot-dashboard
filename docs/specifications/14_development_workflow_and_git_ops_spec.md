@@ -8,23 +8,27 @@ In this repository, the operating model assumes that **multiple autonomous AI ag
 To eliminate file collision, untracked change leakage, and merge hazards between concurrent agents while preserving a pristine, auditable linear commit history, this specification formalizes the following core lifecycle:
 
 ```text
-[Issue Creation]
+[Step 0: Planning Consensus (Antigravity)]
+   │ (implementation_plan.md with canonical English headings & ArtifactMetadata -> [Proceed] approval)
+   ▼
+[Step 1: Issue Creation]
    │ (Define intent & acceptance criteria via gh issue create)
    ▼
-[Worktree Work Environment Provisioning]
+[Step 2: Worktree Work Environment Provisioning]
    │ (Deploy isolated directory at peer sibling level: ../<repo>-worktrees/<branch>)
    ▼
-[SDD Definition, Implementation & Local Quality Gate]
+[Step 3: SDD Definition, Implementation & Local Quality Gate]
    │ (Atomic Commits, Conventional Commits, 5-stage validation)
    ▼
-[Rebase onto Latest Base & PR Creation]
+[Step 4: Rebase onto Latest Base & PR Creation]
    │ (git fetch && git rebase, Closes #<issue>, gh pr create)
    ▼
-[Rebase Merge & Worktree Cleanup]
+[Step 5: Rebase Merge & Worktree Cleanup]
    │ (Rebase and Merge, git worktree remove, branch prune)
    ▼
-[Completed / Pristine Linear History Preserved]
+[Completed / Walkthrough Evidence Sealed & Pristine Linear History Preserved]
 ```
+
 
 ---
 
@@ -41,8 +45,22 @@ Branch protection and direct push rules differ strictly between the **original u
 
 ## 3. Step-by-Step Operational Protocol
 
+### 3.0. Step 0: Planning & Pre-Execution Consensus (Google Antigravity)
+
+In Google Antigravity, before implementing non-trivial code modifications, the agent must formulate an implementation plan and acquire explicit human consensus via the UI `[Proceed]` button.
+
+#### Proceed Button Activation Requirements (The 4 Golden Rules)
+To ensure that the Antigravity UI parser deterministically recognizes the plan and displays the `[Proceed]` button:
+1. **Official brain Path**: Write directly to `<appDataDir>\brain\<conversation-id>/implementation_plan.md`.
+2. **Canonical English Headings**: Maintain exact required English headings (`# [Goal Description]`, `## User Review Required`, `## Open Questions`, `## Proposed Changes`, `## Verification Plan`, etc.). Never substitute or translate them into Japanese.
+3. **ArtifactMetadata**: Pass `ArtifactMetadata` with `RequestFeedback: true`, `UserFacing: true`, and `Summary`. Do NOT call `ask_question` concurrently.
+4. **Immediate Turn End**: Conclude the turn immediately after file generation with a concise call-to-action to prevent chat state disruption.
+
+Once approved (`[Proceed]` received), proceed to Step 1.
+
 ### 3.1. Step 1: Issue Creation (Issue-Driven Development)
 All changes start with a dedicated GitHub Issue.
+
 
 1. **Clarify Objective and Scope**:
    - Problem statement / Why this change is needed
