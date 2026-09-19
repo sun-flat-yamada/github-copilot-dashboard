@@ -9,6 +9,7 @@ import {
   MonthlyReportAggregatedData,
 } from '../types/copilot.js';
 import { checkIsDemoMode } from '../../dashboard/src/hooks/useDashboardData.js';
+import { resolveDataPath } from '../../dashboard/src/utils/pathResolver.js';
 import { checkDataIsolation } from '../../scripts/verify-fork-health.js';
 import { setupForkDemoData } from '../../scripts/setup-fork-demo.js';
 
@@ -219,5 +220,97 @@ describe('Live Metrics DEMO Data & Referencing Tests', () => {
     assert.match(headerContent, /const isMockMode = isMockModeData\(indexMeta, repoInfo\);/);
     assert.match(headerContent, /const showDemoBadge = isDemoMode !== undefined \? isDemoMode : isMockMode;/);
     assert.match(headerContent, /{showDemoBadge \?/);
+  });
+
+  it('verifies resolveDataPath resolves paths correctly across GitHub Pages and Node environments', () => {
+    const originalWindow = global.window;
+
+    try {
+      // 1. Node / SSR 環境
+      delete (global as any).window;
+      assert.equal(resolveDataPath('./data/index.json'), './data/index.json');
+      assert.equal(resolveDataPath('data/demo/index.json'), './data/demo/index.json');
+
+      // 2. GitHub Pages 環境 (末尾スラッシュなし)
+      (global as any).window = {
+        location: {
+          pathname: '/github-copilot-dashboard',
+        },
+      };
+      assert.equal(
+        resolveDataPath('./data/index.json'),
+        '/github-copilot-dashboard/data/index.json',
+        'Should preserve repo prefix when accessing without trailing slash'
+      );
+      assert.equal(
+        resolveDataPath('./data/demo/monthly/2026-09.json'),
+        '/github-copilot-dashboard/data/demo/monthly/2026-09.json'
+      );
+
+      // 3. GitHub Pages 環境 (末尾スラッシュあり)
+      (global as any).window = {
+        location: {
+          pathname: '/github-copilot-dashboard/',
+        },
+      };
+      assert.equal(
+        resolveDataPath('./data/index.json'),
+        '/github-copilot-dashboard/data/index.json'
+      );
+
+      // 4. index.html を含むパス
+      (global as any).window = {
+        location: {
+          pathname: '/github-copilot-dashboard/index.html',
+        },
+      };
+      assert.equal(
+        resolveDataPath('./data/reports/2026-09.json'),
+        '/github-copilot-dashboard/data/reports/2026-09.json'
+      );
+
+      // 5. ルートパス (ローカル開発サーバー http://localhost:3000/)
+      (global as any).window = {
+        location: {
+          pathname: '/',
+        },
+      };
+      assert.equal(resolveDataPath('./data/index.json'), './data/index.json');
+    } finally {
+      if (originalWindow === undefined) {
+        delete (global as any).window;
+      } else {
+        global.window = originalWindow;
+      }
+    }
+  });
+
+  it('verifies App.tsx displays reportError when isReportSource is true', () => {
+    const appContent = fs.readFileSync(
+      path.resolve(projectRoot, 'dashboard/src/App.tsx'),
+      'utf-8'
+    );
+    assert.match(
+      appContent,
+      /{isReportSource \? reportError : error}/,
+      'Error banner must prioritize reportError when activeSource is report'
+    );
+  });
+
+  it('verifies copilot-analysis-cron.yml stages DEMO partition before build', () => {
+    const workflowContent = fs.readFileSync(
+      path.resolve(projectRoot, '.github/workflows/copilot-analysis-cron.yml'),
+      'utf-8'
+    );
+    assert.match(
+      workflowContent,
+      /Stage DEMO Partitions for GitHub Pages/,
+      'Workflow must contain step to stage DEMO partitions'
+    );
+    assert.match(
+      workflowContent,
+      /cp -r data\/demo\/\* dashboard\/public\/data\/demo\//,
+      'Workflow must copy data/demo to dashboard/public/data/demo'
+    );
   });
 });

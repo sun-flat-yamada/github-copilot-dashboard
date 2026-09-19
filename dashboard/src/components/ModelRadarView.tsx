@@ -17,6 +17,7 @@ import {
   ScopeAggregatedData,
   MonthlyReportAggregatedData,
 } from '../../../src/types/copilot';
+import { resolveDataPath } from '../utils/pathResolver';
 import {
   Radar as RadarIcon,
   Sparkles,
@@ -144,7 +145,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch('./data/model-benchmarks.json');
+        const res = await fetch(resolveDataPath('./data/model-benchmarks.json'));
         if (!res.ok) {
           throw new Error(`Failed to load model-benchmarks.json: status ${res.status}`);
         }

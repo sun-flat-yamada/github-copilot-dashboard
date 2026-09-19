@@ -182,6 +182,18 @@ jobs:
         if: env.MOCK_MODE != 'true'
         run: npm run benchmark:update
 
+      - name: Stage DEMO Partitions for GitHub Pages
+        if: env.MOCK_MODE != 'true'
+        run: |
+          if [ -d "data/demo" ]; then
+            echo "📦 Staging DEMO partition into dashboard/public/data/demo for GitHub Pages deployment..."
+            mkdir -p dashboard/public/data/demo
+            cp -r data/demo/* dashboard/public/data/demo/
+            echo "✅ DEMO partitions successfully staged."
+          else
+            echo "ℹ️ No data/demo directory found to stage."
+          fi
+
       - name: Build Dashboard SPA
         if: env.MOCK_MODE != 'true'
         env:
