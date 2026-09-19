@@ -16,9 +16,9 @@
 The dashboard is designed as a responsive Single Page Application (SPA) optimized for execution on GitHub Pages, adhering to an **Anti-Multi-Column Single-Stack** structure and **Progressive Disclosure** via accordions.
 
 ```
-+-----------------------------------------------------------------------------------------------+
-|  GitHub Copilot Analytics [ℹ️ About] [Active Data: Live Metrics ▼]   [🔗 Repo: owner/name] [⚠️] |
-+-----------------------------------------------------------------------------------------------+
++------------------------------------------------------------------------------------------------------+
+|  GitHub Copilot Analytics [ℹ️ About] [Active Data: Live Metrics ▼]   [🔗 Repo: owner/name] [☀️/🌙] [⚠️] |
++------------------------------------------------------------------------------------------------------+
 | [Navigation: 6 Analysis Views]                                                                 |
 |  [Overview] [Users (Rankings Consolidated)] [Trends] [Budget] [Deep Analytics] [Model Radar] |
 +-----------------------------------------------------------------------------------------------+
@@ -112,3 +112,17 @@ Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint 
    - **ViewNavigation (Navigation Bar)**: Replaces legacy mode switching with 6 dedicated analysis views (`overview`, `users`, `trend`, `budget`, `deep_analysis`, `model_radar`), automatically managing view availability based on active data source capabilities with rankings consolidated into user details.
 3. **About Modal & Metadata**:
    - Info icon (`Info`) in the header opens a modal displaying the exact generation timestamp (`yyyy-mm-dd hh:MM:ss`), specification version (2026.09 LTS), source repository details (with fork attributes), data retention limits, and managed seat totals.
+
+### 2.10 Theme Toggle & Light Mode Specification
+1. **Default Mode**:
+   - Dark mode is enforced as the primary default on initial visits or when unconfigured.
+2. **UI Placement & Interaction**:
+   - Simple icon-only button (`Sun` / `Moon`) positioned directly adjacent to the GitHub repository link container in the header action area.
+   - Displays `Sun` icon in Dark mode and `Moon` icon in Light mode.
+   - Instantly inverts display theme upon click, accompanied by accessible `title` and `aria-label` tooltips.
+3. **Persistence & FOUC Prevention**:
+   - User preference persists in browser `localStorage` under the key `copilot_dashboard_theme`.
+   - An inline IIFE script inside `index.html` evaluates `localStorage` and assigns classes prior to DOM paint, preventing Flash of Unstyled Content (FOUC).
+4. **Semantic Token Architecture (Tailwind CSS v4)**:
+   - Utilizes CSS variables (`--color-slate-*`) under `html.light` and `[data-theme="light"]` selectors, automatically adapting canvas backgrounds (`#f8fafc`), cards (`#ffffff`), borders (`#e2e8f0`), and typography (`#0f172a`).
+   - Dynamically binds Recharts gridlines, axis labels, and floating tooltips to theme tokens for high legibility across all views.
