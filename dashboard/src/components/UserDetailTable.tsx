@@ -309,28 +309,28 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
         </div>
       </div>
 
-      {/* テーブル本体 */}
-      <div className="overflow-x-auto rounded-lg border border-slate-800">
-        <table className="w-full text-left text-xs text-slate-300">
-          <thead className="bg-slate-950/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
-            <tr>
-              <th className="px-4 py-3 text-center w-14">#</th>
-              <th className="px-4 py-3">ユーザー / 表示名</th>
-              <th className="px-4 py-3">任意仕訳グループ</th>
-              <th className="px-4 py-3">Cost Center</th>
-              <th className="px-4 py-3">Organization</th>
-              <th className="px-4 py-3">プラン</th>
-              <th className="px-4 py-3">稼働状況</th>
+      {/* テーブル本体: ヘッダー固定・データ行垂直スクロール */}
+      <div className="overflow-auto max-h-[600px] rounded-lg border border-slate-800 relative scrollbar-thin scrollbar-thumb-slate-700">
+        <table className="w-full text-left text-xs text-slate-300 border-collapse">
+          <thead className="sticky top-0 z-20 bg-slate-950 text-slate-400 uppercase tracking-wider font-semibold shadow-md">
+            <tr className="border-b border-slate-800">
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-center w-14">#</th>
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3">ユーザー / 表示名</th>
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3">任意仕訳グループ</th>
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3">Cost Center</th>
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3">Organization</th>
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3">プラン</th>
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3">稼働状況</th>
               {hasUsageMetrics && (
                 <>
-                  <th className="px-4 py-3 text-right">提案数</th>
-                  <th className="px-4 py-3 text-right">受諾採用数</th>
-                  <th className="px-4 py-3 text-right">受諾率</th>
-                  <th className="px-4 py-3 text-right">AIチャット</th>
+                  <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right">提案数</th>
+                  <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right">受諾採用数</th>
+                  <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right">受諾率</th>
+                  <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right">AIチャット</th>
                 </>
               )}
-              <th className="px-4 py-3 text-right">費用 / 超過請求 ({scope_type === 'daily' ? '日割り' : '月額'})</th>
-              <th className="px-4 py-3 text-center w-24">
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right">費用 / 超過請求 ({scope_type === 'daily' ? '日割り' : '月額'})</th>
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-center w-24">
                 <ActionColumnHeader />
               </th>
             </tr>
