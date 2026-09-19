@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Users, Search, Download } from 'lucide-react';
+import { Users, Search, Download, Trophy } from 'lucide-react';
 import { MonthlyReportAggregatedData } from '../../../../src/types/copilot';
 
 interface MonthlyReportUserTableProps {
@@ -38,6 +38,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({ 
   // CSV エクスポート
   const handleExportCsv = () => {
     const headers = [
+      '順位',
       'GitHub User',
       'Display Name',
       'Department',
@@ -49,7 +50,8 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({ 
       'Last Activity',
       'Surface',
     ];
-    const rows = filteredUsers.map((u) => [
+    const rows = filteredUsers.map((u, idx) => [
+      idx + 1,
       u.login,
       `"${u.display_name.replace(/"/g, '""')}"`,
       `"${u.department.replace(/"/g, '""')}"`,
@@ -79,7 +81,11 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({ 
         <div>
           <h3 className="text-sm font-bold text-white flex items-center space-x-2">
             <Users className="w-4 h-4 text-indigo-400" />
-            <span>ユーザー別 利用・費用明細 ({filteredUsers.length}名)</span>
+            <span>ユーザー別 利用・費用明細 & ランキング ({filteredUsers.length}名)</span>
+            <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800">
+              <Trophy className="w-3 h-3 text-amber-400" />
+              <span>{userSortBy === 'spend' ? '利用費用順' : 'リクエスト順'}</span>
+            </span>
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
             レポート期間中の個人別消費量と主要モデル利用実績
@@ -137,6 +143,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({ 
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b border-slate-800 text-slate-400 font-semibold bg-slate-950/40">
+              <th className="py-2.5 px-3 text-center w-14">順位</th>
               <th className="py-2.5 px-3">GitHub ユーザー</th>
               <th className="py-2.5 px-3">部署 / 仕訳グループ</th>
               <th className="py-2.5 px-3">Cost Center</th>
@@ -149,39 +156,62 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({ 
           <tbody className="divide-y divide-slate-800/60">
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-8 text-slate-500">
+                <td colSpan={8} className="text-center py-8 text-slate-500">
                   該当するユーザーレコードがありません。
                 </td>
               </tr>
             ) : (
-              filteredUsers.map((u) => (
-                <tr key={u.login} className="hover:bg-slate-800/40 transition">
-                  <td className="py-2.5 px-3">
-                    <div className="font-semibold text-slate-100">{u.display_name}</div>
-                    <div className="text-[11px] text-slate-500 font-mono">@{u.login}</div>
-                  </td>
-                  <td className="py-2.5 px-3 text-slate-300">
-                    <span className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800">
-                      {u.department}
-                    </span>
-                  </td>
-                  <td className="py-2.5 px-3 text-slate-400 font-mono text-[11px]">{u.cost_center}</td>
-                  <td className="py-2.5 px-3">
-                    <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-purple-950/60 text-purple-300 border border-purple-800/50">
-                      {u.primary_model}
-                    </span>
-                  </td>
-                  <td className="py-2.5 px-3 text-right font-medium text-slate-200">
-                    {u.total_requests.toLocaleString()}
-                  </td>
-                  <td className="py-2.5 px-3 text-right font-bold text-emerald-400">
-                    ${u.total_spend_usd.toFixed(2)}
-                  </td>
-                  <td className="py-2.5 px-3 text-right text-slate-400 font-mono text-[11px]">
-                    {u.last_activity_date || '-'}
-                  </td>
-                </tr>
-              ))
+              filteredUsers.map((u, index) => {
+                const isTop1 = index === 0;
+                const isTop2 = index === 1;
+                const isTop3 = index === 2;
+
+                return (
+                  <tr key={u.login} className="hover:bg-slate-800/40 transition">
+                    <td className="py-2.5 px-3 text-center font-bold">
+                      {isTop1 ? (
+                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs">
+                          🥇
+                        </span>
+                      ) : isTop2 ? (
+                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-400/20 text-slate-200 border border-slate-400/40 text-xs">
+                          🥈
+                        </span>
+                      ) : isTop3 ? (
+                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-700/20 text-amber-400 border border-amber-700/40 text-xs">
+                          🥉
+                        </span>
+                      ) : (
+                        <span className="text-slate-500 font-mono">{index + 1}</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-3">
+                      <div className="font-semibold text-slate-100">{u.display_name}</div>
+                      <div className="text-[11px] text-slate-500 font-mono">@{u.login}</div>
+                    </td>
+                    <td className="py-2.5 px-3 text-slate-300">
+                      <span className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800">
+                        {u.department}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-slate-400 font-mono text-[11px]">{u.cost_center}</td>
+                    <td className="py-2.5 px-3">
+                      <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-purple-950/60 text-purple-300 border border-purple-800/50">
+                        {u.primary_model}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-medium text-slate-200">
+                      {u.total_requests.toLocaleString()}
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-bold text-emerald-400">
+                      ${u.total_spend_usd.toFixed(2)}
+                    </td>
+                    <td className="py-2.5 px-3 text-right text-slate-400 font-mono text-[11px]">
+                      {u.last_activity_date || '-'}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

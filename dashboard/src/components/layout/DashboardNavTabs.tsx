@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   PieChart as PieIcon,
-  Trophy,
   Bot,
   Landmark,
   BarChart3,
@@ -10,7 +9,7 @@ import {
   BrainCircuit,
 } from 'lucide-react';
 
-export type TabType = 'overview' | 'ranking' | 'trend' | 'budget' | 'usage' | 'users';
+export type TabType = 'overview' | 'users' | 'trend' | 'budget' | 'usage';
 
 interface DashboardNavTabsProps {
   activeTab: TabType;
@@ -37,18 +36,6 @@ export const DashboardNavTabs: React.FC<DashboardNavTabsProps> = ({
       >
         <PieIcon className="w-3.5 h-3.5" />
         <span>コスト配賦</span>
-      </button>
-
-      <button
-        onClick={() => onTabChange('ranking')}
-        className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-          activeTab === 'ranking'
-            ? 'bg-indigo-600 text-white shadow-sm'
-            : 'text-slate-400 hover:text-slate-200'
-        }`}
-      >
-        <Trophy className="w-3.5 h-3.5" />
-        <span>グループ内ランキング</span>
       </button>
 
       <button

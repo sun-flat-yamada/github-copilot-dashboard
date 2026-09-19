@@ -93,15 +93,14 @@ The aggregation engine and dashboard must support rapid switching between data s
 - Implement progressive disclosure via accordion sections: Block 0 (Executive Summary) is expanded by default, subsequent blocks start collapsed showing title, icon, and summary chips.
 - Provide global `[Expand All]` and `[Collapse All]` controls.
 
-### FR-8: 7 Dedicated Analysis Views Navigation (`ViewNavigation`)
-- Transition from legacy mode switching to 7 dedicated purpose-built analysis views:
-  1. `overview` (Executive Overview)
-  2. `ranking` (Group & Individual Usage Rankings)
-  3. `users` (User Detail Table & Individual Trends)
-  4. `trend` (Usage & Acceptance Rate Trends)
-  5. `budget` (Cost Center Budget Tracking)
-  6. `deep_analysis` (Deep Diagnostics & Efficiency Modeling)
-  7. `model_radar` (AI Model Characteristic Benchmark Radar)
+### FR-8: 6 Dedicated Analysis Views Navigation (`ViewNavigation`)
+- Transition from legacy mode switching to 6 dedicated purpose-built analysis views (with rankings consolidated into User Details):
+  1. `overview` (Executive Cost Allocation & Overview)
+  2. `users` (User Details & Usage Rankings)
+  3. `trend` (User Model Trends & Development Metrics)
+  4. `budget` (Cost Center Budget Tracking)
+  5. `deep_analysis` (Deep Diagnostics & Efficiency Modeling)
+  6. `model_radar` (AI Model Characteristic Benchmark Radar)
 - Dynamically enable or disable views according to the capabilities of the currently active data source.
 
 ---

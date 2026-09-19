@@ -168,7 +168,7 @@ export interface MonthlyReportAggregatedData {
    - Switch rapidly between past reported months (`2026-08`, `2026-09`, etc.).
    - Instant client-side drag-and-drop ingestion parsed in browser memory (Zero-Leakage).
 3. **Analytics Sections & View Integration**:
-   - Synchronized across dedicated analysis views (Overview, Ranking, Users, Trend, Model Radar).
+   - Synchronized across dedicated analysis views (Overview, Users, Trend, Model Radar).
    - 1. **KPI Cards**: Net spend, gross spend, total requests, active users, top model.
    - 2. **3-Axis Allocation**: Donut and bar charts grouped by department, cost center, and organization (single-column vertical stack).
    - 3. **Model & SKU Breakdown**: Request shares and expenditure percentages.

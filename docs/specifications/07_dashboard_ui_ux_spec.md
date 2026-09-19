@@ -19,8 +19,8 @@ The dashboard is designed as a responsive Single Page Application (SPA) optimize
 +-----------------------------------------------------------------------------------------------+
 |  GitHub Copilot Analytics [ℹ️ About] [Active Data: Live Metrics ▼]   [🔗 Repo: owner/name] [⚠️] |
 +-----------------------------------------------------------------------------------------------+
-| [Navigation: 7 Analysis Views]                                                                 |
-|  [Overview] [Rankings] [Users] [Trends] [Budget] [Deep Analytics] [Model Radar]              |
+| [Navigation: 6 Analysis Views]                                                                 |
+|  [Overview] [Users (Rankings Consolidated)] [Trends] [Budget] [Deep Analytics] [Model Radar] |
 +-----------------------------------------------------------------------------------------------+
 | [Multi-Tag AND Filter Bar]                                                                    |
 |  Filter by tags: [正社員] [リモート] [AI推進] ... (AND logic: All selected must match) [Reset] |
@@ -94,11 +94,11 @@ Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint 
    - Total chat turns overlaid as a line graph.
 - **Productivity Indicators**: Daily suggestions, acceptances, and acceptance rate (%) trends.
 
-### 2.7 Intra-Group Usage Rankings (`GroupUsageRanking`)
-- **Page-Wide Synchronization**: Synchronizes automatically with the active axis and target group selected at the top.
-- **Active Axis Indication**: Explicitly displays the current axis name and a "Synchronized" indicator badge.
-- **3-Axis Support**: Displays member rankings within the active Cost Center, Organization, or Custom Allocation Group.
-- **Metric Sorting**: One-click sorting by acceptances, suggestions, chat turns, acceptance rate, or incurred cost.
+### 2.7 User Details & Consolidated Usage Rankings (`UserDetailTable`)
+- **Full Ranking Consolidation**: Unifies the legacy ranking view (`ranking`) directly into the user details view (`users`). In both GitHub Pages (report data) and live metrics environments, users can inspect per-user ranking positions with podium badges (🥇, 🥈, 🥉, #N) directly within the user details table.
+- **3-Axis & Group Integration**: Seamlessly ranks and sorts members across Cost Centers, Organizations, and Custom Allocation Groups.
+- **Metric Sorting**: One-click sorting by acceptances (adoption ranking), suggestions, chat turns, acceptance rate, incurred cost, or inactive days.
+- **Direct Navigation**: Direct transitions to individual model trends (`trend`) and deep diagnostics (`deep_analysis`).
 
 ### 2.8 Cost Center Budget Cards
 - Displays budget limit, free allowance, current expenditure, and remaining capacity with color-coded progress bars.
@@ -109,6 +109,6 @@ Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint 
    - External link in the header dynamically resolves repository URLs via runtime metadata (`indexMeta.repository`) or host origin (`<owner>.github.io/<repo>/`). Zero hardcoded URLs; guaranteed conflict-free for downstream forks.
 2. **Active Data Selector & View Navigation**:
    - **ActiveDataSelector (Header)**: Continuously displays the active data source at header center, facilitating quick dataset switching. To prevent popup clipping and containing block traps caused by the parent header's CSS `backdrop-filter` (`backdrop-blur`), the selection modal is mounted directly into `document.body` via React Portal (`createPortal`). To prevent positional jittering when toggling data source tabs, the modal uses a pinned top offset (`items-start pt-16 sm:pt-20`) rather than vertical centering, enforces a fixed vertical card height (`h-[600px] max-h-[calc(100vh-5.5rem)]`) with fixed headers/tabs/footers (`flex-shrink-0`), and enables independent internal scrolling within the body container (`flex-1 min-h-0 overflow-y-auto`).
-   - **ViewNavigation (Navigation Bar)**: Replaces legacy mode switching with 7 dedicated analysis views (`overview`, `ranking`, `users`, `trend`, `budget`, `deep_analysis`, `model_radar`), automatically managing view availability based on active data source capabilities.
+   - **ViewNavigation (Navigation Bar)**: Replaces legacy mode switching with 6 dedicated analysis views (`overview`, `users`, `trend`, `budget`, `deep_analysis`, `model_radar`), automatically managing view availability based on active data source capabilities with rankings consolidated into user details.
 3. **About Modal & Metadata**:
    - Info icon (`Info`) in the header opens a modal displaying the exact generation timestamp (`yyyy-mm-dd hh:MM:ss`), specification version (2026.09 LTS), source repository details (with fork attributes), data retention limits, and managed seat totals.

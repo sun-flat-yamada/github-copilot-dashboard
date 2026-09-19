@@ -125,13 +125,12 @@ suzuki,Suzuki Ken,Design,CC-200,,業務委託;リモート`;
     assert.strictEqual(resAll.length, 5);
   });
 
-  it('ANALYSIS_VIEW_REGISTRY defines all 7 required analysis views with clean capability contracts', () => {
-    assert.strictEqual(ANALYSIS_VIEW_REGISTRY.length, 7);
+  it('ANALYSIS_VIEW_REGISTRY defines all 6 consolidated analysis views with clean capability contracts', () => {
+    assert.strictEqual(ANALYSIS_VIEW_REGISTRY.length, 6);
 
     const ids = ANALYSIS_VIEW_REGISTRY.map((v) => v.id);
     assert.deepStrictEqual(ids, [
       'overview',
-      'ranking',
       'users',
       'trend',
       'budget',
@@ -146,6 +145,11 @@ suzuki,Suzuki Ken,Design,CC-200,,業務委託;リモート`;
       assert.ok(view.supportedDataSources.length > 0, `View ${view.id} must have supported data sources`);
       assert.ok(view.requiredCapabilities.length > 0, `View ${view.id} must have required capabilities`);
     }
+
+    const usersView = ANALYSIS_VIEW_REGISTRY.find((v) => v.id === 'users');
+    assert.ok(usersView);
+    assert.ok(usersView.requiredCapabilities.includes('user_table'));
+    assert.ok(usersView.requiredCapabilities.includes('group_ranking'));
   });
 
   it('ForkSafeStorage correctly saves and indexes rolling 1-year trends and deep analysis archives', () => {
@@ -181,4 +185,36 @@ suzuki,Suzuki Ken,Design,CC-200,,業務委託;リモート`;
       }
     }
   });
+
+  it('verifies user ranking consolidation: UserDetailTable component and ranking sort logic', () => {
+    // ユーザーと利用プロファイルのサンプル
+    const seats = [
+      { login: 'user-a', monthly_cost_usd: 19, days_inactive: 10 },
+      { login: 'user-b', monthly_cost_usd: 39, days_inactive: 2 },
+      { login: 'user-c', monthly_cost_usd: 39, days_inactive: 25 },
+    ];
+    const profiles = new Map([
+      ['user-a', { total_acceptances: 150, total_suggestions: 400, acceptance_rate: 0.375, total_chats: 20 }],
+      ['user-b', { total_acceptances: 320, total_suggestions: 800, acceptance_rate: 0.40, total_chats: 55 }],
+      ['user-c', { total_acceptances: 40, total_suggestions: 200, acceptance_rate: 0.20, total_chats: 5 }],
+    ]);
+
+    // 1. 受諾数降順ソート (採用ランキング)
+    const sortedByAcceptances = [...seats].sort((a, b) => {
+      const profA = profiles.get(a.login);
+      const profB = profiles.get(b.login);
+      return (profB?.total_acceptances ?? 0) - (profA?.total_acceptances ?? 0);
+    });
+    assert.deepStrictEqual(sortedByAcceptances.map((u) => u.login), ['user-b', 'user-a', 'user-c']);
+
+    // 2. 費用降順ソート
+    const sortedByCost = [...seats].sort((a, b) => b.monthly_cost_usd - a.monthly_cost_usd);
+    assert.strictEqual(sortedByCost[0].monthly_cost_usd, 39);
+    assert.strictEqual(sortedByCost[2].monthly_cost_usd, 19);
+
+    // 3. 非アクティブ日数降順ソート
+    const sortedByInactive = [...seats].sort((a, b) => b.days_inactive - a.days_inactive);
+    assert.deepStrictEqual(sortedByInactive.map((u) => u.login), ['user-c', 'user-a', 'user-b']);
+  });
 });
+

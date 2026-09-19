@@ -170,7 +170,7 @@ export interface MonthlyReportAggregatedData {
    - 過去の利用可能月（`2026-08`, `2026-09` 等）を即座に切り替え。
    - 手元の CSV ファイルをドラッグ＆ドロップで即時投入・ブラウザ内メモリ解析（Zero-Leakage）。
 3. **分析セクション & ビュー連動**:
-   - 各分析ビュー（Overview, Ranking, Users, Trend, Model Radar）に完全連動。
+   - 各分析ビュー（Overview, Users, Trend, Model Radar）に完全連動。
    - ① **KPI カード**: 総費用、総リクエスト、アクティブ人数、トップモデル
    - ② **3軸費用・リクエスト配賦**: 部署 / Cost Center / 組織別の配賦チャート（垂直1カラム）
    - ③ **モデル別 & SKU別分析**: モデルごとのリクエストシェア・費用比率

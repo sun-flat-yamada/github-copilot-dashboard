@@ -22,7 +22,6 @@ import { ErrorLogModal } from './components/ErrorLogModal';
 import { AboutModal } from './components/AboutModal';
 import { CostCenterBudgetCards } from './components/CostCenterBudgetCards';
 import { UserTrendViewer } from './components/UserTrendViewer';
-import { GroupUsageRanking } from './components/GroupUsageRanking';
 import { MonthlyReportKpis } from './components/monthly-report/MonthlyReportKpis';
 import { MonthlyReportCharts } from './components/monthly-report/MonthlyReportCharts';
 import { MonthlyReportUserTable } from './components/monthly-report/MonthlyReportUserTable';
@@ -34,7 +33,6 @@ import {
   Users2,
   Landmark,
   Bot,
-  Trophy,
   BarChart3,
   AlertTriangle,
   ChevronsDown,
@@ -45,7 +43,6 @@ const ALL_SECTION_IDS = [
   'advisor',
   'allocation',
   'budget',
-  'ranking',
   'users',
   'trend',
   'usage',
@@ -216,7 +213,7 @@ export const App: React.FC = () => {
         onOpenAboutModal={() => setIsAboutModalOpen(true)}
       />
 
-      {/* 2. 分析Viewナビゲーションバー (7つのView切り替え ★要件4) */}
+      {/* 2. 分析Viewナビゲーションバー (6つのView切り替え ★要件4) */}
       <ViewNavigation
         activeView={activeView}
         onSelectView={setActiveView}
@@ -455,42 +452,7 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* View 2: グループ内ランキング (Ranking) */}
-        {activeView === 'ranking' && (
-          <div className="flex flex-col space-y-6 w-full">
-            {activeSource === 'live_metrics' && currentData && (
-              <>
-                <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-bold text-white flex items-center space-x-2">
-                      <Trophy className="w-4 h-4 text-amber-400" />
-                      <span>グループ内 利用ランキング</span>
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      任意仕訳グループ、Cost Center、または Organization 内の貢献度・活用実績
-                    </p>
-                  </div>
-                </div>
-
-                <GroupUsageRanking
-                  data={currentData}
-                  grouping={currentGrouping}
-                  selectedGroup={selectedGroup}
-                  onGroupChange={setSelectedGroup}
-                  onSelectUserForTrend={handleSelectUserForTrend}
-                />
-              </>
-            )}
-
-            {isReportSource && currentReportData && (
-              <div className="flex flex-col space-y-6">
-                <MonthlyReportUserTable reportData={currentReportData} />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* View 3: ユーザー明細 (Users) */}
+        {/* View 2: ユーザー明細 & ランキング (Users) */}
         {activeView === 'users' && (
           <div className="flex flex-col space-y-6 w-full">
             {activeSource === 'live_metrics' && currentData && (
@@ -508,7 +470,7 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* View 4: ユーザー別推移 (Trend) */}
+        {/* View 3: ユーザー別推移 (Trend) */}
         {activeView === 'trend' && (
           <div className="flex flex-col space-y-6 w-full">
             {activeSource === 'live_metrics' && currentData && (
