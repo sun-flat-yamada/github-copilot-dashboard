@@ -442,6 +442,8 @@ export const App: React.FC = () => {
                 >
                   <UserDetailTable
                     data={currentData}
+                    userProfiles={deepAnalysisProfiles}
+                    initialSelectedLogin={focusedUserLogin}
                     filterStatus={userTableFilterStatus}
                     onSelectUserForTrend={handleSelectUserForTrend}
                     onSelectUserForDeepAnalysis={handleOpenDeepAnalysis}
@@ -483,7 +485,10 @@ export const App: React.FC = () => {
                 >
                   <MonthlyReportUserTable
                     reportData={currentReportData}
+                    userProfiles={deepAnalysisProfiles}
+                    initialSelectedLogin={focusedUserLogin}
                     onSelectUserForDeepAnalysis={handleOpenDeepAnalysis}
+                    onSelectUserForTrend={handleSelectUserForTrend}
                   />
                 </CollapsibleSection>
               </>
@@ -497,6 +502,8 @@ export const App: React.FC = () => {
             {activeSource === 'live_metrics' && currentData && (
               <UserDetailTable
                 data={currentData}
+                userProfiles={deepAnalysisProfiles}
+                initialSelectedLogin={focusedUserLogin}
                 filterStatus={userTableFilterStatus}
                 onSelectUserForTrend={handleSelectUserForTrend}
                 onSelectUserForDeepAnalysis={handleOpenDeepAnalysis}
@@ -506,7 +513,10 @@ export const App: React.FC = () => {
             {isReportSource && currentReportData && (
               <MonthlyReportUserTable
                 reportData={currentReportData}
+                userProfiles={deepAnalysisProfiles}
+                initialSelectedLogin={focusedUserLogin}
                 onSelectUserForDeepAnalysis={handleOpenDeepAnalysis}
+                onSelectUserForTrend={handleSelectUserForTrend}
               />
             )}
           </div>
