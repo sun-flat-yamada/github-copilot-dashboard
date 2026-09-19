@@ -189,4 +189,35 @@ describe('Live Metrics DEMO Data & Referencing Tests', () => {
     assert.ok(fs.existsSync(path.join(demoDataDir, 'index.json')));
     assert.ok(fs.existsSync(path.join(publicDemoDir, 'index.json')));
   });
+
+  it('verifies useDashboardData handles runtime fetch error recording into allIssues', () => {
+    // Contract test: DataFetchIssue structure generated for client-side not_found fetch errors
+    const mockRuntimeError = {
+      id: 'runtime-error-scope-monthly-2026-09',
+      timestamp: new Date().toISOString(),
+      severity: 'error' as const,
+      category: 'not_found' as const,
+      target: 'data:monthly:2026-09',
+      message: 'データの読み込みに失敗しました: Data for scope monthly (2026-09) not found at ./data/monthly/2026-09.json',
+      details: '取得先URL: ./data/monthly/2026-09.json',
+      http_status: 404,
+      affected_fields: ['live_metrics', 'monthly'],
+    };
+
+    assert.equal(mockRuntimeError.severity, 'error');
+    assert.equal(mockRuntimeError.category, 'not_found');
+    assert.equal(mockRuntimeError.http_status, 404);
+    assert.ok(mockRuntimeError.message.includes('データの読み込みに失敗しました'));
+    assert.ok(mockRuntimeError.target.includes('monthly:2026-09'));
+  });
+
+  it('verifies DashboardHeader.tsx binds showDemoBadge and exports isMockModeData', () => {
+    const headerContent = fs.readFileSync(
+      path.resolve(projectRoot, 'dashboard/src/components/layout/DashboardHeader.tsx'),
+      'utf-8'
+    );
+    assert.match(headerContent, /const isMockMode = isMockModeData\(indexMeta, repoInfo\);/);
+    assert.match(headerContent, /const showDemoBadge = isDemoMode !== undefined \? isDemoMode : isMockMode;/);
+    assert.match(headerContent, /{showDemoBadge \?/);
+  });
 });

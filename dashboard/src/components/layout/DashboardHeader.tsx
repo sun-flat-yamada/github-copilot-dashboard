@@ -116,6 +116,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onToggleDemoMode,
 }) => {
   const isMockMode = isMockModeData(indexMeta, repoInfo);
+  const showDemoBadge = isDemoMode !== undefined ? isDemoMode : isMockMode;
 
   return (
     <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
@@ -131,7 +132,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 GitHub Copilot Analytics
               </h1>
               {/* 動作モードインジケーター (Mock / DEMO vs LIVE) */}
-              {isMockMode ? (
+              {showDemoBadge ? (
                 <span
                   data-testid="mock-mode-badge"
                   data-demo-mode={isDemoMode}

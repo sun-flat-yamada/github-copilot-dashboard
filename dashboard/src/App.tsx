@@ -36,6 +36,7 @@ import {
   Bot,
   BarChart3,
   AlertTriangle,
+  AlertCircle,
   ChevronsDown,
   ChevronsUp,
 } from 'lucide-react';
@@ -308,11 +309,22 @@ export const App: React.FC = () => {
         {/* エラー表示 */}
         {((activeSource === 'live_metrics' && error && !loading) ||
           (isReportSource && reportError && !reportLoading)) && (
-          <div className="p-4 bg-red-950/50 border border-red-800/80 rounded-xl text-red-200 text-xs flex items-center justify-between">
+          <div className="p-4 bg-red-950/50 border border-red-800/80 rounded-xl text-red-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
             <div>
-              <p className="font-semibold">データの読み込みに失敗しました:</p>
-              <p className="mt-1 font-mono">{error || reportError}</p>
+              <p className="font-semibold text-red-100 flex items-center space-x-1.5">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                <span>データの読み込みに失敗しました:</span>
+              </p>
+              <p className="mt-1 font-mono text-red-300 break-all">{error || reportError}</p>
             </div>
+            <button
+              type="button"
+              onClick={() => setIsErrorModalOpen(true)}
+              className="px-3 py-1.5 bg-rose-900/80 hover:bg-rose-800 text-rose-100 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors border border-rose-700/60 shrink-0 cursor-pointer self-start sm:self-auto"
+            >
+              <AlertCircle className="w-3.5 h-3.5 text-rose-300" />
+              <span>エラー詳細を確認</span>
+            </button>
           </div>
         )}
 

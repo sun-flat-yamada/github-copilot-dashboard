@@ -108,7 +108,32 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     return indexMeta?.available_reports || ['2026-09', '2026-08'];
   }, [indexMeta]);
 
-  // 全体の異常一覧
+  // クライアント側ランタイムfetchエラー追跡状態
+  const [runtimeIssues, setRuntimeIssues] = useState<Map<string, DataFetchIssue>>(new Map());
+
+  const addRuntimeIssue = useCallback((issue: DataFetchIssue) => {
+    setRuntimeIssues((prev) => {
+      const next = new Map(prev);
+      next.set(issue.id, issue);
+      return next;
+    });
+  }, []);
+
+  const clearRuntimeIssue = useCallback((idPrefix: string) => {
+    setRuntimeIssues((prev) => {
+      let changed = false;
+      const next = new Map(prev);
+      for (const key of next.keys()) {
+        if (key.includes(idPrefix)) {
+          next.delete(key);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, []);
+
+  // 全体の異常一覧 (indexMeta由来 + currentData由来 + クライアント側ランタイムエラー)
   const allIssues: DataFetchIssue[] = useMemo(() => {
     const map = new Map<string, DataFetchIssue>();
     for (const issue of indexMeta?.issues || []) {
@@ -117,8 +142,11 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     for (const issue of currentData?.issues || []) {
       map.set(issue.id, issue);
     }
+    for (const issue of runtimeIssues.values()) {
+      map.set(issue.id, issue);
+    }
     return Array.from(map.values());
-  }, [indexMeta, currentData]);
+  }, [indexMeta, currentData, runtimeIssues]);
 
   const hasErrors = allIssues.some((i) => i.severity === 'error');
 
@@ -143,8 +171,16 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
       const meta = (await res.json()) as IndexMetadata;
       setIndexMeta(meta);
 
-      // メタデータ自身が is_mock_mode を宣言している場合は DEMO モード確定
-      if (meta.is_mock_mode && !isDemoMode) {
+      // メタデータ自身が is_mock_mode を宣言している、または proud-corp の場合は DEMO モード確定
+      const totalSeats = meta.summary?.total_seats ?? 0;
+      const availableDaysCount = meta.available_days?.length ?? 0;
+      const hasRealMetrics = totalSeats > 0 || availableDaysCount > 0;
+      const shouldBeDemo =
+        meta.is_mock_mode === true ||
+        meta.repository?.owner === 'proud-corp' ||
+        (!hasRealMetrics && (dir === './data/demo' || !meta.repository?.owner));
+
+      if (shouldBeDemo && !isDemoMode) {
         setIsDemoMode(true);
       }
 
@@ -162,11 +198,23 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
       if (defaultReport) {
         setSelectedReportMonth(defaultReport);
       }
+      clearRuntimeIssue('index');
     } catch (e: any) {
       console.error('Error fetching index:', e);
       setError(e.message || 'Failed to initialize analytics index');
+      addRuntimeIssue({
+        id: 'runtime-error-index',
+        timestamp: new Date().toISOString(),
+        severity: 'error',
+        category: 'not_found',
+        target: `${dir}/index.json`,
+        message: `インデックスメタデータの読み込みに失敗しました: ${e.message}`,
+        details: `取得先URL: ${dir}/index.json\nDEMOデータセットアップコマンド: npm run demo:setup`,
+        http_status: 404,
+        affected_fields: ['index'],
+      });
     }
-  }, [isDemoMode]);
+  }, [isDemoMode, addRuntimeIssue, clearRuntimeIssue]);
 
   useEffect(() => {
     loadIndex();
@@ -180,6 +228,9 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
       reportCacheRef.current.clear();
       currentDataRef.current = null;
       currentReportDataRef.current = null;
+      setError(null);
+      setReportError(null);
+      setRuntimeIssues(new Map());
       loadIndex(next ? './data/demo' : './data');
       return next;
     });
@@ -222,7 +273,22 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
         }
 
         const url = `${dataBaseDir}/${subDir}/${fileName}`;
-        const res = await fetch(url);
+        let res = await fetch(url);
+
+        // フォールバック: LIVEモード (./data) で404の場合、DEMOデータ (./data/demo) を自動試行
+        if (!res.ok && dataBaseDir !== './data/demo') {
+          try {
+            const fallbackUrl = `./data/demo/${subDir}/${fileName}`;
+            const fallbackRes = await fetch(fallbackUrl);
+            if (fallbackRes.ok) {
+              res = fallbackRes;
+              setIsDemoMode(true);
+            }
+          } catch {
+            // ignore fallback error
+          }
+        }
+
         if (!res.ok) {
           throw new Error(`Data for scope ${scopeType} (${selectedKey}) not found at ${url}`);
         }
@@ -230,11 +296,23 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
         if (!isCancelled) {
           scopeDataCacheRef.current.set(cacheKey, data);
           setCurrentData(data);
+          clearRuntimeIssue(`scope-${scopeType}-${selectedKey}`);
         }
       } catch (e: any) {
         if (!isCancelled) {
           console.error('Failed to load scope data:', e);
           setError(e.message);
+          addRuntimeIssue({
+            id: `runtime-error-scope-${scopeType}-${selectedKey}`,
+            timestamp: new Date().toISOString(),
+            severity: 'error',
+            category: 'not_found',
+            target: `data:${scopeType}:${selectedKey}`,
+            message: `データの読み込みに失敗しました: ${e.message}`,
+            details: `取得先URL: ${dataBaseDir}/${scopeType === 'monthly' ? 'monthly' : scopeType === 'custom' ? 'custom' : 'daily'}/${selectedKey}.json\nスコープ: ${scopeType} (${selectedKey})\nアクティブソース: ${activeSource}\n\n【対処手順】\n1. DEMOデータを使用する場合: 画面上部の「DEMO (Mock)」バッジを確認し、必要に応じて 'npm run demo:setup' を実行してください。\n2. 実データ運用の場合は、GitHub Actions によるデータ同期パイプライン (copilot-analysis-cron.yml) が正常完了していることを確認してください。`,
+            http_status: 404,
+            affected_fields: ['live_metrics', scopeType],
+          });
         }
       } finally {
         if (!isCancelled) {
@@ -248,7 +326,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     return () => {
       isCancelled = true;
     };
-  }, [scopeType, selectedKey, indexMeta, noLiveData, dataBaseDir]);
+  }, [scopeType, selectedKey, indexMeta, noLiveData, dataBaseDir, addRuntimeIssue, clearRuntimeIssue, activeSource]);
 
   // 3. Monthly Usage Report データの取得
   useEffect(() => {
@@ -273,7 +351,22 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
       setReportError(null);
       try {
         const url = `${dataBaseDir}/reports/${selectedReportMonth}.json`;
-        const res = await fetch(url);
+        let res = await fetch(url);
+
+        // フォールバック: LIVEモードで404の場合、DEMOデータ (./data/demo/reports/) を試行
+        if (!res.ok && dataBaseDir !== './data/demo') {
+          try {
+            const fallbackUrl = `./data/demo/reports/${selectedReportMonth}.json`;
+            const fallbackRes = await fetch(fallbackUrl);
+            if (fallbackRes.ok) {
+              res = fallbackRes;
+              setIsDemoMode(true);
+            }
+          } catch {
+            // ignore fallback error
+          }
+        }
+
         if (!res.ok) {
           throw new Error(`Monthly report for ${selectedReportMonth} not found at ${url}`);
         }
@@ -281,11 +374,23 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
         if (!isCancelled) {
           reportCacheRef.current.set(`${dataBaseDir}:${selectedReportMonth}`, data);
           setCurrentReportData(data);
+          clearRuntimeIssue(`report-${selectedReportMonth}`);
         }
       } catch (e: any) {
         if (!isCancelled) {
           console.error('Failed to load report data:', e);
           setReportError(e.message);
+          addRuntimeIssue({
+            id: `runtime-error-report-${selectedReportMonth}`,
+            timestamp: new Date().toISOString(),
+            severity: 'error',
+            category: 'not_found',
+            target: `data:reports:${selectedReportMonth}`,
+            message: `月次レポートの読み込みに失敗しました: ${e.message}`,
+            details: `取得先URL: ${dataBaseDir}/reports/${selectedReportMonth}.json\nレポート月: ${selectedReportMonth}`,
+            http_status: 404,
+            affected_fields: ['monthly_report'],
+          });
         }
       } finally {
         if (!isCancelled) {
