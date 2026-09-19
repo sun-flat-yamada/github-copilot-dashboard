@@ -10,12 +10,12 @@ import {
   XCircle,
   LineChart,
   BrainCircuit,
-  Trophy,
   ArrowUpDown,
   Users as UsersIcon,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
+import { ActionColumnHeader } from './common/ActionColumnHeader';
 import { UserDrilldownPanel } from './UserDrilldownPanel';
 
 export type UserSortMetric =
@@ -131,7 +131,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
   // CSVエクスポート
   const handleExportCsv = () => {
     const headers = [
-      '順位',
+      '#',
       'GitHub User',
       '表示名',
       '仕訳グループ (部署)',
@@ -226,11 +226,11 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
         <div>
           <div className="flex items-center space-x-2">
             <UsersIcon className="w-4 h-4 text-indigo-400" />
-            <h3 className="text-sm font-bold text-slate-200">ユーザー別 利用 & 活用ランキング明細</h3>
+            <h3 className="text-sm font-bold text-slate-200">ユーザー別 利用・活用明細</h3>
             {sortBy !== 'default' && (
-              <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800">
-                <Trophy className="w-3 h-3 text-amber-400" />
-                <span>ランキング順</span>
+              <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                <ArrowUpDown className="w-3 h-3 text-slate-400" />
+                <span>並び替え適用中</span>
               </span>
             )}
           </div>
@@ -279,7 +279,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
             ))}
           </select>
 
-          {/* ソート & ランキング基準 */}
+          {/* 並び替え基準 */}
           <div className="flex items-center space-x-1.5 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1">
             <ArrowUpDown className="w-3 h-3 text-slate-400" />
             <span className="text-xs text-slate-400">並び順:</span>
@@ -289,7 +289,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
               className="bg-transparent text-xs text-slate-200 focus:outline-none"
             >
               <option value="default" className="bg-slate-900">標準 (シート順)</option>
-              <option value="acceptances" className="bg-slate-900">受諾数 降順 (採用ランキング)</option>
+              <option value="acceptances" className="bg-slate-900">受諾数 降順</option>
               <option value="suggestions" className="bg-slate-900">提案数 降順</option>
               <option value="acceptance_rate" className="bg-slate-900">受諾率 降順</option>
               <option value="chats" className="bg-slate-900">AIチャット数 降順</option>
@@ -314,7 +314,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
         <table className="w-full text-left text-xs text-slate-300">
           <thead className="bg-slate-950/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
             <tr>
-              <th className="px-4 py-3 text-center w-14">順位</th>
+              <th className="px-4 py-3 text-center w-14">#</th>
               <th className="px-4 py-3">ユーザー / 表示名</th>
               <th className="px-4 py-3">任意仕訳グループ</th>
               <th className="px-4 py-3">Cost Center</th>
@@ -330,7 +330,9 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                 </>
               )}
               <th className="px-4 py-3 text-right">費用 / 超過請求 ({scope_type === 'daily' ? '日割り' : '月額'})</th>
-              <th className="px-4 py-3 text-center w-24">アクション</th>
+              <th className="px-4 py-3 text-center w-24">
+                <ActionColumnHeader />
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60 bg-slate-900/40">
@@ -342,9 +344,6 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
               </tr>
             ) : (
               filteredUsers.map((u, index) => {
-                const isTop1 = index === 0;
-                const isTop2 = index === 1;
-                const isTop3 = index === 2;
                 const prof = profileMap.get(u.login.toLowerCase());
                 const isSelected = selectedUserLogin === u.login;
 
@@ -358,22 +357,8 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                           : 'hover:bg-slate-800/40'
                       }`}
                     >
-                      <td className="px-4 py-3 text-center font-bold">
-                        {isTop1 ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs">
-                            🥇
-                          </span>
-                        ) : isTop2 ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-400/20 text-slate-200 border border-slate-400/40 text-xs">
-                            🥈
-                          </span>
-                        ) : isTop3 ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-700/20 text-amber-400 border border-amber-700/40 text-xs">
-                            🥉
-                          </span>
-                        ) : (
-                          <span className="text-slate-500 font-mono">{index + 1}</span>
-                        )}
+                      <td className="px-4 py-3 text-center text-slate-500 font-mono text-xs">
+                        {index + 1}
                       </td>
 
                       <td className="px-4 py-3">
@@ -477,15 +462,15 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                               e.stopPropagation();
                               handleToggleUserDrilldown(u.login);
                             }}
-                            className={`px-2 py-1 rounded text-[10px] font-semibold flex items-center space-x-1 transition-all shadow-sm cursor-pointer ${
+                            className={`p-1.5 rounded transition-all shadow-sm cursor-pointer ${
                               isSelected
                                 ? 'bg-indigo-600 text-white border border-indigo-400'
                                 : 'bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60'
                             }`}
-                            title={isSelected ? 'ドリルダウンを閉じる' : 'このユーザーの利用実態・AI健全度をドリルダウン分析'}
+                            title={isSelected ? 'ドリルダウンを閉じる' : '詳細分析 (利用実態・AI健全度をドリルダウン分析)'}
+                            aria-label={isSelected ? '閉じる' : '詳細分析'}
                           >
-                            {isSelected ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                            <span>{isSelected ? '閉じる' : '詳細分析'}</span>
+                            {isSelected ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                           </button>
                           {onSelectUserForTrend && (
                             <button
@@ -494,11 +479,11 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                                 e.stopPropagation();
                                 onSelectUserForTrend(u.login);
                               }}
-                              className="px-2 py-1 rounded bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 text-[10px] font-semibold flex items-center space-x-1 transition-all cursor-pointer"
-                              title="日次利用トレンド・モデル内訳を確認"
+                              className="p-1.5 rounded bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 transition-all cursor-pointer inline-flex items-center justify-center"
+                              title="トレンド (日次利用トレンド・モデル内訳を確認)"
+                              aria-label="トレンド"
                             >
-                              <LineChart className="w-3 h-3" />
-                              <span>トレンド</span>
+                              <LineChart className="w-3.5 h-3.5" />
                             </button>
                           )}
                           {onSelectUserForDeepAnalysis && (
@@ -508,11 +493,11 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                                 e.stopPropagation();
                                 onSelectUserForDeepAnalysis(u.login);
                               }}
-                              className="px-2 py-1 rounded bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 text-[10px] font-semibold flex items-center space-x-1 transition-all shadow-sm cursor-pointer"
-                              title="非効率パターン診断・高度分析を実行"
+                              className="p-1.5 rounded bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 transition-all shadow-sm cursor-pointer inline-flex items-center justify-center"
+                              title="診断 (非効率パターン診断・高度分析を実行)"
+                              aria-label="診断"
                             >
-                              <BrainCircuit className="w-3 h-3" />
-                              <span>診断</span>
+                              <BrainCircuit className="w-3.5 h-3.5" />
                             </button>
                           )}
                         </div>
