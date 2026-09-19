@@ -1,19 +1,47 @@
 import React, { useState, useMemo } from 'react';
-import { Users, Search, Download, Trophy, BrainCircuit } from 'lucide-react';
-import { MonthlyReportAggregatedData } from '../../../../src/types/copilot';
+import { Users, Search, Download, Trophy, BrainCircuit, ChevronDown, ChevronUp, LineChart } from 'lucide-react';
+import { MonthlyReportAggregatedData, UserUsageProfile } from '../../../../src/types/copilot';
+import { adaptReportToProfiles } from '../../utils/deepAnalysisAdapter';
+import { UserDrilldownPanel } from '../UserDrilldownPanel';
 
 interface MonthlyReportUserTableProps {
   reportData: MonthlyReportAggregatedData;
+  userProfiles?: UserUsageProfile[];
+  initialSelectedLogin?: string;
   onSelectUserForDeepAnalysis?: (login: string) => void;
+  onSelectUserForTrend?: (login: string) => void;
 }
 
 export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
   reportData,
+  userProfiles,
+  initialSelectedLogin,
   onSelectUserForDeepAnalysis,
+  onSelectUserForTrend,
 }) => {
   const [userSearchQuery, setUserSearchQuery] = useState<string>('');
   const [selectedDeptFilter, setSelectedDeptFilter] = useState<string>('all');
   const [userSortBy, setUserSortBy] = useState<'spend' | 'requests'>('spend');
+  const [selectedUserLogin, setSelectedUserLogin] = useState<string | null>(initialSelectedLogin || null);
+
+  // 利用可能なプロファイル一覧 (渡されたプロファイルまたはレポートからの動的アダプト)
+  const effectiveProfiles = useMemo(() => {
+    if (userProfiles && userProfiles.length > 0) return userProfiles;
+    return adaptReportToProfiles(reportData);
+  }, [userProfiles, reportData]);
+
+  // プロファイルマップ
+  const profileMap = useMemo(() => {
+    const map = new Map<string, UserUsageProfile>();
+    for (const p of effectiveProfiles) {
+      map.set(p.login.toLowerCase(), p);
+    }
+    return map;
+  }, [effectiveProfiles]);
+
+  const handleToggleUserDrilldown = (login: string) => {
+    setSelectedUserLogin((prev) => (prev === login ? null : login));
+  };
 
   // 部署一覧 (フィルター用)
   const departmentsList = useMemo(() => {
@@ -172,69 +200,146 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                 const isTop1 = index === 0;
                 const isTop2 = index === 1;
                 const isTop3 = index === 2;
+                const isSelected = selectedUserLogin === u.login;
+                const prof = profileMap.get(u.login.toLowerCase());
 
                 return (
-                  <tr key={u.login} className="hover:bg-slate-800/40 transition">
-                    <td className="py-2.5 px-3 text-center font-bold">
-                      {isTop1 ? (
-                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs">
-                          🥇
+                  <React.Fragment key={u.login}>
+                    <tr
+                      onClick={() => handleToggleUserDrilldown(u.login)}
+                      className={`cursor-pointer transition ${
+                        isSelected
+                          ? 'bg-indigo-950/60 border-l-4 border-indigo-500'
+                          : 'hover:bg-slate-800/40'
+                      }`}
+                    >
+                      <td className="py-2.5 px-3 text-center font-bold">
+                        {isTop1 ? (
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs">
+                            🥇
+                          </span>
+                        ) : isTop2 ? (
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-400/20 text-slate-200 border border-slate-400/40 text-xs">
+                            🥈
+                          </span>
+                        ) : isTop3 ? (
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-700/20 text-amber-400 border border-amber-700/40 text-xs">
+                            🥉
+                          </span>
+                        ) : (
+                          <span className="text-slate-500 font-mono">{index + 1}</span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <div className="flex items-center space-x-1.5">
+                          <span className="font-semibold text-slate-100">{u.display_name}</span>
+                          {isSelected && (
+                            <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-500 text-white">
+                              分析中
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-mono">@{u.login}</div>
+                      </td>
+                      <td className="py-2.5 px-3 text-slate-300">
+                        <span className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800">
+                          {u.department}
                         </span>
-                      ) : isTop2 ? (
-                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-400/20 text-slate-200 border border-slate-400/40 text-xs">
-                          🥈
+                      </td>
+                      <td className="py-2.5 px-3 text-slate-400 font-mono text-[11px]">{u.cost_center}</td>
+                      <td className="py-2.5 px-3">
+                        <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-purple-950/60 text-purple-300 border border-purple-800/50">
+                          {u.primary_model}
                         </span>
-                      ) : isTop3 ? (
-                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-700/20 text-amber-400 border border-amber-700/40 text-xs">
-                          🥉
-                        </span>
-                      ) : (
-                        <span className="text-slate-500 font-mono">{index + 1}</span>
-                      )}
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <div className="font-semibold text-slate-100">{u.display_name}</div>
-                      <div className="text-[11px] text-slate-500 font-mono">@{u.login}</div>
-                    </td>
-                    <td className="py-2.5 px-3 text-slate-300">
-                      <span className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800">
-                        {u.department}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-slate-400 font-mono text-[11px]">{u.cost_center}</td>
-                    <td className="py-2.5 px-3">
-                      <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-purple-950/60 text-purple-300 border border-purple-800/50">
-                        {u.primary_model}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-right font-medium text-slate-200">
-                      {u.total_requests.toLocaleString()}
-                    </td>
-                    <td className="py-2.5 px-3 text-right">
-                      <div className="font-bold text-slate-100">
-                        ${(u.gross_spend_usd ?? u.total_spend_usd).toFixed(2)}
-                      </div>
-                      <div className="text-[10px] text-amber-400 font-mono">
-                        超過: ${(u.net_spend_usd ?? u.total_spend_usd).toFixed(2)}
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-3 text-right text-slate-400 font-mono text-[11px]">
-                      {u.last_activity_date || '-'}
-                    </td>
-                    <td className="py-2.5 px-3 text-center">
-                      {onSelectUserForDeepAnalysis && (
-                        <button
-                          type="button"
-                          onClick={() => onSelectUserForDeepAnalysis(u.login)}
-                          className="px-2 py-1 rounded bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 text-[10px] font-semibold inline-flex items-center space-x-1 transition-all shadow-sm"
-                          title="このユーザーの非効率パターン・高度診断を実行"
-                        >
-                          <BrainCircuit className="w-3 h-3" />
-                          <span>診断</span>
-                        </button>
-                      )}
-                    </td>
-                  </tr>
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-medium text-slate-200">
+                        {u.total_requests.toLocaleString()}
+                      </td>
+                      <td className="py-2.5 px-3 text-right">
+                        <div className="font-bold text-slate-100">
+                          ${(u.gross_spend_usd ?? u.total_spend_usd).toFixed(2)}
+                        </div>
+                        <div className="text-[10px] text-amber-400 font-mono">
+                          超過: ${(u.net_spend_usd ?? u.total_spend_usd).toFixed(2)}
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-3 text-right text-slate-400 font-mono text-[11px]">
+                        {u.last_activity_date || '-'}
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <div className="flex items-center justify-center space-x-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleUserDrilldown(u.login);
+                            }}
+                            className={`px-2 py-1 rounded text-[10px] font-semibold flex items-center space-x-1 transition-all shadow-sm cursor-pointer ${
+                              isSelected
+                                ? 'bg-indigo-600 text-white border border-indigo-400'
+                                : 'bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60'
+                            }`}
+                            title={isSelected ? 'ドリルダウンを閉じる' : 'このユーザーの利用実態・AI健全度をドリルダウン分析'}
+                          >
+                            {isSelected ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                            <span>{isSelected ? '閉じる' : '詳細分析'}</span>
+                          </button>
+                          {onSelectUserForTrend && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectUserForTrend(u.login);
+                              }}
+                              className="px-2 py-1 rounded bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 text-[10px] font-semibold flex items-center space-x-1 transition-all cursor-pointer"
+                              title="日次利用トレンド・モデル内訳を確認"
+                            >
+                              <LineChart className="w-3 h-3" />
+                              <span>トレンド</span>
+                            </button>
+                          )}
+                          {onSelectUserForDeepAnalysis && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectUserForDeepAnalysis(u.login);
+                              }}
+                              className="px-2 py-1 rounded bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 text-[10px] font-semibold inline-flex items-center space-x-1 transition-all shadow-sm cursor-pointer"
+                              title="このユーザーの非効率パターン・高度診断を実行"
+                            >
+                              <BrainCircuit className="w-3 h-3" />
+                              <span>診断</span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                    {isSelected && (
+                      <tr key={`${u.login}-drilldown`} className="bg-slate-950">
+                        <td colSpan={9} className="p-0 border-b-2 border-indigo-500/60">
+                          <UserDrilldownPanel
+                            login={u.login}
+                            displayName={u.display_name}
+                            department={u.department}
+                            costCenter={u.cost_center}
+                            organization={u.organization}
+                            primaryModel={u.primary_model}
+                            totalRequests={u.total_requests}
+                            monthlyCostUsd={u.gross_spend_usd ?? u.total_spend_usd}
+                            excessBillingUsd={u.net_spend_usd ?? u.total_spend_usd}
+                            lastActivity={u.last_activity_date}
+                            surface={u.surface}
+                            profile={prof}
+                            allProfiles={effectiveProfiles}
+                            onSelectUserForTrend={onSelectUserForTrend}
+                            onSelectUserForDeepAnalysis={onSelectUserForDeepAnalysis}
+                            onClose={() => setSelectedUserLogin(null)}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 );
               })
             )}

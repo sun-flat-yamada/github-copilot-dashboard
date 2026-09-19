@@ -98,7 +98,8 @@ Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint 
 - **Full Ranking Consolidation**: Unifies the legacy ranking view (`ranking`) directly into the user details view (`users`). In both GitHub Pages (report data) and live metrics environments, users can inspect per-user ranking positions with podium badges (🥇, 🥈, 🥉, #N) directly within the user details table.
 - **3-Axis & Group Integration**: Seamlessly ranks and sorts members across Cost Centers, Organizations, and Custom Allocation Groups.
 - **Metric Sorting**: One-click sorting by acceptances (adoption ranking), suggestions, chat turns, acceptance rate, incurred cost, or inactive days.
-- **Direct Navigation**: Direct transitions to individual model trends (`trend`) and deep diagnostics (`deep_analysis`).
+- **User Selection & Inline Drill-down Analysis (`UserDrilldownPanel`)**: Clicking any user row or clicking the "Drilldown" button expands a comprehensive diagnostic panel directly beneath the row without navigating away. Allows instant 360-degree micro-analysis of FinOps costs (monthly/daily/excess billing), productivity KPIs, daily trends with AI model breakdown charts, overall AI health score (0-100), and 5 anti-pattern diagnostic evaluations with actionable prescriptions while preserving table context. Fully compatible with Live Metrics, Monthly Usage Report, and User Upload (CSV) data sources.
+- **Direct Navigation**: Direct transitions to individual model trends (`trend`) and deep diagnostics (`deep_analysis`) from row actions or within the drilldown panel.
 
 ### 2.8 Cost Center Budget Cards
 - Displays budget limit, free allowance, current expenditure, and remaining capacity with color-coded progress bars.
