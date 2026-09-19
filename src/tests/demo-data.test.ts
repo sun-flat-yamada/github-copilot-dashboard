@@ -1,4 +1,4 @@
-import { describe, it } from 'node:test';
+import { describe, it, before } from 'node:test';
 import * as assert from 'node:assert/strict';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -16,6 +16,14 @@ describe('Live Metrics DEMO Data & Referencing Tests', () => {
   const projectRoot = path.resolve(import.meta.dirname, '../..');
   const demoDataDir = path.resolve(projectRoot, 'data/demo');
   const publicDemoDir = path.resolve(projectRoot, 'dashboard/public/data/demo');
+
+  before(() => {
+    // CI環境などのクリーンな作業ツリーでは data/ が .gitignore されているため、
+    // テスト実行前にローカル DEMO パーティションを確実に初期生成する。
+    if (!fs.existsSync(demoDataDir) || !fs.existsSync(publicDemoDir)) {
+      setupForkDemoData({ localOnly: true, push: false });
+    }
+  });
 
   it('verifies DEMO data directory structure exists in both data/demo and dashboard/public/data/demo', () => {
     assert.ok(fs.existsSync(demoDataDir), 'data/demo directory must exist');
