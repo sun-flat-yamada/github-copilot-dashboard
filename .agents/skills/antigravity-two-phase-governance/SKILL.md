@@ -94,10 +94,11 @@ Antigravity の UI パーサーが `implementation_plan.md` を「実行可能�
      - `Summary: "<変更概要の簡潔な説明>"`
    - ※ `ask_question` ツールの併用呼び出しは禁止です。疑問点はすべて `## Open Questions` に記載し、承認は UI の `[Proceed]` ボタンに一任します。
 
-4. **チャットへのリンク・再要約の全面禁止 ＆ 即時ターン終了 (Immediate Turn End)**:
-   - **`file:///` リンク出力の全面禁止**: チャット内に `[implementation_plan.md](file:///...)` 等のリンクを出力してはなりません。Antigravity はアーティファクト作成時に専用 Plan ペイン（Artifact Preview）を自動展開するためリンクは不要であり、リンクをクリックすると VS Code 通常エディタタブとして開かれて Plan ペインとの連動が破損します。
-   - **計画の再要約・説明の全面禁止**: Antigravity システムプロンプト原典（`The user will automatically see any new and modified plans you create, so DO NOT re-summarize the plan in your request.`）に厳格に従い、計画の内容・背景・実施事項をチャットで一切解説・箇条書きしてはなりません。疑問点や確認事項はすべて計画内の `## User Review Required` および `## Open Questions` に記載してください。
-   - **極小合図と即時ターン終了**: 計画アーティファクト作成後は、チャットに余計な発話を行わず、定型合図（`実装計画を作成しました。内容をご確認いただき、よろしければ画面上の **[Proceed]** ボタンを押してください。`）の1行のみを出力し、**他のツール呼び出しを一切行わずに直ちにターンを終了（Stop calling tools to end your turn）** します。チャットに対話文やリンクを連ねると、UI 状態機械が「通常対話待機（Waiting for regular chat input）」へと遷移し、入力欄上部の `[Proceed]` ボタンが抑制（消滅）します。
+4. **同一ターンでのコード変更ゼロ（`modifiedFileUris === 0`） ＆ 公式リンク提示と即時終了**:
+   - **同一ターンでの通常コード変更厳禁**: UI エンジン（`jetskiAgent`）の条件式 `w = G?.requestFeedback && t && !d && r.length === 0` により、`implementation_plan.md` を作成・更新するターンにおいて、リポジトリ内の通常ファイル（`.ts`, `.js`, `.json` 等）を変更してはなりません。通常ファイル変更が 1 件でも存在すると `r.length > 0` となり、**`[Proceed]` ボタンが消滅** します。
+   - **最新ターン（`isLatest`）での即時終了**: `Proceed` ボタンは「そのターンでまさに今 `write_to_file` された最新メッセージ」のアーティファクトカード内でのみ描画されます。計画作成後は他のツール呼び出しを行わずに直ちにターンを終了（Stop calling tools to end your turn）してください。
+   - **公式クリック可能リンクの提示**: Antigravity 公式指示（`You MUST create clickable links for all files...`）に準拠し、チャット本文には必ず `[implementation_plan.md](file:///...)` のリンクを明記してユーザーの即時閲覧導線を確保してください。
+   - **ボタンの描画位置の認識**: `[Proceed]` ボタンはチャット入力欄の上部ではなく、**エージェントの返答メッセージ内に表示される「アーティファクトカード（implementation_plan.md の枠）」の中**に表示されます。ユーザーへ案内する際はこの位置を正しく案内してください。
 
 ---
 
