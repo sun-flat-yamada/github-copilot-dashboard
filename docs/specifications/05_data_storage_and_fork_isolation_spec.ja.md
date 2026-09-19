@@ -108,8 +108,33 @@ data/
 │   └── reports/
 │       ├── 2026-08.json              # 月次レポート集計済みデータ
 │       └── 2026-09.json
-└── index.json                        # 利用可能な期間・レポートメタデータ一覧
 ```
+
+### 2.1 DEMO専用データ格納パーティション (`data/demo/`)
+
+実エンタープライズのGitHub API認証情報を持たない環境での即時デモ表示、機能評価、およびCIテストを安定して実施可能にするため、独立データブランチ `copilot-data` 配下にDEMO専用の格納場所 `data/demo/` を配置する：
+
+```
+copilot-data (独立データ永続化ブランチ)
+├── data/
+│   ├── raw/                           # 実運用のAPI生レスポンス (Append-Only)
+│   ├── processed/                     # 実運用の集計スコープデータ
+│   ├── reports/                       # 実運用の月次利用レポートCSV
+│   ├── index.json                     # 本番用メタデータインデックス
+│   └── demo/                          # 🌟 DEMO専用シミュレーションデータセット
+│       ├── raw/                       # DEMO用API生レスポンスフィクスチャ
+│       ├── reports/                   # DEMO用月次利用レポートCSVフィクスチャ
+│       ├── processed/                 # DEMO用集計スコープ (daily, monthly, custom, trends, deep-analysis, reports)
+│       ├── index.json                 # DEMO用メタデータインデックス (is_mock_mode: true)
+│       └── error-log.json             # DEMO用診断エラー・警告ログ
+```
+
+#### DEMO動作時の参照切り替え仕様
+- **SPAフロントエンド動的解決**: URLクエリパラメータ（`?demo=true` や `?mock=true`）、環境変数 `VITE_MOCK_MODE=true`、またはインデックスの `is_mock_mode: true` を検知した場合、データ参照ベースパスを `./data/` から `./data/demo/` へ自動的に切り替える。
+- **ヘッダーバッジ対話切替**: ヘッダー上の `DEMO (Mock)` / `LIVE` バッジをクリックすることで、実データとDEMOデータをシームレスに切り替え可能。
+- **データ生成・同期コマンド**:
+  - `npm run demo:generate`: 2026年最新仕様の完全なLive Metrics DEMOデータセットを `data/demo/` および `dashboard/public/data/demo/` に生成。
+  - `npm run demo:sync [-- --push]`: 隔離された一時ワークツリーを経由して `data/demo/` を `copilot-data` ブランチへ安全にコミット・反映（`main` ブランチは一切無変更）。
 
 ---
 

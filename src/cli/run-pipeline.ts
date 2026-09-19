@@ -14,7 +14,8 @@ async function main() {
   console.log('🚀 GitHub Copilot Analytics Pipeline (2026.09 LTS)');
   console.log('=====================================================');
 
-  const isMock = process.argv.includes('--mock') || process.env.MOCK_MODE === 'true';
+  const isMock =
+    process.argv.includes('--mock') || process.argv.includes('--demo') || process.env.MOCK_MODE === 'true';
 
   // 1. 各モジュールの初期化
   const client = new GitHubCopilotClient({ mockMode: isMock });
@@ -22,7 +23,7 @@ async function main() {
   //           > COPILOT_USER_MAPPING_BASE64 > 未設定時のフォールバック
   const resolver = new AttributeResolver(loadUserMappingFromFile(process.env.COPILOT_USER_MAPPING_FILE));
   const aggregator = new MetricsAggregator();
-  const storage = new ForkSafeStorage();
+  const storage = new ForkSafeStorage({ isDemo: isMock });
   const reportParser = new ReportParser(resolver);
 
   console.log(`📋 AttributeResolver: Loaded ${resolver.getMappingCount()} custom user attribute mapping(s).`);
