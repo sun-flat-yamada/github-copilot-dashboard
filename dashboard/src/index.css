@@ -9,17 +9,31 @@
   --color-copilot-purple: #8957e5;
 }
 
-:root {
+:root,
+html.dark,
+[data-theme="dark"] {
   color-scheme: dark;
+  --color-slate-950: #090d13;
+  --color-slate-900: #161b22;
+  --color-slate-850: #1c2128;
+  --color-slate-800: #30363d;
+  --color-slate-700: #484f58;
+  --color-slate-600: #6e7681;
+  --color-slate-500: #8b949e;
+  --color-slate-400: #8b949e;
+  --color-slate-300: #c9d1d9;
+  --color-slate-200: #e6edf3;
+  --color-slate-100: #f0f6fc;
 }
 
 body {
   margin: 0;
-  background-color: #0d1117;
-  color: #c9d1d9;
+  background-color: var(--color-slate-950);
+  color: var(--color-slate-300);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - Dark Mode */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -33,6 +47,134 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #484f58;
+}
+
+/* ==========================================================================
+   Light Mode Color Remapping (Semantic Design Tokens)
+   ========================================================================== */
+html.light,
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Slate Gray System Remapping */
+  --color-slate-950: #f8fafc;
+  --color-slate-900: #ffffff;
+  --color-slate-850: #f1f5f9;
+  --color-slate-800: #e2e8f0;
+  --color-slate-700: #cbd5e1;
+  --color-slate-600: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-400: #64748b;
+  --color-slate-300: #334155;
+  --color-slate-200: #1e293b;
+  --color-slate-100: #0f172a;
+
+  /* Copilot Brand Colors for Light Mode */
+  --color-copilot-dark: #f8fafc;
+  --color-copilot-card: #ffffff;
+  --color-copilot-border: #e2e8f0;
+
+  /* Status and Tint Accents for Light Mode */
+  --color-emerald-950: #ecfdf5;
+  --color-emerald-800: #a7f3d0;
+  --color-emerald-400: #059669;
+
+  --color-amber-950: #fffbeb;
+  --color-amber-800: #fde68a;
+  --color-amber-400: #b45309;
+  --color-amber-300: #92400e;
+  --color-amber-200: #78350f;
+
+  --color-indigo-950: #eef2ff;
+  --color-indigo-800: #c7d2fe;
+  --color-indigo-400: #4f46e5;
+
+  --color-purple-950: #faf5ff;
+  --color-purple-800: #e9d5ff;
+  --color-purple-400: #9333ea;
+
+  --color-blue-950: #eff6ff;
+  --color-blue-800: #bfdbfe;
+  --color-blue-400: #2563eb;
+
+  --color-rose-950: #fff1f2;
+  --color-rose-800: #fecdd3;
+  --color-rose-400: #e11d48;
+
+  --color-red-950: #fef2f2;
+  --color-red-800: #fecaca;
+  --color-red-400: #dc2626;
+  --color-red-300: #b91c1c;
+  --color-red-200: #991b1b;
+  --color-red-100: #7f1d1d;
+
+  --color-cyan-950: #ecfeff;
+  --color-cyan-800: #a5f3fc;
+  --color-cyan-400: #0891b2;
+}
+
+/* Light mode body background & scrollbar */
+html.light body {
+  background-color: #f8fafc;
+  color: #1e293b;
+}
+
+html.light ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+html.light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Light mode select option styling */
+html.light option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+/* Light mode text contrast enhancements for headings with text-white */
+html.light :is(h1, h2, h3, h4, h5, h6).text-white,
+html.light th.text-white,
+html.light .text-white:not(
+  [class*="bg-indigo-"],
+  [class*="bg-purple-"],
+  [class*="bg-emerald-"],
+  [class*="bg-rose-"],
+  [class*="bg-red-"],
+  [class*="bg-blue-"],
+  [class*="bg-amber-600"],
+  [class*="bg-gradient-"],
+  [class*="from-"]
+) {
+  color: #0f172a !important;
+}
+
+html.light .hover\:text-white:hover {
+  color: #0f172a;
+}
+
+/* Light mode Recharts tooltips and grids */
+html.light .recharts-default-tooltip {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04) !important;
+}
+
+html.light .recharts-cartesian-grid line,
+html.light .recharts-polar-grid line,
+html.light .recharts-polar-grid polygon,
+html.light .recharts-polar-grid circle {
+  stroke: #e2e8f0 !important;
+}
+
+html.light .recharts-text,
+html.light .recharts-cartesian-axis-tick-value,
+html.light .recharts-polar-angle-axis-tick-value {
+  fill: #64748b !important;
 }
 
 /* Radar Chart Focus Animation: Gentle slow breathing pulse (no white glow, pure line opacity) */
@@ -53,4 +195,3 @@ body {
   stroke-width: 3.5px !important;
   stroke-opacity: 1 !important;
 }
-
