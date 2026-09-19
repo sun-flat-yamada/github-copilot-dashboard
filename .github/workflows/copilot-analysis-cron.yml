@@ -188,8 +188,13 @@ jobs:
           if [ -d "data/demo" ]; then
             echo "📦 Staging DEMO partition into dashboard/public/data/demo for GitHub Pages deployment..."
             mkdir -p dashboard/public/data/demo
+            # 1. ルート直下のメタデータ (index.json, error-log.json等) をコピー
             cp -r data/demo/* dashboard/public/data/demo/
-            echo "✅ DEMO partitions successfully staged."
+            # 2. 永続ストレージの processed/* を SPA 公開パスのルート直下にも展開 (二重防護)
+            if [ -d "data/demo/processed" ]; then
+              cp -r data/demo/processed/* dashboard/public/data/demo/
+            fi
+            echo "✅ DEMO partitions successfully staged (both root and processed compatibility paths)."
           else
             echo "ℹ️ No data/demo directory found to stage."
           fi
