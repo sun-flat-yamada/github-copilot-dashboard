@@ -58,6 +58,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onOpenErrorModal,
   onOpenAboutModal,
 }) => {
+  const isMockMode =
+    indexMeta?.is_mock_mode ??
+    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_MOCK_MODE === 'true');
+
   return (
     <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
       <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3 sm:gap-6">
@@ -71,6 +75,29 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               <h1 className="text-sm sm:text-base font-bold text-white tracking-tight whitespace-nowrap">
                 GitHub Copilot Analytics
               </h1>
+              {/* 動作モードインジケーター (Mock / DEMO vs LIVE) */}
+              {isMockMode ? (
+                <span
+                  data-testid="mock-mode-badge"
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-amber-500/15 border border-amber-500/40 text-amber-300 shadow-sm whitespace-nowrap select-none cursor-help"
+                  title="【DEMO / Mock モード】このダッシュボードに表示されているデータはすべてシミュレーション用の架空（デモ用）データです。実データではありません。"
+                >
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
+                  </span>
+                  <span>DEMO (Mock)</span>
+                </span>
+              ) : (
+                <span
+                  data-testid="live-mode-badge"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 whitespace-nowrap select-none cursor-help"
+                  title="【LIVE 実データモード】GitHub API / 月次利用レポートの実績データを表示しています。"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  <span>LIVE</span>
+                </span>
+              )}
               <button
                 onClick={onOpenAboutModal}
                 className="p-1 rounded-lg text-slate-400 hover:text-indigo-300 hover:bg-slate-800 transition-colors flex items-center cursor-pointer flex-shrink-0"
