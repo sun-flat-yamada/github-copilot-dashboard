@@ -58,6 +58,10 @@ export const AboutModal: React.FC<AboutModalProps> = ({
 
   const formattedDate = formatAnalysisDate(indexMeta?.generated_at);
 
+  const isMockMode =
+    indexMeta?.is_mock_mode ??
+    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_MOCK_MODE === 'true');
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in"
@@ -114,18 +118,31 @@ export const AboutModal: React.FC<AboutModalProps> = ({
 
           {/* 2. バージョン & リポジトリ情報 */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* バージョン情報 */}
+            {/* バージョン & 動作モード情報 */}
             <div className="p-3.5 rounded-xl bg-slate-950/40 border border-slate-800 flex items-start space-x-3">
               <div className="p-1.5 rounded-lg bg-slate-800 text-slate-400 mt-0.5">
                 <Layers className="w-4 h-4" />
               </div>
               <div>
-                <span className="text-slate-400 block font-medium">仕様バージョン</span>
-                <span className="text-slate-200 font-semibold text-xs mt-0.5 inline-block">
-                  2026.09 LTS
-                </span>
+                <span className="text-slate-400 block font-medium">仕様バージョン & 動作モード</span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-slate-200 font-semibold text-xs inline-block">
+                    2026.09 LTS
+                  </span>
+                  {isMockMode ? (
+                    <span className="text-[10px] px-1.5 py-0.2 rounded font-bold bg-amber-950/80 text-amber-300 border border-amber-700/80">
+                      DEMO (Mock)
+                    </span>
+                  ) : (
+                    <span className="text-[10px] px-1.5 py-0.2 rounded font-medium bg-emerald-950/80 text-emerald-300 border border-emerald-700/80">
+                      LIVE
+                    </span>
+                  )}
+                </div>
                 <span className="block text-[10px] text-slate-500 mt-0.5">
-                  GitHub Enterprise 3-Axis Allocation
+                  {isMockMode
+                    ? 'シミュレーション用架空(DEMO)データ'
+                    : 'GitHub Enterprise 3-Axis Allocation'}
                 </span>
               </div>
             </div>

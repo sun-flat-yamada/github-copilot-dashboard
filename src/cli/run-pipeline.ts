@@ -264,6 +264,7 @@ async function main() {
     available_reports: availableReportMonths,
     rolling_1year_trend_file: 'trends/rolling-1year.json',
     deep_analysis_months: storage.getStoredDeepAnalysisMonths(),
+    is_mock_mode: isMock,
     default_scopes: {
       latest_day: hasLiveMetrics ? referenceDate : undefined,
       latest_month: monthKey || rolling12Months[0],

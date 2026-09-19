@@ -367,6 +367,7 @@ export interface IndexMetadata {
   available_reports?: string[]; // e.g. ["2026-09", "2026-08"]
   rolling_1year_trend_file?: string; // e.g. "trends/rolling-1year.json"
   deep_analysis_months?: string[]; // ディープ分析用アーカイブが存在する月一覧
+  is_mock_mode?: boolean; // モック動作モード (DEMO用シミュレーションデータ) の有無
   default_scopes: {
     // ライブ Copilot Metrics/Seats データが1件も無い場合 (認証情報未設定・
     // Enterprise Owner権限なし等) は捏造せず undefined とする。
