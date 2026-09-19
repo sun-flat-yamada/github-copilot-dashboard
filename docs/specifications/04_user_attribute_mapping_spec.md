@@ -191,3 +191,22 @@ printed, but encryption/decryption still proceeds (since the GPG layer is format
   is torn down at the end of the job) and is never persisted to the repository or uploaded as an artifact.
 - Store the passphrase only as a Secret named `COPILOT_USER_MAPPING_PASSPHRASE`; never log or hardcode it
   in source code.
+
+---
+
+## 7. DEMO Environment Encrypted Mapping Fixture (DEMO Mapping Fixture)
+
+### 7.1 Objective and Background
+To allow full inspection and validation of multi-axis breakdowns (Department, CostCenter, Organization, and tags) during DEMO / Mock executions and downstream fork evaluations without exposing any real employee PII.
+
+### 7.2 Architecture and Specification
+1. **In-Repository Fixture**:
+   - `fixtures/demo/copilot-user-mapping.demo.json.gpg`
+   - Encrypts 94 synthetic mock user profiles (85 Live Metrics users + Monthly Usage Report users).
+   - AES256 GPG symmetric encryption (default passphrase: `copilot-demo-secret-passphrase-2026`).
+2. **Automated Deployment**:
+   - When `scripts/generate-demo-data.ts` runs, the encrypted fixture is deployed to both `data/demo/config/` and `dashboard/public/data/demo/config/`.
+3. **Automatic Fallback Loader**:
+   - When running `--mock` or `MOCK_DATA=true`, if `COPILOT_USER_MAPPING` or `COPILOT_USER_MAPPING_FILE` is not set, `src/cli/run-pipeline.ts` invokes `loadDemoUserMapping()` from `src/collector/demo-mapping-loader.ts`.
+   - A temporary plaintext mapping file is generated under the system temp directory and supplied to `AttributeResolver`, preventing demo metrics from falling back to `未分類 (Unassigned)`.
+

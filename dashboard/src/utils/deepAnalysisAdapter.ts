@@ -80,7 +80,29 @@ export function adaptReportToProfiles(
         accumulatedCost += dayCost;
 
         const modelBreakdown: Record<string, number> = {};
-        if (dayChats > 0) {
+        if (trend.model_breakdown && Object.keys(trend.model_breakdown).length > 0) {
+          const mb = trend.model_breakdown;
+          const trendDayTotal = Object.values(mb).reduce((s: number, v: number) => s + v, 0);
+          if (trendDayTotal > 0 && dayChats > 0) {
+            let acc = 0;
+            const entries = Object.entries(mb);
+            entries.forEach(([m, count], mIdx) => {
+              const numCount = Number(count);
+              const mRatio = numCount / trendDayTotal;
+              const val =
+                mIdx === entries.length - 1
+                  ? Math.max(0, dayChats - acc)
+                  : Math.round(dayChats * mRatio);
+              acc += val;
+              if (val > 0) {
+                const normM = normalizeModelId(m);
+                modelBreakdown[normM] = (modelBreakdown[normM] || 0) + val;
+              }
+            });
+          }
+        }
+
+        if (Object.keys(modelBreakdown).length === 0 && dayChats > 0) {
           modelBreakdown[normModelId] = dayChats;
         }
 
@@ -112,9 +134,15 @@ export function adaptReportToProfiles(
       });
     }
 
-    const modelUsageTotals: Record<string, number> = {
-      [normModelId]: totalChats,
-    };
+    const modelUsageTotals: Record<string, number> = {};
+    dailyHistory.forEach((h) => {
+      Object.entries(h.model_breakdown || {}).forEach(([m, cnt]) => {
+        modelUsageTotals[m] = (modelUsageTotals[m] || 0) + cnt;
+      });
+    });
+    if (Object.keys(modelUsageTotals).length === 0) {
+      modelUsageTotals[normModelId] = totalChats;
+    }
 
     return {
       login: user.login,

@@ -318,6 +318,7 @@ export interface ReportDailyTrend {
   requests: number;
   spend_usd: number;
   active_users: number;
+  model_breakdown?: Record<string, number>;
 }
 
 export interface ReportUserDetail {

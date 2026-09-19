@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { UserUsageProfile } from '../../../src/types/copilot';
+import { DeepAnalysisDataSourceInfo } from '../../../src/types/deep-analysis';
 import {
   ResponsiveContainer,
   Bar,
@@ -19,18 +20,36 @@ import {
   Building2,
   Compass,
   BrainCircuit,
+  Database,
+  Layers,
 } from 'lucide-react';
 
 interface UserTrendViewerProps {
   profiles?: UserUsageProfile[];
   initialSelectedLogin?: string;
+  sourceInfo?: DeepAnalysisDataSourceInfo;
   onOpenRadar?: (modelId?: string) => void;
   onOpenDeepAnalysis?: (login: string) => void;
 }
 
+// 既知モデルのカラーパレット定義 (未知のモデルはフォールバックパレットを使用)
+const MODEL_COLOR_MAP: Record<string, { name: string; color: string }> = {
+  'claude-3-7-sonnet': { name: 'Claude 3.7 Sonnet', color: '#d97706' }, // amber-600
+  'claude-3-5-sonnet': { name: 'Claude 3.5 Sonnet', color: '#f59e0b' }, // amber-500
+  'gpt-4o': { name: 'GPT-4o', color: '#10b981' }, // emerald-500
+  'gpt-4o-mini': { name: 'GPT-4o mini', color: '#34d399' }, // emerald-400
+  'o1': { name: 'o1 (推論)', color: '#6366f1' }, // indigo-500
+  'o3-mini': { name: 'o3-mini', color: '#818cf8' }, // indigo-400
+  'gemini-2-0-flash': { name: 'Gemini 2.0 Flash', color: '#3b82f6' }, // blue-500
+  'gemini-1-5-pro': { name: 'Gemini 1.5 Pro', color: '#60a5fa' }, // blue-400
+};
+
+const FALLBACK_COLORS = ['#ec4899', '#8b5cf6', '#14b8a6', '#f97316', '#a855f7'];
+
 export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
   profiles = [],
   initialSelectedLogin,
+  sourceInfo,
   onOpenRadar,
   onOpenDeepAnalysis,
 }) => {
@@ -38,10 +57,64 @@ export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
     initialSelectedLogin || (profiles[0]?.login || '')
   );
 
+  // 外部からの初期選択・切替追従 (テーブルからの「トレンド」クリック等)
+  useEffect(() => {
+    if (initialSelectedLogin && profiles.some((p) => p.login === initialSelectedLogin)) {
+      setSelectedLogin(initialSelectedLogin);
+    } else if (profiles.length > 0 && !profiles.some((p) => p.login === selectedLogin)) {
+      setSelectedLogin(profiles[0]?.login || '');
+    }
+  }, [initialSelectedLogin, profiles, selectedLogin]);
+
   // 現在選択されているユーザープロファイル
   const currentProfile = useMemo(() => {
     return profiles.find((p) => p.login === selectedLogin) || profiles[0] || null;
   }, [profiles, selectedLogin]);
+
+  // 選択ユーザーの日次履歴に登場する全モデルキーを動的検出
+  const activeModelConfigs = useMemo(() => {
+    if (!currentProfile || !currentProfile.daily_history) return [];
+
+    const foundModels = new Set<string>();
+    currentProfile.daily_history.forEach((h) => {
+      if (h.model_breakdown) {
+        Object.keys(h.model_breakdown).forEach((m) => foundModels.add(m));
+      }
+    });
+
+    // プロファイルサマリーの model_usage_totals も確認
+    if (currentProfile.model_usage_totals) {
+      Object.keys(currentProfile.model_usage_totals).forEach((m) => foundModels.add(m));
+    }
+
+    // モデルが1つも無い場合のフォールバック（代表モデル）
+    if (foundModels.size === 0) {
+      foundModels.add('claude-3-7-sonnet');
+      foundModels.add('gpt-4o');
+      foundModels.add('o1');
+      foundModels.add('gemini-2-0-flash');
+    }
+
+    const modelList = Array.from(foundModels);
+    let fallbackIdx = 0;
+
+    return modelList.map((modelId) => {
+      if (MODEL_COLOR_MAP[modelId]) {
+        return {
+          id: modelId,
+          name: MODEL_COLOR_MAP[modelId].name,
+          color: MODEL_COLOR_MAP[modelId].color,
+        };
+      }
+      const color = FALLBACK_COLORS[fallbackIdx % FALLBACK_COLORS.length];
+      fallbackIdx++;
+      return {
+        id: modelId,
+        name: modelId,
+        color,
+      };
+    });
+  }, [currentProfile]);
 
   if (!currentProfile) {
     return (
@@ -52,30 +125,69 @@ export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
     );
   }
 
-  // チャート用データ加工
-  const chartData = currentProfile.daily_history.map((h) => {
-    const claude = h.model_breakdown['claude-3-7-sonnet'] || 0;
-    const gpt4o = h.model_breakdown['gpt-4o'] || 0;
-    const o1 = h.model_breakdown['o1'] || 0;
-    const gemini = h.model_breakdown['gemini-2-0-flash'] || 0;
-    const totalModels = claude + gpt4o + o1 + gemini;
-
-    return {
-      date: h.date.substring(5), // MM-DD
+  // チャート用データ加工 (動的モデル集計)
+  const chartData = (currentProfile.daily_history || []).map((h) => {
+    const row: Record<string, any> = {
+      date: h.date.length >= 10 ? h.date.substring(5) : h.date, // MM-DD
       fullDate: h.date,
-      'Claude 3.7 Sonnet': claude,
-      'GPT-4o': gpt4o,
-      'o1 (推論)': o1,
-      'Gemini 2.0 Flash': gemini,
-      totalModels,
-      suggestions: h.suggestions,
-      acceptances: h.acceptances,
-      acceptanceRate: Math.round(h.acceptance_rate * 100),
+      suggestions: h.suggestions || 0,
+      acceptances: h.acceptances || 0,
+      acceptanceRate: Math.round((h.acceptance_rate || 0) * 100),
     };
+
+    let totalModels = 0;
+    activeModelConfigs.forEach((cfg) => {
+      const val = h.model_breakdown?.[cfg.id] || 0;
+      row[cfg.name] = val;
+      totalModels += val;
+    });
+
+    // breakdown が無くとも総チャット数があればフォールバック
+    row.totalModels = totalModels > 0 ? totalModels : (h.total_chats || 0);
+
+    return row;
   });
+
+  // 最も多く利用されているモデルの特定 (レーダー連携用)
+  const primaryModelId = useMemo(() => {
+    if (!currentProfile) return 'claude-3-7-sonnet';
+    if (currentProfile.model_usage_totals) {
+      const entries = Object.entries(currentProfile.model_usage_totals);
+      if (entries.length > 0) {
+        entries.sort((a, b) => b[1] - a[1]);
+        return entries[0][0];
+      }
+    }
+    return activeModelConfigs[0]?.id || 'claude-3-7-sonnet';
+  }, [currentProfile, activeModelConfigs]);
 
   return (
     <div className="flex flex-col space-y-6">
+      {/* 0. アクティブデータソース情報バッジ */}
+      {sourceInfo && (
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-slate-900/90 border border-slate-800/80 rounded-2xl shadow-sm">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="text-xs font-semibold text-slate-400">分析データソース:</span>
+            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-950/80 text-indigo-300 border border-indigo-700/60 flex items-center space-x-1.5 shadow-sm">
+              <Database className="w-3.5 h-3.5 text-indigo-400" />
+              <span>{sourceInfo.label}</span>
+            </span>
+            {sourceInfo.isSynthesized && (
+              <span className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-950/70 text-amber-300 border border-amber-800/60 flex items-center space-x-1 shadow-sm">
+                <Layers className="w-3 h-3 text-amber-400" />
+                <span>日別トレンド按分合成</span>
+              </span>
+            )}
+            <span className="text-xs text-slate-400">
+              対象ユーザー: <span className="font-mono text-slate-200">{profiles.length} 名</span>
+            </span>
+          </div>
+          {sourceInfo.details && (
+            <span className="text-[11px] text-slate-400">{sourceInfo.details}</span>
+          )}
+        </div>
+      )}
+
       {/* 1. ユーザー選択ヘッダーバー */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
@@ -128,7 +240,7 @@ export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
           {onOpenDeepAnalysis && (
             <button
               onClick={() => onOpenDeepAnalysis(currentProfile.login)}
-              className="px-3 py-2 rounded-lg bg-gradient-to-r from-cyan-600/30 to-indigo-600/30 hover:from-cyan-600/50 hover:to-indigo-600/50 text-cyan-300 border border-cyan-500/40 text-xs font-semibold flex items-center space-x-1.5 transition-all shadow-sm"
+              className="px-3 py-2 rounded-lg bg-gradient-to-r from-cyan-600/30 to-indigo-600/30 hover:from-cyan-600/50 hover:to-indigo-600/50 text-cyan-300 border border-cyan-500/40 text-xs font-semibold flex items-center space-x-1.5 transition-all shadow-sm cursor-pointer"
               title="このユーザーの非効率AI利用パターンをディープ分析"
             >
               <BrainCircuit className="w-4 h-4 text-cyan-400" />
@@ -185,33 +297,26 @@ export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
               <span>日次モデル別利用量トレンド (モデル内訳積み上げ ＋ 合計値推移)</span>
             </h4>
             <p className="text-xs text-slate-400 mt-0.5">
-              Claude 3.7 Sonnet、GPT-4o、o1、Gemini 2.0 Flash の日別対話回数と全体推移
+              {activeModelConfigs.map((m) => m.name).join('、')} の日別対話回数と全体推移
             </p>
           </div>
 
-          <div className="flex items-center space-x-3 text-xs text-slate-400">
-            <span className="flex items-center space-x-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-              <span>Claude 3.7</span>
-            </span>
-            <span className="flex items-center space-x-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-              <span>GPT-4o</span>
-            </span>
-            <span className="flex items-center space-x-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
-              <span>o1</span>
-            </span>
-            <span className="flex items-center space-x-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-              <span>Gemini 2.0</span>
-            </span>
+          <div className="flex flex-wrap items-center gap-2.5 text-xs text-slate-400">
+            {activeModelConfigs.slice(0, 5).map((m) => (
+              <span key={m.id} className="flex items-center space-x-1">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: m.color }} />
+                <span>{m.name}</span>
+              </span>
+            ))}
+            {activeModelConfigs.length > 5 && (
+              <span className="text-[11px] text-slate-400">+{activeModelConfigs.length - 5} モデル</span>
+            )}
 
             {onOpenRadar && (
               <button
-                onClick={() => onOpenRadar('claude-3-7-sonnet')}
-                className="flex items-center space-x-1 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-purple-950/60 hover:bg-purple-900/80 text-purple-300 border border-purple-800/70 transition-all shadow-sm ml-2"
-                title="モデルの特性をレーダーチャートで比較"
+                onClick={() => onOpenRadar(primaryModelId)}
+                className="flex items-center space-x-1 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-purple-950/60 hover:bg-purple-900/80 text-purple-300 border border-purple-800/70 transition-all shadow-sm ml-1 cursor-pointer"
+                title={`${primaryModelId} の特性をレーダーチャートで比較`}
               >
                 <Compass className="w-3 h-3 text-purple-400" />
                 <span>モデル特性レーダーで比較</span>
@@ -236,10 +341,9 @@ export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
                 }}
               />
               <Legend wrapperStyle={{ fontSize: '11px', color: '#8b949e' }} />
-              <Bar dataKey="Claude 3.7 Sonnet" stackId="a" fill="#d97706" />
-              <Bar dataKey="GPT-4o" stackId="a" fill="#10b981" />
-              <Bar dataKey="o1 (推論)" stackId="a" fill="#6366f1" />
-              <Bar dataKey="Gemini 2.0 Flash" stackId="a" fill="#3b82f6" />
+              {activeModelConfigs.map((cfg) => (
+                <Bar key={cfg.id} dataKey={cfg.name} stackId="a" fill={cfg.color} />
+              ))}
               <Line
                 type="monotone"
                 dataKey="totalModels"
