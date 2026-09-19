@@ -21,6 +21,7 @@ interface DeepAnalysisViewProps {
   userProfiles?: UserUsageProfile[];
   sourceInfo?: DeepAnalysisDataSourceInfo;
   initialSelectedLogin?: string;
+  onSelectLogin?: (login: string) => void;
 }
 
 export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
@@ -28,6 +29,7 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
   userProfiles,
   sourceInfo,
   initialSelectedLogin,
+  onSelectLogin,
 }) => {
   const profiles = useMemo(() => {
     if (userProfiles && userProfiles.length > 0) {
@@ -53,18 +55,38 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
     return interestingUser?.login || '';
   });
 
-  // プロファイル群が更新された場合の選択ユーザー追従
+  const prevInitialSelectedLoginRef = React.useRef<string | undefined>(initialSelectedLogin);
+
+  // 外部からの初期選択・切替追従 (親からの initialSelectedLogin プロパティが新しく変化した時のみ追従)
   useEffect(() => {
-    if (initialSelectedLogin && profiles.some((p) => p.login === initialSelectedLogin)) {
+    if (
+      initialSelectedLogin &&
+      initialSelectedLogin !== prevInitialSelectedLoginRef.current &&
+      profiles.some((p) => p.login === initialSelectedLogin)
+    ) {
+      prevInitialSelectedLoginRef.current = initialSelectedLogin;
       setSelectedLogin(initialSelectedLogin);
-    } else if (profiles.length > 0 && !profiles.some((p) => p.login === selectedLogin)) {
+    }
+  }, [initialSelectedLogin, profiles]);
+
+  // プロファイル群（フィルター等）が更新され、現在選択中のユーザーが存在しなくなった場合のフォールバック
+  useEffect(() => {
+    if (profiles.length > 0 && !profiles.some((p) => p.login === selectedLogin)) {
       const interestingUser =
         profiles.find((p) => p.login === 'kenji-sato') ||
         profiles.find((p) => p.login === 'yuki-takahashi') ||
         profiles[0];
       setSelectedLogin(interestingUser?.login || '');
     }
-  }, [initialSelectedLogin, profiles, selectedLogin]);
+  }, [profiles, selectedLogin]);
+
+  const handleSelectLogin = (login: string) => {
+    setSelectedLogin(login);
+    prevInitialSelectedLoginRef.current = login;
+    if (onSelectLogin) {
+      onSelectLogin(login);
+    }
+  };
 
   // 3. 対象区間選択ステート
   const [periodScope, setPeriodScope] = useState<AnalysisPeriodScopeType>('30d');
@@ -171,7 +193,7 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
         profiles={profiles}
         currentProfile={currentProfile}
         selectedLogin={selectedLogin}
-        onSelectLogin={setSelectedLogin}
+        onSelectLogin={handleSelectLogin}
         periodScope={periodScope}
         onSelectPeriodScope={(scope) => {
           setPeriodScope(scope);
