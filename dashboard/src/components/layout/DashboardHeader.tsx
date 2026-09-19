@@ -51,27 +51,43 @@ export function isMockModeData(
   indexMeta: IndexMetadata | null,
   repoInfo?: { owner: string; name: string }
 ): boolean {
-  if (typeof indexMeta?.is_mock_mode === 'boolean') {
-    return indexMeta.is_mock_mode;
+  // 1. 明示的な is_mock_mode: true
+  if (indexMeta?.is_mock_mode === true) {
+    return true;
   }
 
+  // 2. 環境変数の設定
   if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_MOCK_MODE === 'true') {
     return true;
   }
 
-  if (indexMeta?.repository?.owner === 'proud-corp') {
+  // 3. proud-corp はシミュレーションモック組織名
+  if (indexMeta?.repository?.owner === 'proud-corp' || repoInfo?.owner === 'proud-corp') {
     return true;
   }
 
-  if (repoInfo?.owner === 'proud-corp') {
+  // 4. 実稼働メトリクス (管理シート数 > 0 または 日次データ日数 > 0) の有無を検証
+  //    実エンタープライズの認証情報が存在せず、ライブメトリクスが0件の場合は実稼働 (LIVE) ではなく
+  //    デモ用・空シミュレーション状態であるため確実に DEMO (Mock) として扱う
+  const totalSeats = indexMeta?.summary?.total_seats ?? 0;
+  const availableDaysCount = indexMeta?.available_days?.length ?? 0;
+  const hasRealLiveMetrics = totalSeats > 0 || availableDaysCount > 0;
+
+  if (!hasRealLiveMetrics) {
     return true;
   }
 
+  // 5. モック専用イシューのシグネチャ
   if (indexMeta?.issues?.some((i) => i.target?.includes('proud-') || i.details?.includes('proud-corp'))) {
     return true;
   }
 
-  return false;
+  // 6. 明示的な is_mock_mode: false かつ 実際にライブデータが存在する場合のみ LIVE
+  if (indexMeta?.is_mock_mode === false && hasRealLiveMetrics) {
+    return false;
+  }
+
+  return !hasRealLiveMetrics;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
