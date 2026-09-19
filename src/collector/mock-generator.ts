@@ -533,7 +533,13 @@ export class MockDataGenerator {
     ];
 
     const users = [
-      { login: 'kenji-sato', org: 'proud-fintech', cc: 'FinTech-Division' },
+      { login: 'taro-tanaka', org: 'proud-fintech', cc: 'FinTech-Division' },
+      { login: 'hanako-suzuki', org: 'proud-ai-labs', cc: 'Research-and-AI' },
+      { login: 'kenji-sato', org: 'proud-cloud-core', cc: 'Cloud-Platform' },
+      { login: 'yuki-takahashi', org: 'proud-fintech', cc: 'FinTech-Division' },
+      { login: 'mika-ito', org: 'proud-internal-sys', cc: 'Enterprise-IT' },
+      { login: 'alex-partner', org: 'proud-fintech', cc: 'FinTech-Division' },
+      { login: 'daiki-yamada', org: 'proud-cloud-core', cc: 'Cloud-Platform' },
       { login: 'yuki-tanaka', org: 'proud-fintech', cc: 'FinTech-Division' },
       { login: 'daiki-suzuki', org: 'proud-internal-sys', cc: 'IT-Infrastructure' },
       { login: 'sakura-watanabe', org: 'proud-internal-sys', cc: 'IT-Infrastructure' },
@@ -542,7 +548,7 @@ export class MockDataGenerator {
       { login: 'kaito-nakamura', org: 'proud-core-api', cc: 'IT-Infrastructure' },
       { login: 'aoi-kobayashi', org: 'proud-core-api', cc: 'IT-Infrastructure' },
       { login: 'external-contractor-01', org: 'proud-fintech', cc: 'FinTech-Division' },
-      { login: 'external-contractor-02', org: 'proud-fintech', cc: 'FinTech-Division' },
+      { login: 'external-contractor-02', org: 'proud-cloud-core', cc: 'Cloud-Platform' },
     ];
 
     // 月の日数 (例: 2026-08 は 31日)

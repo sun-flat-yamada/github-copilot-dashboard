@@ -12,6 +12,7 @@ import { checkIsDemoMode } from '../../dashboard/src/hooks/useDashboardData.js';
 import { resolveDataPath, getCandidateDataUrls } from '../../dashboard/src/utils/pathResolver.js';
 import { checkDataIsolation } from '../../scripts/verify-fork-health.js';
 import { setupForkDemoData } from '../../scripts/setup-fork-demo.js';
+import { loadDemoUserMapping } from '../collector/demo-mapping-loader.js';
 
 describe('Live Metrics DEMO Data & Referencing Tests', () => {
   const projectRoot = path.resolve(import.meta.dirname, '../..');
@@ -350,4 +351,91 @@ describe('Live Metrics DEMO Data & Referencing Tests', () => {
       }
     }
   });
+
+  it('verifies DEMO user mapping GPG fixture exists, decrypts, and contains cost centers and orgs', () => {
+    const gpgFixture = path.resolve(projectRoot, 'fixtures/demo/copilot-user-mapping.demo.json.gpg');
+    assert.ok(fs.existsSync(gpgFixture), 'GPG fixture file must exist at fixtures/demo/copilot-user-mapping.demo.json.gpg');
+
+    const decryptedJson = loadDemoUserMapping(projectRoot);
+    assert.ok(decryptedJson, 'loadDemoUserMapping must return decrypted JSON string');
+
+    const parsedMapping = JSON.parse(decryptedJson);
+    assert.ok(Array.isArray(parsedMapping), 'Decrypted mapping must be an array');
+    assert.ok(parsedMapping.length >= 80, 'Must contain at least 80 mock users');
+
+    const costCenters = new Set(parsedMapping.map((u: any) => u.cost_center_override).filter(Boolean));
+    const departments = new Set(parsedMapping.map((u: any) => u.department).filter(Boolean));
+
+    assert.ok(costCenters.size >= 4, `Must define at least 4 cost centers (found: ${costCenters.size})`);
+    assert.ok(departments.size >= 3, `Must define at least 3 departments (found: ${departments.size})`);
+    assert.ok(costCenters.has('FinTech-Division') || costCenters.has('Cloud-Platform'), 'Must contain expected cost center');
+  });
+
+  it('verifies DEMO Monthly Usage Report contains CostCenter and Organization classifications', () => {
+    const reportPath = path.join(demoDataDir, 'processed/reports/2026-09.json');
+    assert.ok(fs.existsSync(reportPath), 'Report file 2026-09.json must exist');
+
+    const reportData = JSON.parse(fs.readFileSync(reportPath, 'utf-8')) as MonthlyReportAggregatedData;
+
+    // CostCenter 分類検証
+    assert.ok(reportData.by_cost_center, 'by_cost_center must exist in monthly report');
+    const ccKeys = Object.keys(reportData.by_cost_center);
+    assert.ok(ccKeys.length >= 4, `by_cost_center must have at least 4 categories (found: ${ccKeys.length})`);
+    assert.ok(!ccKeys.every((k) => k.includes('未分類') || k.includes('Unassigned')), 'CostCenter must not be purely unassigned');
+    for (const key of ccKeys) {
+      const group = reportData.by_cost_center[key];
+      assert.ok(group.total_cost_usd >= 0, `CostCenter ${key} must have valid total_cost_usd`);
+      assert.ok(group.active_seats >= 0, `CostCenter ${key} must have valid active_seats`);
+    }
+
+    // Organization 分類検証
+    assert.ok(reportData.by_organization, 'by_organization must exist in monthly report');
+    const orgKeys = Object.keys(reportData.by_organization);
+    assert.ok(orgKeys.length >= 3, `by_organization must have at least 3 categories (found: ${orgKeys.length})`);
+    assert.ok(!orgKeys.every((k) => k.includes('未分類') || k.includes('Unassigned')), 'Organization must not be purely unassigned');
+    for (const key of orgKeys) {
+      const group = reportData.by_organization[key];
+      assert.ok(group.total_cost_usd >= 0, `Organization ${key} must have valid total_cost_usd`);
+    }
+
+    // user_details 個別検証
+    assert.ok(reportData.user_details.length > 0, 'user_details must not be empty');
+    const assignedCcUsers = reportData.user_details.filter(
+      (u) => u.cost_center && !u.cost_center.includes('未分類') && !u.cost_center.includes('Unassigned')
+    );
+    const assignedOrgUsers = reportData.user_details.filter(
+      (u) => u.organization && !u.organization.includes('未分類') && !u.organization.includes('Default')
+    );
+    assert.ok(assignedCcUsers.length > 0, 'Must have users with valid cost_center assigned');
+    assert.ok(assignedOrgUsers.length > 0, 'Must have users with valid organization assigned');
+  });
+
+  it('verifies DEMO live metrics monthly partition contains populated CostCenter and Organization groups', () => {
+    const monthlyPath = path.join(demoDataDir, 'processed/monthly/2026-09.json');
+    const monthlyData = JSON.parse(fs.readFileSync(monthlyPath, 'utf-8')) as ScopeAggregatedData;
+
+    assert.ok(monthlyData.by_cost_center, 'by_cost_center must exist in live monthly scope');
+    const ccKeys = Object.keys(monthlyData.by_cost_center);
+    assert.ok(ccKeys.length >= 4, `Live metrics by_cost_center must have >= 4 groups (found: ${ccKeys.length})`);
+
+    assert.ok(monthlyData.by_organization, 'by_organization must exist in live monthly scope');
+    const orgKeys = Object.keys(monthlyData.by_organization);
+    assert.ok(orgKeys.length >= 3, `Live metrics by_organization must have >= 3 groups (found: ${orgKeys.length})`);
+
+    // Department が「未分類」のみになっていないこと
+    const deptKeys = Object.keys(monthlyData.by_department);
+    assert.ok(deptKeys.length >= 3, 'Live metrics by_department must have multiple departments');
+    assert.ok(!deptKeys.every((k) => k.includes('未分類')), 'Departments must not be purely Unassigned');
+  });
+
+  it('verifies DEMO GPG user mapping is deployed to data/demo/config and dashboard/public/data/demo/config', () => {
+    const dataGpgPath = path.resolve(demoDataDir, 'config/copilot-user-mapping.demo.json.gpg');
+    const publicGpgPath = path.resolve(publicDemoDir, 'config/copilot-user-mapping.demo.json.gpg');
+
+    assert.ok(fs.existsSync(dataGpgPath), 'data/demo/config/copilot-user-mapping.demo.json.gpg must exist');
+    assert.ok(fs.existsSync(publicGpgPath), 'dashboard/public/data/demo/config/copilot-user-mapping.demo.json.gpg must exist');
+    assert.ok(fs.statSync(dataGpgPath).size > 100, 'GPG mapping file must not be empty');
+    assert.ok(fs.statSync(publicGpgPath).size > 100, 'Public GPG mapping file must not be empty');
+  });
 });
+
