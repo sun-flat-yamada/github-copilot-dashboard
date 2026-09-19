@@ -31,21 +31,11 @@ When multiple AI agents work concurrently on the codebase:
 
 ---
 
-## 3. The 6-Step Change Lifecycle
+## 3. The 5-Step Change Lifecycle
 
 ```text
-[Step 0: Planning (Antigravity)] ──> [Step 1: Issue] ──> [Step 2: Sibling Worktree] ──> [Step 3: Quality Gate] ──> [Step 4: PR (Rebased)] ──> [Step 5: Rebase Merge & Clean]
+[Step 1: Issue] ──> [Step 2: Sibling Worktree] ──> [Step 3: Quality Gate] ──> [Step 4: PR (Rebased)] ──> [Step 5: Rebase Merge & Clean]
 ```
-
-### Step 0: Planning & Pre-Execution Consensus (Google Antigravity)
-- For non-trivial modifications in Antigravity, the agent must output `implementation_plan.md` to `<appDataDir>\brain\<conversation-id>/implementation_plan.md`.
-- **4 Golden Rules for Proceed Button**:
-  1. Exact canonical English headings (`# [Goal Description]`, `## User Review Required`, `## Open Questions`, `## Proposed Changes`, `## Verification Plan`, etc.).
-  2. Output strictly to the official brain directory.
-  3. Set `ArtifactMetadata(RequestFeedback=true, UserFacing=true, Summary=...)`.
-  4. Zero non-artifact edits in planning turn (`modifiedFileUris === 0`), provide clickable `file:///` links, note `[Proceed]` renders in artifact card, and conclude turn immediately.
-- Wait for explicit user approval (`[Proceed]` button click).
-- Reference: [.agents/skills/antigravity-two-phase-governance/SKILL.md](../skills/antigravity-two-phase-governance/SKILL.md).
 
 ### Step 1: Issue Creation
 
