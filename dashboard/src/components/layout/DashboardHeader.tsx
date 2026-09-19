@@ -172,7 +172,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               </button>
             </div>
             <p className="text-[11px] sm:text-xs text-slate-400 hidden md:block whitespace-nowrap">
-              3-Axis Allocation (Org, Cost Center, User Mapping)
+              Copilot Insights for All Users
             </p>
           </div>
         </div>

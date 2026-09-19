@@ -315,7 +315,7 @@ export const App: React.FC = () => {
                 <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
                 <span>データの読み込みに失敗しました:</span>
               </p>
-              <p className="mt-1 font-mono text-red-300 break-all">{error || reportError}</p>
+              <p className="mt-1 font-mono text-red-300 break-all">{isReportSource ? reportError : error}</p>
             </div>
             <button
               type="button"
