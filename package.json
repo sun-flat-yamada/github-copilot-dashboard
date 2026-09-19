@@ -35,6 +35,8 @@
     "pipeline:mock": "tsx src/cli/run-pipeline.ts --mock",
     "demo:generate": "tsx scripts/generate-demo-data.ts",
     "demo:sync": "tsx scripts/sync-demo-to-copilot-data.ts",
+    "demo:setup": "tsx scripts/setup-fork-demo.ts",
+    "demo:import": "tsx scripts/setup-fork-demo.ts",
     "report:import": "tsx scripts/import-report.ts",
     "mapping:encrypt": "tsx scripts/encrypt-user-mapping.ts",
     "mapping:decrypt": "tsx scripts/decrypt-user-mapping.ts",

@@ -238,6 +238,24 @@ export function checkCopilotDataBranch(): HealthCheckResult[] {
     });
   }
 
+  // 3. DEMO 専用データパーティション (data/demo/) の準備状況
+  const localDemoExists = fs.existsSync(path.resolve(process.cwd(), 'data/demo/index.json'));
+  if (localDemoExists) {
+    results.push({
+      category: 'Storage Branch',
+      name: 'DEMO Dataset Partition (data/demo/)',
+      status: 'pass',
+      message: "Dedicated Live Metrics DEMO dataset is initialized and ready for simulation/testing.",
+    });
+  } else {
+    results.push({
+      category: 'Storage Branch',
+      name: 'DEMO Dataset Partition (data/demo/)',
+      status: 'info',
+      message: "DEMO dataset is not yet initialized locally. To import or synthesize DEMO data in this fork, run 'npm run demo:setup'.",
+    });
+  }
+
   return results;
 }
 
