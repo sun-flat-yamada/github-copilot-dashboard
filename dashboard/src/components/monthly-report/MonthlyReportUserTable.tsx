@@ -215,21 +215,21 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
         </div>
       </div>
 
-      {/* ユーザー一覧テーブル */}
-      <div className="overflow-x-auto">
+      {/* ユーザー一覧テーブル: ヘッダー固定・データ行垂直スクロール */}
+      <div className="overflow-auto max-h-[600px] rounded-lg border border-slate-800 relative scrollbar-thin scrollbar-thumb-slate-700">
         <table className="w-full text-left text-xs border-collapse">
-          <thead>
-            <tr className="border-b border-slate-800 text-slate-400 font-semibold bg-slate-950/40">
-              <th className="py-2.5 px-3 text-center w-14">#</th>
-              <th className="py-2.5 px-3">GitHub ユーザー</th>
-              <th className="py-2.5 px-3">部署 / 仕訳グループ</th>
-              <th className="py-2.5 px-3">Cost Center</th>
-              <th className="py-2.5 px-3">Organization</th>
-              <th className="py-2.5 px-3">主利用モデル</th>
-              <th className="py-2.5 px-3 text-right">総リクエスト</th>
-              <th className="py-2.5 px-3 text-right">利用費用 / 超過請求 (USD)</th>
-              <th className="py-2.5 px-3 text-right">最終利用日</th>
-              <th className="py-2.5 px-3 text-center w-24">
+          <thead className="sticky top-0 z-20 bg-slate-950 text-slate-400 font-semibold shadow-md">
+            <tr className="border-b border-slate-800">
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-center w-14">#</th>
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3">GitHub ユーザー</th>
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3">部署 / 仕訳グループ</th>
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3">Cost Center</th>
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3">Organization</th>
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3">主利用モデル</th>
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-right">総リクエスト</th>
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-right">利用費用 / 超過請求 (USD)</th>
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-right">最終利用日</th>
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-center w-24">
                 <ActionColumnHeader />
               </th>
             </tr>
