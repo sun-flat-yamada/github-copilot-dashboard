@@ -30,9 +30,8 @@ Standard dashboard views (Live Metrics, Monthly Report, Model Radar) focus on ma
 - Data Storage & Partitioning: Diagnostic metrics are persisted as monthly archives (`data/processed/deep-analysis/{YYYY-MM}.json`) on the `copilot-data` branch with perpetual accumulation, rapidly queryable through the rolling 1-year metadata index.
 
 ### 2.2 Contextual Deep-Links
-- **User Detail Table (`UserDetailTable`)**: "Deep Analysis" action button in each user row opens the view with that user preselected.
+- **User Detail & Ranking Table (`UserDetailTable`)**: "Deep Analysis" action button in each user row opens the view with that user preselected.
 - **User Trend Viewer (`UserTrendViewer`)**: "Deep Analyze this User" button in the profile header.
-- **Group Usage Rankings (`GroupUsageRanking`)**: Row click or direct action link transitions straight to deep diagnostics.
 
 ### 2.3 Analysis Method Selector
 A modular selector at the top switches between diagnostic engines:
