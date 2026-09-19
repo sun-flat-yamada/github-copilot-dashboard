@@ -4,7 +4,7 @@ import {
   AnalysisPeriodScopeType,
   CustomDateRange,
 } from '../../../../src/types/deep-analysis';
-import { User, Calendar, ChevronDown } from 'lucide-react';
+import { User, Calendar, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface UserPeriodControlsProps {
   profiles: UserUsageProfile[];
@@ -31,29 +31,110 @@ export const UserPeriodControls: React.FC<UserPeriodControlsProps> = ({
   isCustomPickerOpen,
   onToggleCustomPicker,
 }) => {
+  // 左右送り（前後のユーザーへ移動）の計算
+  const currentIndex = profiles.findIndex((p) => p.login === selectedLogin);
+  const canGoPrev = currentIndex > 0;
+  const canGoNext = currentIndex >= 0 && currentIndex < profiles.length - 1;
+
+  const handlePrevUser = () => {
+    if (canGoPrev) {
+      onSelectLogin(profiles[currentIndex - 1].login);
+    }
+  };
+
+  const handleNextUser = () => {
+    if (canGoNext) {
+      onSelectLogin(profiles[currentIndex + 1].login);
+    }
+  };
+
+  // 期間指定ボタン押下時の挙動（未選択なら custom に切り替えてピッカー展開、選択中なら開閉トグル）
+  const handleCustomScopeClick = () => {
+    if (periodScope !== 'custom') {
+      onSelectPeriodScope('custom');
+      if (!isCustomPickerOpen) {
+        onToggleCustomPicker();
+      }
+    } else {
+      onToggleCustomPicker();
+    }
+  };
+
+  const handleApplyCustomRange = () => {
+    if (periodScope !== 'custom') {
+      onSelectPeriodScope('custom');
+    }
+    if (isCustomPickerOpen) {
+      onToggleCustomPicker();
+    }
+  };
+
   return (
     <>
       <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 shadow-lg flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-        {/* ユーザー選択 */}
+        {/* ユーザー選択 & 左右送りコントロール */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <label className="text-xs font-semibold text-slate-300 flex items-center space-x-1.5 shrink-0">
             <User className="w-4 h-4 text-indigo-400" />
             <span>診断対象ユーザー:</span>
           </label>
 
-          <div className="relative min-w-[260px] sm:w-80">
-            <select
-              value={selectedLogin}
-              onChange={(e) => onSelectLogin(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-indigo-500 appearance-none cursor-pointer pr-8 shadow-inner"
+          <div className="flex items-center gap-1.5">
+            {/* 前のユーザーへ送りボタン */}
+            <button
+              type="button"
+              onClick={handlePrevUser}
+              disabled={!canGoPrev}
+              title={
+                canGoPrev
+                  ? `前のユーザー: ${profiles[currentIndex - 1]?.display_name} (@${profiles[currentIndex - 1]?.login})`
+                  : 'リストの先頭です'
+              }
+              className="p-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer shadow-inner"
+              aria-label="前のユーザー"
             >
-              {profiles.map((p) => (
-                <option key={p.login} value={p.login}>
-                  {p.display_name} (@{p.login}) - {p.department}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            <div className="relative min-w-[220px] sm:w-72">
+              <select
+                value={selectedLogin}
+                onChange={(e) => onSelectLogin(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-indigo-500 appearance-none cursor-pointer pr-8 shadow-inner"
+              >
+                {profiles.map((p, idx) => (
+                  <option key={p.login} value={p.login}>
+                    [{idx + 1}/{profiles.length}] {p.display_name} (@{p.login}) - {p.department}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
+            </div>
+
+            {/* 次のユーザーへ送りボタン */}
+            <button
+              type="button"
+              onClick={handleNextUser}
+              disabled={!canGoNext}
+              title={
+                canGoNext
+                  ? `次のユーザー: ${profiles[currentIndex + 1]?.display_name} (@${profiles[currentIndex + 1]?.login})`
+                  : 'リストの末尾です'
+              }
+              className="p-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer shadow-inner"
+              aria-label="次のユーザー"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+
+            {currentIndex >= 0 && (
+              <span
+                className="hidden sm:inline-block text-[11px] font-mono text-slate-400 px-2 py-1 rounded bg-slate-950 border border-slate-800 shrink-0"
+                title={`全 ${profiles.length} 名中 ${currentIndex + 1} 人目を表示中`}
+              >
+                {currentIndex + 1} / {profiles.length}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center space-x-2 text-xs text-slate-400">
@@ -108,7 +189,7 @@ export const UserPeriodControls: React.FC<UserPeriodControlsProps> = ({
             </button>
 
             <button
-              onClick={onToggleCustomPicker}
+              onClick={handleCustomScopeClick}
               className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
                 periodScope === 'custom'
                   ? 'bg-indigo-600 text-white shadow-sm'
@@ -117,7 +198,7 @@ export const UserPeriodControls: React.FC<UserPeriodControlsProps> = ({
             >
               <span>期間指定</span>
               <ChevronDown
-                className={`w-3 h-3 transition-transform ${isCustomPickerOpen ? 'rotate-180' : ''}`}
+                className={`w-3 h-3 transition-transform ${isCustomPickerOpen && periodScope === 'custom' ? 'rotate-180' : ''}`}
               />
             </button>
           </div>
@@ -146,8 +227,8 @@ export const UserPeriodControls: React.FC<UserPeriodControlsProps> = ({
           </div>
 
           <button
-            onClick={onToggleCustomPicker}
-            className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg shadow transition-all"
+            onClick={handleApplyCustomRange}
+            className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg shadow transition-all cursor-pointer"
           >
             この期間で診断を更新
           </button>
