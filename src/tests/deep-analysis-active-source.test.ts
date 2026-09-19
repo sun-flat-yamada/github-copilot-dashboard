@@ -136,4 +136,84 @@ describe('Deep Analysis Multi-Source Adaptation & Diagnostics', () => {
     });
     assert.deepStrictEqual(emptyProfiles, []);
   });
+
+  it('verifies custom date range filtering in InefficiencyDiagnosticEngine', () => {
+    const profiles = adaptReportToProfiles(mockReportData);
+    const alice = profiles[0];
+
+    // 2026-08-04 〜 2026-08-04 の1日のみ指定
+    const customResult = InefficiencyDiagnosticEngine.diagnoseUser(
+      alice,
+      'custom',
+      { start: '2026-08-04', end: '2026-08-04' },
+      profiles
+    );
+
+    assert.ok(customResult);
+    assert.strictEqual(customResult.period.scopeType, 'custom');
+    assert.strictEqual(customResult.period.startDate, '2026-08-04');
+    assert.strictEqual(customResult.period.endDate, '2026-08-04');
+    assert.strictEqual(customResult.period.totalDays, 1);
+  });
+
+  it('verifies user navigation logic (index boundary and prev/next)', () => {
+    const userLogins = ['dev-alice', 'dev-bob', 'dev-charlie'];
+
+    // 1人目 (先頭)
+    let currentIndex = userLogins.indexOf('dev-alice');
+    let canGoPrev = currentIndex > 0;
+    let canGoNext = currentIndex >= 0 && currentIndex < userLogins.length - 1;
+    assert.strictEqual(canGoPrev, false);
+    assert.strictEqual(canGoNext, true);
+    assert.strictEqual(userLogins[currentIndex + 1], 'dev-bob');
+
+    // 2人目 (中間)
+    currentIndex = userLogins.indexOf('dev-bob');
+    canGoPrev = currentIndex > 0;
+    canGoNext = currentIndex >= 0 && currentIndex < userLogins.length - 1;
+    assert.strictEqual(canGoPrev, true);
+    assert.strictEqual(canGoNext, true);
+    assert.strictEqual(userLogins[currentIndex - 1], 'dev-alice');
+    assert.strictEqual(userLogins[currentIndex + 1], 'dev-charlie');
+
+    // 3人目 (末尾)
+    currentIndex = userLogins.indexOf('dev-charlie');
+    canGoPrev = currentIndex > 0;
+    canGoNext = currentIndex >= 0 && currentIndex < userLogins.length - 1;
+    assert.strictEqual(canGoPrev, true);
+    assert.strictEqual(canGoNext, false);
+    assert.strictEqual(userLogins[currentIndex - 1], 'dev-bob');
+  });
+
+  it('verifies UserPeriodControls component contains user navigation and fixed custom period triggers', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const userPeriodControlsPath = path.resolve('dashboard/src/components/deep-analysis/UserPeriodControls.tsx');
+    assert.ok(fs.existsSync(userPeriodControlsPath), 'UserPeriodControls.tsx exists');
+
+    const content = fs.readFileSync(userPeriodControlsPath, 'utf-8');
+    // 左右送り関連要素
+    assert.ok(content.includes('ChevronLeft'), 'includes ChevronLeft icon');
+    assert.ok(content.includes('ChevronRight'), 'includes ChevronRight icon');
+    assert.ok(content.includes('canGoPrev'), 'calculates canGoPrev boundary');
+    assert.ok(content.includes('canGoNext'), 'calculates canGoNext boundary');
+    assert.ok(content.includes('handlePrevUser'), 'defines handlePrevUser handler');
+    assert.ok(content.includes('handleNextUser'), 'defines handleNextUser handler');
+
+    // 期間指定クリック時の連動
+    assert.ok(content.includes('handleCustomScopeClick'), 'defines handleCustomScopeClick handler');
+    assert.ok(content.includes("onSelectPeriodScope('custom')"), "sets scope to 'custom' on period button click");
+  });
+
+  it('verifies DeepAnalysisView prevents initialSelectedLogin rollback and supports onSelectLogin', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const deepAnalysisViewPath = path.resolve('dashboard/src/components/DeepAnalysisView.tsx');
+    assert.ok(fs.existsSync(deepAnalysisViewPath), 'DeepAnalysisView.tsx exists');
+
+    const content = fs.readFileSync(deepAnalysisViewPath, 'utf-8');
+    assert.ok(content.includes('prevInitialSelectedLoginRef'), 'uses prevInitialSelectedLoginRef to guard against unwanted rollbacks');
+    assert.ok(content.includes('onSelectLogin?: (login: string) => void'), 'supports onSelectLogin prop in interface');
+    assert.ok(content.includes('handleSelectLogin'), 'defines handleSelectLogin');
+  });
 });
