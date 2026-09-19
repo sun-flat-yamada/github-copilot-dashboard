@@ -43,7 +43,7 @@ When multiple AI agents work concurrently on the codebase:
   1. Exact canonical English headings (`# [Goal Description]`, `## User Review Required`, `## Open Questions`, `## Proposed Changes`, `## Verification Plan`, etc.).
   2. Output strictly to the official brain directory.
   3. Set `ArtifactMetadata(RequestFeedback=true, UserFacing=true, Summary=...)`.
-  4. Conclude turn immediately without chat re-summarization.
+  4. Never output file:/// links or plan re-summaries in chat; conclude turn immediately with at most a 1-line signal to prevent UI state machine disruption.
 - Wait for explicit user approval (`[Proceed]` button click).
 - Reference: [.agents/skills/antigravity-two-phase-governance/SKILL.md](../skills/antigravity-two-phase-governance/SKILL.md).
 

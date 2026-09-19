@@ -54,7 +54,7 @@ To ensure that the Antigravity UI parser deterministically recognizes the plan a
 1. **Official brain Path**: Write directly to `<appDataDir>\brain\<conversation-id>/implementation_plan.md`.
 2. **Canonical English Headings**: Maintain exact required English headings (`# [Goal Description]`, `## User Review Required`, `## Open Questions`, `## Proposed Changes`, `## Verification Plan`, etc.). Never substitute or translate them into Japanese.
 3. **ArtifactMetadata**: Pass `ArtifactMetadata` with `RequestFeedback: true`, `UserFacing: true`, and `Summary`. Do NOT call `ask_question` concurrently.
-4. **Immediate Turn End**: Conclude the turn immediately after file generation with a concise call-to-action to prevent chat state disruption.
+4. **No Chat Links/Summaries & Immediate Turn End**: Never output `file:///` links or plan re-summaries in chat (the dedicated Plan tab renders automatically; clicking file links breaks Plan tab focus). Conclude turn immediately with at most a 1-line signal to prevent UI state machine disruption.
 
 Once approved (`[Proceed]` received), proceed to Step 1.
 
