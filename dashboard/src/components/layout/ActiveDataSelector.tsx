@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   DataSourceType,
   AnalysisScopeType,
@@ -215,37 +216,47 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
         <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180 text-white' : ''}`} />
       </button>
 
-      {/* 2. データソース選択モーダル */}
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
+      {/* 2. データソース選択モーダル (createPortal で document.body にマウントしヘッダーの Containing Block から隔離) */}
+      {isOpen &&
+        typeof document !== 'undefined' &&
+        createPortal(
           <div
-            className="fixed inset-0"
-            onClick={() => setIsOpen(false)}
-            aria-hidden="true"
-          />
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="active-data-selector-title"
+          >
+            <div
+              className="fixed inset-0"
+              onClick={() => setIsOpen(false)}
+              aria-hidden="true"
+            />
 
-          <div className="relative bg-slate-900 border border-slate-700/90 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col z-10 animate-in zoom-in-95 duration-150">
-            {/* モーダルヘッダー */}
-            <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/70">
-              <div className="flex items-center space-x-2.5">
-                <div className="p-2 rounded-xl bg-indigo-950/80 border border-indigo-800 text-indigo-400">
-                  <Sparkles className="w-5 h-5" />
+            <div className="relative bg-slate-900 border border-slate-700/90 rounded-2xl w-full max-w-2xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col z-10 my-auto animate-in zoom-in-95 duration-150">
+              {/* モーダルヘッダー */}
+              <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/70">
+                <div className="flex items-center space-x-2.5">
+                  <div className="p-2 rounded-xl bg-indigo-950/80 border border-indigo-800 text-indigo-400">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 id="active-data-selector-title" className="text-base font-bold text-white">
+                      アクティブ分析データの選択
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      ダッシュボード全体の分析対象データソースと期間スコープを切り替えます
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-base font-bold text-white">アクティブ分析データの選択</h3>
-                  <p className="text-xs text-slate-400">
-                    ダッシュボード全体の分析対象データソースと期間スコープを切り替えます
-                  </p>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                  aria-label="閉じる"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
             {/* ソース切り替えタブ (a / b / c) */}
             <div className="flex border-b border-slate-800 bg-slate-950/40 p-1.5 gap-1.5">
@@ -590,7 +601,8 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

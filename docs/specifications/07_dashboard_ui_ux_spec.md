@@ -108,7 +108,7 @@ Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint 
 1. **Fork-Safe Repository Link**:
    - External link in the header dynamically resolves repository URLs via runtime metadata (`indexMeta.repository`) or host origin (`<owner>.github.io/<repo>/`). Zero hardcoded URLs; guaranteed conflict-free for downstream forks.
 2. **Active Data Selector & View Navigation**:
-   - **ActiveDataSelector (Header)**: Continuously displays the active data source at header center, facilitating quick dataset switching.
+   - **ActiveDataSelector (Header)**: Continuously displays the active data source at header center, facilitating quick dataset switching. To prevent popup clipping and containing block traps caused by the parent header's CSS `backdrop-filter` (`backdrop-blur`), the selection modal is mounted directly into `document.body` via React Portal (`createPortal`), ensuring robust viewport-centered layout (`max-h-[90vh]` with internal scrolling).
    - **ViewNavigation (Navigation Bar)**: Replaces legacy mode switching with 7 dedicated analysis views (`overview`, `ranking`, `users`, `trend`, `budget`, `deep_analysis`, `model_radar`), automatically managing view availability based on active data source capabilities.
 3. **About Modal & Metadata**:
    - Info icon (`Info`) in the header opens a modal displaying the exact generation timestamp (`yyyy-mm-dd hh:MM:ss`), specification version (2026.09 LTS), source repository details (with fork attributes), data retention limits, and managed seat totals.
