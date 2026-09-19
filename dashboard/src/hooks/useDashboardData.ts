@@ -16,9 +16,35 @@ export interface RepoInfo {
   isFork: boolean;
 }
 
+export function checkIsDemoMode(): boolean {
+  if (typeof window !== 'undefined') {
+    const params = new URLSearchParams(window.location.search);
+    if (
+      params.get('demo') === 'true' ||
+      params.get('mock') === 'true' ||
+      params.get('mode') === 'demo' ||
+      params.get('data') === 'demo'
+    ) {
+      return true;
+    }
+  }
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_MOCK_MODE === 'true') {
+    return true;
+  }
+  return false;
+}
+
 export function useDashboardData(initialSource: DataSourceType = 'live_metrics') {
   const [activeSource, setActiveSource] = useState<DataSourceType>(initialSource);
   const [indexMeta, setIndexMeta] = useState<IndexMetadata | null>(null);
+
+  // DEMOモード状態 (URLパラメータ・環境変数・手動切替)
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(checkIsDemoMode);
+
+  // DEMOモード時は ./data/demo、LIVEモード時は ./data を参照
+  const dataBaseDir = useMemo(() => {
+    return isDemoMode ? './data/demo' : './data';
+  }, [isDemoMode]);
 
   // Live Metrics スコープ
   const [scopeType, setScopeType] = useState<AnalysisScopeType>('monthly');
@@ -97,17 +123,36 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
   const hasErrors = allIssues.some((i) => i.severity === 'error');
 
   // 1. 初回インデックスのロード
-  const loadIndex = useCallback(async () => {
+  const loadIndex = useCallback(async (forcedDir?: string) => {
+    const dir = forcedDir || (isDemoMode ? './data/demo' : './data');
     try {
-      const res = await fetch('./data/index.json');
+      let res = await fetch(`${dir}/index.json`);
+      // 通常パスで404かつDEMOパス未指定時は、./data/demo/index.json へのフォールバックを試みる
+      if (!res.ok && dir !== './data/demo') {
+        try {
+          const fallbackRes = await fetch('./data/demo/index.json');
+          if (fallbackRes.ok) {
+            res = fallbackRes;
+            setIsDemoMode(true);
+          }
+        } catch {
+          // ignore fallback error
+        }
+      }
       if (!res.ok) throw new Error(`Failed to load index.json: ${res.status}`);
       const meta = (await res.json()) as IndexMetadata;
       setIndexMeta(meta);
+
+      // メタデータ自身が is_mock_mode を宣言している場合は DEMO モード確定
+      if (meta.is_mock_mode && !isDemoMode) {
+        setIsDemoMode(true);
+      }
 
       const defaultMonth = meta.default_scopes.latest_month || meta.available_months?.[0];
       if (defaultMonth) {
         setSelectedKey(defaultMonth);
         setScopeType('monthly');
+        setNoLiveData(false);
       } else {
         setNoLiveData(true);
         setLoading(false);
@@ -121,10 +166,23 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
       console.error('Error fetching index:', e);
       setError(e.message || 'Failed to initialize analytics index');
     }
-  }, []);
+  }, [isDemoMode]);
 
   useEffect(() => {
     loadIndex();
+  }, [loadIndex]);
+
+  // 手動でDEMOモードとLIVEモードを切り替えるハンドラー
+  const toggleDemoMode = useCallback((forcedMode?: boolean) => {
+    setIsDemoMode((prev) => {
+      const next = forcedMode !== undefined ? forcedMode : !prev;
+      scopeDataCacheRef.current.clear();
+      reportCacheRef.current.clear();
+      currentDataRef.current = null;
+      currentReportDataRef.current = null;
+      loadIndex(next ? './data/demo' : './data');
+      return next;
+    });
   }, [loadIndex]);
 
   // 2. Live Metrics データの取得
@@ -138,7 +196,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
       return;
     }
 
-    const cacheKey = `${scopeType}:${selectedKey}`;
+    const cacheKey = `${dataBaseDir}:${scopeType}:${selectedKey}`;
     const cached = scopeDataCacheRef.current.get(cacheKey);
     if (cached) {
       setCurrentData(cached);
@@ -163,7 +221,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
           fileName = `${selectedKey.replace(/[:\/]/g, '_')}.json`;
         }
 
-        const url = `./data/${subDir}/${fileName}`;
+        const url = `${dataBaseDir}/${subDir}/${fileName}`;
         const res = await fetch(url);
         if (!res.ok) {
           throw new Error(`Data for scope ${scopeType} (${selectedKey}) not found at ${url}`);
@@ -190,7 +248,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     return () => {
       isCancelled = true;
     };
-  }, [scopeType, selectedKey, indexMeta, noLiveData]);
+  }, [scopeType, selectedKey, indexMeta, noLiveData, dataBaseDir]);
 
   // 3. Monthly Usage Report データの取得
   useEffect(() => {
@@ -200,7 +258,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
       return;
     }
 
-    const cached = reportCacheRef.current.get(selectedReportMonth);
+    const cached = reportCacheRef.current.get(`${dataBaseDir}:${selectedReportMonth}`);
     if (cached) {
       setCurrentReportData(cached);
       setReportLoading(false);
@@ -214,14 +272,14 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
       setReportLoading(true);
       setReportError(null);
       try {
-        const url = `./data/reports/${selectedReportMonth}.json`;
+        const url = `${dataBaseDir}/reports/${selectedReportMonth}.json`;
         const res = await fetch(url);
         if (!res.ok) {
           throw new Error(`Monthly report for ${selectedReportMonth} not found at ${url}`);
         }
         const data = (await res.json()) as MonthlyReportAggregatedData;
         if (!isCancelled) {
-          reportCacheRef.current.set(selectedReportMonth, data);
+          reportCacheRef.current.set(`${dataBaseDir}:${selectedReportMonth}`, data);
           setCurrentReportData(data);
         }
       } catch (e: any) {
@@ -462,6 +520,10 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     availableReports,
     allIssues,
     hasErrors,
+    // DEMOモード状態と切替
+    isDemoMode,
+    toggleDemoMode,
+    dataBaseDir,
     // タグANDフィルター
     availableTags,
     selectedTags,
