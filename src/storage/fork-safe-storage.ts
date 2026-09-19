@@ -12,16 +12,38 @@ import {
 export interface StorageConfig {
   baseDir?: string;
   publicDir?: string;
+  isDemo?: boolean;
 }
 
 export class ForkSafeStorage {
   private baseDir: string;
   private publicDir?: string;
+  private isDemo: boolean;
 
   constructor(config: StorageConfig = {}) {
-    this.baseDir = config.baseDir || path.resolve(process.cwd(), 'data');
-    this.publicDir = config.publicDir || path.resolve(process.cwd(), 'dashboard/public/data');
+    this.isDemo = config.isDemo ?? false;
+    this.baseDir =
+      config.baseDir ||
+      (this.isDemo ? path.resolve(process.cwd(), 'data/demo') : path.resolve(process.cwd(), 'data'));
+    this.publicDir =
+      config.publicDir !== undefined
+        ? config.publicDir
+        : this.isDemo
+        ? path.resolve(process.cwd(), 'dashboard/public/data/demo')
+        : path.resolve(process.cwd(), 'dashboard/public/data');
     this.ensureDirectory(this.baseDir);
+  }
+
+  public getBaseDir(): string {
+    return this.baseDir;
+  }
+
+  public getPublicDir(): string | undefined {
+    return this.publicDir;
+  }
+
+  public isDemoStorage(): boolean {
+    return this.isDemo;
   }
 
   private ensureDirectory(dirPath: string): void {

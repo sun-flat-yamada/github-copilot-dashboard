@@ -107,8 +107,33 @@ data/
 │   └── reports/
 │       ├── 2026-08.json              # Monthly report precomputed data
 │       └── 2026-09.json              # Monthly report precomputed data
-└── index.json                        # Metadata index of available periods and summaries
 ```
+
+### 2.1 Dedicated DEMO Data Partition (`data/demo/`)
+
+To support instant demonstration, offline evaluation, and reliable integration testing without requiring live GitHub API credentials or exposing real operational history, a dedicated DEMO storage partition is established on the `copilot-data` orphan branch under `data/demo/`:
+
+```
+copilot-data (Orphan Data Branch)
+├── data/
+│   ├── raw/                           # Real operational API responses
+│   ├── processed/                     # Real operational processed scopes
+│   ├── reports/                       # Real operational monthly reports
+│   ├── index.json                     # Live metadata index
+│   └── demo/                          # 🌟 Dedicated DEMO simulation dataset
+│       ├── raw/                       # DEMO raw API response fixtures
+│       ├── reports/                   # DEMO monthly usage report CSV fixtures
+│       ├── processed/                 # DEMO precomputed scopes (daily, monthly, custom, trends, deep-analysis, reports)
+│       ├── index.json                 # DEMO metadata index (is_mock_mode: true)
+│       └── error-log.json             # DEMO diagnostic anomaly issues
+```
+
+#### DEMO Mode Referencing Behavior
+- **Dashboard Dynamic Resolution**: The dashboard detects DEMO mode via (a) URL parameter `?demo=true` or `?mock=true`, (b) `VITE_MOCK_MODE=true`, or (c) `index.json` declaring `is_mock_mode: true`. When activated, the data resolver dynamically prefixes all fetch requests with `./data/demo/` instead of `./data/`.
+- **Interactive Switching**: The header DEMO/LIVE badge allows users to toggle between live data and DEMO simulation data interactively.
+- **Pipeline & Tooling**:
+  - `npm run demo:generate`: Generates/updates the complete 2026 LTS Live Metrics DEMO bundle under `data/demo/` and `dashboard/public/data/demo/`.
+  - `npm run demo:sync [-- --push]`: Safely commits and syncs `data/demo/` to the `copilot-data` branch in an isolated temporary worktree.
 
 ---
 

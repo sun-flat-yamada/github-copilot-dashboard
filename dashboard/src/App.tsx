@@ -82,6 +82,8 @@ export const App: React.FC = () => {
     selectedTags,
     handleToggleTag,
     handleClearTags,
+    isDemoMode,
+    toggleDemoMode,
   } = useDashboardData('live_metrics');
 
   // 2. 分析View選択 (要件4: モード切替からView切替への抜本移行)
@@ -211,6 +213,8 @@ export const App: React.FC = () => {
         hasErrors={hasErrors}
         onOpenErrorModal={() => setIsErrorModalOpen(true)}
         onOpenAboutModal={() => setIsAboutModalOpen(true)}
+        isDemoMode={isDemoMode}
+        onToggleDemoMode={toggleDemoMode}
       />
 
       {/* 2. 分析Viewナビゲーションバー (6つのView切り替え ★要件4) */}

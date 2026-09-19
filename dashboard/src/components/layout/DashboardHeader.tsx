@@ -35,6 +35,8 @@ interface DashboardHeaderProps {
   hasErrors: boolean;
   onOpenErrorModal: () => void;
   onOpenAboutModal: () => void;
+  isDemoMode?: boolean;
+  onToggleDemoMode?: () => void;
 }
 
 /**
@@ -110,6 +112,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   hasErrors,
   onOpenErrorModal,
   onOpenAboutModal,
+  isDemoMode,
+  onToggleDemoMode,
 }) => {
   const isMockMode = isMockModeData(indexMeta, repoInfo);
 
@@ -130,8 +134,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               {isMockMode ? (
                 <span
                   data-testid="mock-mode-badge"
-                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-amber-500/15 border border-amber-500/40 text-amber-300 shadow-sm whitespace-nowrap select-none cursor-help"
-                  title="【DEMO / Mock モード】このダッシュボードに表示されているデータはすべてシミュレーション用の架空（デモ用）データです。実データではありません。"
+                  data-demo-mode={isDemoMode}
+                  onClick={onToggleDemoMode}
+                  className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-amber-500/15 border border-amber-500/40 text-amber-300 shadow-sm whitespace-nowrap select-none ${
+                    onToggleDemoMode ? 'cursor-pointer hover:bg-amber-500/25 transition-colors' : 'cursor-help'
+                  }`}
+                  title="【DEMO / Mock モード】このダッシュボードに表示されているデータはすべてシミュレーション用の架空（デモ用）データです。クリックでLIVEデータ/DEMOデータを切り替え可能です。"
                 >
                   <span className="relative flex h-1.5 w-1.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
@@ -142,8 +150,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               ) : (
                 <span
                   data-testid="live-mode-badge"
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 whitespace-nowrap select-none cursor-help"
-                  title="【LIVE 実データモード】GitHub API / 月次利用レポートの実績データを表示しています。"
+                  data-demo-mode={isDemoMode}
+                  onClick={onToggleDemoMode}
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 whitespace-nowrap select-none ${
+                    onToggleDemoMode ? 'cursor-pointer hover:bg-emerald-500/20 transition-colors' : 'cursor-help'
+                  }`}
+                  title="【LIVE 実データモード】GitHub API / 月次利用レポートの実績データを表示しています。クリックでDEMOデータを表示可能です。"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                   <span>LIVE</span>
