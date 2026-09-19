@@ -136,6 +136,36 @@ copilot-data (独立データ永続化ブランチ)
   - `npm run demo:generate`: 2026年最新仕様の完全なLive Metrics DEMOデータセットを `data/demo/` および `dashboard/public/data/demo/` に生成。
   - `npm run demo:sync [-- --push]`: 隔離された一時ワークツリーを経由して `data/demo/` を `copilot-data` ブランチへ安全にコミット・反映（`main` ブランチは一切無変更）。
 
+### 2.2 永続ストレージ階層 (`processed/`) と SPA公開パスの二重構造および同期規約 (ナレッジ・再発防止)
+
+永続化ストレージ（`copilot-data` ブランチ）と、Web配信用の静的ホスティング領域（`dashboard/public/data/` およびビルド成果物 `dist/data/`）では、ディレクトリ構造の設計目的が異なるため、以下の不整合防止規約を遵守する：
+
+#### 1. ディレクトリ構造の役割分担
+- **永続ストレージ (`copilot-data`)**: 生データ (`raw/`) と集計済みデータ (`processed/`) を明確に分離する目的で、スコープ別集計データは `data/processed/{monthly,daily,custom,reports,trends,deep-analysis}/` 配下に格納される（DEMOデータも同様に `data/demo/processed/` 配下に格納）。
+- **SPA公開領域 (`dashboard/public/data/` および `dist/data/`)**: Webブラウザからのフェッチ高速化とクリーンな相対URL設計のため、集計データは `monthly/`, `reports/` など公開ルート直下にフラット展開される。
+
+#### 2. CI/CD ステージング規約 (`copilot-analysis-cron.yml`)
+GitHub Actions による GitHub Pages ビルド直前のステージング処理では、`data/demo/` をそのままコピーするだけでなく、必ず **`processed/` 配下のファイル群を公開ディレクトリ直下へもフラット展開** しなければならない：
+```bash
+mkdir -p dashboard/public/data/demo
+# 1. ルート直下のメタデータ (index.json, error-log.json 等) をコピー
+cp -r data/demo/* dashboard/public/data/demo/
+# 2. 永続ストレージの processed/* を公開ルート直下にフラット展開 (二重配置)
+if [ -d "data/demo/processed" ]; then
+  cp -r data/demo/processed/* dashboard/public/data/demo/
+fi
+```
+
+#### 3. フロントエンド多層防護フォールバック規約 (`pathResolver.ts`)
+フロントエンドは単一のURLフェッチに依存せず、以下の多重フォールバック候補 (`getCandidateDataUrls`) を順次試行して、過渡的な配置差異や環境差分を自動吸収する：
+1. **公開ルート直下パス** (例: `/github-copilot-dashboard/data/demo/monthly/2026-09.json`)
+2. **永続ストレージ互換パス** (例: `/github-copilot-dashboard/data/demo/processed/monthly/2026-09.json`)
+3. **代替モード公開ルート直下パス** (LIVE <=> DEMO 双方向フォールバック)
+4. **代替モード永続ストレージ互換パス**
+
+#### 4. サブディレクトリホスティング & 末尾スラッシュ非依存のURL解決
+GitHub Pages 等のサブディレクトリ環境において、末尾スラッシュの有無（例: `/repo` vs `/repo/`）に関わらず、ブラウザがドメインルートへ誤解決しないよう、`window.location.pathname` からベースパスを算出して解決する。
+
 ---
 
 ## 3. インデックスメタデータ (`index.json`) 仕様

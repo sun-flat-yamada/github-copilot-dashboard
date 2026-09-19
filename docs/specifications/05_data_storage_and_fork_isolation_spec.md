@@ -135,6 +135,36 @@ copilot-data (Orphan Data Branch)
   - `npm run demo:generate`: Generates/updates the complete 2026 LTS Live Metrics DEMO bundle under `data/demo/` and `dashboard/public/data/demo/`.
   - `npm run demo:sync [-- --push]`: Safely commits and syncs `data/demo/` to the `copilot-data` branch in an isolated temporary worktree.
 
+### 2.2 Dual Hierarchy Convention: Persistent Storage (`processed/`) vs. SPA Distribution Root
+
+To prevent routing and 404 discrepancies across environments, the following conventions are strictly enforced:
+
+#### 1. Separation of Responsibilities
+- **Persistent Storage (`copilot-data`)**: To strictly separate unadulterated raw inputs (`raw/`) from aggregated derivatives, scope data is saved under `data/processed/{monthly,daily,custom,reports,trends,deep-analysis}/` (and similarly `data/demo/processed/`).
+- **SPA Public Serving Path (`dashboard/public/data/` and `dist/data/`)**: For performance and clean URL aesthetics, scopes are queried directly under the root of the distribution directory (e.g. `monthly/`, `reports/`).
+
+#### 2. CI/CD Staging Convention (`copilot-analysis-cron.yml`)
+When staging `data/demo` prior to SPA build in GitHub Actions, the workflow must copy both root metadata AND unnest `data/demo/processed/*` directly into `dashboard/public/data/demo/`:
+```bash
+mkdir -p dashboard/public/data/demo
+# 1. Copy root metadata (index.json, error-log.json, etc.)
+cp -r data/demo/* dashboard/public/data/demo/
+# 2. Flatten persistent storage processed/* directly into public root (dual availability)
+if [ -d "data/demo/processed" ]; then
+  cp -r data/demo/processed/* dashboard/public/data/demo/
+fi
+```
+
+#### 3. Client-Side Multi-Tier Defense-in-Depth Fallback (`pathResolver.ts`)
+The client SPA (`useDashboardData.ts`) must never rely on a single fragile URL. It iterates through candidate URLs (`getCandidateDataUrls`) in order:
+1. **Public distribution root path** (e.g. `/github-copilot-dashboard/data/demo/monthly/2026-09.json`)
+2. **Persistent storage processed path** (e.g. `/github-copilot-dashboard/data/demo/processed/monthly/2026-09.json`)
+3. **Alternate mode root path** (LIVE <=> DEMO bidirectional fallback)
+4. **Alternate mode processed path**
+
+#### 4. Subdirectory & Trailing-Slash Agnostic Resolution
+All data fetches resolve through `resolveDataPath`, dynamically extracting the base path from `window.location.pathname` to prevent RFC 3986 relative path drops when accessed without a trailing slash.
+
 ---
 
 ## 3. Metadata Index (`index.json`) Specification
