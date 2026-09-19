@@ -8,6 +8,7 @@ import {
   ScopeAggregatedData,
   GroupSummary,
 } from '../../../src/types/copilot';
+import { resolveDataPath } from '../utils/pathResolver';
 
 export interface RepoInfo {
   owner: string;
@@ -153,15 +154,16 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
   // 1. 初回インデックスのロード
   const loadIndex = useCallback(async (forcedDir?: string) => {
     const dir = forcedDir || (isDemoMode ? './data/demo' : './data');
+    const altDir = dir === './data/demo' ? './data' : './data/demo';
     try {
-      let res = await fetch(`${dir}/index.json`);
-      // 通常パスで404かつDEMOパス未指定時は、./data/demo/index.json へのフォールバックを試みる
-      if (!res.ok && dir !== './data/demo') {
+      let res = await fetch(resolveDataPath(`${dir}/index.json`));
+      // 双方向フォールバック: 指定パスで失敗した場合はもう一方のパス (./data <=> ./data/demo) を自動試行
+      if (!res.ok) {
         try {
-          const fallbackRes = await fetch('./data/demo/index.json');
+          const fallbackRes = await fetch(resolveDataPath(`${altDir}/index.json`));
           if (fallbackRes.ok) {
             res = fallbackRes;
-            setIsDemoMode(true);
+            setIsDemoMode(altDir === './data/demo');
           }
         } catch {
           // ignore fallback error
@@ -209,7 +211,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
         category: 'not_found',
         target: `${dir}/index.json`,
         message: `インデックスメタデータの読み込みに失敗しました: ${e.message}`,
-        details: `取得先URL: ${dir}/index.json\nDEMOデータセットアップコマンド: npm run demo:setup`,
+        details: `取得先URL: ${resolveDataPath(`${dir}/index.json`)}\nDEMOデータセットアップコマンド: npm run demo:setup`,
         http_status: 404,
         affected_fields: ['index'],
       });
@@ -272,17 +274,18 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
           fileName = `${selectedKey.replace(/[:\/]/g, '_')}.json`;
         }
 
-        const url = `${dataBaseDir}/${subDir}/${fileName}`;
-        let res = await fetch(url);
+        const primaryUrl = resolveDataPath(`${dataBaseDir}/${subDir}/${fileName}`);
+        let res = await fetch(primaryUrl);
 
-        // フォールバック: LIVEモード (./data) で404の場合、DEMOデータ (./data/demo) を自動試行
-        if (!res.ok && dataBaseDir !== './data/demo') {
+        // 双方向フォールバック: 失敗した場合はもう一方のパス (./data <=> ./data/demo) を自動試行
+        if (!res.ok) {
+          const altBaseDir = dataBaseDir === './data/demo' ? './data' : './data/demo';
           try {
-            const fallbackUrl = `./data/demo/${subDir}/${fileName}`;
+            const fallbackUrl = resolveDataPath(`${altBaseDir}/${subDir}/${fileName}`);
             const fallbackRes = await fetch(fallbackUrl);
             if (fallbackRes.ok) {
               res = fallbackRes;
-              setIsDemoMode(true);
+              setIsDemoMode(altBaseDir === './data/demo');
             }
           } catch {
             // ignore fallback error
@@ -290,7 +293,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
         }
 
         if (!res.ok) {
-          throw new Error(`Data for scope ${scopeType} (${selectedKey}) not found at ${url}`);
+          throw new Error(`Data for scope ${scopeType} (${selectedKey}) not found at ${primaryUrl}`);
         }
         const data = (await res.json()) as ScopeAggregatedData;
         if (!isCancelled) {
@@ -350,17 +353,18 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
       setReportLoading(true);
       setReportError(null);
       try {
-        const url = `${dataBaseDir}/reports/${selectedReportMonth}.json`;
-        let res = await fetch(url);
+        const primaryUrl = resolveDataPath(`${dataBaseDir}/reports/${selectedReportMonth}.json`);
+        let res = await fetch(primaryUrl);
 
-        // フォールバック: LIVEモードで404の場合、DEMOデータ (./data/demo/reports/) を試行
-        if (!res.ok && dataBaseDir !== './data/demo') {
+        // 双方向フォールバック: 失敗した場合はもう一方のパス (./data <=> ./data/demo) を自動試行
+        if (!res.ok) {
+          const altBaseDir = dataBaseDir === './data/demo' ? './data' : './data/demo';
           try {
-            const fallbackUrl = `./data/demo/reports/${selectedReportMonth}.json`;
+            const fallbackUrl = resolveDataPath(`${altBaseDir}/reports/${selectedReportMonth}.json`);
             const fallbackRes = await fetch(fallbackUrl);
             if (fallbackRes.ok) {
               res = fallbackRes;
-              setIsDemoMode(true);
+              setIsDemoMode(altBaseDir === './data/demo');
             }
           } catch {
             // ignore fallback error
@@ -368,7 +372,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
         }
 
         if (!res.ok) {
-          throw new Error(`Monthly report for ${selectedReportMonth} not found at ${url}`);
+          throw new Error(`Monthly report for ${selectedReportMonth} not found at ${primaryUrl}`);
         }
         const data = (await res.json()) as MonthlyReportAggregatedData;
         if (!isCancelled) {

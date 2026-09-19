@@ -10,6 +10,7 @@ import {
   DeepAnalysisDataSourceInfo,
 } from '../../../src/types/deep-analysis';
 import { adaptReportToProfiles } from '../utils/deepAnalysisAdapter';
+import { resolveDataPath } from '../utils/pathResolver';
 
 interface UseDeepAnalysisDataParams {
   activeSource: DataSourceType;
@@ -63,8 +64,17 @@ export function useDeepAnalysisData({
       setArchiveLoading(true);
       setArchiveError(null);
       try {
-        const url = `./data/deep-analysis/${selectedReportMonth}.json`;
-        const res = await fetch(url);
+        const primaryUrl = resolveDataPath(`./data/deep-analysis/${selectedReportMonth}.json`);
+        let res = await fetch(primaryUrl);
+        if (!res.ok) {
+          try {
+            const fallbackUrl = resolveDataPath(`./data/demo/deep-analysis/${selectedReportMonth}.json`);
+            const fallbackRes = await fetch(fallbackUrl);
+            if (fallbackRes.ok) res = fallbackRes;
+          } catch {
+            // ignore
+          }
+        }
         if (res.ok) {
           const data = (await res.json()) as DeepAnalysisArchive;
           if (data && Array.isArray(data.user_profiles)) {
