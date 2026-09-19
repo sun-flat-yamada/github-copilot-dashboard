@@ -21,7 +21,7 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data }) => {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {/* 1. 総費用 */}
+      {/* 1. 総費用 (利用費用 & 超過請求費用) */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg relative overflow-hidden group hover:border-slate-700 transition-all">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-slate-400">{costLabel}</span>
@@ -30,12 +30,32 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data }) => {
           </div>
         </div>
         <div className="mt-3">
-          <div className="text-2xl font-bold text-slate-100">
-            ${overview.total_spend_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          <div className="flex items-baseline space-x-2">
+            <span className="text-2xl font-bold text-slate-100">
+              ${overview.total_spend_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </span>
+            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">利用費用</span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
             契約シート数: <span className="text-slate-300 font-medium">{overview.total_seats} 席</span>
           </p>
+
+          {/* 超過請求費用 & 上限Limit設定値の併記 */}
+          {overview.total_net_billable_usd !== undefined && (
+            <div className="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+              <span className="text-slate-400">超過請求費用:</span>
+              <div className="flex items-center space-x-1.5">
+                <span className="font-mono font-semibold text-emerald-400">
+                  ${overview.total_net_billable_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </span>
+                {overview.total_spending_limit_usd !== undefined && overview.total_spending_limit_usd > 0 && (
+                  <span className="text-slate-500 font-mono text-[10px]">
+                    (上限: ${overview.total_spending_limit_usd.toLocaleString()})
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
