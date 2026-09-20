@@ -66,9 +66,10 @@ The center of the header prominently displays the currently active dataset, allo
 - Supports multi-tag selection evaluated with **AND logic (must match all selected tags)**.
 - Displays matching user counts ("Matched N / M users") and a "Clear" button. Re-aggregates KPI cards, group allocations, rankings, detail tables, and deep analytics dynamically in real time.
 
-### 2.3 Anti-Multi-Column Single-Stack Rule
+### 2.3 Anti-Multi-Column Single-Stack & Fluid Responsive Width Rule
 - Page layouts follow a strict **single-column vertical stack (`flex flex-col space-y-6 w-full`)**.
 - Splitting cards or charts horizontally (2-3 columns) is strictly prohibited to eliminate horizontal table scrolling and compressed timeline charts.
+- **Fluid Responsive Expansion on Window Maximization**: Narrow or fixed maximum widths (`max-w-7xl`, `max-w-[1600px]`, etc.) are eliminated. While maintaining appropriate side margins/padding (`px-4 sm:px-6 lg:px-8`), the content body (`<main>`) as well as header and navigation containers automatically expand to fill available space on large displays and maximized windows (`w-full mx-auto`).
 - **Exception Rule**: Side-by-side elements are permitted only when simultaneous comparative inspection is essential (e.g., budget vs. actuals) AND both elements have identical fixed heights.
 
 ### 2.4 Progressive Disclosure via Accordions
