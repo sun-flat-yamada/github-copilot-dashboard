@@ -34,7 +34,7 @@ export const ViewNavigation: React.FC<ViewNavigationProps> = ({
 }) => {
   return (
     <nav className="w-full border-b border-slate-800/80 bg-slate-950/40 backdrop-blur-sm sticky top-16 z-40">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-2 overflow-x-auto no-scrollbar">
+      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-2 overflow-x-auto no-scrollbar">
         <div className="inline-flex items-center space-x-1 p-1 bg-slate-900/90 border border-slate-800/90 rounded-2xl shadow-inner min-w-max">
           {ANALYSIS_VIEW_REGISTRY.map((view) => {
             const isActive = activeView === view.id;
