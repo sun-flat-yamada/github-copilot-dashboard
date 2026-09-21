@@ -222,9 +222,15 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     }
   }, [isDemoMode, addRuntimeIssue, clearRuntimeIssue]);
 
+  // 初回マウント時のみ実行する。loadIndex は isDemoMode に依存する useCallback のため、
+  // 依存配列に含めると Live Metrics / Monthly Report 取得時のDEMOフォールバック (isDemoMode の
+  // 暗黙的な変化) の度に index.json が再取得され、ユーザーが選択済みの selectedKey /
+  // selectedReportMonth が最新月へ強制的に巻き戻ってしまう。明示的なモード切替は
+  // toggleDemoMode が loadIndex を直接呼び出すため、ここでは初回ロードのみを行う。
   useEffect(() => {
     loadIndex();
-  }, [loadIndex]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 手動でDEMOモードとLIVEモードを切り替えるハンドラー
   const toggleDemoMode = useCallback((forcedMode?: boolean) => {
