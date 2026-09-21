@@ -62,6 +62,28 @@ test('Dashboard Data Stability & Infinite Loop Prevention Tests', async (t) => {
     );
   });
 
+  await t.test('verifies initial index load does not reset user-selected scope/report month on implicit isDemoMode flips', () => {
+    // Regression test: loadIndex() unconditionally resets selectedKey/selectedReportMonth to the
+    // metadata's "latest" defaults. If the mount effect re-runs loadIndex whenever isDemoMode changes
+    // (e.g. a silent DEMO fallback triggered while fetching a specific scope/report), the user's
+    // manual month selection gets clobbered back to the newest available month.
+    // The mount effect must therefore run exactly once and must NOT list loadIndex as a dependency.
+    assert.ok(
+      !/useEffect\(\(\)\s*=>\s*\{\s*loadIndex\(\);\s*\}\s*,\s*\[loadIndex\]\)/.test(hookContent),
+      'Initial loadIndex() useEffect must NOT depend on [loadIndex] (re-fires on every isDemoMode change and resets user selections)'
+    );
+    assert.ok(
+      /useEffect\(\(\)\s*=>\s*\{\s*loadIndex\(\);[\s\S]*?\}\s*,\s*\[\]\)/.test(hookContent),
+      'Initial loadIndex() useEffect must run exactly once on mount (empty dependency array)'
+    );
+
+    // Explicit user-initiated mode switching must still reset to the new mode's defaults.
+    assert.ok(
+      hookContent.includes("loadIndex(next ? './data/demo' : './data');"),
+      'toggleDemoMode must continue to explicitly call loadIndex to reset defaults for the newly selected mode'
+    );
+  });
+
   await t.test('verifies App.tsx renders MonthlyReportView without destructive unmounting during background fetch', () => {
     // When reportLoading is true but currentReportData exists, App should NOT destroy MonthlyReportView
     assert.ok(
