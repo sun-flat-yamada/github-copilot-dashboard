@@ -32,6 +32,7 @@ flowchart TD
 
     subgraph D4["4. User Interface"]
         S07["SDD-07 Dashboard UI/UX & Fallbacks"]
+        S15["SDD-15 Data-Centric Reactivity Design"]
     end
 
     subgraph D5["5. Operations & Fork Lifecycle"]
@@ -65,6 +66,7 @@ flowchart TD
 | **SDD-12** | Fork Synchronization & Operations Specification | [EN](12_fork_sync_and_customization_ops_spec.md) \| [JA](12_fork_sync_and_customization_ops_spec.ja.md) | Upstream sync runbooks (UI/CLI), dual-branch model, health audit | Active (2026.09) |
 | **SDD-13** | Fork-Restricted Environment Setup Guide | [EN](13_fork_restricted_environment_setup_guide.md) \| [JA](13_fork_restricted_environment_setup_guide.ja.md) | Mirror-based duplication procedure for EMU and restricted enterprises | Active (2026.09) |
 | **SDD-14** | Development Workflow & Git Ops Specification | [EN](14_development_workflow_and_git_ops_spec.md) \| [JA](14_development_workflow_and_git_ops_spec.ja.md) | Multi-agent parallel Worktree operations, Issue driven, PR & Rebase merge, permission model | Active (2026.09) |
+| **SDD-15** | Data-Centric Reactivity Design Specification | [EN](15_data_centric_reactivity_design_spec.md) \| [JA](15_data_centric_reactivity_design_spec.ja.md) | Cross-View tracking of active selected data (source/scope/tags), React implementation conventions, known anti-patterns | Active (2026.09) |
 
 ---
 
@@ -90,7 +92,7 @@ Depending on your role, we recommend reviewing specifications in the following o
 
 ### 4. Frontend & Data Pipeline Engineers
 1. [SDD-03 GitHub Copilot API](03_github_copilot_api_spec_2026.md) & [SDD-06 Aggregation](06_aggregation_and_billing_logic_spec.md)
-2. [SDD-07 Dashboard UI/UX](07_dashboard_ui_ux_spec.md)
+2. [SDD-07 Dashboard UI/UX](07_dashboard_ui_ux_spec.md) & [SDD-15 Data-Centric Reactivity Design](15_data_centric_reactivity_design_spec.md)
 3. [SDD-11 Deep Analytics View](11_deep_analysis_view_spec.md)
 
 ---
@@ -99,6 +101,6 @@ Depending on your role, we recommend reviewing specifications in the following o
 
 When proposing a new feature or architectural change:
 1. **Bilingual Standard**: Always provide both English (`XX_<feature>.md`) and Japanese (`XX_<feature>.ja.md`) specifications.
-2. **Numbering & Naming**: Follow sequential numbering (`SDD-14`, `SDD-15`, etc.) under `docs/specifications/`.
+2. **Numbering & Naming**: Follow sequential numbering (`SDD-15`, `SDD-16`, etc.) under `docs/specifications/`.
 3. **Traceability**: Update this index whenever a new specification is approved.
 4. **Zero Secrets**: Never include real tokens, credentials, or internal org PII in specification examples.

@@ -103,6 +103,12 @@ The aggregation engine and dashboard must support rapid switching between data s
   6. `model_radar` (AI Model Characteristic Benchmark Radar)
 - Dynamically enable or disable views according to the capabilities of the currently active data source.
 
+### FR-9: Cross-View Data-Centric Reactivity
+- Every analysis View (FR-8) must render its displayed content (KPI figures, default selections, charts, derived usage percentages, etc.) as a **pure function of "the analysis target data the user currently has actively selected"** — i.e., the combination of the active data source type (FR-3-1) × time/group scope (FR-3-2) × Tag AND filter (FR-6).
+- When a View is already mounted and visible and the user changes only the scope or tag filter (without revisiting the View tab itself), that View's displayed content, default selections, and derived aggregates **must immediately recompute and track the change without requiring a remount**. Implementations that "compute once on first render and never again" violate this requirement.
+- When a computed value has a cross-data-source fallback path (e.g., falling back to Monthly Usage Report aggregates when Live Metrics data is empty), **the fallback path must equally honor the active filters**. Being a "fallback" path is never a valid excuse for ignoring filter state.
+- The detailed design policy, implementation conventions, and known anti-patterns for satisfying this requirement are defined in [SDD-15: Data-Centric Reactivity Design Specification](15_data_centric_reactivity_design_spec.md).
+
 ---
 
 ## 4. Non-Functional Requirements

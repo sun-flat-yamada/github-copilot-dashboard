@@ -8,7 +8,7 @@
 
 ## 🏛️ 仕様ドメイン & アーキテクチャ構成図
 
-全13件の仕様書は、以下の6つのエンジニアリングドメインに分類・体系化されています：
+全15件の仕様書は、以下の6つのエンジニアリングドメインに分類・体系化されています：
 
 ```mermaid
 flowchart TD
@@ -32,6 +32,7 @@ flowchart TD
 
     subgraph D4["4. フロントエンド UI/UX"]
         S07["SDD-07 ダッシュボード UI/UX 仕様"]
+        S15["SDD-15 データセントリック・リアクティビティ設計"]
     end
 
     subgraph D5["5. 自動化運用 & Fork保守ライフサイクル"]
@@ -65,6 +66,7 @@ flowchart TD
 | **SDD-12** | Fork先変更反映 & 運用保守仕様書 | [JA](12_fork_sync_and_customization_ops_spec.ja.md) \| [EN](12_fork_sync_and_customization_ops_spec.md) | 本家同期手順 (Web UI/CLI)、2層ブランチ運用、健全性診断 | 正式運用 (2026.09) |
 | **SDD-13** | Fork制限環境向けセットアップ手順書 | [JA](13_fork_restricted_environment_setup_guide.ja.md) \| [EN](13_fork_restricted_environment_setup_guide.md) | EMU・ポリシー制限によりGitHub Forkを使えない組織向けのミラー複製手順 | 正式運用 (2026.09) |
 | **SDD-14** | 開発運用ワークフロー & Git Ops 仕様書 | [JA](14_development_workflow_and_git_ops_spec.ja.md) \| [EN](14_development_workflow_and_git_ops_spec.md) | 複数AIエージェント並行Worktree運用、Issue起票、PR作成、Rebaseマージ、権限制御 | 正式運用 (2026.09) |
+| **SDD-15** | データセントリック・リアクティビティ設計仕様書 | [JA](15_data_centric_reactivity_design_spec.ja.md) \| [EN](15_data_centric_reactivity_design_spec.md) | 各Viewのアクティブ選択データ（データソース/スコープ/タグ）への追従原則、React実装規約、既知アンチパターン | 正式運用 (2026.09) |
 
 ---
 
@@ -90,7 +92,7 @@ flowchart TD
 
 ### 4. フロントエンド・パイプライン開発者
 1. [SDD-03 GitHub API 仕様書](03_github_copilot_api_spec_2026.ja.md) & [SDD-06 集計ロジック](06_aggregation_and_billing_logic_spec.ja.md)
-2. [SDD-07 ダッシュボード UI/UX 仕様書](07_dashboard_ui_ux_spec.ja.md)
+2. [SDD-07 ダッシュボード UI/UX 仕様書](07_dashboard_ui_ux_spec.ja.md) & [SDD-15 データセントリック・リアクティビティ設計仕様書](15_data_centric_reactivity_design_spec.ja.md)
 3. [SDD-11 深い分析専用ビュー仕様書](11_deep_analysis_view_spec.ja.md)
 
 ---
@@ -99,6 +101,6 @@ flowchart TD
 
 新規機能や仕様変更を起票する際は以下を遵守してください：
 1. **日英バイリンガル必須**: 英語 (`XX_<feature>.md`) と日本語 (`XX_<feature>.ja.md`) の両方を必ず同時に整備してください。
-2. **連番採番**: `docs/specifications/` 直下に `SDD-14`, `SDD-15` と連番で配置します。
+2. **連番採番**: `docs/specifications/` 直下に `SDD-15`, `SDD-16` と連番で配置します。
 3. **インデックス更新**: 本ファイルおよび関連するドキュメント一覧を同期してください。
 4. **シークレット・PIIの完全排除**: サンプルコードや説明文に本物のトークンや実在の社内人名を含めてはなりません。
