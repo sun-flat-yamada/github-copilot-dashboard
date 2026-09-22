@@ -160,3 +160,12 @@ flowchart TB
 ├── tsconfig.json
 └── README.md
 ```
+
+---
+
+## 4. フロントエンドの状態管理原則 (データセントリック・リアクティビティ)
+
+`dashboard/` 配下のSPAは、`useDashboardData` フックを**唯一の情報源 (Single Source of Truth)** とし、アクティブデータソース・スコープ・タグフィルターに応じたフィルター適用済みの派生データ（`currentData`, `currentReportData` 等）のみを各Viewコンポーネントへ供給する。
+
+グローバルなコントロールバー（`ActiveDataSelector` / `ScopeSelector` / `TagFilterBar`）は `App.tsx` 内で各Viewコンポーネントの外側の兄弟要素として配置されるため、フィルター変更はViewを再マウントしない。したがって各Viewは、マウント時の一度きりの計算ではなく、派生データの参照変化に追従する実装（`useMemo` / `useEffect` の依存配列設計）を必須とする。この原則（データセントリック・リアクティビティ）の詳細な設計方針・実装規約・既知のアンチパターンは [SDD-15 データセントリック・リアクティビティ設計仕様書](15_data_centric_reactivity_design_spec.ja.md) に定める。
+

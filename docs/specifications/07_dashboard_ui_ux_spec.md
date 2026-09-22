@@ -11,9 +11,11 @@
 
 ---
 
-## 1. Overall Layout
+## 1. Overall Layout (Data-Centric & Single-Column Vertical Stack)
 
 The dashboard is designed as a responsive Single Page Application (SPA) optimized for execution on GitHub Pages, adhering to an **Anti-Multi-Column Single-Stack** structure and **Progressive Disclosure** via accordions.
+
+> **What "Data-Centric" means here**: This term is not merely a layout philosophy (consolidating data selection at the top of the screen). It also encodes an implementation requirement (SDD-01 FR-9): **every View's displayed content must always behave as a pure function of the header's Active Selected Data (source / scope / tags)**. Because the global control bar (`ActiveDataSelector` / `ScopeSelector` / `TagFilterBar`) is rendered as a sibling element outside each View, filter changes never remount the View. Views must therefore never rely on a one-time, mount-time computation, and must instead track every change to the Active Selected Data. See [SDD-15: Data-Centric Reactivity Design Specification](15_data_centric_reactivity_design_spec.md) for the detailed design policy, implementation conventions, and checklist.
 
 ```
 +------------------------------------------------------------------------------------------------------+
