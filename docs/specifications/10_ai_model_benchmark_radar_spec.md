@@ -69,6 +69,10 @@ flowchart TD
   Models with zero internal request volume display an enterprise share of **`0%` (0 req)**, labeled with an "Exploratory / Evaluation Knowledge" badge to guide trial adoption.
 - **Identifier Normalization (`normalizeModelId`)**:
   Normalizes label variations (e.g., `Claude 3.7 Sonnet`, `GPT-4o mini`, `o1 (Reasoning)`, `Gemini 2.0 Flash`) to standard knowledge IDs (`claude-3-7-sonnet`, `gpt-4o-mini`, `o1`, `gemini-2-0-flash`).
+- **Tag/Scope Filter Reactivity (`Usage Share (%)` Recomputation)**:
+  Whenever the Tag filter or scope (target month, organization, etc.) changes, each model's usage volume and usage share (%) are always recomputed strictly from the currently "active analysis target data".
+  - **Live Metrics**: Since per-user, per-model request counts (`model_usage_totals`) are retained, the breakdown is recomputed exactly from the user set after the tag AND-filter is applied.
+  - **Monthly Usage Report / Uploaded Data**: User records retain only a single `primary_model` per user (no per-model breakdown per user), so when a tag filter is applied, `model_breakdown` is recomputed as an approximation that attributes each filtered user's full request count to their `primary_model`. When no tags are selected, the original precise breakdown computed at parse time is used unchanged.
 
 ### 2.4 Quick Navigation in Model Details Card
 - **Top-Mounted 2-Tier Full-Width Layout**: Positioned at the very top of the card widget with a dedicated 2-tier row layout: upper tier hosts the label and index counter (`1 / 4`), while the lower tier utilizes the full width of the widget for step navigation buttons (`<` / `>`) and the wide model selector dropdown. This prevents unwanted line wrapping and layout shifting when model names are long.
