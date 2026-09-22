@@ -156,3 +156,12 @@ flowchart TB
 ├── tsconfig.json
 └── README.md
 ```
+
+---
+
+## 4. Frontend State Management Principle (Data-Centric Reactivity)
+
+The SPA under `dashboard/` treats the `useDashboardData` hook as the **Single Source of Truth**, supplying each View component only with filter-applied derived data (`currentData`, `currentReportData`, etc.) reflecting the active data source, scope, and tag filters.
+
+Because the global control bar (`ActiveDataSelector` / `ScopeSelector` / `TagFilterBar`) is rendered inside `App.tsx` as a sibling element outside each View component, changing a filter never remounts the View. Every View must therefore be implemented to track changes in the reference identity of the derived data (via `useMemo` / `useEffect` dependency array design), rather than computing once at mount time. The detailed design policy, implementation conventions, and known anti-patterns for this principle (Data-Centric Reactivity) are defined in [SDD-15: Data-Centric Reactivity Design Specification](15_data_centric_reactivity_design_spec.md).
+
