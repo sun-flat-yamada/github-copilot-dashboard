@@ -13,6 +13,7 @@ import {
   getCandidateDataUrls,
   fetchDataWithFallback,
 } from '../utils/pathResolver';
+import { buildFilteredModelBreakdown } from '../utils/reportModelBreakdown';
 
 export interface RepoInfo {
   owner: string;
@@ -601,6 +602,11 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
       return res;
     };
 
+    // タグ絞り込み時のモデル内訳再集計
+    // (Monthly Report のユーザー明細には primary_model のみ保持されているため、
+    //  各ユーザーの total_requests/total_spend_usd を primary_model に按分計上する近似値)
+    const filteredModelBreakdown = buildFilteredModelBreakdown(filteredDetails);
+
     return {
       ...activeReportData,
       overview: {
@@ -608,8 +614,10 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
         total_net_spend_usd: Number(totalSpend.toFixed(2)),
         total_requests: totalRequests,
         total_active_users: filteredDetails.length,
+        top_model: filteredModelBreakdown[0]?.model_name || 'N/A',
       },
       user_details: filteredDetails,
+      model_breakdown: filteredModelBreakdown,
       by_department: buildFilteredReportGroups('department'),
       by_cost_center: buildFilteredReportGroups('cost_center'),
       by_organization: buildFilteredReportGroups('organization'),
