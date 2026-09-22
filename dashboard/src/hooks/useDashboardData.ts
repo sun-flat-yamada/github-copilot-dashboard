@@ -58,11 +58,13 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [noLiveData, setNoLiveData] = useState<boolean>(false);
+  // 現在表示中の Live Metrics データが実際に /demo/ パスから取得されたものか (ソース単位で追跡)
+  const [scopeDataIsDemoSourced, setScopeDataIsDemoSourced] = useState<boolean | undefined>(undefined);
 
-  // キャッシュ
+  // キャッシュ (取得元が demo パスだったかどうかも併せて保持する)
   const currentDataRef = useRef<ScopeAggregatedData | null>(null);
   currentDataRef.current = currentData;
-  const scopeDataCacheRef = useRef<Map<string, ScopeAggregatedData>>(new Map());
+  const scopeDataCacheRef = useRef<Map<string, { data: ScopeAggregatedData; isDemoSourced: boolean }>>(new Map());
 
   // Monthly Usage Report スコープ
   const [selectedReportMonth, setSelectedReportMonth] = useState<string>('2026-08');
@@ -71,7 +73,9 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
   const [reportError, setReportError] = useState<string | null>(null);
   const currentReportDataRef = useRef<MonthlyReportAggregatedData | null>(null);
   currentReportDataRef.current = currentReportData;
-  const reportCacheRef = useRef<Map<string, MonthlyReportAggregatedData>>(new Map());
+  const reportCacheRef = useRef<Map<string, { data: MonthlyReportAggregatedData; isDemoSourced: boolean }>>(new Map());
+  // 現在表示中の Monthly Report データが実際に /demo/ パスから取得されたものか (ソース単位で追跡)
+  const [reportDataIsDemoSourced, setReportDataIsDemoSourced] = useState<boolean | undefined>(undefined);
 
   // User Upload スコープ (On-demand)
   const [uploadedData, setUploadedData] = useState<MonthlyReportAggregatedData | null>(null);
@@ -262,7 +266,8 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     const cacheKey = `${dataBaseDir}:${scopeType}:${selectedKey}`;
     const cached = scopeDataCacheRef.current.get(cacheKey);
     if (cached) {
-      setCurrentData(cached);
+      setCurrentData(cached.data);
+      setScopeDataIsDemoSourced(cached.isDemoSourced);
       setLoading(false);
       setError(null);
       return;
@@ -290,13 +295,16 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
         if (!res.ok) {
           throw new Error(`Data for scope ${scopeType} (${selectedKey}) not found at ${candidateUrls[0]}`);
         }
-        if (finalUrl.includes('/demo/') && !isDemoMode) {
-          setIsDemoMode(true);
-        }
+        // このリクエスト単体が /demo/ パスへフォールバックしたかどうかをソース単位で記録する。
+        // グローバルな isDemoMode (ユーザーの既定ディレクトリ選好) は書き換えない。これにより、
+        // Live Metrics だけがフォールバックしても Monthly Report 等 他ソースの表示が
+        // 誤って「DEMO」表示になることを防ぐ。
+        const isDemoSourced = finalUrl.includes('/demo/');
         const data = (await res.json()) as ScopeAggregatedData;
         if (!isCancelled) {
-          scopeDataCacheRef.current.set(cacheKey, data);
+          scopeDataCacheRef.current.set(cacheKey, { data, isDemoSourced });
           setCurrentData(data);
+          setScopeDataIsDemoSourced(isDemoSourced);
           clearRuntimeIssue(`scope-${scopeType}-${selectedKey}`);
         }
       } catch (e: any) {
@@ -339,7 +347,8 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
 
     const cached = reportCacheRef.current.get(`${dataBaseDir}:${selectedReportMonth}`);
     if (cached) {
-      setCurrentReportData(cached);
+      setCurrentReportData(cached.data);
+      setReportDataIsDemoSourced(cached.isDemoSourced);
       setReportLoading(false);
       setReportError(null);
       return;
@@ -357,13 +366,15 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
         if (!res.ok) {
           throw new Error(`Monthly report for ${selectedReportMonth} not found at ${candidateUrls[0]}`);
         }
-        if (finalUrl.includes('/demo/') && !isDemoMode) {
-          setIsDemoMode(true);
-        }
+        // Live Metrics と同様、このリクエスト単体のフォールバック有無をソース単位で記録する。
+        // グローバルな isDemoMode は書き換えない (Monthly Report がフォールバックしても
+        // Live Metrics 側の表示に影響を与えないようにするため)。
+        const isDemoSourced = finalUrl.includes('/demo/');
         const data = (await res.json()) as MonthlyReportAggregatedData;
         if (!isCancelled) {
-          reportCacheRef.current.set(`${dataBaseDir}:${selectedReportMonth}`, data);
+          reportCacheRef.current.set(`${dataBaseDir}:${selectedReportMonth}`, { data, isDemoSourced });
           setCurrentReportData(data);
+          setReportDataIsDemoSourced(isDemoSourced);
           clearRuntimeIssue(`report-${selectedReportMonth}`);
         }
       } catch (e: any) {
@@ -427,6 +438,22 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     }
     return currentReportData;
   }, [activeSource, uploadedData, currentReportData]);
+
+  // 現在アクティブ選択中のデータソースが実際に DEMO データを表示しているか (ソース単位の実態)。
+  // グローバルな isDemoMode (既定ディレクトリ選好) とは独立しており、
+  // - live_metrics: Live Metrics 取得が /demo/ へフォールバックしたか
+  // - monthly_report: Monthly Report 取得が /demo/ へフォールバックしたか
+  // - user_upload: ユーザーが自分のファイルをアップロードした実データのため常に false (DEMO扱いしない)
+  // 該当データが未取得の場合は undefined を返し、呼び出し側で静的ヒューリスティックにフォールバックできるようにする。
+  const activeDataIsDemoSourced = useMemo((): boolean | undefined => {
+    if (activeSource === 'user_upload') {
+      return false;
+    }
+    if (activeSource === 'monthly_report') {
+      return reportDataIsDemoSourced;
+    }
+    return scopeDataIsDemoSourced;
+  }, [activeSource, scopeDataIsDemoSourced, reportDataIsDemoSourced]);
 
   // 利用可能な全タグの抽出 (現在のデータソースから)
   const availableTags = useMemo(() => {
@@ -615,10 +642,12 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     availableReports,
     allIssues,
     hasErrors,
-    // DEMOモード状態と切替
+    // DEMOモード状態と切替 (グローバルな既定ディレクトリ選好)
     isDemoMode,
     toggleDemoMode,
     dataBaseDir,
+    // 現在アクティブなデータソースが実際に DEMO データかどうか (ソース単位・ヘッダーバッジ用)
+    activeDataIsDemoSourced,
     // タグANDフィルター
     availableTags,
     selectedTags,

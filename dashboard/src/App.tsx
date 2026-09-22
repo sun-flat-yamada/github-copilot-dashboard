@@ -87,6 +87,7 @@ export const App: React.FC = () => {
     handleClearTags,
     isDemoMode,
     toggleDemoMode,
+    activeDataIsDemoSourced,
   } = useDashboardData('live_metrics');
 
   // ディープ分析用データ統合フック (Live Metrics / Monthly Report / User Upload 全対応)
@@ -287,6 +288,7 @@ export const App: React.FC = () => {
         onOpenAboutModal={() => setIsAboutModalOpen(true)}
         isDemoMode={isDemoMode}
         onToggleDemoMode={toggleDemoMode}
+        activeDataIsDemoSourced={activeDataIsDemoSourced}
         theme={theme}
         onToggleTheme={toggleTheme}
       />

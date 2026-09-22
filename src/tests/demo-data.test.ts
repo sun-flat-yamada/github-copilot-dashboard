@@ -213,13 +213,17 @@ describe('Live Metrics DEMO Data & Referencing Tests', () => {
     assert.ok(mockRuntimeError.target.includes('monthly:2026-09'));
   });
 
-  it('verifies DashboardHeader.tsx binds showDemoBadge and exports isMockModeData', () => {
+  it('verifies DashboardHeader.tsx binds showDemoBadge to per-source activeDataIsDemoSourced with isMockMode fallback', () => {
     const headerContent = fs.readFileSync(
       path.resolve(projectRoot, 'dashboard/src/components/layout/DashboardHeader.tsx'),
       'utf-8'
     );
     assert.match(headerContent, /const isMockMode = isMockModeData\(indexMeta, repoInfo\);/);
-    assert.match(headerContent, /const showDemoBadge = isDemoMode !== undefined \? isDemoMode : isMockMode;/);
+    assert.match(
+      headerContent,
+      /const showDemoBadge = activeDataIsDemoSourced !== undefined \? activeDataIsDemoSourced : isMockMode;/,
+      'showDemoBadge must be driven by the per-active-source activeDataIsDemoSourced flag, not the global isDemoMode'
+    );
     assert.match(headerContent, /{showDemoBadge \?/);
   });
 

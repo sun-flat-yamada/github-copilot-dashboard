@@ -77,6 +77,24 @@ describe('Header Mock/DEMO Mode Status Tests', () => {
     assert.match(content, /bg-emerald-500/);
   });
 
+  it('verifies DashboardHeader.tsx badge reflects the per-active-source activeDataIsDemoSourced prop', () => {
+    // Regression test: the badge must reflect the currently active data source's own fetch status,
+    // not a single global isDemoMode flag shared across Live Metrics / Monthly Report / User Upload.
+    const headerPath = path.resolve('dashboard/src/components/layout/DashboardHeader.tsx');
+    const content = fs.readFileSync(headerPath, 'utf-8');
+
+    assert.match(
+      content,
+      /activeDataIsDemoSourced\?:\s*boolean;/,
+      'DashboardHeaderProps must declare an activeDataIsDemoSourced prop'
+    );
+    assert.match(
+      content,
+      /const showDemoBadge = activeDataIsDemoSourced !== undefined \? activeDataIsDemoSourced : isMockMode;/,
+      'showDemoBadge must prioritize activeDataIsDemoSourced over the global isDemoMode/isMockMode heuristic'
+    );
+  });
+
   it('verifies proud-corp and zero-live-metrics fallback heuristic logic', () => {
     // 判定ロジックの契約テスト: DashboardHeader の isMockModeData と同等の判定
     const simulateCheck = (meta: Partial<IndexMetadata> | null, repo?: { owner: string }) => {
