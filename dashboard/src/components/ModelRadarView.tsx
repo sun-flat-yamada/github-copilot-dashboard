@@ -136,10 +136,12 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
     }
   };
 
-  // 初期選択完了フラグ
-  const hasInitializedRef = useRef<boolean>(false);
+  // 直前に適用した明示的モデル指定 (initialSelectedModelId) の値。同一値の再適用でユーザー操作を上書きしないための変更検知用。
+  const appliedInitialModelIdRef = useRef<string | undefined>(undefined);
+  // ユーザーが手動でモデル選択を操作したか (true の間は Top3 自動追従を停止し、明示的な選択を維持する)
+  const isManualSelectionRef = useRef<boolean>(false);
 
-  // 1. ベンチマークデータの取得
+  // 1. ベンチマークデータの取得 (静的な参照ベンチマークデータのため、マウント時に一度だけ取得)
   useEffect(() => {
     async function loadDataset() {
       setLoading(true);
@@ -151,21 +153,6 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
         }
         const data = (await res.json()) as BenchmarkDataset;
         setDataset(data);
-
-        // 初期選択モデルの設定:
-        // 1. initialSelectedModelId が指定されていればそれを選択
-        // 2. 利用データに基づく Top 3 モデルを選択 (利用実績データがない/0件の場合は未選択: [])
-        if (initialSelectedModelId && data.models.some((m) => m.id === initialSelectedModelId)) {
-          setSelectedModelIds([initialSelectedModelId]);
-          setFocusedModelId(initialSelectedModelId);
-          hasInitializedRef.current = true;
-        } else {
-          const stats = computeModelUsage(data, aggregatedData, monthlyReportData);
-          const top3Ids = getTopUsageModelIds(data, stats, 3);
-          setSelectedModelIds(top3Ids);
-          setFocusedModelId(top3Ids[0] || '');
-          hasInitializedRef.current = true;
-        }
       } catch (e: any) {
         console.error('Failed to load benchmark dataset:', e);
         setError(e.message || 'データロードエラー');
@@ -175,24 +162,33 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
     }
 
     loadDataset();
-  }, [initialSelectedModelId]);
+  }, []);
 
-  // 利用データが非同期で後から到着した場合の初期選択反映 (未初期化または未選択時)
+  // 2. モデル選択の決定:
+  // 1. initialSelectedModelId が (新規に) 指定されていればそれを優先選択 (Trend等からの明示的な遷移)
+  // 2. それ以外は、アクティブな分析対象データ (スコープ・タグANDフィルター適用後の aggregatedData /
+  //    monthlyReportData) の Top 3 利用モデルをデフォルト選択とし、対象データが変わる都度追従・再計算する
+  // 3. ユーザーが一度でも手動でモデル選択を操作した後は、データが変化しても自動追従を停止し上書きしない
   useEffect(() => {
-    if (!dataset || hasInitializedRef.current) return;
+    if (!dataset) return;
+
     if (initialSelectedModelId && dataset.models.some((m) => m.id === initialSelectedModelId)) {
-      setSelectedModelIds([initialSelectedModelId]);
-      setFocusedModelId(initialSelectedModelId);
-      hasInitializedRef.current = true;
+      // 同一値の再適用 (依存配列内の他要素変化による再実行) ではユーザーの手動選択を上書きしない
+      if (appliedInitialModelIdRef.current !== initialSelectedModelId) {
+        appliedInitialModelIdRef.current = initialSelectedModelId;
+        isManualSelectionRef.current = true;
+        setSelectedModelIds([initialSelectedModelId]);
+        setFocusedModelId(initialSelectedModelId);
+      }
       return;
     }
+
+    if (isManualSelectionRef.current) return;
+
     const stats = computeModelUsage(dataset, aggregatedData, monthlyReportData);
     const top3Ids = getTopUsageModelIds(dataset, stats, 3);
-    if (top3Ids.length > 0) {
-      setSelectedModelIds(top3Ids);
-      setFocusedModelId(top3Ids[0] || '');
-      hasInitializedRef.current = true;
-    }
+    setSelectedModelIds(top3Ids);
+    setFocusedModelId(top3Ids[0] || '');
   }, [dataset, aggregatedData, monthlyReportData, initialSelectedModelId]);
 
   // 組織内・分析対象データの実績集計 (未利用モデルも必ず 0% として保持ナレッジ全モデルを網羅)
@@ -376,6 +372,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
 
   // モデル選択トグル (全モデル選択可能・0モデル選択解除も可能)
   const handleToggleModel = (id: string) => {
+    isManualSelectionRef.current = true;
     if (selectedModelIds.includes(id)) {
       const next = selectedModelIds.filter((m) => m !== id);
       setSelectedModelIds(next);
@@ -390,6 +387,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
 
   // 複数モデルの一括選択/一括解除 (ベンダー・Tier別ボタン用)
   const handleBatchSelectModels = (targetIds: string[], select: boolean) => {
+    isManualSelectionRef.current = true;
     if (select) {
       setSelectedModelIds((prev) => Array.from(new Set([...prev, ...targetIds])));
       if (!targetIds.includes(focusedModelId) && targetIds.length > 0) {
@@ -408,6 +406,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
 
   // 全Copilotモデル一括選択
   const handleSelectAllCopilot = () => {
+    isManualSelectionRef.current = true;
     if (!dataset) return;
     const copilotIds = dataset.models.filter((m) => m.is_copilot_native).map((m) => m.id);
     setSelectedModelIds(copilotIds);
@@ -416,11 +415,13 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
 
   // 全モデルの選択解除 (完全クリア)
   const handleClearSelection = () => {
+    isManualSelectionRef.current = true;
     setSelectedModelIds([]);
     setFocusedModelId('');
   };
 
   const handleApplyPreset = (modelIds: string[]) => {
+    isManualSelectionRef.current = true;
     setSelectedModelIds(modelIds);
     setFocusedModelId(modelIds[0] || '');
   };

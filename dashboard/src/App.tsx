@@ -111,7 +111,8 @@ export const App: React.FC = () => {
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [userTableFilterStatus, setUserTableFilterStatus] = useState<UserSeatStatus | 'all'>('all');
   const [focusedUserLogin, setFocusedUserLogin] = useState<string>('');
-  const [focusedRadarModelId, setFocusedRadarModelId] = useState<string>('claude-3-7-sonnet');
+  // 空文字時は ModelRadarView 側でアクティブ選択データの Top3 利用モデルが自動選択される (SDD-10)
+  const [focusedRadarModelId, setFocusedRadarModelId] = useState<string>('');
 
   // 4. モーダル状態
   const [isErrorModalOpen, setIsErrorModalOpen] = useState<boolean>(false);
@@ -190,6 +191,16 @@ export const App: React.FC = () => {
   const handleOpenRadar = (modelId?: string) => {
     if (modelId) setFocusedRadarModelId(modelId);
     setActiveView('model_radar');
+  };
+
+  // Viewナビゲーションタブからの直接遷移時は個別モデル指定をリセットし、
+  // モデル特性レーダーが常にアクティブ選択データのTop3利用モデルをデフォルト選択できるようにする
+  // (特定モデルへのフォーカス遷移は handleOpenRadar 経由のみ)
+  const handleSelectView = (view: AnalysisViewId) => {
+    if (view === 'model_radar') {
+      setFocusedRadarModelId('');
+    }
+    setActiveView(view);
   };
 
   const handleOpenDeepAnalysis = (login?: string) => {
@@ -296,7 +307,7 @@ export const App: React.FC = () => {
       {/* 2. 分析Viewナビゲーションバー (6つのView切り替え ★要件4) */}
       <ViewNavigation
         activeView={activeView}
-        onSelectView={setActiveView}
+        onSelectView={handleSelectView}
         activeSource={activeSource}
       />
 
