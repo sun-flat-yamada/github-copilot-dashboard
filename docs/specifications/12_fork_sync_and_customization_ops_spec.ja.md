@@ -125,7 +125,7 @@ GitHub EMU / ポリシー制限のある組織における同種のチェック�
 
 > [!NOTE]
 > `copilot-analysis-cron.yml` の `analyze-and-deploy` ジョブには
-> `github.repository == 'sun-flat-yamada/github-copilot-dashboard'` というガードが
+> `github.repository == 'sun-flat-yamada/github-copilot-dashboard' || github.repository_id == '1364445722'`(数値IDはリネーム・移管に耐える保険として併記)というガードが
 > 付与されているため、上記の2層ブランチ戦略のようにダウンストリームフォーク側で
 > `main` を意図的にデプロイ非対象のまま維持している場合、retarget前の
 > (`main` のままの)ワークフローは、通常の fast-forward 同期を含むあらゆる
