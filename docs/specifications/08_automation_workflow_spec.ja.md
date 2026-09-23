@@ -109,7 +109,7 @@ permissions:
 ```
 
 > [!NOTE]
-> `analyze-and-deploy` ジョブには `github.repository == 'sun-flat-yamada/github-copilot-dashboard'` というガードが付与されている。2層ブランチ戦略([SDD-12 第2.2節](12_fork_sync_and_customization_ops_spec.ja.md#22-例外-コード改修ui独自機能が必要な場合の2層ブランチ戦略))を採用し、`main` を恒久的にデプロイ非実行の純粋ミラーとして維持し、実運用パイプラインを自身のカスタマイズ用ブランチへ retarget しているダウンストリームフォークでは、このガードが無い場合、通常の upstream fast-forward 同期を含むあらゆる `main` へのpushのたびに、そのフォーク自身のリポジトリ上で本ジョブが起動を試み、`github-pages` 環境保護ルールに阻まれて失敗してしまう(詳細は[SDD-12 第2.3節](12_fork_sync_and_customization_ops_spec.ja.md#23-forkcustom-運用時の設定チェックリスト-operational-checklist)を参照)。本ガードにより、該当フォークではジョブが失敗ではなくクリーンにスキップされるようになり、本リポジトリ自身の実行には一切影響しない。
+> `analyze-and-deploy` ジョブには `github.repository == 'sun-flat-yamada/github-copilot-dashboard' || github.repository_id == '1364445722'` というガードが付与されている(数値のリポジトリIDは、本リポジトリが将来リネームまたは別オーナーへ移管された場合の保険として併記している。`github.repository` はリネーム/移管で値が変わるが、`github.repository_id` は不変であるため — 詳細は[Contexts reference](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts)を参照)。2層ブランチ戦略([SDD-12 第2.2節](12_fork_sync_and_customization_ops_spec.ja.md#22-例外-コード改修ui独自機能が必要な場合の2層ブランチ戦略))を採用し、`main` を恒久的にデプロイ非実行の純粋ミラーとして維持し、実運用パイプラインを自身のカスタマイズ用ブランチへ retarget しているダウンストリームフォークでは、このガードが無い場合、通常の upstream fast-forward 同期を含むあらゆる `main` へのpushのたびに、そのフォーク自身のリポジトリ上で本ジョブが起動を試み、`github-pages` 環境保護ルールに阻まれて失敗してしまう(詳細は[SDD-12 第2.3節](12_fork_sync_and_customization_ops_spec.ja.md#23-forkcustom-運用時の設定チェックリスト-operational-checklist)を参照)。本ガードにより、該当フォークではジョブが失敗ではなくクリーンにスキップされるようになり、本リポジトリ自身の実行には一切影響しない。
 
 ### ステップフロー:
 1. チェックアウト (`main`)

@@ -125,7 +125,7 @@ settings may be locked down and require an administrator exception request.
 
 > [!NOTE]
 > `copilot-analysis-cron.yml`'s `analyze-and-deploy` job carries a
-> `github.repository == 'sun-flat-yamada/github-copilot-dashboard'` guard, so `main`'s
+> `github.repository == 'sun-flat-yamada/github-copilot-dashboard' || github.repository_id == '1364445722'` guard (the repository ID is a rename/transfer-proof fallback for the name check), so `main`'s
 > own (unretargeted) copy of the workflow safely no-ops instead of failing on every
 > `main` push in a downstream fork — including the routine fast-forward syncs in the
 > Dual-Branch Strategy above, where `main` is deliberately never a deploy target.
