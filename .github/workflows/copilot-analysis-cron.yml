@@ -25,6 +25,20 @@ concurrency:
 
 jobs:
   analyze-and-deploy:
+    # Downstream forks that mirror this repository sometimes intentionally keep
+    # `main` as a permanently deploy-inert, fast-forward-only mirror of upstream
+    # (see SDD-12 Section 2.2 "Dual-Branch Strategy"), retargeting the actual
+    # scheduled/CI-deploy pipeline to their own customization branch instead.
+    # Without this guard, every `main` push in such a fork (including routine
+    # upstream fast-forward syncs) would still trigger this job under that
+    # fork's own repository, which fails immediately with "Branch \"main\" is
+    # not allowed to deploy to github-pages due to environment protection
+    # rules." if that fork's `github-pages` environment only allows its
+    # customization branch to deploy (as SDD-12 Section 2.3 recommends). This
+    # repository-identity check keeps the job a clean no-op (skipped, not
+    # failed) anywhere other than the canonical upstream repository, with zero
+    # effect on this repository's own runs.
+    if: github.repository == 'sun-flat-yamada/github-copilot-dashboard'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

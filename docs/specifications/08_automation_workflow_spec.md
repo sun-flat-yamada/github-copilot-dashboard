@@ -108,6 +108,9 @@ permissions:
   id-token: write      # Required for GitHub Pages OIDC authentication
 ```
 
+> [!NOTE]
+> The `analyze-and-deploy` job carries a `github.repository == 'sun-flat-yamada/github-copilot-dashboard'` guard. Downstream forks that adopt the Dual-Branch Strategy ([SDD-12 Section 2.2](12_fork_sync_and_customization_ops_spec.md#22-dual-branch-strategy-for-code-level-customizations)) keep `main` as a permanently deploy-inert mirror and retarget the real pipeline to their own customization branch; without this guard, every `main` push in such a fork — including routine upstream fast-forward syncs — would still attempt this job under that fork's own repository and fail against its `github-pages` environment protection rules (see [SDD-12 Section 2.3](12_fork_sync_and_customization_ops_spec.md#23-operational-checklist-for-forkcustom-deployments)). The guard makes the job a clean no-op there instead, with no effect on this repository's own runs.
+
 ### Execution Steps:
 1. Checkout repository (`main`).
 2. Setup Node.js 22 & install dependencies (`npm ci`).
