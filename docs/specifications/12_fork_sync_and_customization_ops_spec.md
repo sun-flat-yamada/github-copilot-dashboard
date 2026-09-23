@@ -123,6 +123,16 @@ See [SDD-13](13_fork_restricted_environment_setup_guide.md) for the equivalent
 checklist under GitHub EMU / policy-restricted organizations, where some of these
 settings may be locked down and require an administrator exception request.
 
+> [!NOTE]
+> `copilot-analysis-cron.yml`'s `analyze-and-deploy` job carries a
+> `github.repository == 'sun-flat-yamada/github-copilot-dashboard'` guard, so `main`'s
+> own (unretargeted) copy of the workflow safely no-ops instead of failing on every
+> `main` push in a downstream fork — including the routine fast-forward syncs in the
+> Dual-Branch Strategy above, where `main` is deliberately never a deploy target.
+> Item 3 above still applies once you retarget the job onto `fork/custom` in step 1:
+> that copy runs under your fork's own `github.repository`, so its `github-pages`
+> environment must explicitly allow `fork/custom` to deploy.
+
 ---
 
 ## 3. Upstream Synchronization Procedures
