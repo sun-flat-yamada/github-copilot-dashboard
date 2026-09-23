@@ -123,6 +123,17 @@ GitHub EMU / ポリシー制限のある組織における同種のチェック�
 管理者により制限されており、例外申請が必要となる場合の対応）は
 [SDD-13](13_fork_restricted_environment_setup_guide.ja.md) を参照してください。
 
+> [!NOTE]
+> `copilot-analysis-cron.yml` の `analyze-and-deploy` ジョブには
+> `github.repository == 'sun-flat-yamada/github-copilot-dashboard'` というガードが
+> 付与されているため、上記の2層ブランチ戦略のようにダウンストリームフォーク側で
+> `main` を意図的にデプロイ非対象のまま維持している場合、retarget前の
+> (`main` のままの)ワークフローは、通常の fast-forward 同期を含むあらゆる
+> `main` へのpushで失敗するのではなく、安全にスキップされる。手順1で
+> `fork/custom` へジョブをretargetした後は、そのコピーはフォーク自身の
+> `github.repository` 上で実行されるため、上記の項目3(`github-pages` 環境で
+> `fork/custom` を明示的に許可する設定)は引き続き必要である。
+
 ---
 
 ## 3. Upstream 更新の同期手順 (Upstream Synchronization Procedures)
