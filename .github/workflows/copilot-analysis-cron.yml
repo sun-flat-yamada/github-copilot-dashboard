@@ -38,7 +38,18 @@ jobs:
     # repository-identity check keeps the job a clean no-op (skipped, not
     # failed) anywhere other than the canonical upstream repository, with zero
     # effect on this repository's own runs.
-    if: github.repository == 'sun-flat-yamada/github-copilot-dashboard'
+    #
+    # Checked by both `github.repository` (owner/repo name) and
+    # `github.repository_id` (the stable numeric repository ID, unaffected by
+    # a future rename or ownership transfer of this repository — see
+    # https://docs.github.com/en/actions/reference/workflows-and-actions/contexts).
+    # The name check keeps the condition self-documenting; the ID check is a
+    # zero-config safety net so the guard keeps matching even if this
+    # repository is ever renamed or transferred without every fork's copy of
+    # this file being updated in lockstep. Both values require no repository
+    # configuration (no Actions Variable/Secret to remember to set), so
+    # forks continue to be skipped safely with no setup on their part.
+    if: github.repository == 'sun-flat-yamada/github-copilot-dashboard' || github.repository_id == '1364445722'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
