@@ -68,7 +68,7 @@
     "autoprefixer": "^10.6.1",
     "postcss": "^8.5.1",
     "tailwindcss": "^4.3.3",
-    "tsx": "^4.19.2",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.2.2"
   }
