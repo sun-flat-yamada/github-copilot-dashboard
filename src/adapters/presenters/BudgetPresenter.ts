@@ -1,4 +1,5 @@
 import { CostCenterBudget, DataSourceType } from '../../domain/entities/copilot.js';
+import { BillingConfigLoader } from '../storage/BillingConfigLoader.js';
 
 export interface FormattedBudgetCard {
   costCenterId: string;
@@ -27,6 +28,7 @@ export interface BudgetSummaryViewModel {
 
 export interface BudgetViewModel {
   hasBudgets: boolean;
+  currencySymbol: string;
   activeSource: DataSourceType;
   cards: FormattedBudgetCard[];
   summary: BudgetSummaryViewModel;
@@ -44,17 +46,32 @@ export class BudgetPresenter {
     const isReportSource = activeSource === 'monthly_report' || activeSource === 'user_upload';
     const targetBudgets = isReportSource ? (reportBudgets || budgets || []) : (budgets || []);
 
+    const billingConfig = BillingConfigLoader.load();
+    const sym = billingConfig.currency.symbol;
+    const decimals = billingConfig.currency.displayDecimals;
+    const rate = billingConfig.currency.exchangeRateFromUSD;
+
+    const formatMoney = (usdVal: number) => {
+      const converted = usdVal * rate;
+      const formattedNum = converted.toLocaleString('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      });
+      return `${sym}${formattedNum}`;
+    };
+
     if (!targetBudgets || targetBudgets.length === 0) {
       return {
         hasBudgets: false,
+        currencySymbol: sym,
         activeSource,
         cards: [],
         summary: {
-          totalLimitFormatted: '$0.00',
+          totalLimitFormatted: formatMoney(0),
           totalLimitRaw: 0,
-          totalSpendFormatted: '$0.00',
+          totalSpendFormatted: formatMoney(0),
           totalSpendRaw: 0,
-          totalRemainingFormatted: '$0.00',
+          totalRemainingFormatted: formatMoney(0),
           totalRemainingRaw: 0,
           overallUtilizationPercent: 0,
           alertCount: 0,
@@ -91,11 +108,11 @@ export class BudgetPresenter {
       return {
         costCenterId: b.cost_center_id,
         costCenterName: b.cost_center_name || b.cost_center_code,
-        spendingLimitFormatted: `$${limit.toFixed(2)}`,
-        currentSpendFormatted: `$${spend.toFixed(2)}`,
-        freeTierFormatted: `$${free.toFixed(2)}`,
-        netBillableFormatted: `$${billable.toFixed(2)}`,
-        remainingBudgetFormatted: `$${remaining.toFixed(2)}`,
+        spendingLimitFormatted: formatMoney(limit),
+        currentSpendFormatted: formatMoney(spend),
+        freeTierFormatted: formatMoney(free),
+        netBillableFormatted: formatMoney(billable),
+        remainingBudgetFormatted: formatMoney(remaining),
         utilizationPercent: utilization,
         status: b.status,
         statusColor,
@@ -107,15 +124,16 @@ export class BudgetPresenter {
 
     return {
       hasBudgets: true,
+      currencySymbol: sym,
       activeSource,
       cards,
       summary: {
-        totalLimitFormatted: `$${totalLimit.toFixed(2)}`,
-        totalLimitRaw: totalLimit,
-        totalSpendFormatted: `$${totalSpend.toFixed(2)}`,
-        totalSpendRaw: totalSpend,
-        totalRemainingFormatted: `$${totalRemaining.toFixed(2)}`,
-        totalRemainingRaw: totalRemaining,
+        totalLimitFormatted: formatMoney(totalLimit),
+        totalLimitRaw: totalLimit * rate,
+        totalSpendFormatted: formatMoney(totalSpend),
+        totalSpendRaw: totalSpend * rate,
+        totalRemainingFormatted: formatMoney(totalRemaining),
+        totalRemainingRaw: totalRemaining * rate,
         overallUtilizationPercent: overallUtilization,
         alertCount,
       },

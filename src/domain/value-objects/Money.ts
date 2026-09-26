@@ -1,10 +1,11 @@
 import { DomainError } from './DomainError.js';
+import { CurrencyConfig, DEFAULT_CURRENCY_USD } from '../entities/billing-config.js';
 
 export class Money {
   readonly amount: number;
-  readonly currency: 'USD';
+  readonly currency: string;
 
-  constructor(amount: number, currency: 'USD' = 'USD') {
+  constructor(amount: number, currency: string = 'USD') {
     if (isNaN(amount) || !isFinite(amount)) {
       throw new DomainError('Money amount must be a finite number');
     }
@@ -25,6 +26,15 @@ export class Money {
     return new Money(this.amount * factor, this.currency);
   }
 
+  applyDiscount(discountPercent: number): Money {
+    const multiplier = Math.max(0, 1 - discountPercent / 100);
+    return new Money(this.amount * multiplier, this.currency);
+  }
+
+  convertCurrency(exchangeRate: number, targetCurrencyCode: string): Money {
+    return new Money(this.amount * exchangeRate, targetCurrencyCode);
+  }
+
   isZero(): boolean {
     return this.amount === 0;
   }
@@ -37,16 +47,36 @@ export class Money {
     return `$${this.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
+  formatWithCurrency(currencyConfig: CurrencyConfig = DEFAULT_CURRENCY_USD, options?: { precision?: number }): string {
+    const decimals = typeof options?.precision === 'number'
+      ? options.precision
+      : currencyConfig.displayDecimals;
+
+    const formattedNum = this.amount.toLocaleString(
+      currencyConfig.code === 'JPY' ? 'ja-JP' : 'en-US',
+      {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      }
+    );
+
+    return `${currencyConfig.symbol}${formattedNum}`;
+  }
+
   equals(other: Money): boolean {
     return Math.abs(this.amount - other.amount) < 0.0001 && this.currency === other.currency;
   }
 
-  static zero(): Money {
-    return new Money(0);
+  static zero(currency: string = 'USD'): Money {
+    return new Money(0, currency);
   }
 
   static fromUsd(amount: number): Money {
     return new Money(amount, 'USD');
+  }
+
+  static of(amount: number, currency: string = 'USD'): Money {
+    return new Money(amount, currency);
   }
 }
 
@@ -80,4 +110,3 @@ export function getSeatPricing(): SeatPricing {
     enterprise: Money.fromUsd(defaultEnterprise),
   };
 }
-
