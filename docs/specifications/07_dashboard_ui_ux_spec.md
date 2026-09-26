@@ -87,8 +87,9 @@ The center of the header prominently displays the currently active dataset, allo
 
 ### 2.5 Anomaly Detection & Error Handling (Error & Warning Detection)
 Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint disruptions):
-1. **Header Error/Warning Icon**:
-   - Displays a pulsing red (error) or yellow (warning) badge with count in the header.
+1. **Header Error/Warning Icon & Badge (Compact Error Indicator)**:
+   - Eliminates redundant text labels (`エラー検知` / `警告あり`) in favor of a clean, compact indicator displaying only the anomaly icon (`AlertCircle` for red pulse error, `AlertTriangle` for amber warning) alongside a pill-shaped count badge (`allIssuesCount`).
+   - Provides dynamic accessible `aria-label` and detailed tooltip (`title`) for screen reader and keyboard accessibility.
    - Clicking opens the anomaly diagnostics overlay.
 2. **Anomaly Diagnostics Modal (`ErrorLogModal`)**:
    - **Window Dimensions**: 80% viewport width (`w-[80vw]`), 80% viewport height (`h-[80vh]`).
@@ -150,3 +151,10 @@ Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint 
    - **Sort Indicators**: Subdued `ArrowUpDown` for inactive columns, dynamic `ArrowUp` (ascending) / `ArrowDown` (descending) for active columns with alternating sort order on consecutive clicks.
    - **Accessibility & UX**: All sortable headers include `cursor-pointer select-none` and hover highlight feedback for intuitive data inspection.
 
+### 2.12 Header Action Controls Height & Icon Size Standardization
+1. **Unified Button Container Height (`h-9` / 36px)**:
+   - All right-side action button containers (source repository link & Star pill, three-dots display settings menu, anomaly error/warning trigger) strictly adhere to `h-9` (36px).
+   - Eliminates subtle height mismatches (previously 34px vs. 38px) and aligns all elements precisely across the horizontal baseline.
+2. **Standardized Action Icon Sizing (`w-4 h-4` / 16px)**:
+   - All icons within the action buttons (GitHub SVG, Star, MoreVertical, AlertCircle, AlertTriangle) are standardized to `w-4 h-4` (16px).
+   - Discontinues arbitrary viewport expansion (`sm:w-5 sm:h-5`) for the error indicator, preserving geometric harmony and balanced visual weight.

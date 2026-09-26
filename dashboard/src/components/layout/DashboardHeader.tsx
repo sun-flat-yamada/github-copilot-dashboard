@@ -290,12 +290,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           />
 
           {/* 生成元 GitHub リポジトリリンク & Star (Forkセーフ・動的解決) */}
-          <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl shadow-sm flex-shrink-0">
+          <div className="flex items-center h-9 bg-slate-900 border border-slate-800 rounded-xl shadow-sm flex-shrink-0">
             <a
               href={repoInfo.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center text-slate-400 hover:text-slate-100 hover:bg-slate-800 p-2 rounded-l-xl transition-all group cursor-pointer"
+              className="h-full flex items-center justify-center text-slate-400 hover:text-slate-100 hover:bg-slate-800 px-2.5 rounded-l-xl transition-all group cursor-pointer"
               title={`GitHubリポジトリを開く: ${repoInfo.owner}/${repoInfo.name}\nURL: ${repoInfo.url}`}
             >
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-slate-400 group-hover:text-indigo-400 transition-colors">
@@ -305,7 +305,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             <div className="w-px h-4 bg-slate-700" />
             <button
               onClick={onToggleStar}
-              className={`flex items-center justify-center p-2 rounded-r-xl transition-all group cursor-pointer ${
+              className={`h-full flex items-center justify-center px-2.5 rounded-r-xl transition-all group cursor-pointer ${
                 isStarred
                   ? 'text-amber-400 bg-slate-800'
                   : 'text-slate-400 hover:text-amber-400 hover:bg-slate-800'
@@ -325,7 +325,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               data-testid="header-settings-menu-button"
               aria-expanded={isSettingsMenuOpen}
               aria-haspopup="menu"
-              className={`flex items-center justify-center p-2 rounded-xl border transition-all cursor-pointer shadow-sm ${
+              className={`h-9 w-9 flex items-center justify-center rounded-xl border transition-all cursor-pointer shadow-sm ${
                 isSettingsMenuOpen
                   ? 'bg-slate-800 border-indigo-500/50 text-indigo-300 ring-2 ring-indigo-500/20'
                   : 'bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-100 hover:bg-slate-800'
@@ -436,23 +436,30 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           {allIssuesCount > 0 && (
             <button
               onClick={onOpenErrorModal}
-              className={`relative p-2 rounded-xl border transition-all flex items-center space-x-1.5 cursor-pointer shadow-md flex-shrink-0 ${
+              data-testid="header-error-modal-button"
+              aria-label={
                 hasErrors
-                  ? 'bg-rose-950/70 border-rose-800 text-rose-400 hover:bg-rose-900/80 hover:border-rose-600 animate-pulse'
-                  : 'bg-amber-950/70 border-amber-800 text-amber-400 hover:bg-amber-900/80 hover:border-amber-600'
+                  ? `エラー検知 (${allIssuesCount}件)`
+                  : `警告あり (${allIssuesCount}件)`
+              }
+              title={
+                hasErrors
+                  ? `エラー検知 (${allIssuesCount}件): クリックして詳細を表示`
+                  : `警告あり (${allIssuesCount}件): クリックして詳細を表示`
+              }
+              className={`relative h-9 px-2.5 rounded-xl border transition-all flex items-center space-x-1.5 cursor-pointer shadow-md flex-shrink-0 focus:outline-none focus:ring-2 ${
+                hasErrors
+                  ? 'bg-rose-950/70 border-rose-800 text-rose-400 hover:bg-rose-900/80 hover:border-rose-600 focus:ring-rose-500/40 animate-pulse'
+                  : 'bg-amber-950/70 border-amber-800 text-amber-400 hover:bg-amber-900/80 hover:border-amber-600 focus:ring-amber-500/40'
               }`}
-              title="データ取得時の異常・エラー一覧を表示"
             >
               {hasErrors ? (
-                <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                <AlertCircle className="w-4 h-4 shrink-0" />
               ) : (
-                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
+                <AlertTriangle className="w-4 h-4 shrink-0" />
               )}
-              <span className="hidden md:inline-block text-xs font-bold">
-                {hasErrors ? 'エラー検知' : '警告あり'}
-              </span>
               <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
+                className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-extrabold leading-none ${
                   hasErrors ? 'bg-rose-600 text-white' : 'bg-amber-500 text-slate-950'
                 }`}
               >
