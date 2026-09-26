@@ -125,6 +125,11 @@ GitHub Copilot（Copilot Business / Copilot Enterprise）の企業導入が進�
 - ある集計値がデータソース間のフォールバック経路（例: Live Metricsが空の場合にMonthly Usage Reportの集計値を代替使用する等）を持つ場合、**フォールバック先の経路も含めて**アクティブフィルターを等しく反映すること。フォールバック経路であることを理由にフィルター非対応が許容されることはない。
 - 本要件を実現するための詳細な設計方針・実装規約・既知のアンチパターンは [SDD-15 データセントリック・リアクティビティ設計仕様書](15_data_centric_reactivity_design_spec.ja.md) に定める。
 
+### FR-13: FinOps 動的マルチ通貨換算 & EA 契約単価・ボリュームディスカウント
+- 日本円（JPY）、ユーロ（EUR）、米ドル（USD）を含む動的マルチ通貨換算をサポートすること。
+- Enterprise Agreement (EA) 契約におけるボリュームディスカウント率（0-100%）の適用、およびクレジット直接契約単価（例: `1.273円 / AIC` 等の任意精度指定）やシート直接単価の上書き指定を可能とすること。直接単価指定時はそれを最優先適用すること。
+- 設定は環境変数 `COPILOT_BILLING_CONFIG` または `data/config/billing.json` から安全に注入され、未指定時は標準 USD レートへ自動フォールバックすること。
+
 ---
 
 ## 4. 非機能要件 (Non-Functional Requirements)
@@ -139,6 +144,7 @@ GitHub Copilot（Copilot Business / Copilot Enterprise）の企業導入が進�
 ### NFR-2: セキュリティ & 最小権限
 - GitHub APIアクセスには GitHub Personal Access Token (Fine-grained PAT) または GitHub App を使用し、必要最小限の権限（`copilot:read`, `enterprise_billing:read`, `org:read`）のみを要求すること。
 - 個人名や社内組織情報がパブリックなGitHub PagesやGitログに流出しないよう、環境変数で表示名のマスキング/ハッシュ化オプションを提供すること。
+- 48KB を超える大規模ユーザーマッピングには GPG (AES-256) 対称暗号化を適用し、暗号化ブロブを `copilot-data` に隔離し、実行時 `$RUNNER_TEMP` にのみ平文復号すること（詳細は [GPG鍵管理・運用標準ガイド](../security/01_gpg_key_management_and_user_mapping_guide.ja.md) を参照）。
 
 ### NFR-3: オフライン・モック対応
 - 実際のGitHub EnterpriseやCopilot契約がない開発・検証環境でも、2026年仕様に完全準拠したリアルなモックデータを瞬時に生成し、全機能をローカルおよびCI上でシミュレーション・検証可能とすること。
@@ -146,3 +152,13 @@ GitHub Copilot（Copilot Business / Copilot Enterprise）の企業導入が進�
 ### NFR-4: 移植性と保守性
 - Node.js 20+ / TypeScript を採用し、データパイプラインとダッシュボードの型安全性を100%保証すること。
 - 外部データベース（PostgreSQL, RDS等）を一切不要とし、GitHub ActionsとGitHub Pagesのみで完結するゼロインフラ運用を実現すること。
+
+### NFR-5: フロントエンド Code Splitting & バンドル軽量化 (Bundle Splitting Performance)
+- 初回ロード時のメイン JavaScript チャンクは **300 kB 以下 (gzip 80 kB 以下)** を維持すること。
+- 各分析 View（Model Radar, Deep Analysis, Credits, Agent Activity, Adoption Maturity 等）は `React.lazy` および `<Suspense>` により動的オンデマンド分割読み込みを行い、初回ロード性能を最大化すること。
+- 遅延読み込み時のレイアウトシフトやチラつきを抑止するため、統一スケルトンプレースホルダー（`ViewSkeleton`）を提供すること。
+
+### NFR-6: Repository 物理分離による純粋ブラウザバンドル保証 (Strict Browser/Node Repository Isolation)
+- フロントエンド SPA で使用するリポジトリ（`HttpJsonMetricsRepository`）はブラウザ標準の `fetch` API のみで実装し、Node.js 固有の `fs` や `path` モジュールへの参照を一切含まないこと。
+- Vite ビルド時に `Module "fs" has been externalized for browser compatibility` 等の互換性警告が 0 件であることを保証すること。
+
