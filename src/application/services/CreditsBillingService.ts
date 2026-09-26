@@ -1,4 +1,9 @@
 import { Money } from '../../domain/value-objects/Money.js';
+import {
+  EnterpriseBillingConfig,
+  calculateEffectiveCreditRate,
+} from '../../domain/entities/billing-config.js';
+import { BillingConfigLoader } from '../../adapters/storage/BillingConfigLoader.js';
 
 export interface ModelCreditsDetail {
   modelName: string;
@@ -30,11 +35,23 @@ export class CreditsBillingService {
   public static readonly DEFAULT_CREDIT_RATE_USD = 0.05;
 
   /**
-   * Calculates USD cost for consumed AI Credits.
+   * Calculates cost for consumed AI Credits using effective rate from config or provided override.
    */
-  static calculateCreditsCost(creditsConsumed: number, ratePerCredit: number = this.DEFAULT_CREDIT_RATE_USD): Money {
-    if (creditsConsumed <= 0) return Money.zero();
-    return Money.fromUsd(creditsConsumed * ratePerCredit);
+  static calculateCreditsCost(
+    creditsConsumed: number,
+    ratePerCredit?: number,
+    config: EnterpriseBillingConfig = BillingConfigLoader.load()
+  ): Money {
+    if (creditsConsumed <= 0) return Money.zero(config.currency.code);
+    let effectiveRate: number;
+    if (typeof ratePerCredit === 'number') {
+      effectiveRate = ratePerCredit;
+    } else if (config.customPricePerCredit !== undefined || config.discountPercent > 0 || config.currency.code !== 'USD') {
+      effectiveRate = calculateEffectiveCreditRate(config);
+    } else {
+      effectiveRate = this.DEFAULT_CREDIT_RATE_USD;
+    }
+    return Money.of(creditsConsumed * effectiveRate, config.currency.code);
   }
 
   /**
@@ -42,15 +59,17 @@ export class CreditsBillingService {
    */
   static calculateModelCredits(
     creditsByModel: Record<string, number> = {},
-    customRates: Record<string, number> = {}
+    customRates: Record<string, number> = {},
+    defaultRate?: number
   ): CreditsCostSummary {
     let totalCredits = 0;
     let totalCost = Money.zero();
     const byModel: Record<string, ModelCreditsDetail> = {};
+    const fallbackRate = typeof defaultRate === 'number' ? defaultRate : this.DEFAULT_CREDIT_RATE_USD;
 
     for (const [model, credits] of Object.entries(creditsByModel)) {
       if (credits <= 0) continue;
-      const rate = customRates[model] ?? this.DEFAULT_CREDIT_RATE_USD;
+      const rate = customRates[model] ?? fallbackRate;
       const cost = Money.fromUsd(credits * rate);
 
       totalCredits += credits;
