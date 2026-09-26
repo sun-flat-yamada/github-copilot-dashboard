@@ -6,6 +6,8 @@ import {
   IndexMetadata,
   MonthlyReportAggregatedData,
   ScopeAggregatedData,
+  FilterCriteria,
+  DEFAULT_FILTER_CRITERIA,
   GroupSummary,
 } from '../../../src/types/copilot';
 import {
@@ -14,6 +16,15 @@ import {
   fetchDataWithFallback,
 } from '../utils/pathResolver';
 import { buildFilteredModelBreakdown } from '../utils/reportModelBreakdown';
+import {
+  applyFilterCriteriaToLiveScope,
+  generateDatasetVersionKey,
+  isFilterCriteriaActive,
+  countActiveFilterConditions,
+  getFilterSummaryBadges,
+  matchUserWithCriteria,
+  FilterableUser,
+} from '../utils/filterEngine';
 
 export interface RepoInfo {
   owner: string;
@@ -66,8 +77,9 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
   // User Upload スコープ (On-demand)
   const [uploadedData, setUploadedData] = useState<MonthlyReportAggregatedData | null>(null);
 
-  // タグANDフィルター
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  // 統合フィルター条件 (2階層特定モデル: 組織財務・属性タグ・ユーザー正規表現)
+  const [filterCriteria, setFilterCriteria] = useState<FilterCriteria>(DEFAULT_FILTER_CRITERIA);
+  const selectedTags = filterCriteria.tags;
 
   // 生成元 GitHub リポジトリ情報 (Fork セーフ・動的解決)
   const repoInfo: RepoInfo = useMemo(() => {
@@ -406,15 +418,22 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     }
   }, [activeSource]);
 
-  // タグ操作ハンドラー
+  // タグ操作ハンドラー (filterCriteria.tags と同期)
   const handleToggleTag = useCallback((tag: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
+    setFilterCriteria((prev) => {
+      const nextTags = prev.tags.includes(tag)
+        ? prev.tags.filter((t) => t !== tag)
+        : [...prev.tags, tag];
+      return { ...prev, tags: nextTags };
+    });
   }, []);
 
   const handleClearTags = useCallback(() => {
-    setSelectedTags([]);
+    setFilterCriteria((prev) => ({ ...prev, tags: [] }));
+  }, []);
+
+  const resetFilterCriteria = useCallback(() => {
+    setFilterCriteria(DEFAULT_FILTER_CRITERIA);
   }, []);
 
   // アクティブなレポートデータ (monthly_report または user_upload)
@@ -441,125 +460,101 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     return scopeDataIsDemoSourced;
   }, [activeSource, scopeDataIsDemoSourced, reportDataIsDemoSourced]);
 
-  // 利用可能な全タグの抽出 (現在のデータソースから)
-  const availableTags = useMemo(() => {
-    const tagSet = new Set<string>();
+  // フィルター選択肢候補の抽出 (現在のデータソースから動的に導出)
+  const {
+    availableCostCenters,
+    availableOrganizations,
+    availableGroups,
+    availableTags,
+  } = useMemo(() => {
+    const costCenters = new Set<string>();
+    const orgs = new Set<string>();
+    const groups = new Set<string>();
+    const tags = new Set<string>();
 
     if (activeSource === 'live_metrics' && currentData?.users) {
       for (const u of currentData.users) {
+        if (u.cost_center && u.cost_center.trim() && u.cost_center !== 'Unassigned') {
+          costCenters.add(u.cost_center.trim());
+        }
+        if (u.organization && u.organization.trim() && u.organization !== 'Unassigned') {
+          orgs.add(u.organization.trim());
+        }
+        if (u.department && u.department.trim() && u.department !== 'Unassigned') {
+          groups.add(u.department.trim());
+        }
         for (const t of u.tags || []) {
-          if (t) tagSet.add(t);
+          if (t && t.trim()) tags.add(t.trim());
         }
       }
     } else if (activeReportData?.user_details) {
       for (const u of activeReportData.user_details) {
+        if (u.cost_center && u.cost_center.trim() && u.cost_center !== 'Unassigned') {
+          costCenters.add(u.cost_center.trim());
+        }
+        if (u.organization && u.organization.trim() && u.organization !== 'Unassigned') {
+          orgs.add(u.organization.trim());
+        }
+        if (u.department && u.department.trim() && u.department !== 'Unassigned') {
+          groups.add(u.department.trim());
+        }
         for (const t of u.tags || []) {
-          if (t) tagSet.add(t);
+          if (t && t.trim()) tags.add(t.trim());
         }
       }
     }
 
-    return Array.from(tagSet).sort();
+    return {
+      availableCostCenters: Array.from(costCenters).sort(),
+      availableOrganizations: Array.from(orgs).sort(),
+      availableGroups: Array.from(groups).sort(),
+      availableTags: Array.from(tags).sort(),
+    };
   }, [activeSource, currentData, activeReportData]);
 
-  // タグANDフィルターを適用した Live Metrics データ
+  // 統合フィルター条件 (FilterCriteria) を適用した Live Metrics データ (SDD-15 準拠・完全再集計)
   const filteredCurrentData = useMemo<ScopeAggregatedData | null>(() => {
     if (!currentData) return null;
-    if (selectedTags.length === 0) return currentData;
+    return applyFilterCriteriaToLiveScope(currentData, filterCriteria);
+  }, [currentData, filterCriteria]);
 
-    // AND条件 (選択された全タグを保持しているユーザーのみ抽出)
-    const filteredUsers = currentData.users.filter(
-      (u) => u.tags && selectedTags.every((t) => u.tags!.includes(t))
-    );
-    const matchingLogins = new Set(filteredUsers.map((u) => u.login.toLowerCase()));
-
-    const filteredProfiles = currentData.user_profiles?.filter((p) =>
-      matchingLogins.has(p.login.toLowerCase())
-    );
-
-    const activeUsers = filteredUsers.filter(
-      (u) => u.status === 'active' || u.status === 'low_active'
-    ).length;
-    const idleUsers = filteredUsers.filter(
-      (u) => u.status === 'idle' || u.status === 'never_used'
-    ).length;
-    const totalSpend = filteredUsers.reduce((sum, u) => sum + u.monthly_cost_usd, 0);
-    const idleWaste = filteredUsers
-      .filter((u) => u.status === 'idle' || u.status === 'never_used')
-      .reduce((sum, u) => sum + u.monthly_cost_usd, 0);
-
-    // グループ別再集計
-    const buildFilteredGroups = (field: 'department' | 'cost_center' | 'organization') => {
-      const res: Record<string, GroupSummary> = {};
-      for (const u of filteredUsers) {
-        const key = u[field] || 'Unassigned';
-        if (!res[key]) {
-          res[key] = {
-            group_name: key,
-            total_seats: 0,
-            active_seats: 0,
-            idle_seats: 0,
-            total_cost_usd: 0,
-            potential_savings_usd: 0,
-            active_ratio: 0,
-            acceptance_rate: 0.35,
-            total_suggestions: 0,
-            total_acceptances: 0,
-            total_chats: 0,
-            total_pr_summaries: 0,
-          };
-        }
-        res[key].total_seats += 1;
-        if (u.status === 'active' || u.status === 'low_active') res[key].active_seats += 1;
-        if (u.status === 'idle' || u.status === 'never_used') {
-          res[key].idle_seats += 1;
-          res[key].potential_savings_usd += u.monthly_cost_usd;
-        }
-        res[key].total_cost_usd += u.monthly_cost_usd;
-      }
-      for (const g of Object.values(res)) {
-        g.active_ratio = g.total_seats > 0 ? Number((g.active_seats / g.total_seats).toFixed(2)) : 0;
-        g.total_cost_usd = Number(g.total_cost_usd.toFixed(2));
-        g.potential_savings_usd = Number(g.potential_savings_usd.toFixed(2));
-      }
-      return res;
-    };
-
-    return {
-      ...currentData,
-      overview: {
-        ...currentData.overview,
-        total_seats: filteredUsers.length,
-        active_users: activeUsers,
-        idle_seats: idleUsers,
-        total_spend_usd: Number(totalSpend.toFixed(2)),
-        idle_waste_usd: Number(idleWaste.toFixed(2)),
-        active_ratio: filteredUsers.length > 0 ? Number((activeUsers / filteredUsers.length).toFixed(2)) : 0,
-      },
-      users: filteredUsers,
-      user_profiles: filteredProfiles,
-      by_department: buildFilteredGroups('department'),
-      by_cost_center: buildFilteredGroups('cost_center'),
-      by_organization: buildFilteredGroups('organization'),
-    };
-  }, [currentData, selectedTags]);
-
-  // タグANDフィルターを適用したレポートデータ
+  // 統合フィルター条件 (FilterCriteria) を適用したレポートデータ (SDD-15 準拠・完全再集計)
   const filteredActiveReportData = useMemo<MonthlyReportAggregatedData | null>(() => {
     if (!activeReportData) return null;
-    if (selectedTags.length === 0) return activeReportData;
+    if (!isFilterCriteriaActive(filterCriteria)) {
+      if (selectedTags.length === 0) return activeReportData;
+    }
 
-    const filteredDetails = activeReportData.user_details.filter(
-      (u) => u.tags && selectedTags.every((t) => u.tags!.includes(t))
+    const filteredDetails = activeReportData.user_details.filter((u) => {
+      const userItem: FilterableUser = {
+        login: u.login,
+        display_name: u.display_name,
+        cost_center: u.cost_center,
+        organization: u.organization,
+        department: u.department,
+        tags: u.tags,
+      };
+      return matchUserWithCriteria(userItem, filterCriteria);
+    });
+
+    const totalNetSpend = filteredDetails.reduce(
+      (sum, u) => sum + (u.net_spend_usd ?? u.total_spend_usd),
+      0
     );
-
-    const totalSpend = filteredDetails.reduce((sum, u) => sum + u.total_spend_usd, 0);
-    const totalRequests = filteredDetails.reduce((sum, u) => sum + u.total_requests, 0);
+    const totalGrossSpend = filteredDetails.reduce(
+      (sum, u) => sum + (u.gross_spend_usd ?? u.total_spend_usd),
+      0
+    );
+    const totalDiscount = totalGrossSpend - totalNetSpend;
+    const totalRequests = filteredDetails.reduce(
+      (sum, u) => sum + u.total_requests,
+      0
+    );
 
     const buildFilteredReportGroups = (field: 'department' | 'cost_center' | 'organization') => {
       const res: Record<string, GroupSummary> = {};
       for (const u of filteredDetails) {
-        const key = u[field] || 'Unassigned';
+        const key = (u[field] || '').trim() || 'Unassigned';
         if (!res[key]) {
           res[key] = {
             group_name: key,
@@ -587,18 +582,17 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
       return res;
     };
 
-    // タグ絞り込み時のモデル内訳再集計
-    // (Monthly Report のユーザー明細には primary_model のみ保持されているため、
-    //  各ユーザーの total_requests/total_spend_usd を primary_model に按分計上する近似値)
     const filteredModelBreakdown = buildFilteredModelBreakdown(filteredDetails);
 
     return {
       ...activeReportData,
       overview: {
         ...activeReportData.overview,
-        total_net_spend_usd: Number(totalSpend.toFixed(2)),
-        total_requests: totalRequests,
         total_active_users: filteredDetails.length,
+        total_net_spend_usd: Number(totalNetSpend.toFixed(2)),
+        total_gross_spend_usd: Number(totalGrossSpend.toFixed(2)),
+        total_discount_usd: Number(totalDiscount.toFixed(2)),
+        total_requests: totalRequests,
         top_model: filteredModelBreakdown[0]?.model_name || 'N/A',
       },
       user_details: filteredDetails,
@@ -608,6 +602,15 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
       by_organization: buildFilteredReportGroups('organization'),
     };
   }, [activeReportData, selectedTags]);
+
+  // 決定論的データセットバージョンキー (表示更新・再マウント保証)
+  const currentScopeKey =
+    activeSource === 'live_metrics'
+      ? selectedKey
+      : activeReportData?.report_month || selectedReportMonth;
+  const datasetVersionKey = useMemo(() => {
+    return generateDatasetVersionKey(activeSource, currentScopeKey, filterCriteria);
+  }, [activeSource, currentScopeKey, filterCriteria]);
 
   return {
     activeSource,
@@ -641,7 +644,18 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     dataBaseDir,
     // 現在アクティブなデータソースが実際に DEMO データかどうか (ソース単位・ヘッダーバッジ用)
     activeDataIsDemoSourced,
-    // タグANDフィルター
+    // 統合フィルター条件 (2階層特定モデル & SDD-15)
+    filterCriteria,
+    setFilterCriteria,
+    resetFilterCriteria,
+    datasetVersionKey,
+    isFilterActive: isFilterCriteriaActive(filterCriteria),
+    filterConditionsCount: countActiveFilterConditions(filterCriteria),
+    filterSummaryBadges: getFilterSummaryBadges(filterCriteria),
+    availableCostCenters,
+    availableOrganizations,
+    availableGroups,
+    // タグANDフィルター (後方互換性エイリアス)
     availableTags,
     selectedTags,
     handleToggleTag,
