@@ -133,8 +133,8 @@ flowchart TD
         ACL["Anti-Corruption Layer (ACL)\n- RawApiFetcher (Retry & Calendar Version)\n- ResponseNormalizer / NormalizerRegistry\n- Zod Schemas"]
         DataSources["Data Sources\n- GitHubApiCopilotDataSource\n- MockCopilotDataSource\n- StaticJsonMetricsRepository"]
         StorageAdapters["Storage Adapters\n- ForkSafeStorageWriter\n- AttributeResolverAdapter / DemoAttributeResolver"]
-        Presenters["Presenters (DOM-Independent Pure TS)\n- Overview / Users / Trend\n- Budget / DeepAnalysis / ModelRadar"]
-        ViewPlugins["View Plugins\n- Overview / Users / Trend\n- Budget / DeepAnalysis / ModelRadar"]
+        Presenters["Presenters (DOM-Independent Pure TS)\n- Overview / Users / Trend\n- Budget / DeepAnalysis / ModelRadar\n- Credits / Agent / Adoption"]
+        ViewPlugins["View Plugins (9 Total)\n- Overview / Users / Trend\n- Budget / DeepAnalysis / ModelRadar\n- Credits / Agent / Adoption"]
     end
 
     subgraph Frameworks["4. Frameworks & Drivers (React & CLI)"]
@@ -164,7 +164,7 @@ The dashboard state is managed via `DataStore` and evaluated incrementally throu
 - **Input Hash Memoization**: Computations are cached based on input state hashes, preventing redundant calculations across view switches.
 
 ### 4.2 View Plugin System & Presenter Separation
-Analysis views implement `IViewPluginManifest` and decouple presentation formatting from UI rendering:
+All 9 analysis views (Overview, Users, Trend, Budget, DeepAnalysis, ModelRadar, Credits, Agent, Adoption) implement `IViewPluginManifest` and decouple presentation formatting from UI rendering:
 - **ViewOrchestrator**: Validates rendering prerequisites (`canRender`) and data completeness (`requiredDerivedData`) before activating views.
 - **Presenter**: Transforms raw aggregates into display-ready view models completely outside the React render loop, enabling rapid headless unit testing.
 
@@ -192,8 +192,8 @@ Analysis views implement `IViewPluginManifest` and decouple presentation formatt
 │   ├── adapters/                       # Layer 3: Adapters
 │   │   ├── github-api/                 # ACL, RawApiFetcher, Normalizers, Zod Schemas
 │   │   ├── storage/                    # StaticJsonMetricsRepository, ForkSafeStorageWriter
-│   │   ├── presenters/                 # Overview, Users, Trend, Budget, DeepAnalysis, ModelRadar
-│   │   ├── views/                      # ViewPlugin manifests & component loaders
+│   │   ├── presenters/                 # Overview, Users, Trend, Budget, DeepAnalysis, ModelRadar, Credits, Agent, Adoption
+│   │   ├── views/                      # ViewPlugin manifests & component loaders (9 plugins)
 │   │   └── composition-root.ts         # Backend Composition Root (createPipelineApp)
 │   ├── frameworks/                     # Layer 4: Frameworks
 │   │   ├── react/                      # DashboardProvider, useStoreSelector, useViewPlugin

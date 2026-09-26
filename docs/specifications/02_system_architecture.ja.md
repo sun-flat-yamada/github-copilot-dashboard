@@ -133,8 +133,8 @@ flowchart TD
         ACL["Anti-Corruption Layer (ACL)\n- RawApiFetcher (リトライ & カレンダーヘッダー)\n- ResponseNormalizer / NormalizerRegistry\n- Zod Schemas"]
         DataSources["Data Sources\n- GitHubApiCopilotDataSource\n- MockCopilotDataSource\n- StaticJsonMetricsRepository"]
         StorageAdapters["Storage Adapters\n- ForkSafeStorageWriter\n- AttributeResolverAdapter / DemoAttributeResolver"]
-        Presenters["Presenters (DOM非依存)\n- Overview / Users / Trend\n- Budget / DeepAnalysis / ModelRadar"]
-        ViewPlugins["View Plugins\n- Overview / Users / Trend\n- Budget / DeepAnalysis / ModelRadar"]
+        Presenters["Presenters (DOM非依存)\n- Overview / Users / Trend\n- Budget / DeepAnalysis / ModelRadar\n- Credits / Agent / Adoption"]
+        ViewPlugins["View Plugins (全9種)\n- Overview / Users / Trend\n- Budget / DeepAnalysis / ModelRadar\n- Credits / Agent / Adoption"]
     end
 
     subgraph Frameworks["4. Frameworks & Drivers (React & CLI & Web)"]
@@ -164,7 +164,7 @@ flowchart TD
 - **入力ハッシュメモ化**: 依存ステートや上流派生データに変更がない場合、キャッシュされた計算結果を再利用し、無駄な再計算を完全防止。
 
 ### 4.2 View Plugin System & Presenter 分離
-6種（Phase 6で9種）の分析ビューは `IViewPluginManifest` を実装した独立プラグインとして定義される。
+全9種の分析ビュー（Overview, Users, Trend, Budget, DeepAnalysis, ModelRadar, Credits, Agent, Adoption）は `IViewPluginManifest` を実装した独立プラグインとして定義される。
 - **ViewOrchestrator**: 表示条件（`canRender`）および派生データの準備状況（`requiredDerivedData`）を検証し、表示可能ビューの切り替えを安全に調停。
 - **Presenter**: ビュー表示に必要なフォーマット・計算（通貨表記、比率、ソート、フィルタ結果等）を React / DOM から完全に切り離した純粋 TypeScript クラスとして実装し、ブラウザ不要の高速単体テストを実現。
 
@@ -192,8 +192,8 @@ flowchart TD
 │   ├── adapters/                       # Layer 3: Adapters
 │   │   ├── github-api/                 # ACL, RawApiFetcher, Normalizers, Zod Schemas
 │   │   ├── storage/                    # StaticJsonMetricsRepository, ForkSafeStorageWriter
-│   │   ├── presenters/                 # Overview, Users, Trend, Budget, DeepAnalysis, ModelRadar
-│   │   ├── views/                      # ViewPlugin 定義 & レジストリ登録
+│   │   ├── presenters/                 # Overview, Users, Trend, Budget, DeepAnalysis, ModelRadar, Credits, Agent, Adoption
+│   │   ├── views/                      # ViewPlugin 定義 & レジストリ登録 (全9種)
 │   │   └── composition-root.ts         # バックエンド Composition Root (createPipelineApp)
 │   ├── frameworks/                     # Layer 4: Frameworks
 │   │   ├── react/                      # DashboardProvider, useStoreSelector, useViewPlugin

@@ -10,6 +10,8 @@ import { getSeatPricing, Money } from '../domain/value-objects/Money.js';
 import { SeatClassificationRule } from '../domain/rules/SeatClassificationRule.js';
 import { SeatBillingRule } from '../domain/rules/SeatBillingRule.js';
 import { CreditsBillingService } from '../application/services/CreditsBillingService.js';
+import { AdoptionPhaseRule } from '../domain/rules/AdoptionPhaseRule.js';
+import { AdoptionPhase } from '../domain/entities/agent-metrics.js';
 
 export const getCopilotPricing = (): Record<CopilotPlanType, number> => {
   const pricing = getSeatPricing();
@@ -129,6 +131,14 @@ export class BillingCalculator {
       isPrepaid: seat.prepaid ?? false,
     });
 
+    const adoptionPhase = AdoptionPhaseRule.classify({
+      totalSuggestions: status === 'active' ? 100 : 0,
+      totalChats: status === 'active' ? 10 : 0,
+      totalAgentSessions: aiCreditsUsed28d > 300 ? 12 : aiCreditsUsed28d > 100 ? 5 : 0,
+      distinctAgentsUsed: aiCreditsUsed28d > 300 ? 3 : 1,
+      overridePhase: attr.targetAdoptionPhase as AdoptionPhase | undefined,
+    });
+
     return {
       login: attr.login,
       display_name: attr.displayName,
@@ -150,6 +160,10 @@ export class BillingCalculator {
       cost_center_error: costCenterError,
       ai_credits_used_28d: aiCreditsUsed28d,
       ai_credits_cost_usd: aiCreditsCostUsd,
+      ai_adoption_phase: adoptionPhase,
+      teams: attr.teams,
+      projects: attr.projects,
+      role: attr.role,
       prepaid: seatBilling.isPrepaid,
       billing_effective_date: seatBilling.billingEffectiveDate,
     };
