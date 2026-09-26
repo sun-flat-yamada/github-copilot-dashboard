@@ -124,6 +124,11 @@ The aggregation engine and dashboard must support rapid switching between data s
 - When a computed value has a cross-data-source fallback path (e.g., falling back to Monthly Usage Report aggregates when Live Metrics data is empty), **the fallback path must equally honor the active filters**. Being a "fallback" path is never a valid excuse for ignoring filter state.
 - The detailed design policy, implementation conventions, and known anti-patterns for satisfying this requirement are defined in [SDD-15: Data-Centric Reactivity Design Specification](15_data_centric_reactivity_design_spec.md).
 
+### FR-13: FinOps Dynamic Multi-Currency & Enterprise Agreement (EA) Pricing
+- Support dynamic multi-currency conversion including JPY (Japanese Yen), EUR (Euro), and USD (US Dollar).
+- Enable volume discount percentage application (0-100%) and direct enterprise contract unit rate overrides (e.g., custom credit rate such as `1.273 JPY / AIC` with arbitrary precision or custom seat pricing). Direct contract rates shall always take highest priority over calculated discounts.
+- Seamlessly inject configuration via environment variable `COPILOT_BILLING_CONFIG` or `data/config/billing.json`, with safe fallback to default standard USD rates when omitted.
+
 ---
 
 ## 4. Non-Functional Requirements
@@ -138,6 +143,7 @@ The aggregation engine and dashboard must support rapid switching between data s
 ### NFR-2: Security & Principle of Least Privilege
 - Restrict GitHub API credentials (Fine-grained PAT or GitHub App) to minimum required scopes (`copilot:read`, `enterprise_billing:read`, `org:read`).
 - Provide anonymization/masking options via environment variables to protect personal identities on public deployments.
+- Apply AES-256 symmetric GPG encryption for enterprise user mappings exceeding GitHub's 48KB secret limit, isolating encrypted blobs to `copilot-data` and decrypting strictly into ephemeral `$RUNNER_TEMP` (see [GPG Key Management & Operational Guide](../security/01_gpg_key_management_and_user_mapping_guide.md)).
 
 ### NFR-3: Offline & Mock Support
 - Support full local and CI simulation via 2026 specification-compliant mock generators without live GitHub Enterprise credentials.
@@ -145,3 +151,13 @@ The aggregation engine and dashboard must support rapid switching between data s
 ### NFR-4: Portability & Maintainability
 - 100% type safety with Node.js 20+ and TypeScript.
 - Zero external database dependencies (no PostgreSQL or RDS required); entirely serverless with GitHub Actions and GitHub Pages.
+
+### NFR-5: Frontend Code Splitting & Performance Optimization
+- Maintain initial entry JavaScript bundle at **< 300 kB (< 80 kB gzip)**.
+- Dynamically split and lazy-load heavy analysis views (Model Radar, Deep Analysis, Credits, Agent Activity, Adoption Maturity) via `React.lazy` and `<Suspense>` to ensure near-instant initial render.
+- Provide a unified skeleton placeholder (`ViewSkeleton`) to prevent visual layout shifts during dynamic chunk loading.
+
+### NFR-6: Strict Browser/Node Repository Isolation
+- Ensure frontend repositories (`HttpJsonMetricsRepository`) rely purely on browser-native `fetch` APIs without references to Node.js `fs` or `path` modules.
+- Guarantee 0 build warnings from Vite regarding Node.js module externalization (`Module "fs" has been externalized`).
+
