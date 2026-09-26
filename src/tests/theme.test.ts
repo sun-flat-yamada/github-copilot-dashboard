@@ -101,11 +101,12 @@ describe('Theme Management & Light Mode Support Tests', () => {
     }
   });
 
-  it('verifies DashboardHeader.tsx contains theme toggle button next to GitHub link', () => {
+  it('verifies DashboardHeader.tsx contains theme toggle button within settings menu next to GitHub link', () => {
     const headerPath = path.resolve(projectRoot, 'dashboard/src/components/layout/DashboardHeader.tsx');
     const headerContent = fs.readFileSync(headerPath, 'utf-8');
 
     // Button definition & icons
+    assert.match(headerContent, /data-testid="header-settings-menu-button"/);
     assert.match(headerContent, /data-testid="theme-toggle-button"/);
     assert.match(headerContent, /Sun/);
     assert.match(headerContent, /Moon/);
@@ -113,12 +114,18 @@ describe('Theme Management & Light Mode Support Tests', () => {
 
     // Adjacent placement next to GitHub repo link container
     const githubLinkIndex = headerContent.indexOf('repoInfo.url');
+    const menuButtonIndex = headerContent.indexOf('data-testid="header-settings-menu-button"');
     const themeButtonIndex = headerContent.indexOf('data-testid="theme-toggle-button"');
     assert.ok(githubLinkIndex !== -1, 'GitHub link must exist');
+    assert.ok(menuButtonIndex !== -1, 'Settings menu button must exist');
     assert.ok(themeButtonIndex !== -1, 'Theme toggle button must exist');
     assert.ok(
-      Math.abs(themeButtonIndex - githubLinkIndex) < 3000,
-      'Theme toggle button must be placed directly adjacent to GitHub repo link'
+      Math.abs(menuButtonIndex - githubLinkIndex) < 2500,
+      'Settings menu button must be placed directly adjacent to GitHub repo link'
+    );
+    assert.ok(
+      Math.abs(themeButtonIndex - githubLinkIndex) < 6000,
+      'Theme toggle button must be placed within settings menu adjacent to GitHub repo link'
     );
   });
 

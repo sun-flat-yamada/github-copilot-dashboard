@@ -19,7 +19,7 @@ The dashboard is designed as a responsive Single Page Application (SPA) optimize
 
 ```
 +------------------------------------------------------------------------------------------------------+
-|  GitHub Copilot Analytics [ℹ️ About] [Active Data: Live Metrics ▼]   [🔗 Repo: owner/name] [☀️/🌙] [⚠️] |
+|  GitHub Copilot Analytics [ℹ️ About] [Active Data: Live Metrics ▼]   [🔗 Repo: owner/name] [⋮ Menu] [⚠️] |
 +------------------------------------------------------------------------------------------------------+
 | [Navigation: 6 Analysis Views]                                                                 |
 |  [Overview] [Users (Rankings Consolidated)] [Trends] [Budget] [Deep Analytics] [Model Radar] |
@@ -123,16 +123,16 @@ Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint 
 3. **About Modal & Metadata**:
    - Info icon (`Info`) in the header opens a modal displaying the exact generation timestamp (`yyyy-mm-dd hh:MM:ss`), specification version (2026.09 LTS), source repository details (with fork attributes), data retention limits, and managed seat totals.
 
-### 2.10 Theme Toggle & Light Mode Specification
-1. **Default Mode**:
-   - Dark mode is enforced as the primary default on initial visits or when unconfigured.
+### 2.10 Three-Dots Settings Menu (Display Settings: Theme & Currency Switching) Specification
+1. **Design Rationale**:
+   - To eliminate header clutter caused by multiple disparate toggle buttons and streamline display preferences into a unified, modern interface, Currency Switching (sub-currency selection) and Display Mode Switching (Dark/Light mode) are consolidated into a three-dots menu icon (⋮, `MoreVertical`).
 2. **UI Placement & Interaction**:
-   - Simple icon-only button (`Sun` / `Moon`) positioned directly adjacent to the GitHub repository link container in the header action area.
-   - Displays `Sun` icon in Dark mode and `Moon` icon in Light mode.
-   - Instantly inverts display theme upon click, accompanied by accessible `title` and `aria-label` tooltips.
-3. **Persistence & FOUC Prevention**:
-   - User preference persists in browser `localStorage` under the key `copilot_dashboard_theme`.
-   - An inline IIFE script inside `index.html` evaluates `localStorage` and assigns classes prior to DOM paint, preventing Flash of Unstyled Content (FOUC).
+   - The three-dots menu button is positioned directly adjacent to the GitHub repository link container in the header action area.
+   - Clicking the button toggles a dropdown panel (`w-64 sm:w-72`).
+   - Automatically closes upon outside clicks (`mousedown`) or pressing the `Escape` key.
+3. **Menu Organization**:
+   - **Display Mode (Theme)**: Real-time display of current mode (Dark / Light) with an accessible one-click toggle button (`Sun` / `Moon`). Preferences persist in `localStorage` under `copilot_dashboard_theme`.
+   - **Sub-Currency Selection**: Grounded on baseline USD (`$`) display, allows selecting an optional secondary currency (USD Only, USD + JPY, USD + EUR, custom, etc.). Preferences persist in `localStorage` under `copilot_dashboard_preferred_sub_currency`.
 4. **Semantic Token Architecture (Tailwind CSS v4)**:
    - Utilizes CSS variables (`--color-slate-*`) under `html.light` and `[data-theme="light"]` selectors, automatically adapting canvas backgrounds (`#f8fafc`), cards (`#ffffff`), borders (`#e2e8f0`), and typography (`#0f172a`).
    - Dynamically binds Recharts gridlines, axis labels, and floating tooltips to theme tokens for high legibility across all views.

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   DataSourceType,
   AnalysisScopeType,
@@ -9,7 +9,7 @@ import {
   DEFAULT_FILTER_CRITERIA,
 } from '../../../../src/types/copilot';
 import { ActiveDataSelector } from './ActiveDataSelector';
-import { CurrencySelector } from './CurrencySelector';
+import { useCurrency } from '../../contexts/CurrencyContext';
 import { RepoInfo } from '../../hooks/useDashboardData';
 import {
   Sparkles,
@@ -19,6 +19,9 @@ import {
   AlertTriangle,
   Sun,
   Moon,
+  MoreVertical,
+  Coins,
+  Check,
 } from 'lucide-react';
 import { Theme } from '../../hooks/useTheme';
 
@@ -162,6 +165,37 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   // 未取得 (undefined) の場合のみ、静的ヒューリスティック (isMockMode) にフォールバックする。
   const showDemoBadge = activeDataIsDemoSourced !== undefined ? activeDataIsDemoSourced : isMockMode;
 
+  // 通貨および表示設定メニュー状態 (スリードットメニュー用)
+  const { subCurrencyCode, setSubCurrencyCode, availableSubCurrencies } = useCurrency();
+  const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
+  const settingsMenuRef = useRef<HTMLDivElement>(null);
+
+  // 外側クリックおよびEscキー押下でスリードットメニューを閉じる
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (settingsMenuRef.current && !settingsMenuRef.current.contains(e.target as Node)) {
+        setIsSettingsMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsSettingsMenuOpen(false);
+      }
+    };
+
+    if (isSettingsMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isSettingsMenuOpen]);
+
+  const activeCurrency =
+    availableSubCurrencies.find((c) => c.code === subCurrencyCode) || availableSubCurrencies[0];
+
   return (
     <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3 sm:gap-6">
@@ -248,9 +282,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             currentReportData={currentReportData}
           />
 
-          {/* 通貨セレクター (USD常時基本表示 + 任意サブ通貨切り替え) */}
-          <CurrencySelector />
-
           {/* 生成元 GitHub リポジトリリンク & Star (Forkセーフ・動的解決) */}
           <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl shadow-sm flex-shrink-0">
             <a
@@ -279,23 +310,120 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             </button>
           </div>
 
-          {/* 表示モード切替ボタン (Darkモード / Lightモード) */}
-          {onToggleTheme && (
+          {/* 表示設定メニュー (スリードットメニュー: 表示モード切替 ＆ 通貨表示切替を集約) */}
+          <div className="relative inline-block text-left flex-shrink-0" ref={settingsMenuRef}>
             <button
               type="button"
-              onClick={onToggleTheme}
-              data-testid="theme-toggle-button"
-              className="flex items-center justify-center p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-amber-400 hover:bg-slate-800 transition-all cursor-pointer shadow-sm flex-shrink-0"
-              title={theme === 'dark' ? 'ライトモードに切り替え' : 'ダークモードに切り替え'}
-              aria-label={theme === 'dark' ? 'ライトモードに切り替え' : 'ダークモードに切り替え'}
+              onClick={() => setIsSettingsMenuOpen((prev) => !prev)}
+              data-testid="header-settings-menu-button"
+              aria-expanded={isSettingsMenuOpen}
+              aria-haspopup="menu"
+              className={`flex items-center justify-center p-2 rounded-xl border transition-all cursor-pointer shadow-sm ${
+                isSettingsMenuOpen
+                  ? 'bg-slate-800 border-indigo-500/50 text-indigo-300 ring-2 ring-indigo-500/20'
+                  : 'bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-100 hover:bg-slate-800'
+              }`}
+              title="表示設定（通貨・表示モード）"
+              aria-label="表示設定メニュー"
             >
-              {theme === 'dark' ? (
-                <Sun className="w-4 h-4 transition-transform hover:rotate-45 text-amber-400" />
-              ) : (
-                <Moon className="w-4 h-4 transition-transform hover:-rotate-12 text-indigo-400" />
-              )}
+              <MoreVertical className="w-4 h-4" />
             </button>
-          )}
+
+            {isSettingsMenuOpen && (
+              <div
+                role="menu"
+                aria-orientation="vertical"
+                aria-labelledby="header-settings-menu-button"
+                className="absolute right-0 mt-2 w-64 sm:w-72 rounded-2xl bg-slate-900/95 border border-slate-700/80 shadow-2xl p-2.5 z-50 backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
+              >
+                {/* メニューヘッダー */}
+                <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800/80 mb-2">
+                  表示設定 (Display Settings)
+                </div>
+
+                {/* セクション 1: 表示モード切替 (Theme) */}
+                <div className="px-1 mb-2">
+                  <div className="text-[11px] font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+                    <span className="flex items-center space-x-1.5">
+                      {theme === 'dark' ? (
+                        <Moon className="w-3.5 h-3.5 text-indigo-400" />
+                      ) : (
+                        <Sun className="w-3.5 h-3.5 text-amber-400" />
+                      )}
+                      <span>表示モード</span>
+                    </span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">
+                      {theme === 'dark' ? 'Dark' : 'Light'}
+                    </span>
+                  </div>
+                  {onToggleTheme && (
+                    <button
+                      type="button"
+                      onClick={onToggleTheme}
+                      data-testid="theme-toggle-button"
+                      aria-label={theme === 'dark' ? 'ライトモードに切り替え' : 'ダークモードに切り替え'}
+                      title={theme === 'dark' ? 'ライトモードに切り替え' : 'ダークモードに切り替え'}
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/80 text-slate-200 transition cursor-pointer text-xs group"
+                    >
+                      <span className="flex items-center space-x-2">
+                        {theme === 'dark' ? (
+                          <Sun className="w-4 h-4 text-amber-400 group-hover:rotate-45 transition-transform" />
+                        ) : (
+                          <Moon className="w-4 h-4 text-indigo-400 group-hover:-rotate-12 transition-transform" />
+                        )}
+                        <span className="font-medium">
+                          {theme === 'dark' ? 'ライトモードに変更' : 'ダークモードに変更'}
+                        </span>
+                      </span>
+                      <span className="text-[10px] text-indigo-400 group-hover:text-indigo-300 font-medium">
+                        切替
+                      </span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="border-t border-slate-800/80 my-2" />
+
+                {/* セクション 2: 通貨表示切替 (Currency) */}
+                <div className="px-1">
+                  <div className="text-[11px] font-semibold text-slate-300 mb-1 flex items-center justify-between">
+                    <span className="flex items-center space-x-1.5">
+                      <Coins className="w-3.5 h-3.5 text-amber-400" />
+                      <span>サブ表示通貨</span>
+                    </span>
+                    <span className="font-mono text-emerald-400 font-bold text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/40">
+                      {activeCurrency.code === 'none' ? 'USD' : `USD+${activeCurrency.code}`}
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 mb-1.5 px-0.5">
+                    USD常時基本表示＋任意サブ通貨
+                  </div>
+                  <div className="space-y-0.5 max-h-48 overflow-y-auto pr-0.5">
+                    {availableSubCurrencies.map((item) => {
+                      const isSelected = item.code === subCurrencyCode;
+                      return (
+                        <button
+                          key={item.code}
+                          type="button"
+                          onClick={() => {
+                            setSubCurrencyCode(item.code);
+                          }}
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition cursor-pointer text-left ${
+                            isSelected
+                              ? 'bg-indigo-950/70 text-indigo-200 font-semibold border border-indigo-800/50'
+                              : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                          }`}
+                        >
+                          <span>{item.label}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* 異常検出 (Error / Warning) アイコンボタン */}
           {allIssuesCount > 0 && (
