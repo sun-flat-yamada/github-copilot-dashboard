@@ -49,3 +49,35 @@ export class Money {
     return new Money(amount, 'USD');
   }
 }
+
+export interface SeatPricing {
+  business: Money;
+  enterprise: Money;
+}
+
+export function getSeatPricing(): SeatPricing {
+  const defaultBusiness = 19;
+  const defaultEnterprise = 39;
+  const overrideStr = typeof process !== 'undefined' ? process.env?.COPILOT_SEAT_PRICING_OVERRIDE : undefined;
+  if (overrideStr) {
+    try {
+      const parsed = JSON.parse(overrideStr);
+      return {
+        business: Money.fromUsd(Number(parsed.business ?? defaultBusiness)),
+        enterprise: Money.fromUsd(Number(parsed.enterprise ?? defaultEnterprise)),
+      };
+    } catch {
+      const matchB = overrideStr.match(/business=(\d+(\.\d+)?)/i);
+      const matchE = overrideStr.match(/enterprise=(\d+(\.\d+)?)/i);
+      return {
+        business: Money.fromUsd(matchB ? Number(matchB[1]) : defaultBusiness),
+        enterprise: Money.fromUsd(matchE ? Number(matchE[1]) : defaultEnterprise),
+      };
+    }
+  }
+  return {
+    business: Money.fromUsd(defaultBusiness),
+    enterprise: Money.fromUsd(defaultEnterprise),
+  };
+}
+

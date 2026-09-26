@@ -84,6 +84,10 @@ export class ReportParser {
       if (['last_activity_at', 'last_interaction_at'].includes(h)) map.last_activity_at = idx;
       if (['last_authenticated_at'].includes(h)) map.last_authenticated_at = idx;
       if (['last_surface_used', 'surface', 'editor', 'ide'].includes(h)) map.last_surface_used = idx;
+
+      // AI Credits & Tokens (2026.09 仕様)
+      if (['ai_credits_consumed', 'credits_consumed', 'credits', 'ai_credits'].includes(h)) map.ai_credits_consumed = idx;
+      if (['token_count', 'tokens', 'total_tokens'].includes(h)) map.token_count = idx;
     });
 
     return map;
@@ -210,6 +214,8 @@ export class ReportParser {
         cost_center_name: headerMap.cost_center_name !== undefined ? row[headerMap.cost_center_name] : undefined,
         last_activity_at: headerMap.last_activity_at !== undefined ? row[headerMap.last_activity_at] : undefined,
         last_surface_used: headerMap.last_surface_used !== undefined ? row[headerMap.last_surface_used] : undefined,
+        ai_credits_consumed: parseNum(headerMap.ai_credits_consumed),
+        token_count: parseNum(headerMap.token_count),
       });
     }
 
@@ -262,6 +268,12 @@ export class ReportParser {
       day.total_chats += qty;
       day.model_breakdown[modelKey] = (day.model_breakdown[modelKey] || 0) + qty;
       day.daily_cost_usd = Number((day.daily_cost_usd + (rec.net_amount || 0)).toFixed(4));
+      if (rec.ai_credits_consumed) {
+        day.ai_credits_consumed = (day.ai_credits_consumed ?? 0) + rec.ai_credits_consumed;
+      }
+      if (rec.token_count) {
+        day.token_count = (day.token_count ?? 0) + rec.token_count;
+      }
       dayMap.set(rec.date, day);
 
       if (rec.organization) orgByUser.set(login, rec.organization);

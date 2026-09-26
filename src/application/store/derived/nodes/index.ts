@@ -5,6 +5,7 @@ import { activeDataForViewNode } from './activeDataForView.js';
 import { availableTagsNode } from './availableTags.js';
 import { availableGroupsNode } from './availableGroups.js';
 import { diagnosticResultsNode } from './diagnosticResults.js';
+import { creditsAnalysisNode } from './creditsAnalysis.js';
 
 export function registerCoreDerivedNodes(graph: DerivedDataGraph): void {
   graph.registerNode(filteredScopeDataNode);
@@ -13,6 +14,7 @@ export function registerCoreDerivedNodes(graph: DerivedDataGraph): void {
   graph.registerNode(availableTagsNode);
   graph.registerNode(availableGroupsNode);
   graph.registerNode(diagnosticResultsNode);
+  graph.registerNode(creditsAnalysisNode);
 }
 
 export {
@@ -22,4 +24,5 @@ export {
   availableTagsNode,
   availableGroupsNode,
   diagnosticResultsNode,
+  creditsAnalysisNode,
 };

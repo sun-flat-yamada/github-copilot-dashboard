@@ -210,6 +210,9 @@ export interface UserUsageProfile {
   model_usage_totals: Record<string, number>;
   daily_history: UserModelDailyUsage[];
   tags?: string[];
+  ai_credits_used_28d?: number;
+  ai_adoption_phase?: AdoptionPhase;
+  total_agent_sessions?: number;
 }
 
 // ==========================================
