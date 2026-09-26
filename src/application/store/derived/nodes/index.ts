@@ -6,6 +6,7 @@ import { availableTagsNode } from './availableTags.js';
 import { availableGroupsNode } from './availableGroups.js';
 import { diagnosticResultsNode } from './diagnosticResults.js';
 import { creditsAnalysisNode } from './creditsAnalysis.js';
+import { agentAdoptionNode } from './agentAdoption.js';
 
 export function registerCoreDerivedNodes(graph: DerivedDataGraph): void {
   graph.registerNode(filteredScopeDataNode);
@@ -15,6 +16,7 @@ export function registerCoreDerivedNodes(graph: DerivedDataGraph): void {
   graph.registerNode(availableGroupsNode);
   graph.registerNode(diagnosticResultsNode);
   graph.registerNode(creditsAnalysisNode);
+  graph.registerNode(agentAdoptionNode);
 }
 
 export {
@@ -25,4 +27,5 @@ export {
   availableGroupsNode,
   diagnosticResultsNode,
   creditsAnalysisNode,
+  agentAdoptionNode,
 };

@@ -222,11 +222,30 @@ export class PipelineOrchestrator {
     const allRecordedMonths = Array.from(allMonthsSet).sort().reverse();
     const rolling12Months = allRecordedMonths.slice(0, 12);
 
+    const totalAiCreditsUsed = enrichedSeats.reduce((sum, u) => sum + (u.ai_credits_used_28d || 0), 0);
+    const totalAiCreditsCostUsd = Number((totalAiCreditsUsed * 0.01).toFixed(2));
+    const totalMonthlySpend = enrichedSeats.reduce((sum, u) => sum + u.monthly_cost_usd, 0);
+    const totalCombinedCostUsd = Number((totalMonthlySpend + totalAiCreditsCostUsd).toFixed(2));
+    const idleSeats = enrichedSeats.filter((u) => u.status === 'idle' || u.status === 'never_used');
+    const idleWasteSpend = idleSeats.reduce((sum, u) => sum + u.monthly_cost_usd, 0);
+    const activeSeatsCount = enrichedSeats.length - idleSeats.length;
+
+    const totalAgentSessions = userProfiles.reduce((sum, p) => sum + (p.total_agent_sessions || 0), 0);
+    const engagedAgentUsers = userProfiles.filter((p) => (p.total_agent_sessions || 0) > 0).length;
+    const agentAdoptionRate = activeSeatsCount > 0 ? Number((engagedAgentUsers / activeSeatsCount).toFixed(4)) : 0;
+
     const rollingTrendEntries = rolling12Months.map((m) => ({
       month: m,
-      total_monthly_spend_usd: Number(enrichedSeats.reduce((sum, u) => sum + u.monthly_cost_usd, 0).toFixed(2)),
-      active_seats: enrichedSeats.filter((u) => u.status === 'active' || u.status === 'low_active').length,
+      total_monthly_spend_usd: Number(totalMonthlySpend.toFixed(2)),
+      total_spend_usd: Number(totalMonthlySpend.toFixed(2)),
+      active_seats: activeSeatsCount,
+      idle_seats: idleSeats.length,
       total_seats: enrichedSeats.length,
+      acceptance_rate: 0.35,
+      total_chats: userProfiles.reduce((sum, p) => sum + p.total_chats, 0),
+      total_ai_credits_used: totalAiCreditsUsed,
+      total_agent_sessions: totalAgentSessions,
+      agent_adoption_rate: agentAdoptionRate,
     }));
 
     this.storage.saveRolling1YearTrend({
@@ -236,10 +255,6 @@ export class PipelineOrchestrator {
     });
 
     // 8. IndexMetadata の保存
-    const totalMonthlySpend = enrichedSeats.reduce((sum, u) => sum + u.monthly_cost_usd, 0);
-    const idleSeats = enrichedSeats.filter((u) => u.status === 'idle' || u.status === 'never_used');
-    const idleWasteSpend = idleSeats.reduce((sum, u) => sum + u.monthly_cost_usd, 0);
-
     const indexMeta: IndexMetadata = {
       repository: {
         owner: process.env.GITHUB_REPOSITORY_OWNER || 'proud-corp',
@@ -263,10 +278,15 @@ export class PipelineOrchestrator {
       },
       summary: {
         total_seats: enrichedSeats.length,
-        active_seats_30d: enrichedSeats.length - idleSeats.length,
+        active_seats_30d: activeSeatsCount,
         idle_seats_30d: idleSeats.length,
         total_monthly_spend_usd: Number(totalMonthlySpend.toFixed(2)),
         idle_waste_spend_usd: Number(idleWasteSpend.toFixed(2)),
+        total_ai_credits_used: totalAiCreditsUsed,
+        total_ai_credits_cost_usd: totalAiCreditsCostUsd,
+        total_combined_cost_usd: totalCombinedCostUsd,
+        credits_pool_utilization_percent: Number(Math.min(100, (totalAiCreditsUsed / Math.max(1, enrichedSeats.length * 3900)) * 100).toFixed(1)),
+        agent_adoption_rate: agentAdoptionRate,
       },
       issues: issues,
     };

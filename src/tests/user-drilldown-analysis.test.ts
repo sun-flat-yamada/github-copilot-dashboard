@@ -189,7 +189,7 @@ describe('User Detail Table Inline Drilldown Analysis Tests', () => {
     );
     assert.ok(diagnostic);
     assert.strictEqual(typeof diagnostic.healthScore, 'number');
-    assert.strictEqual(diagnostic.patterns.length, 5);
+    assert.strictEqual(diagnostic.patterns.length, 9);
   });
 
   it('verifies InefficiencyDiagnosticEngine correctly computes metrics for an adapted profile', () => {
@@ -248,7 +248,7 @@ describe('User Detail Table Inline Drilldown Analysis Tests', () => {
     assert.ok(diagnostic, 'Diagnostic must return a result');
     assert.strictEqual(typeof diagnostic.healthScore, 'number');
     assert.ok(diagnostic.healthScore >= 0 && diagnostic.healthScore <= 100);
-    assert.strictEqual(diagnostic.patterns.length, 5, 'Must evaluate all 5 anti-patterns');
+    assert.strictEqual(diagnostic.patterns.length, 9, 'Must evaluate all 9 anti-patterns');
     assert.ok(diagnostic.drilldown.dailyActivity.length > 0);
   });
 });
