@@ -5,6 +5,7 @@ import { adaptReportToProfiles } from '../../utils/deepAnalysisAdapter';
 import { formatElapsedActivity } from '../../utils/dateFormatters';
 import { ActionColumnHeader } from '../common/ActionColumnHeader';
 import { UserDrilldownPanel } from '../UserDrilldownPanel';
+import { useCurrency } from '../../contexts/CurrencyContext';
 
 interface MonthlyReportUserTableProps {
   reportData: MonthlyReportAggregatedData;
@@ -31,6 +32,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
   const [localGroupFilter, setLocalGroupFilter] = useState<string>('all');
   const [userSortBy, setUserSortBy] = useState<'spend' | 'requests'>('spend');
   const [selectedUserLogin, setSelectedUserLogin] = useState<string | null>(initialSelectedLogin || null);
+  const { formatMoney } = useCurrency();
 
   const activeGroup = selectedGroup !== undefined ? selectedGroup : localGroupFilter;
 
@@ -290,12 +292,22 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                         {u.total_requests.toLocaleString()}
                       </td>
                       <td className="py-2.5 px-3 text-right">
-                        <div className="font-bold text-slate-100">
-                          ${(u.gross_spend_usd ?? u.total_spend_usd).toFixed(2)}
-                        </div>
-                        <div className="text-[10px] text-amber-400 font-mono">
-                          超過: ${(u.net_spend_usd ?? u.total_spend_usd).toFixed(2)}
-                        </div>
+                        {(() => {
+                          const gross = u.gross_spend_usd ?? u.total_spend_usd;
+                          const net = u.net_spend_usd ?? u.total_spend_usd;
+                          const grossDual = formatMoney(gross);
+                          const netDual = formatMoney(net);
+                          return (
+                            <>
+                              <div className="font-bold text-slate-100">
+                                {grossDual.usd} {grossDual.sub && <span className="text-[11px] text-slate-400 font-normal">({grossDual.sub})</span>}
+                              </div>
+                              <div className="text-[10px] text-amber-400 font-mono">
+                                超過: {netDual.usd} {netDual.sub && `(${netDual.sub})`}
+                              </div>
+                            </>
+                          );
+                        })()}
                       </td>
                       <td className="py-2.5 px-3 text-right font-mono text-[11px]">
                         {u.last_activity_date ? (

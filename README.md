@@ -63,6 +63,11 @@ Performs multidimensional aggregation and cost allocation across 3 primary axes 
 - Automatically flags seats unused for 30+ days, calculating wasted license expenses and potential savings.
 - Supports one-click CSV export of candidate users for license reclamation or reassignment.
 
+### 9. Permanent USD Primary with Optional Secondary Sub-Currency (Dual Currency FinOps)
+- Enforces **USD ($) as the permanent primary display currency** across all 9 analysis views, KPI summary cards, cost charts, and user tables.
+- Optionally displays localized sub-currencies (e.g., JPY `¥`, EUR `€`) in parentheses alongside USD (e.g., `$2,975.00 (¥461,125)`).
+- Fully integrates with Enterprise Agreement (EA) volume discounts and AI Credits contractual unit rates (`COPILOT_BILLING_CONFIG`), with instant interactive switching via the header currency selector.
+
 ---
 
 ## 🏛️ System Architecture
@@ -186,10 +191,14 @@ Register your configuration under **Settings** > **Secrets and variables** > **A
       { "github_user": "octocat-lead", "display_name": "Taro Tanaka", "department": "Platform Engineering", "cost_center_override": "FinTech-Division" }
     ]
     ```
+  - `COPILOT_BILLING_CONFIG`: *(Optional)* JSON configuration for optional sub-currency (JPY, EUR, etc.), EA volume discount, or custom contractual AI Credits unit pricing:
+    ```json
+    { "subCurrency": { "code": "JPY", "symbol": "¥", "exchangeRateFromUSD": 155.0, "displayDecimals": 0 }, "discountPercent": 15 }
+    ```
   - *(Testing / Demo)* `MOCK_MODE`: Set to `true` to immediately spin up the dashboard using 2026 synthetic simulation data.
 
 > [!NOTE]
-> For advanced setup options — including **CSV mapping format**, **GPG encryption for mappings > 48KB**, **graceful credentials degradation**, and **fork synchronization runbooks** — refer to the **[🚀 Complete Setup & Configuration Guide (docs/setup_guide.md)](docs/setup_guide.md)**.
+> For advanced setup options — including **Currency Display & Enterprise Billing Configuration**, **CSV mapping format**, **GPG encryption for mappings > 48KB**, **graceful credentials degradation**, and **fork synchronization runbooks** — refer to the **[🚀 Complete Setup & Configuration Guide (docs/setup_guide.md)](docs/setup_guide.md)**.
 
 ---
 

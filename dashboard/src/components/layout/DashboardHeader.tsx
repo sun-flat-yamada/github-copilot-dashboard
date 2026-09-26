@@ -6,6 +6,7 @@ import {
   MonthlyReportAggregatedData,
 } from '../../../../src/types/copilot';
 import { ActiveDataSelector } from './ActiveDataSelector';
+import { CurrencySelector } from './CurrencySelector';
 import { RepoInfo } from '../../hooks/useDashboardData';
 import {
   Sparkles,
@@ -215,6 +216,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             onUploadFileLoaded={onUploadFileLoaded}
             onClearUploadedFile={onClearUploadedFile}
           />
+
+          {/* 通貨セレクター (USD常時基本表示 + 任意サブ通貨切り替え) */}
+          <CurrencySelector />
 
           {/* 生成元 GitHub リポジトリリンク & Star (Forkセーフ・動的解決) */}
           <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl shadow-sm flex-shrink-0">

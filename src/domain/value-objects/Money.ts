@@ -63,6 +63,64 @@ export class Money {
     return `${currencyConfig.symbol}${formattedNum}`;
   }
 
+  /**
+   * Formats with permanent USD primary, and optional sub-currency in parentheses.
+   * e.g. "$1,234.50 (¥185,175)" or "$1,234.50" (if subCurrency omitted/USD).
+   */
+  formatWithSubCurrency(
+    subCurrency?: CurrencyConfig | null,
+    options?: { precisionUSD?: number; precisionSub?: number }
+  ): string {
+    return this.formatDual(subCurrency, options).combined;
+  }
+
+  /**
+   * Structured dual-currency formatting.
+   * Returns { usd: "$1,234.50", sub?: "¥185,175", combined: "$1,234.50 (¥185,175)" }
+   */
+  formatDual(
+    subCurrency?: CurrencyConfig | null,
+    options?: { precisionUSD?: number; precisionSub?: number }
+  ): { usd: string; sub?: string; combined: string } {
+    const usdPrecision = typeof options?.precisionUSD === 'number' ? options.precisionUSD : 2;
+    const usd = `$${this.amount.toLocaleString('en-US', {
+      minimumFractionDigits: usdPrecision,
+      maximumFractionDigits: usdPrecision,
+    })}`;
+
+    if (!subCurrency || subCurrency.code === 'USD' || subCurrency.exchangeRateFromUSD <= 0) {
+      return { usd, combined: usd };
+    }
+
+    const subDecimals = typeof options?.precisionSub === 'number'
+      ? options.precisionSub
+      : subCurrency.displayDecimals;
+
+    const subAmount = this.amount * subCurrency.exchangeRateFromUSD;
+    const subFormattedNum = subAmount.toLocaleString(
+      subCurrency.code === 'JPY' ? 'ja-JP' : 'en-US',
+      {
+        minimumFractionDigits: subDecimals,
+        maximumFractionDigits: subDecimals,
+      }
+    );
+
+    const sub = `${subCurrency.symbol}${subFormattedNum}`;
+    return {
+      usd,
+      sub,
+      combined: `${usd} (${sub})`,
+    };
+  }
+
+  static formatDualAmount(
+    amountUSD: number,
+    subCurrency?: CurrencyConfig | null,
+    options?: { precisionUSD?: number; precisionSub?: number }
+  ): { usd: string; sub?: string; combined: string } {
+    return new Money(amountUSD, 'USD').formatDual(subCurrency, options);
+  }
+
   equals(other: Money): boolean {
     return Math.abs(this.amount - other.amount) < 0.0001 && this.currency === other.currency;
   }

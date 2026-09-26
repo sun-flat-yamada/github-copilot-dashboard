@@ -1,6 +1,7 @@
 import React from 'react';
 import { ScopeAggregatedData } from '../../../src/types/copilot';
 import { DollarSign, Users, AlertTriangle, AlertCircle, CheckCircle2, MessageSquare, FileCode } from 'lucide-react';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 interface KpiSummaryCardsProps {
   data: ScopeAggregatedData;
@@ -8,6 +9,7 @@ interface KpiSummaryCardsProps {
 
 export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data }) => {
   const { overview, scope_type } = data;
+  const { formatMoney } = useCurrency();
 
   const costLabel =
     scope_type === 'daily'
@@ -18,6 +20,13 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data }) => {
 
   const isChatMissing = overview.missing_metrics?.includes('copilot_ide_chat');
   const isLanguageMissing = overview.missing_metrics?.includes('copilot_ide_code_completions');
+
+  const spendDual = formatMoney(overview.total_spend_usd);
+  const netBillableDual = overview.total_net_billable_usd !== undefined ? formatMoney(overview.total_net_billable_usd) : null;
+  const spendingLimitDual = overview.total_spending_limit_usd !== undefined && overview.total_spending_limit_usd > 0
+    ? formatMoney(overview.total_spending_limit_usd, { precisionUSD: 0, precisionSub: 0 })
+    : null;
+  const idleWasteDual = formatMoney(overview.idle_waste_usd);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -30,10 +39,15 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data }) => {
           </div>
         </div>
         <div className="mt-3">
-          <div className="flex items-baseline space-x-2">
+          <div className="flex items-baseline space-x-2 flex-wrap">
             <span className="text-2xl font-bold text-slate-100">
-              ${overview.total_spend_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              {spendDual.usd}
             </span>
+            {spendDual.sub && (
+              <span className="text-sm font-semibold text-slate-400">
+                ({spendDual.sub})
+              </span>
+            )}
             <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">利用費用</span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
@@ -41,16 +55,21 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data }) => {
           </p>
 
           {/* 超過請求費用 & 上限Limit設定値の併記 */}
-          {overview.total_net_billable_usd !== undefined && (
-            <div className="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+          {netBillableDual && (
+            <div className="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] flex-wrap gap-1">
               <span className="text-slate-400">超過請求費用:</span>
-              <div className="flex items-center space-x-1.5">
+              <div className="flex items-center space-x-1.5 flex-wrap">
                 <span className="font-mono font-semibold text-emerald-400">
-                  ${overview.total_net_billable_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  {netBillableDual.usd}
                 </span>
-                {overview.total_spending_limit_usd !== undefined && overview.total_spending_limit_usd > 0 && (
+                {netBillableDual.sub && (
+                  <span className="font-mono text-[10px] text-emerald-500/80">
+                    ({netBillableDual.sub})
+                  </span>
+                )}
+                {spendingLimitDual && (
                   <span className="text-slate-500 font-mono text-[10px]">
-                    (上限: ${overview.total_spending_limit_usd.toLocaleString()})
+                    (上限: {spendingLimitDual.usd}{spendingLimitDual.sub ? ` [${spendingLimitDual.sub}]` : ''})
                   </span>
                 )}
               </div>
@@ -86,8 +105,15 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data }) => {
           </div>
         </div>
         <div className="mt-3">
-          <div className="text-2xl font-bold text-amber-300">
-            ${overview.idle_waste_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          <div className="flex items-baseline space-x-1.5 flex-wrap">
+            <span className="text-2xl font-bold text-amber-300">
+              {idleWasteDual.usd}
+            </span>
+            {idleWasteDual.sub && (
+              <span className="text-sm font-semibold text-amber-400/80">
+                ({idleWasteDual.sub})
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-500 mt-1">
             30日以上未利用: <span className="text-amber-400 font-semibold">{overview.idle_seats} 席</span>

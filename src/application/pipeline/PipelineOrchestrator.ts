@@ -14,6 +14,7 @@ import {
 import { AttributeResolver } from '../../collector/attribute-resolver.js';
 import { loadUserMappingFromFile } from '../../collector/mapping-file-loader.js';
 import { loadDemoUserMapping } from '../../collector/demo-mapping-loader.js';
+import { BillingConfigLoader } from '../../adapters/storage/BillingConfigLoader.js';
 
 export interface PipelineOrchestratorDependencies {
   dataSource: ICopilotDataSource;
@@ -255,6 +256,7 @@ export class PipelineOrchestrator {
     });
 
     // 8. IndexMetadata の保存
+    const billingConfig = BillingConfigLoader.load();
     const indexMeta: IndexMetadata = {
       repository: {
         owner: process.env.GITHUB_REPOSITORY_OWNER || 'proud-corp',
@@ -270,6 +272,10 @@ export class PipelineOrchestrator {
       rolling_1year_trend_file: 'trends/rolling-1year.json',
       deep_analysis_months: this.storage.getStoredDeepAnalysisMonths(),
       is_mock_mode: this.isMock || (!hasLiveMetrics && enrichedSeats.length === 0),
+      billing: {
+        currency: billingConfig.currency,
+        subCurrency: billingConfig.subCurrency,
+      },
       default_scopes: {
         latest_day: hasLiveMetrics ? referenceDate : undefined,
         latest_month: monthKey || rolling12Months[0],
