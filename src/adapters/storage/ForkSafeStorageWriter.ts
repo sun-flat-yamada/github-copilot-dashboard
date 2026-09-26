@@ -37,7 +37,15 @@ export class ForkSafeStorageWriter implements IStorageWriter {
   }
 
   saveDeepAnalysisArchive(month: string, profiles: UserUsageProfile[]): void {
-    this.storage.saveDeepAnalysisArchive(month, profiles);
+    this.storage.saveDeepAnalysisArchive(month, {
+      month,
+      generated_at: new Date().toISOString(),
+      user_profiles: profiles,
+    });
+  }
+
+  saveRolling1YearTrend(data: any): void {
+    this.storage.saveRolling1YearTrend(data);
   }
 
   saveIndex(metadata: IndexMetadata): void {
@@ -46,6 +54,26 @@ export class ForkSafeStorageWriter implements IStorageWriter {
 
   saveErrorLog(issues: DataFetchIssue[]): void {
     this.storage.saveErrorLog(issues);
+  }
+
+  getRawReportFiles(month: string): string[] {
+    return this.storage.getRawReportFiles(month);
+  }
+
+  getStoredReportMonths(): string[] {
+    return this.storage.getStoredReportMonths();
+  }
+
+  getStoredProcessedMonths(): string[] {
+    return this.storage.getStoredProcessedMonths();
+  }
+
+  getStoredDeepAnalysisMonths(): string[] {
+    return this.storage.getStoredDeepAnalysisMonths();
+  }
+
+  saveRawReportFile(month: string, fileName: string, content: string): void {
+    this.storage.saveRawReportFile(month, fileName, content);
   }
 
   getStorage(): ForkSafeStorage {

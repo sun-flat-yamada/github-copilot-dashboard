@@ -39,6 +39,20 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
   }
 
   async fetchMetrics(): Promise<CopilotDailyMetrics[]> {
+    if (!this.enterprise && this.orgs.length === 0) {
+      this.issues.push({
+        id: `issue_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        timestamp: new Date().toISOString(),
+        severity: 'warning',
+        category: 'api_auth',
+        target: 'config:copilot-metrics',
+        message: 'COPILOT_ENTERPRISE and COPILOT_ORGS are both unset — skipping live Copilot Metrics collection.',
+        details:
+          'Set COPILOT_ENTERPRISE (enterprise-wide) or COPILOT_ORGS (comma-separated org slugs) as a repository/organization Actions variable to enable live metrics collection. Monthly Usage Report (CSV import) and other credential-independent features remain unaffected.',
+      });
+      return [];
+    }
+
     const apiVer = this.fetcher.getApiVersion();
     const normalizer = this.metricsNormalizers.getNormalizer(apiVer);
 
@@ -70,6 +84,20 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
   }
 
   async fetchSeats(): Promise<CopilotSeatAssignment[]> {
+    if (!this.enterprise && this.orgs.length === 0) {
+      this.issues.push({
+        id: `issue_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        timestamp: new Date().toISOString(),
+        severity: 'warning',
+        category: 'api_auth',
+        target: 'config:copilot-billing-seats',
+        message: 'COPILOT_ENTERPRISE and COPILOT_ORGS are both unset — skipping live Copilot Seats collection.',
+        details:
+          'Set COPILOT_ENTERPRISE (enterprise-wide) or COPILOT_ORGS (comma-separated org slugs) as a repository/organization Actions variable to enable live seat collection. Monthly Usage Report (CSV import) and other credential-independent features remain unaffected.',
+      });
+      return [];
+    }
+
     const apiVer = this.fetcher.getApiVersion();
     const normalizer = this.seatsNormalizers.getNormalizer(apiVer);
 

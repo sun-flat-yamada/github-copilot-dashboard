@@ -109,63 +109,102 @@ flowchart TB
 
 ---
 
-## 3. ディレクトリ構成仕様
+## 3. クリーンアーキテクチャ 4層設計 (Clean Architecture & DIP)
+
+2026.09 LTS では、保守性・テスタビリティ・拡張性を飛躍的に高めるため、以下の 4 層 Clean Architecture を導入している。
+
+```mermaid
+flowchart TD
+    subgraph Domain["1. Domain Layer (純粋TS・ゼロ外部依存)"]
+        Entities["Entities\n- copilot.ts / deep-analysis.ts\n- model-benchmark.ts / views.ts"]
+        VO["Value Objects\n- Money / HealthScore / DateRange"]
+        Rules["Business Rules\n- SeatClassification / BudgetUtilization\n- AdoptionPhaseRule / SeatBillingRule"]
+        Ports["Ports (Interfaces)\n- ICopilotDataSource / IStorageWriter\n- IAttributeResolver / IMetricsRepository\n- IViewPluginManifest"]
+    end
+
+    subgraph Application["2. Application Layer (ユースケース・ステート)"]
+        Services["Application Services\n- ScopeManager / FilterService\n- CacheService / DiagnosticService\n- DemoModeService / AdoptionPhaseService"]
+        Store["Reactive DataStore & DerivedDataGraph\n- DataStore / Reducer / State\n- DAG (トポロジカルソート・メモ化)"]
+        Views["View System\n- ViewPluginRegistry / ViewOrchestrator"]
+        Pipeline["Pipeline\n- PipelineOrchestrator"]
+    end
+
+    subgraph Adapters["3. Interface Adapters (入出力変換・Presenter)"]
+        ACL["Anti-Corruption Layer (ACL)\n- RawApiFetcher (リトライ & カレンダーヘッダー)\n- ResponseNormalizer / NormalizerRegistry\n- Zod Schemas"]
+        DataSources["Data Sources\n- GitHubApiCopilotDataSource\n- MockCopilotDataSource\n- StaticJsonMetricsRepository"]
+        StorageAdapters["Storage Adapters\n- ForkSafeStorageWriter\n- AttributeResolverAdapter / DemoAttributeResolver"]
+        Presenters["Presenters (DOM非依存)\n- Overview / Users / Trend\n- Budget / DeepAnalysis / ModelRadar"]
+        ViewPlugins["View Plugins\n- Overview / Users / Trend\n- Budget / DeepAnalysis / ModelRadar"]
+    end
+
+    subgraph Frameworks["4. Frameworks & Drivers (React & CLI & Web)"]
+        ReactUI["React Dashboard SPA\n- DashboardProvider / useStoreSelector\n- useStoreDispatch / useViewPlugin\n- App.tsx / AppV2.tsx"]
+        CLI["CLI Entrypoint\n- run-pipeline.ts -> createPipelineApp()"]
+    end
+
+    Frameworks --> Adapters
+    Adapters --> Application
+    Application --> Domain
+    Adapters --> Domain
+```
+
+### 3.1 レイヤー責務
+1. **Domain Layer (`src/domain/`)**: フレームワーク（React / CLI）や外部ライブラリに一切依存しない純粋なビジネスエンティティ、値オブジェクト（`Money`, `HealthScore`）、不変ビジネスルール、および抽象ポート（Interfaces）。
+2. **Application Layer (`src/application/`)**: ユースケース、リアクティブ状態管理（`DataStore`）、派生データ計算グラフ（`DerivedDataGraph`）、およびビューオーケストレーション（`ViewOrchestrator`, `ViewPluginRegistry`）。
+3. **Interface Adapters (`src/adapters/`)**: 外部API（GitHub REST API）のスキーマ防壁（ACL: `RawApiFetcher`, Zod Schemas）、ストレージアダプタ、および表示ロジックを純粋関数化する Presenters（DOM非依存・単体テスト可能）。
+4. **Frameworks & Drivers (`src/frameworks/`, `dashboard/`, `src/cli/`)**: React Context (`DashboardProvider`)、カスタムフック (`useViewPlugin`, `useStoreSelector`)、CLI エントリポイント。
+
+---
+
+## 4. フロントエンドの状態管理原則 (Reactive DataStore & View Plugins)
+
+### 4.1 Reactive DataStore + DerivedDataGraph
+ダッシュボードは `DataStore` と `DerivedDataGraph` による単方向データフローを採用している。
+- **トポロジカルソート & 循環検出**: 派生ノード（`filteredScopeData`, `filteredReportData`, `diagnosticResults` 等）は依存関係に基づきトポロジカル順に自動計算される。
+- **入力ハッシュメモ化**: 依存ステートや上流派生データに変更がない場合、キャッシュされた計算結果を再利用し、無駄な再計算を完全防止。
+
+### 4.2 View Plugin System & Presenter 分離
+6種（Phase 6で9種）の分析ビューは `IViewPluginManifest` を実装した独立プラグインとして定義される。
+- **ViewOrchestrator**: 表示条件（`canRender`）および派生データの準備状況（`requiredDerivedData`）を検証し、表示可能ビューの切り替えを安全に調停。
+- **Presenter**: ビュー表示に必要なフォーマット・計算（通貨表記、比率、ソート、フィルタ結果等）を React / DOM から完全に切り離した純粋 TypeScript クラスとして実装し、ブラウザ不要の高速単体テストを実現。
+
+---
+
+## 5. ディレクトリ構成仕様
 
 ```
 .
 ├── .github/
-│   └── workflows/
-│       ├── copilot-analysis-cron.yml   # 日次定期実行・Pagesデプロイ
-│       └── test-and-preview.yml        # CIビルド・テスト検証
+│   └── workflows/                      # GitHub Actions ワークフロー
 ├── docs/
-│   └── specifications/                 # SDD仕様書群
-│       ├── 01_requirements_specification.md
-│       ├── 02_system_architecture.md
-│       ├── 03_github_copilot_api_spec_2026.md
-│       ├── 04_user_attribute_mapping_spec.md
-│       ├── 05_data_storage_and_fork_isolation_spec.md
-│       ├── 06_aggregation_and_billing_logic_spec.md
-│       ├── 07_dashboard_ui_ux_spec.md
-│       └── 08_automation_workflow_spec.md
+│   └── specifications/                 # SDD仕様書群 (01〜15)
 ├── src/
-│   ├── types/                          # 型定義 (API, Metrics, Mapping, Aggregation)
-│   │   └── copilot.ts
-│   ├── collector/                      # API収集・モック生成・属性リゾルバ
-│   │   ├── github-client.ts
-│   │   ├── mock-generator.ts
-│   │   └── attribute-resolver.ts
-│   ├── processor/                      # 費用計算・多次元集計エンジン
-│   │   ├── billing-calculator.ts
-│   │   └── metrics-aggregator.ts
-│   ├── storage/                        # Fork安全ストレージ・インデックス生成
-│   │   └── fork-safe-storage.ts
-│   └── cli/                            # CLI実行エントリポイント
-│       └── run-pipeline.ts
-├── dashboard/                          # GitHub Pages SPA (Vite + React + Tailwind)
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── ScopeSelector.tsx
-│   │   │   ├── GroupingSelector.tsx
-│   │   │   ├── KpiSummaryCards.tsx
-│   │   │   ├── CostAllocationCharts.tsx
-│   │   │   ├── UsageMetricsCharts.tsx
-│   │   │   ├── UserDetailTable.tsx
-│   │   │   └── IdleSeatAdvisor.tsx
-│   │   ├── App.tsx
-│   │   └── main.tsx
-│   ├── index.html
-│   ├── vite.config.ts
-│   └── tailwind.config.js
-├── package.json
-├── tsconfig.json
-└── README.md
+│   ├── domain/                         # Layer 1: Domain
+│   │   ├── entities/                   # エンティティ (copilot, views, model-benchmark 等)
+│   │   ├── value-objects/              # 値オブジェクト (Money, HealthScore, DateRange 等)
+│   │   ├── rules/                      # ビジネスルール (SeatClassification, AdoptionPhase 等)
+│   │   └── ports/                      # ポート (ICopilotDataSource, IStorageWriter 等)
+│   ├── application/                    # Layer 2: Application
+│   │   ├── store/                      # DataStore, Reducer, State, DerivedDataGraph
+│   │   ├── services/                   # ScopeManager, FilterService, DemoModeService 等
+│   │   ├── views/                      # ViewPluginRegistry, ViewOrchestrator
+│   │   └── pipeline/                   # PipelineOrchestrator
+│   ├── adapters/                       # Layer 3: Adapters
+│   │   ├── github-api/                 # ACL, RawApiFetcher, Normalizers, Zod Schemas
+│   │   ├── storage/                    # StaticJsonMetricsRepository, ForkSafeStorageWriter
+│   │   ├── presenters/                 # Overview, Users, Trend, Budget, DeepAnalysis, ModelRadar
+│   │   ├── views/                      # ViewPlugin 定義 & レジストリ登録
+│   │   └── composition-root.ts         # バックエンド Composition Root (createPipelineApp)
+│   ├── frameworks/                     # Layer 4: Frameworks
+│   │   ├── react/                      # DashboardProvider, useStoreSelector, useViewPlugin
+│   │   └── composition-root.ts         # フロントエンド Composition Root (createDashboardApp)
+│   └── cli/
+│       └── run-pipeline.ts             # CLI実行エントリポイント (createPipelineApp経由)
+├── dashboard/                          # フロントエンド SPA (Vite + React + Tailwind)
+│   └── src/
+│       ├── components/                 # UIコンポーネント & Viewコンポーネント
+│       ├── App.tsx / AppV2.tsx
+│       └── main.tsx
+└── package.json
 ```
-
----
-
-## 4. フロントエンドの状態管理原則 (データセントリック・リアクティビティ)
-
-`dashboard/` 配下のSPAは、`useDashboardData` フックを**唯一の情報源 (Single Source of Truth)** とし、アクティブデータソース・スコープ・タグフィルターに応じたフィルター適用済みの派生データ（`currentData`, `currentReportData` 等）のみを各Viewコンポーネントへ供給する。
-
-グローバルなコントロールバー（`ActiveDataSelector` / `ScopeSelector` / `TagFilterBar`）は `App.tsx` 内で各Viewコンポーネントの外側の兄弟要素として配置されるため、フィルター変更はViewを再マウントしない。したがって各Viewは、マウント時の一度きりの計算ではなく、派生データの参照変化に追従する実装（`useMemo` / `useEffect` の依存配列設計）を必須とする。この原則（データセントリック・リアクティビティ）の詳細な設計方針・実装規約・既知のアンチパターンは [SDD-15 データセントリック・リアクティビティ設計仕様書](15_data_centric_reactivity_design_spec.ja.md) に定める。
 

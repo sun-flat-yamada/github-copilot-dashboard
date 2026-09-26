@@ -22,23 +22,8 @@ export interface RepoInfo {
   isFork: boolean;
 }
 
-export function checkIsDemoMode(): boolean {
-  if (typeof window !== 'undefined') {
-    const params = new URLSearchParams(window.location.search);
-    if (
-      params.get('demo') === 'true' ||
-      params.get('mock') === 'true' ||
-      params.get('mode') === 'demo' ||
-      params.get('data') === 'demo'
-    ) {
-      return true;
-    }
-  }
-  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_MOCK_MODE === 'true') {
-    return true;
-  }
-  return false;
-}
+import { DemoModeService } from '../../../src/application/services/DemoModeService';
+export const checkIsDemoMode = DemoModeService.checkIsDemoMode;
 
 export function useDashboardData(initialSource: DataSourceType = 'live_metrics') {
   const [activeSource, setActiveSource] = useState<DataSourceType>(initialSource);

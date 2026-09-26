@@ -8,7 +8,7 @@ import {
   ScopeAggregatedData,
   MonthlyReportAggregatedData,
 } from '../types/copilot.js';
-import { checkIsDemoMode } from '../../dashboard/src/hooks/useDashboardData.js';
+import { checkIsDemoMode } from '../application/services/DemoModeService.js';
 import { resolveDataPath, getCandidateDataUrls } from '../../dashboard/src/utils/pathResolver.js';
 import { checkDataIsolation } from '../../scripts/verify-fork-health.js';
 import { setupForkDemoData } from '../../scripts/setup-fork-demo.js';

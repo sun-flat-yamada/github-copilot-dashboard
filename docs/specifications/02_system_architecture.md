@@ -109,59 +109,102 @@ flowchart TB
 
 ---
 
-## 3. Directory Layout Specification
+## 3. Four-Layer Clean Architecture & Dependency Inversion Principle (DIP)
+
+In 2026.09 LTS, a 4-layer Clean Architecture has been introduced to maximize maintainability, testability, and extensibility:
+
+```mermaid
+flowchart TD
+    subgraph Domain["1. Domain Layer (Pure TS, Zero Dependencies)"]
+        Entities["Entities\n- copilot.ts / deep-analysis.ts\n- model-benchmark.ts / views.ts"]
+        VO["Value Objects\n- Money / HealthScore / DateRange"]
+        Rules["Business Rules\n- SeatClassification / BudgetUtilization\n- AdoptionPhaseRule / SeatBillingRule"]
+        Ports["Ports (Interfaces)\n- ICopilotDataSource / IStorageWriter\n- IAttributeResolver / IMetricsRepository\n- IViewPluginManifest"]
+    end
+
+    subgraph Application["2. Application Layer (Use Cases & State)"]
+        Services["Application Services\n- ScopeManager / FilterService\n- CacheService / DiagnosticService\n- DemoModeService / AdoptionPhaseService"]
+        Store["Reactive DataStore & DerivedDataGraph\n- DataStore / Reducer / State\n- DAG (Topological Sort & Memoization)"]
+        Views["View System\n- ViewPluginRegistry / ViewOrchestrator"]
+        Pipeline["Pipeline\n- PipelineOrchestrator"]
+    end
+
+    subgraph Adapters["3. Interface Adapters (I/O, ACL, Presenters)"]
+        ACL["Anti-Corruption Layer (ACL)\n- RawApiFetcher (Retry & Calendar Version)\n- ResponseNormalizer / NormalizerRegistry\n- Zod Schemas"]
+        DataSources["Data Sources\n- GitHubApiCopilotDataSource\n- MockCopilotDataSource\n- StaticJsonMetricsRepository"]
+        StorageAdapters["Storage Adapters\n- ForkSafeStorageWriter\n- AttributeResolverAdapter / DemoAttributeResolver"]
+        Presenters["Presenters (DOM-Independent Pure TS)\n- Overview / Users / Trend\n- Budget / DeepAnalysis / ModelRadar"]
+        ViewPlugins["View Plugins\n- Overview / Users / Trend\n- Budget / DeepAnalysis / ModelRadar"]
+    end
+
+    subgraph Frameworks["4. Frameworks & Drivers (React & CLI)"]
+        ReactUI["React Dashboard SPA\n- DashboardProvider / useStoreSelector\n- useStoreDispatch / useViewPlugin\n- App.tsx / AppV2.tsx"]
+        CLI["CLI Entrypoint\n- run-pipeline.ts -> createPipelineApp()"]
+    end
+
+    Frameworks --> Adapters
+    Adapters --> Application
+    Application --> Domain
+    Adapters --> Domain
+```
+
+### 3.1 Layer Responsibilities
+1. **Domain Layer (`src/domain/`)**: Pure business models, immutable value objects (`Money`, `HealthScore`), business rules, and abstract port interfaces with zero dependencies on frameworks or third-party libraries.
+2. **Application Layer (`src/application/`)**: Use cases, unidirectional state management (`DataStore`), topologically sorted computation graph (`DerivedDataGraph`), and view lifecycle management (`ViewOrchestrator`).
+3. **Interface Adapters (`src/adapters/`)**: External API resilience (`RawApiFetcher`, Zod Schemas), storage adapters, pure presentation logic (`Presenters`), and view plugins.
+4. **Frameworks & Drivers (`src/frameworks/`, `dashboard/`, `src/cli/`)**: React Context provider (`DashboardProvider`), custom reactive hooks (`useViewPlugin`, `useStoreSelector`), and CLI entrypoints.
+
+---
+
+## 4. Frontend State Management Principle (Reactive DataStore & View Plugins)
+
+### 4.1 Reactive DataStore & DerivedDataGraph
+The dashboard state is managed via `DataStore` and evaluated incrementally through `DerivedDataGraph`.
+- **Topological Sorting & Cycle Detection**: Derived nodes (`filteredScopeData`, `filteredReportData`, `diagnosticResults`, etc.) are computed in strictly dependency-ordered sequence.
+- **Input Hash Memoization**: Computations are cached based on input state hashes, preventing redundant calculations across view switches.
+
+### 4.2 View Plugin System & Presenter Separation
+Analysis views implement `IViewPluginManifest` and decouple presentation formatting from UI rendering:
+- **ViewOrchestrator**: Validates rendering prerequisites (`canRender`) and data completeness (`requiredDerivedData`) before activating views.
+- **Presenter**: Transforms raw aggregates into display-ready view models completely outside the React render loop, enabling rapid headless unit testing.
+
+---
+
+## 5. Directory Layout Specification
 
 ```
 .
 ├── .github/
-│   └── workflows/
-│       ├── copilot-analysis-cron.yml   # Scheduled daily batch & Pages deploy
-│       └── test-and-preview.yml        # CI build & test suite
+│   └── workflows/                      # GitHub Actions workflows
 ├── docs/
-│   └── specifications/                 # SDD Specifications
-│       ├── 01_requirements_specification.md
-│       ├── 02_system_architecture.md
-│       ├── 03_github_copilot_api_spec_2026.md
-│       ├── 04_user_attribute_mapping_spec.md
-│       ├── 05_data_storage_and_fork_isolation_spec.md
-│       ├── 06_aggregation_and_billing_logic_spec.md
-│       ├── 07_dashboard_ui_ux_spec.md
-│       ├── 08_automation_workflow_spec.md
-│       ├── 09_monthly_usage_report_mode_spec.md
-│       ├── 10_ai_model_benchmark_radar_spec.md
-│       └── 11_deep_analysis_view_spec.md
+│   └── specifications/                 # SDD Specifications (01-15)
 ├── src/
-│   ├── types/                          # Type definitions (API, Metrics, Mapping, Aggregation)
-│   │   └── copilot.ts
-│   ├── collector/                      # API collection, mock generator, attribute resolver
-│   │   ├── github-client.ts
-│   │   ├── mock-generator.ts
-│   │   └── attribute-resolver.ts
-│   ├── processor/                      # Cost calculation & multi-axis aggregation
-│   │   ├── billing-calculator.ts
-│   │   └── metrics-aggregator.ts
-│   ├── storage/                        # Fork-safe storage & index generation
-│   │   └── fork-safe-storage.ts
-│   └── cli/                            # CLI pipeline entrypoint
-│       └── run-pipeline.ts
-├── dashboard/                          # GitHub Pages SPA (Vite + React + Tailwind)
-│   ├── src/
-│   │   ├── components/
-│   │   ├── App.tsx
-│   │   └── main.tsx
-│   ├── index.html
-│   ├── vite.config.ts
-│   └── tailwind.config.js
-├── package.json
-├── tsconfig.json
-└── README.md
+│   ├── domain/                         # Layer 1: Domain
+│   │   ├── entities/                   # Domain entities (copilot, views, model-benchmark, etc.)
+│   │   ├── value-objects/              # Value objects (Money, HealthScore, DateRange)
+│   │   ├── rules/                      # Business rules (SeatClassification, AdoptionPhase, etc.)
+│   │   └── ports/                      # Port interfaces (ICopilotDataSource, IStorageWriter, etc.)
+│   ├── application/                    # Layer 2: Application
+│   │   ├── store/                      # DataStore, Reducer, State, DerivedDataGraph
+│   │   ├── services/                   # ScopeManager, FilterService, DemoModeService, etc.
+│   │   ├── views/                      # ViewPluginRegistry, ViewOrchestrator
+│   │   └── pipeline/                   # PipelineOrchestrator
+│   ├── adapters/                       # Layer 3: Adapters
+│   │   ├── github-api/                 # ACL, RawApiFetcher, Normalizers, Zod Schemas
+│   │   ├── storage/                    # StaticJsonMetricsRepository, ForkSafeStorageWriter
+│   │   ├── presenters/                 # Overview, Users, Trend, Budget, DeepAnalysis, ModelRadar
+│   │   ├── views/                      # ViewPlugin manifests & component loaders
+│   │   └── composition-root.ts         # Backend Composition Root (createPipelineApp)
+│   ├── frameworks/                     # Layer 4: Frameworks
+│   │   ├── react/                      # DashboardProvider, useStoreSelector, useViewPlugin
+│   │   └── composition-root.ts         # Frontend Composition Root (createDashboardApp)
+│   └── cli/
+│       └── run-pipeline.ts             # CLI entrypoint via createPipelineApp
+├── dashboard/                          # Frontend SPA (Vite + React + Tailwind)
+│   └── src/
+│       ├── components/                 # UI & view components
+│       ├── App.tsx / AppV2.tsx
+│       └── main.tsx
+└── package.json
 ```
-
----
-
-## 4. Frontend State Management Principle (Data-Centric Reactivity)
-
-The SPA under `dashboard/` treats the `useDashboardData` hook as the **Single Source of Truth**, supplying each View component only with filter-applied derived data (`currentData`, `currentReportData`, etc.) reflecting the active data source, scope, and tag filters.
-
-Because the global control bar (`ActiveDataSelector` / `ScopeSelector` / `TagFilterBar`) is rendered inside `App.tsx` as a sibling element outside each View component, changing a filter never remounts the View. Every View must therefore be implemented to track changes in the reference identity of the derived data (via `useMemo` / `useEffect` dependency array design), rather than computing once at mount time. The detailed design policy, implementation conventions, and known anti-patterns for this principle (Data-Centric Reactivity) are defined in [SDD-15: Data-Centric Reactivity Design Specification](15_data_centric_reactivity_design_spec.md).
 
