@@ -36,6 +36,71 @@ export interface RepoInfo {
 import { DemoModeService } from '../../../src/application/services/DemoModeService';
 export const checkIsDemoMode = DemoModeService.checkIsDemoMode;
 
+export function sliceScopeDataByDateRange(
+  baseData: ScopeAggregatedData,
+  startDate: string,
+  endDate: string
+): ScopeAggregatedData {
+  const filteredTrends = (baseData.daily_trends || []).filter(
+    (d) => d.date >= startDate && d.date <= endDate
+  );
+  const daysCount = filteredTrends.length || 1;
+
+  const totalSpend = filteredTrends.reduce((sum, d) => sum + (d.daily_cost_usd || 0), 0);
+  const totalSuggestions = filteredTrends.reduce((sum, d) => sum + (d.suggestions || 0), 0);
+  const totalAcceptances = filteredTrends.reduce((sum, d) => sum + (d.acceptances || 0), 0);
+  const totalChats = filteredTrends.reduce((sum, d) => sum + (d.chats || 0), 0);
+  const totalPrSummaries = filteredTrends.reduce((sum, d) => sum + (d.pr_summaries || 0), 0);
+  const acceptanceRate = totalSuggestions > 0 ? totalAcceptances / totalSuggestions : 0;
+
+  const filteredUserProfiles = (baseData.user_profiles || []).map((p) => {
+    const history = (p.daily_history || []).filter(
+      (h) => h.date >= startDate && h.date <= endDate
+    );
+    const userSuggestions = history.reduce((s, h) => s + (h.suggestions || 0), 0);
+    const userAcceptances = history.reduce((s, h) => s + (h.acceptances || 0), 0);
+    const userChats = history.reduce((s, h) => s + (h.total_chats || 0), 0);
+    const userSpend = history.reduce((s, h) => s + (h.daily_cost_usd || 0), 0);
+    const userRate = userSuggestions > 0 ? userAcceptances / userSuggestions : 0;
+    return {
+      ...p,
+      daily_history: history,
+      total_suggestions: userSuggestions,
+      total_acceptances: userAcceptances,
+      total_chats: userChats,
+      acceptance_rate: userRate,
+      total_cost_usd: Math.round(userSpend * 100) / 100,
+    };
+  });
+
+  const activeUsersCount = filteredUserProfiles.filter(
+    (p) => (p.total_suggestions || 0) > 0 || (p.total_chats || 0) > 0
+  ).length;
+
+  return {
+    ...baseData,
+    scope_type: 'custom',
+    scope_key: `custom:${startDate}_${endDate}`,
+    date_range: {
+      start: startDate,
+      end: endDate,
+      days_count: daysCount,
+    },
+    daily_trends: filteredTrends,
+    user_profiles: filteredUserProfiles,
+    overview: {
+      ...baseData.overview,
+      total_spend_usd: Math.round(totalSpend * 100) / 100,
+      total_suggestions: totalSuggestions,
+      total_acceptances: totalAcceptances,
+      overall_acceptance_rate: Math.round(acceptanceRate * 10000) / 10000,
+      total_chats: totalChats,
+      total_pr_summaries: totalPrSummaries,
+      active_users: activeUsersCount,
+    },
+  };
+}
+
 export function useDashboardData(initialSource: DataSourceType = 'live_metrics') {
   const [activeSource, setActiveSource] = useState<DataSourceType>(initialSource);
   const [indexMeta, setIndexMeta] = useState<IndexMetadata | null>(null);
@@ -280,14 +345,26 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
         let subDir = 'daily';
         let fileName = `${selectedKey}.json`;
 
+        let candidateUrls: string[];
         if (scopeType === 'monthly') {
           subDir = 'monthly';
+          candidateUrls = getCandidateDataUrls(dataBaseDir, subDir, fileName);
         } else if (scopeType === 'custom') {
           subDir = 'custom';
-          fileName = `${selectedKey.replace(/[:\/]/g, '_')}.json`;
+          if (selectedKey.startsWith('custom:')) {
+            const customFileName = `${selectedKey.replace(/[:\/]/g, '_')}.json`;
+            candidateUrls = [
+              ...getCandidateDataUrls(dataBaseDir, 'custom', customFileName),
+              ...getCandidateDataUrls(dataBaseDir, 'custom', 'latest-30d.json'),
+            ];
+          } else {
+            fileName = `${selectedKey.replace(/[:\/]/g, '_')}.json`;
+            candidateUrls = getCandidateDataUrls(dataBaseDir, subDir, fileName);
+          }
+        } else {
+          candidateUrls = getCandidateDataUrls(dataBaseDir, subDir, fileName);
         }
 
-        const candidateUrls = getCandidateDataUrls(dataBaseDir, subDir, fileName);
         const { res, finalUrl } = await fetchDataWithFallback(candidateUrls);
 
         if (!res.ok) {
@@ -298,7 +375,15 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
         // Live Metrics だけがフォールバックしても Monthly Report 等 他ソースの表示が
         // 誤って「DEMO」表示になることを防ぐ。
         const isDemoSourced = finalUrl.includes('/demo/');
-        const data = (await res.json()) as ScopeAggregatedData;
+        let data = (await res.json()) as ScopeAggregatedData;
+
+        if (scopeType === 'custom' && selectedKey.startsWith('custom:')) {
+          const parts = selectedKey.slice('custom:'.length).split('_');
+          if (parts.length === 2 && parts[0] && parts[1]) {
+            data = sliceScopeDataByDateRange(data, parts[0], parts[1]);
+          }
+        }
+
         if (!isCancelled) {
           scopeDataCacheRef.current.set(cacheKey, { data, isDemoSourced });
           setCurrentData(data);

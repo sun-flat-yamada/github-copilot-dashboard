@@ -30,6 +30,7 @@ import {
   Check,
   X,
   FileCheck,
+  Calendar,
 } from 'lucide-react';
 
 interface DataSelectionModalProps {
@@ -97,6 +98,20 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 期間指定（カスタム範囲）用ステート
+  const [customStartDate, setCustomStartDate] = useState<string>(() => {
+    if (selectedScopeKey.startsWith('custom:')) {
+      return selectedScopeKey.slice('custom:'.length).split('_')[0] || '';
+    }
+    return indexMeta?.default_scopes?.latest_range?.start || '';
+  });
+  const [customEndDate, setCustomEndDate] = useState<string>(() => {
+    if (selectedScopeKey.startsWith('custom:')) {
+      return selectedScopeKey.slice('custom:'.length).split('_')[1] || '';
+    }
+    return indexMeta?.default_scopes?.latest_range?.end || '';
+  });
+
   // モーダルオープン時に現在のプロパティ値で同期
   useEffect(() => {
     if (isOpen) {
@@ -106,8 +121,16 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
       setLocalReportMonth(selectedReportMonth);
       setLocalCriteria(filterCriteria);
       setUploadError(null);
+      if (selectedScopeKey.startsWith('custom:')) {
+        const parts = selectedScopeKey.slice('custom:'.length).split('_');
+        if (parts[0]) setCustomStartDate(parts[0]);
+        if (parts[1]) setCustomEndDate(parts[1]);
+      } else {
+        setCustomStartDate(indexMeta?.default_scopes?.latest_range?.start || '');
+        setCustomEndDate(indexMeta?.default_scopes?.latest_range?.end || '');
+      }
     }
-  }, [isOpen, activeSource, scopeType, selectedScopeKey, selectedReportMonth, filterCriteria]);
+  }, [isOpen, activeSource, scopeType, selectedScopeKey, selectedReportMonth, filterCriteria, indexMeta]);
 
   // キーボードショートカット (Esc で閉じる、Enter で適用)
   useEffect(() => {
@@ -249,7 +272,7 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
   if (!isOpen || typeof document === 'undefined') return null;
 
   const availableMonths = indexMeta?.available_months || ['2026-09'];
-  const availableDays = indexMeta?.available_days?.slice(0, 14) || [];
+  const availableDays = indexMeta?.available_days || [];
 
   return createPortal(
     <div
@@ -346,43 +369,171 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
                 {DATA_SOURCE_LABELS.live_metrics.description}
               </p>
 
-              {/* 期間範囲指定 (月単位 / 日単位) */}
+              {/* 期間範囲指定 (直近30日 / 指定期間 / 月次 / 日次) */}
               {localSource === 'live_metrics' && (
-                <div className="mt-3 pt-3 border-t border-indigo-900/40 space-y-2.5" onClick={(e) => e.stopPropagation()}>
-                  <span className="text-[11px] font-semibold text-indigo-300 block">
-                    抽出期間の範囲指定:
-                  </span>
-                  <div className="flex gap-2">
-                    <select
-                      value={localScopeType === 'monthly' ? localScopeKey : ''}
-                      onChange={(e) => {
-                        setLocalScopeType('monthly');
-                        setLocalScopeKey(e.target.value);
-                      }}
-                      className="flex-1 bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:ring-1 focus:ring-indigo-500"
-                    >
-                      <option value="" disabled>月単位を選択...</option>
-                      {availableMonths.map((m) => (
-                        <option key={m} value={m}>{m} (月次)</option>
-                      ))}
-                    </select>
+                <div className="mt-3 pt-3 border-t border-indigo-900/40 space-y-3" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-indigo-300 block">
+                      抽出期間の範囲指定:
+                    </span>
+                    {localScopeType === 'custom' && localScopeKey === 'latest-30d' && (
+                      <span className="text-[10px] text-indigo-400 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/60">
+                        {indexMeta?.default_scopes?.latest_range?.start ?? '—'} 〜 {indexMeta?.default_scopes?.latest_range?.end ?? '—'}
+                      </span>
+                    )}
+                  </div>
 
-                    {availableDays.length > 0 && (
+                  {/* 4モード切り替えボタン */}
+                  <div className="grid grid-cols-4 gap-1 p-1 bg-slate-950/80 rounded-lg border border-slate-800 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLocalScopeType('custom');
+                        setLocalScopeKey('latest-30d');
+                      }}
+                      className={`px-1.5 py-1.5 rounded-md font-medium transition-all text-center text-[11px] cursor-pointer ${
+                        localScopeType === 'custom' && localScopeKey === 'latest-30d'
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                      }`}
+                    >
+                      直近30日間
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLocalScopeType('custom');
+                        const start = customStartDate || (availableDays.length > 0 ? availableDays[availableDays.length - 1] : '');
+                        const end = customEndDate || (availableDays.length > 0 ? availableDays[0] : '');
+                        setLocalScopeKey(`custom:${start}_${end}`);
+                      }}
+                      className={`px-1.5 py-1.5 rounded-md font-medium transition-all text-center text-[11px] cursor-pointer ${
+                        localScopeType === 'custom' && localScopeKey.startsWith('custom:')
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                      }`}
+                    >
+                      指定期間
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLocalScopeType('monthly');
+                        if (!availableMonths.includes(localScopeKey)) {
+                          setLocalScopeKey(availableMonths[0] || '');
+                        }
+                      }}
+                      className={`px-1.5 py-1.5 rounded-md font-medium transition-all text-center text-[11px] cursor-pointer ${
+                        localScopeType === 'monthly'
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                      }`}
+                    >
+                      月次
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLocalScopeType('daily');
+                        if (!availableDays.includes(localScopeKey)) {
+                          setLocalScopeKey(availableDays[0] || '');
+                        }
+                      }}
+                      className={`px-1.5 py-1.5 rounded-md font-medium transition-all text-center text-[11px] cursor-pointer ${
+                        localScopeType === 'daily'
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                      }`}
+                    >
+                      日次
+                    </button>
+                  </div>
+
+                  {/* 各モードの詳細選択領域 */}
+                  {localScopeType === 'custom' && localScopeKey === 'latest-30d' && (
+                    <div className="p-2.5 rounded-lg bg-indigo-950/30 border border-indigo-800/40 text-xs text-indigo-300 flex items-center justify-between">
+                      <div className="flex items-center space-x-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                        <span>直近30日間のローリング集計</span>
+                      </div>
+                      <span className="font-mono text-[11px] text-indigo-200">
+                        {indexMeta?.default_scopes?.latest_range?.start ?? '—'} 〜 {indexMeta?.default_scopes?.latest_range?.end ?? '—'}
+                      </span>
+                    </div>
+                  )}
+
+                  {localScopeType === 'custom' && localScopeKey.startsWith('custom:') && (
+                    <div className="p-2.5 rounded-lg bg-indigo-950/30 border border-indigo-800/40 space-y-2">
+                      <div className="flex items-center justify-between text-xs text-indigo-300">
+                        <span className="flex items-center space-x-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                          <span>開始日と終了日を指定:</span>
+                        </span>
+                        {customStartDate && customEndDate && (
+                          <span className="text-[10px] text-indigo-400 font-mono">
+                            {customStartDate} 〜 {customEndDate}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <label className="text-[10px] text-slate-400 block mb-1">開始日</label>
+                          <input
+                            type="date"
+                            value={customStartDate}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setCustomStartDate(val);
+                              setLocalScopeKey(`custom:${val}_${customEndDate || val}`);
+                            }}
+                            className="w-full bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:ring-1 focus:ring-indigo-500"
+                          />
+                        </div>
+                        <span className="text-slate-500 pt-4">〜</span>
+                        <div className="flex-1">
+                          <label className="text-[10px] text-slate-400 block mb-1">終了日</label>
+                          <input
+                            type="date"
+                            value={customEndDate}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setCustomEndDate(val);
+                              setLocalScopeKey(`custom:${customStartDate || val}_${val}`);
+                            }}
+                            className="w-full bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:ring-1 focus:ring-indigo-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {localScopeType === 'monthly' && (
+                    <div>
                       <select
-                        value={localScopeType === 'daily' ? localScopeKey : ''}
-                        onChange={(e) => {
-                          setLocalScopeType('daily');
-                          setLocalScopeKey(e.target.value);
-                        }}
-                        className="flex-1 bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:ring-1 focus:ring-indigo-500"
+                        value={localScopeKey}
+                        onChange={(e) => setLocalScopeKey(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:ring-1 focus:ring-indigo-500"
                       >
-                        <option value="" disabled>日単位を選択...</option>
+                        {availableMonths.map((m) => (
+                          <option key={m} value={m}>{m} (月次)</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {localScopeType === 'daily' && (
+                    <div>
+                      <select
+                        value={localScopeKey}
+                        onChange={(e) => setLocalScopeKey(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:ring-1 focus:ring-indigo-500"
+                      >
                         {availableDays.map((d) => (
                           <option key={d} value={d}>{d} (日次)</option>
                         ))}
                       </select>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
