@@ -380,6 +380,55 @@ export type DashboardAppMode = 'live_metrics' | 'monthly_report' | 'model_radar'
 
 export type DataSourceType = 'live_metrics' | 'monthly_report' | 'user_upload';
 
+/**
+ * 2階層特定モデルの第2階層: ANDフィルター条件
+ * 組織・財務軸、プロジェクト・属性軸、アカウント・個別軸の全条件をAND一致で適用
+ */
+export interface FilterCriteria {
+  costCenter: string; // 'all' | '__unassigned__' | specific cost center
+  organization: string; // 'all' | '__unassigned__' | specific organization
+  group: string; // 'all' | '__unassigned__' | specific group (department/team/project)
+  tags: string[]; // AND一致
+  userPattern: string; // 検索語句または正規表現
+  userPatternIsRegex: boolean; // 正規表現モードフラグ
+}
+
+export const DEFAULT_FILTER_CRITERIA: Readonly<FilterCriteria> = {
+  costCenter: 'all',
+  organization: 'all',
+  group: 'all',
+  tags: [],
+  userPattern: '',
+  userPatternIsRegex: false,
+};
+
+/**
+ * 第1階層: 対象データ3種類の表示メタ情報
+ */
+export const DATA_SOURCE_LABELS: Record<
+  DataSourceType,
+  { title: string; shortTitle: string; category: string; description: string }
+> = {
+  live_metrics: {
+    title: '自動定期収集データ（API収集・期間指定）',
+    shortTitle: '自動収集データ',
+    category: 'API定期自動蓄積',
+    description: 'API等から定期的に自動蓄積されたデータ群から、指定した月・日・期間を範囲指定して抽出します。',
+  },
+  monthly_report: {
+    title: '登録済み月次利用レポート (Monthly Usage Report)',
+    shortTitle: '月次レポート',
+    category: '確定月次CSV',
+    description: 'リポジトリに事前登録された月次確定CSVデータから、対象月を選択して分析します。',
+  },
+  user_upload: {
+    title: 'オンデマンド登録CSV (User Upload)',
+    shortTitle: 'オンデマンドCSV',
+    category: '即時ローカル解析',
+    description: '手元のUsage Report CSVを直接ドロップし、ブラウザ内完結（Zero-Leakage）で即座に解析します。',
+  },
+};
+
 export interface MonthlyUsageReportRawRecord {
   date: string; // YYYY-MM-DD
   username: string; // GitHub login
