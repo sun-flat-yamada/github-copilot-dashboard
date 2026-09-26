@@ -1,7 +1,13 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { ViewPlugin, ViewPluginProps } from './ViewPlugin.js';
 import { AgentPresenter, AgentViewModel } from '../presenters/AgentPresenter.js';
-import { AgentActivityView } from '../../../dashboard/src/components/views/AgentActivityView.js';
+import { ViewSkeleton } from '../../../dashboard/src/components/common/ViewSkeleton.js';
+
+const AgentActivityView = lazy(() =>
+  import('../../../dashboard/src/components/views/AgentActivityView.js').then((m) => ({
+    default: m.AgentActivityView,
+  }))
+);
 
 export const AgentViewComponent: React.FC<ViewPluginProps<AgentViewModel>> = (props) => {
   const { presenter, currentData, agentAdoption } = props;
@@ -10,7 +16,11 @@ export const AgentViewComponent: React.FC<ViewPluginProps<AgentViewModel>> = (pr
     agentAdoption,
   });
 
-  return <AgentActivityView viewModel={viewModel} />;
+  return (
+    <Suspense fallback={<ViewSkeleton />}>
+      <AgentActivityView viewModel={viewModel} />
+    </Suspense>
+  );
 };
 
 export const AgentViewPlugin: ViewPlugin<AgentViewModel> = {

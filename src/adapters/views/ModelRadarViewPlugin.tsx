@@ -1,7 +1,13 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { ViewPlugin, ViewPluginProps } from './ViewPlugin.js';
 import { ModelRadarPresenter, ModelRadarViewModel } from '../presenters/ModelRadarPresenter.js';
-import { ModelRadarView } from '../../../dashboard/src/components/ModelRadarView.js';
+import { ViewSkeleton } from '../../../dashboard/src/components/common/ViewSkeleton.js';
+
+const ModelRadarView = lazy(() =>
+  import('../../../dashboard/src/components/ModelRadarView.js').then((m) => ({
+    default: m.ModelRadarView,
+  }))
+);
 
 export const ModelRadarViewComponent: React.FC<ViewPluginProps<ModelRadarViewModel>> = (props) => {
   const {
@@ -18,14 +24,16 @@ export const ModelRadarViewComponent: React.FC<ViewPluginProps<ModelRadarViewMod
   };
 
   return (
-    <div className="w-full">
-      <ModelRadarView
-        initialSelectedModelId={focusedRadarModelId}
-        aggregatedData={currentData}
-        monthlyReportData={currentReportData}
-        onNavigateToTrend={handleNavigateToTrend}
-      />
-    </div>
+    <Suspense fallback={<ViewSkeleton />}>
+      <div className="w-full">
+        <ModelRadarView
+          initialSelectedModelId={focusedRadarModelId}
+          aggregatedData={currentData}
+          monthlyReportData={currentReportData}
+          onNavigateToTrend={handleNavigateToTrend}
+        />
+      </div>
+    </Suspense>
   );
 };
 

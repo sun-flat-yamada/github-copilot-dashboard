@@ -15,7 +15,8 @@ import {
   ModelBenchmarkProfile,
   CANONICAL_VENDOR_ORDER,
 } from '../../../src/types/model-benchmark';
-import { ModelUsageStat, PRESETS } from './ModelRadarView';
+import type { ModelUsageStat } from './radar/radar-utils';
+import { PRESETS } from './radar/radar-constants';
 
 export type SidebarDisplayMode = 'expanded' | 'compact' | 'collapsed';
 
