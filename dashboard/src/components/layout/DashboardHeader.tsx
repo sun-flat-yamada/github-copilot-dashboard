@@ -208,8 +208,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             <Sparkles className="w-5 h-5" />
           </div>
 
-          {/* タイトル & 動作モードバッジ & サブタイトル (十分な表示幅がある場合: xl以上で表示、幅不足時はアイコン表示のみ) */}
-          <div className="hidden xl:flex flex-col justify-center">
+          {/* タイトル & 動作モードバッジ & サブタイトル (十分な表示幅がある場合: md以上で表示、幅不足時はアイコン表示のみ) */}
+          <div className="hidden md:flex flex-col justify-center">
             <div className="flex items-center space-x-1.5 sm:space-x-2">
               <h1 className="text-sm sm:text-base font-bold text-white tracking-tight whitespace-nowrap">
                 GitHub Copilot Analytics

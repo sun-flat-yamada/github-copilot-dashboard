@@ -30,12 +30,12 @@ describe('Header Responsive Title & Icon-Only Collapse Tests (#99)', () => {
     );
   });
 
-  it('verifies title block collapses to icon-only on narrow viewports (< xl: 1280px)', () => {
+  it('verifies title block collapses to icon-only on narrow viewports (< md: 768px)', () => {
     const content = fs.readFileSync(headerPath, 'utf-8');
     assert.match(
       content,
-      /className="hidden xl:flex flex-col justify-center"/,
-      'Title and mode badges must be wrapped in hidden xl:flex to collapse on narrow viewports'
+      /className="hidden md:flex flex-col justify-center"/,
+      'Title and mode badges must be wrapped in hidden md:flex to collapse on narrow viewports'
     );
     assert.match(
       content,
@@ -46,12 +46,12 @@ describe('Header Responsive Title & Icon-Only Collapse Tests (#99)', () => {
 
   it('verifies Information icon button is placed outside the collapsible title block to remain visible adjacent to Sparkles', () => {
     const content = fs.readFileSync(headerPath, 'utf-8');
-    // Information icon should be after the hidden xl:flex container and remain a sibling of Sparkles
+    // Information icon should be after the hidden md:flex container and remain a sibling of Sparkles
     const [beforeInfo, afterInfo] = content.split('<button\n            onClick={onOpenAboutModal}');
     assert.ok(beforeInfo && afterInfo, 'About modal trigger button must exist');
     assert.ok(
-      beforeInfo.includes('hidden xl:flex flex-col justify-center'),
-      'Info icon button must appear after the hidden xl:flex container'
+      beforeInfo.includes('hidden md:flex flex-col justify-center'),
+      'Info icon button must appear after the hidden md:flex container'
     );
     assert.ok(
       afterInfo.includes('<Info className="w-3.5 h-3.5" />'),
