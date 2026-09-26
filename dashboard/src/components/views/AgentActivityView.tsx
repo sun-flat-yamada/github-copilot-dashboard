@@ -1,12 +1,17 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { AgentViewModel } from '../../../../src/adapters/presenters/AgentPresenter';
-import { Bot, MessageSquare, Users, GitPullRequest, Wrench, Terminal, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Bot, MessageSquare, Users, GitPullRequest, Wrench, Terminal, Sparkles, CheckCircle2, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 
 interface AgentActivityViewProps {
   viewModel: AgentViewModel;
 }
 
+type AgentTeamSortKey = 'teamName' | 'sessions' | 'engagedUsers' | 'adoptionRate';
+
 export const AgentActivityView: React.FC<AgentActivityViewProps> = ({ viewModel }) => {
+  const [sortKey, setSortKey] = useState<AgentTeamSortKey>('sessions');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
   if (!viewModel.hasData) {
     return (
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center text-slate-500">
@@ -28,6 +33,47 @@ export const AgentActivityView: React.FC<AgentActivityViewProps> = ({ viewModel 
     prMetrics,
     teams,
   } = viewModel;
+
+  const handleSort = (key: AgentTeamSortKey) => {
+    if (sortKey === key) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir(key === 'teamName' ? 'asc' : 'desc');
+    }
+  };
+
+  const renderSortIcon = (key: AgentTeamSortKey) => {
+    if (sortKey !== key) {
+      return <ArrowUpDown className="w-3 h-3 text-slate-500 opacity-60 group-hover:opacity-100 transition-opacity" />;
+    }
+    return sortDir === 'asc' ? (
+      <ArrowUp className="w-3 h-3 text-purple-400" />
+    ) : (
+      <ArrowDown className="w-3 h-3 text-purple-400" />
+    );
+  };
+
+  const sortedTeams = useMemo(() => {
+    return [...teams].sort((a, b) => {
+      let diff = 0;
+      switch (sortKey) {
+        case 'teamName':
+          diff = a.teamName.localeCompare(b.teamName, 'ja');
+          break;
+        case 'sessions':
+          diff = a.sessions - b.sessions;
+          break;
+        case 'engagedUsers':
+          diff = a.engagedUsers - b.engagedUsers;
+          break;
+        case 'adoptionRate':
+          diff = a.adoptionRate - b.adoptionRate;
+          break;
+      }
+      return sortDir === 'asc' ? diff : -diff;
+    });
+  }, [teams, sortKey, sortDir]);
 
   return (
     <div className="space-y-6">
@@ -209,14 +255,46 @@ export const AgentActivityView: React.FC<AgentActivityViewProps> = ({ viewModel 
             <table className="w-full text-left text-xs">
               <thead className="border-b border-slate-800 text-slate-400 uppercase tracking-wider text-[10px]">
                 <tr>
-                  <th className="py-2.5 px-3">チーム名</th>
-                  <th className="py-2.5 px-3 text-right">総セッション数</th>
-                  <th className="py-2.5 px-3 text-right">Agent 活用人数</th>
-                  <th className="py-2.5 px-3 text-right">チーム内浸透率</th>
+                  <th
+                    className="py-2.5 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors"
+                    onClick={() => handleSort('teamName')}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>チーム名</span>
+                      {renderSortIcon('teamName')}
+                    </div>
+                  </th>
+                  <th
+                    className="py-2.5 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors"
+                    onClick={() => handleSort('sessions')}
+                  >
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span>総セッション数</span>
+                      {renderSortIcon('sessions')}
+                    </div>
+                  </th>
+                  <th
+                    className="py-2.5 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors"
+                    onClick={() => handleSort('engagedUsers')}
+                  >
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span>Agent 活用人数</span>
+                      {renderSortIcon('engagedUsers')}
+                    </div>
+                  </th>
+                  <th
+                    className="py-2.5 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors"
+                    onClick={() => handleSort('adoptionRate')}
+                  >
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span>チーム内浸透率</span>
+                      {renderSortIcon('adoptionRate')}
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {teams.map((t) => (
+                {sortedTeams.map((t) => (
                   <tr key={t.teamName} className="hover:bg-slate-850/50 transition-colors">
                     <td className="py-2.5 px-3 font-semibold text-slate-200">{t.teamName}</td>
                     <td className="py-2.5 px-3 text-right font-mono font-bold text-purple-300">

@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { AdoptionViewModel } from '../../../../src/adapters/presenters/AdoptionPresenter';
-import { TrendingUp, Users, Award, Shield, CheckCircle2, Layers, Zap, Bot, Code, HelpCircle } from 'lucide-react';
+import { TrendingUp, Users, Award, Shield, CheckCircle2, Layers, Zap, Bot, Code, HelpCircle, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { AdoptionPhase } from '../../../../src/domain/entities/agent-metrics';
 
 interface AdoptionMaturityViewProps {
   viewModel: AdoptionViewModel;
 }
+
+type TeamBreakdownSortKey = 'teamName' | 'totalUsers' | 'no_cohort' | 'code_first' | 'agent_first' | 'multi_agent';
 
 const STAGE_ICONS: Record<AdoptionPhase, React.ReactNode> = {
   no_cohort: <HelpCircle className="w-5 h-5 text-slate-400" />,
@@ -42,6 +44,9 @@ const STAGE_COLOR_CLASSES: Record<string, { bg: string; border: string; text: st
 };
 
 export const AdoptionMaturityView: React.FC<AdoptionMaturityViewProps> = ({ viewModel }) => {
+  const [sortKey, setSortKey] = useState<TeamBreakdownSortKey>('totalUsers');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
   if (!viewModel.hasData) {
     return (
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center text-slate-500">
@@ -52,6 +57,53 @@ export const AdoptionMaturityView: React.FC<AdoptionMaturityViewProps> = ({ view
   }
 
   const { totalEvaluatedUsers, stages, teamBreakdown } = viewModel;
+
+  const handleSort = (key: TeamBreakdownSortKey) => {
+    if (sortKey === key) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir(key === 'teamName' ? 'asc' : 'desc');
+    }
+  };
+
+  const renderSortIcon = (key: TeamBreakdownSortKey) => {
+    if (sortKey !== key) {
+      return <ArrowUpDown className="w-3 h-3 text-slate-500 opacity-60 group-hover:opacity-100 transition-opacity" />;
+    }
+    return sortDir === 'asc' ? (
+      <ArrowUp className="w-3 h-3 text-indigo-400" />
+    ) : (
+      <ArrowDown className="w-3 h-3 text-indigo-400" />
+    );
+  };
+
+  const sortedTeamBreakdown = useMemo(() => {
+    return [...teamBreakdown].sort((a, b) => {
+      let diff = 0;
+      switch (sortKey) {
+        case 'teamName':
+          diff = a.teamName.localeCompare(b.teamName, 'ja');
+          break;
+        case 'totalUsers':
+          diff = a.totalUsers - b.totalUsers;
+          break;
+        case 'no_cohort':
+          diff = a.stages.no_cohort - b.stages.no_cohort;
+          break;
+        case 'code_first':
+          diff = a.stages.code_first - b.stages.code_first;
+          break;
+        case 'agent_first':
+          diff = a.stages.agent_first - b.stages.agent_first;
+          break;
+        case 'multi_agent':
+          diff = a.stages.multi_agent - b.stages.multi_agent;
+          break;
+      }
+      return sortDir === 'asc' ? diff : -diff;
+    });
+  }, [teamBreakdown, sortKey, sortDir]);
 
   // Active adoption rate: code_first + agent_first + multi_agent
   const activeUsers = stages
@@ -231,17 +283,65 @@ export const AdoptionMaturityView: React.FC<AdoptionMaturityViewProps> = ({ view
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-950/60 text-slate-400 font-semibold border-b border-slate-800">
                 <tr>
-                  <th className="py-3 px-4">チーム / 部門</th>
-                  <th className="py-3 px-4 text-right">対象人数</th>
+                  <th
+                    className="py-3 px-4 cursor-pointer select-none hover:text-slate-200 transition-colors"
+                    onClick={() => handleSort('teamName')}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>チーム / 部門</span>
+                      {renderSortIcon('teamName')}
+                    </div>
+                  </th>
+                  <th
+                    className="py-3 px-4 text-right cursor-pointer select-none hover:text-slate-200 transition-colors"
+                    onClick={() => handleSort('totalUsers')}
+                  >
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span>対象人数</span>
+                      {renderSortIcon('totalUsers')}
+                    </div>
+                  </th>
                   <th className="py-3 px-4">ステージ構成比</th>
-                  <th className="py-3 px-4 text-center">No Cohort</th>
-                  <th className="py-3 px-4 text-center">Code First</th>
-                  <th className="py-3 px-4 text-center">Agent First</th>
-                  <th className="py-3 px-4 text-center">Multi-Agent</th>
+                  <th
+                    className="py-3 px-4 text-center cursor-pointer select-none hover:text-slate-200 transition-colors"
+                    onClick={() => handleSort('no_cohort')}
+                  >
+                    <div className="flex items-center justify-center gap-1.5">
+                      <span>No Cohort</span>
+                      {renderSortIcon('no_cohort')}
+                    </div>
+                  </th>
+                  <th
+                    className="py-3 px-4 text-center cursor-pointer select-none hover:text-slate-200 transition-colors"
+                    onClick={() => handleSort('code_first')}
+                  >
+                    <div className="flex items-center justify-center gap-1.5">
+                      <span>Code First</span>
+                      {renderSortIcon('code_first')}
+                    </div>
+                  </th>
+                  <th
+                    className="py-3 px-4 text-center cursor-pointer select-none hover:text-slate-200 transition-colors"
+                    onClick={() => handleSort('agent_first')}
+                  >
+                    <div className="flex items-center justify-center gap-1.5">
+                      <span>Agent First</span>
+                      {renderSortIcon('agent_first')}
+                    </div>
+                  </th>
+                  <th
+                    className="py-3 px-4 text-center cursor-pointer select-none hover:text-slate-200 transition-colors"
+                    onClick={() => handleSort('multi_agent')}
+                  >
+                    <div className="flex items-center justify-center gap-1.5">
+                      <span>Multi-Agent</span>
+                      {renderSortIcon('multi_agent')}
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 text-slate-300">
-                {teamBreakdown.map((team) => {
+                {sortedTeamBreakdown.map((team) => {
                   const safeUsers = Math.max(1, team.totalUsers);
                   const pNo = ((team.stages.no_cohort / safeUsers) * 100);
                   const pCode = ((team.stages.code_first / safeUsers) * 100);
