@@ -175,6 +175,10 @@ describe('Data Selection & Hierarchical AND Filtering Tests', () => {
       assert.match(content, /ReportParser/);
       assert.match(content, /readAsText/);
       assert.match(content, /Zero-Leakage/);
+
+      // Header preview section with '選択ユーザー数'
+      assert.match(content, /選択ユーザー数:/);
+      assert.doesNotMatch(content, /集計対象プレビュー:/);
     });
 
     it('verifies ActiveDataSelector displays active summary pills and one-click clear button', () => {
