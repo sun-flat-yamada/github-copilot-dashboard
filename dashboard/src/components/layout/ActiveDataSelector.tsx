@@ -106,12 +106,21 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
   const getDisplayDetails = () => {
     switch (activeSource) {
       case 'live_metrics': {
-        const scopeLabel =
-          scopeType === 'monthly'
-            ? `${selectedScopeKey}`
-            : scopeType === 'daily'
-            ? `${selectedScopeKey}`
-            : '直近30日';
+        let scopeLabel = '直近30日';
+        if (scopeType === 'monthly') {
+          scopeLabel = `${selectedScopeKey}`;
+        } else if (scopeType === 'daily') {
+          scopeLabel = `${selectedScopeKey}`;
+        } else if (scopeType === 'custom') {
+          if (selectedScopeKey === 'latest-30d') {
+            scopeLabel = '直近30日';
+          } else if (selectedScopeKey.startsWith('custom:')) {
+            const parts = selectedScopeKey.slice('custom:'.length).split('_');
+            scopeLabel = parts.length === 2 ? `${parts[0]}〜${parts[1]}` : selectedScopeKey;
+          } else {
+            scopeLabel = selectedScopeKey;
+          }
+        }
         return {
           title: DATA_SOURCE_LABELS.live_metrics.shortTitle,
           subtitle: scopeLabel,

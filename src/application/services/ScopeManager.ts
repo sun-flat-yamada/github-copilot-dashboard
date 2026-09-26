@@ -31,7 +31,12 @@ export class ScopeManager {
       return indexMeta.available_months.includes(key);
     }
     if (scopeType === 'custom') {
-      return key === 'latest-30d';
+      if (key === 'latest-30d') return true;
+      if (key.startsWith('custom:')) {
+        const parts = key.slice('custom:'.length).split('_');
+        return parts.length === 2 && Boolean(parts[0]) && Boolean(parts[1]) && parts[0] <= parts[1];
+      }
+      return false;
     }
     return false;
   }
