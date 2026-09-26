@@ -348,6 +348,20 @@ export class MockDataGenerator {
             { server_name: 'github-ops', total_invocations: Math.floor(65 * activityFactor), total_engaged_users: Math.floor(engagedUsers * 0.18), success_rate: 0.96 },
             { server_name: 'jira-tracker', total_invocations: Math.floor(30 * activityFactor), total_engaged_users: Math.floor(engagedUsers * 0.08), success_rate: 0.94 },
           ],
+          totals_by_skill: [
+            { skill_name: 'test-generator', total_invocations: Math.floor(45 * activityFactor), total_engaged_users: Math.floor(engagedUsers * 0.15) },
+            { skill_name: 'sql-optimizer', total_invocations: Math.floor(30 * activityFactor), total_engaged_users: Math.floor(engagedUsers * 0.1) },
+            { skill_name: 'architecture-reviewer', total_invocations: Math.floor(20 * activityFactor), total_engaged_users: Math.floor(engagedUsers * 0.08) },
+          ],
+          totals_by_slash_cmd: [
+            { command: '/explain', total_invocations: Math.floor(120 * activityFactor), total_engaged_users: Math.floor(engagedUsers * 0.25) },
+            { command: '/fix', total_invocations: Math.floor(85 * activityFactor), total_engaged_users: Math.floor(engagedUsers * 0.2) },
+            { command: '/tests', total_invocations: Math.floor(60 * activityFactor), total_engaged_users: Math.floor(engagedUsers * 0.16) },
+          ],
+          totals_by_plugin: [
+            { plugin_id: 'plugin-gh-actions', plugin_name: 'github-actions-assistant', total_invocations: Math.floor(35 * activityFactor), total_engaged_users: Math.floor(engagedUsers * 0.1) },
+            { plugin_id: 'plugin-dockerfile', plugin_name: 'dockerfile-generator', total_invocations: Math.floor(25 * activityFactor), total_engaged_users: Math.floor(engagedUsers * 0.08) },
+          ],
         },
         ai_credits: {
           total_used: Math.floor((350 + Math.random() * 200) * activityFactor),
@@ -579,6 +593,11 @@ export class MockDataGenerator {
         ai_credits_used_28d: aiCreditsUsed,
         ai_adoption_phase: adoptionPhase,
         total_agent_sessions: Math.floor(totalChats * 0.35),
+        completed_agent_sessions: Math.floor(totalChats * 0.35 * 0.8),
+        ai_credits_limit_monthly: 3900,
+        agent_prs_created: Math.floor(totalChats * 0.05),
+        agent_prs_unreviewed: 0,
+        agent_pr_median_merge_mins: 45,
       });
     }
 

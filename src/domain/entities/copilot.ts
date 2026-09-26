@@ -213,6 +213,11 @@ export interface UserUsageProfile {
   ai_credits_used_28d?: number;
   ai_adoption_phase?: AdoptionPhase;
   total_agent_sessions?: number;
+  completed_agent_sessions?: number;
+  ai_credits_limit_monthly?: number;
+  agent_prs_created?: number;
+  agent_prs_unreviewed?: number;
+  agent_pr_median_merge_mins?: number;
 }
 
 // ==========================================

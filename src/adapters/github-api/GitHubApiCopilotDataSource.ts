@@ -13,6 +13,7 @@ import { NormalizerRegistry } from './NormalizerRegistry.js';
 import { DomainMapper } from './DomainMapper.js';
 import { normalizeMetrics20260310 } from './normalizers/metrics-2026-03-10.js';
 import { normalizeSeats20260310 } from './normalizers/seats-2026-03-10.js';
+import { normalizeTeams20260310 } from './normalizers/teams-2026-03-10.js';
 
 export interface GitHubApiDataSourceConfig {
   fetcher?: RawApiFetcher;
@@ -27,6 +28,7 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
   private issues: DataFetchIssue[] = [];
   private metricsNormalizers = new NormalizerRegistry<unknown, CopilotDailyMetrics>();
   private seatsNormalizers = new NormalizerRegistry<unknown, CopilotSeatAssignment>();
+  private teamsNormalizers = new NormalizerRegistry<unknown, TeamDailyMetrics>();
 
   constructor(config: GitHubApiDataSourceConfig = {}) {
     this.fetcher = config.fetcher || new RawApiFetcher();
@@ -36,6 +38,7 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
     // 既定の Normalizers を登録
     this.metricsNormalizers.register('2026-03-10', normalizeMetrics20260310);
     this.seatsNormalizers.register('2026-03-10', normalizeSeats20260310);
+    this.teamsNormalizers.register('2026-03-10', normalizeTeams20260310);
   }
 
   async fetchMetrics(): Promise<CopilotDailyMetrics[]> {
@@ -153,12 +156,15 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
 
   async fetchTeamMetrics(teamSlug: string): Promise<TeamDailyMetrics[]> {
     if (this.orgs.length === 0) return [];
+    const apiVer = this.fetcher.getApiVersion();
+    const normalizer = this.teamsNormalizers.getNormalizer(apiVer);
     try {
-      const raw = await this.fetcher.fetchRaw<TeamDailyMetrics[]>(
+      const raw = await this.fetcher.fetchRaw<unknown[]>(
         '/orgs/{org}/teams/{team}/copilot/metrics',
         { org: this.orgs[0], team: teamSlug }
       );
-      return Array.isArray(raw) ? raw : [];
+      if (!Array.isArray(raw)) return [];
+      return raw.map((item) => normalizer(item));
     } catch (err: any) {
       this.recordIssue(`teams/${teamSlug}/copilot/metrics`, err);
       return [];

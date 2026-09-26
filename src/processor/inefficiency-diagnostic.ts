@@ -21,9 +21,25 @@ import {
   diagnosePassiveSeat,
   diagnoseOffHoursWorkload,
   analyzeAutonomyDepth,
+  diagnoseCreditBurnOverdrive,
+  diagnoseAgentAbandonment,
+  diagnoseModelCostMismatch,
+  diagnoseReviewBypass,
 } from './inefficiency-rules.js';
 
-export { MODEL_ESTIMATED_CHAT_COST };
+export {
+  MODEL_ESTIMATED_CHAT_COST,
+  diagnoseTabSpamming,
+  diagnoseOverkillModel,
+  diagnoseContextBlindChat,
+  diagnosePassiveSeat,
+  diagnoseOffHoursWorkload,
+  analyzeAutonomyDepth,
+  diagnoseCreditBurnOverdrive,
+  diagnoseAgentAbandonment,
+  diagnoseModelCostMismatch,
+  diagnoseReviewBypass,
+};
 
 // ==========================================
 // 1. Extensible Analysis Methods Registry
@@ -225,14 +241,36 @@ export class InefficiencyDiagnosticEngine {
     // 組織全体の平均ベンチマーク計算
     const peerMetrics = this.calculatePeerBenchmark(allProfiles, scopeType, customRange);
 
-    // 5つの非効率パターンの判定
+    // 9つの非効率パターンの判定
     const p1 = diagnoseTabSpamming(totalSuggestions, totalAcceptances, acceptanceRate, activeDays);
     const p2 = diagnoseOverkillModel(totalChats, modelTotals);
     const p3 = diagnoseContextBlindChat(totalChats, totalAcceptances, activeDays, filteredHistory);
     const p4 = diagnosePassiveSeat(periodInfo.totalDays, activeDays, totalSuggestions, totalChats);
     const p5 = diagnoseOffHoursWorkload(filteredHistory);
 
-    const patterns = [p1, p2, p3, p4, p5];
+    // Phase 6-B: 4つの新パターン
+    let totalCreditsConsumed = 0;
+    for (const h of filteredHistory) {
+      totalCreditsConsumed += h.ai_credits_consumed || 0;
+    }
+    if (totalCreditsConsumed === 0 && profile.ai_credits_used_28d) {
+      totalCreditsConsumed = profile.ai_credits_used_28d;
+    }
+    const creditsLimit = (profile as any).ai_credits_limit_monthly || 3900;
+    const totalAgentSessions = profile.total_agent_sessions || 0;
+    const shortSessions = Math.round(totalAgentSessions * 0.25);
+    const completedSessions = (profile as any).completed_agent_sessions ?? Math.round(totalAgentSessions * 0.7);
+    const heavyModelRequests = (modelTotals['o1'] || 0) + (modelTotals['claude-3-7-sonnet'] || 0);
+    const agentPrs = (profile as any).agent_prs_created ?? Math.floor(totalAgentSessions * 0.1);
+    const unreviewedPrs = (profile as any).agent_prs_unreviewed ?? 0;
+    const mergeMins = (profile as any).agent_pr_median_merge_mins ?? 60;
+
+    const p6 = diagnoseCreditBurnOverdrive(totalCreditsConsumed, creditsLimit, totalAcceptances, totalAgentSessions);
+    const p7 = diagnoseAgentAbandonment(totalAgentSessions, shortSessions, completedSessions);
+    const p8 = diagnoseModelCostMismatch(heavyModelRequests, totalChats, acceptanceRate);
+    const p9 = diagnoseReviewBypass(agentPrs, unreviewedPrs, mergeMins);
+
+    const patterns = [p1, p2, p3, p4, p5, p6, p7, p8, p9];
 
     // 総合健全度スコアの計算 (100点満点からのペナルティ減算)
     // 高リスクパターンが多いほどスコア低下
