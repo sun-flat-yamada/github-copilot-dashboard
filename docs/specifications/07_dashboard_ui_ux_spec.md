@@ -124,7 +124,7 @@ Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint 
 3. **About Modal & Metadata**:
    - Info icon (`Info`) in the header opens a modal displaying the exact generation timestamp (`yyyy-mm-dd hh:MM:ss`), specification version (2026.09 LTS), source repository details (with fork attributes), data retention limits, and managed seat totals.
 4. **Header Title Responsive Collapse & Info Icon Preservation**:
-   - The left header title section (`GitHub Copilot Analytics`, operation mode badge, subtitle) is fully responsive: it displays full title and badges on large displays (width >= 1280px / `xl`), and automatically collapses to icon-only (`Sparkles` icon) on narrow viewports (width < 1280px / `< xl`).
+   - The left header title section (`GitHub Copilot Analytics`, operation mode badge, subtitle) is fully responsive: it displays full title and badges on viewports with sufficient width (width >= 768px / `md`), and automatically collapses to icon-only (`Sparkles` icon) on narrow mobile viewports (width < 768px / `< md`).
    - The Information icon button (`Info`) triggering the About modal is preserved immediately adjacent to the `Sparkles` icon even when collapsed, maintaining instant accessibility.
    - Removing the `min-w-max` constraint from the left container minimizes its footprint to approximately 64px, entirely eliminating layout collisions and visual overlap where the title previously slipped underneath right-side action controls (`ActiveDataSelector`, three-dots settings menu, GitHub repo link).
 
