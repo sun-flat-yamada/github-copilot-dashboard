@@ -135,3 +135,13 @@
 4. **セマンティックトークン設計 (Tailwind CSS v4)**:
    - `html.light` および `[data-theme="light"]` セレクタ下で、Tailwind CSS v4 の `--color-slate-*` 変数群を清潔感の高いライトパレット（背景 `#f8fafc`、カード `#ffffff`、境界線 `#e2e8f0`、文字 `#0f172a`）にセマンティック再マッピング。
    - Recharts の各種グラフ（グリッド線、X/Y軸目盛り、ツールチップ）も CSS 変数と連動し、両モードにおいて高い可読性と洗練されたコントラストを保証。
+
+### 2.10 テーブル列分離および全テーブル多軸ソート仕様 (Separate Cost/Overage Columns & Universal Table Sorting)
+1. **利用費用と超過請求の独立列分離**:
+   - `MonthlyReportUserTable`、`MonthlyReportCharts` (3軸配賦テーブル)、`UserDetailTable`、`GroupUsageRanking` において、従来同一列に併記されていた「利用費用（USD）」と「超過請求（USD）」をそれぞれ独立した列として分離。
+   - 超過請求（Net Billable Overage）列はアンバーカラー（`text-amber-400`）および等幅フォント（`font-mono`）で表示し、無料枠控除後の実質請求額を即座に識別可能とする。
+2. **全テーブルにおける双方向クリックソート機能の統一適用**:
+   - ダッシュボード内のすべてのテーブル表示コンポーネント（ユーザー明細、月次レポート明細、3軸配賦テーブル、グループ利用ランキング、成熟度ステージ分布、Agent活用動向、AI Credits消費ランキング、モデル生データテーブル）において、ソート可能なすべての列ヘッダーにクリックソート機能を配備。
+   - **ソートインジケーター**: 非ソート時は薄い `ArrowUpDown`、アクティブ時は昇順（`ArrowUp`）/ 降順（`ArrowDown`）を表示。同一ヘッダーの連続クリックで昇順・降順をトグル。
+   - **アクセシビリティ & 操作性**: ヘッダーは `cursor-pointer select-none` とホバーハイライトを備え、直感的な並び替えとデータ探索を実現。
+

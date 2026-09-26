@@ -19,7 +19,7 @@ export interface AgentViewModel {
     prsMergedByAgent: number;
     medianMergeHours: number;
   };
-  teams: Array<{ teamName: string; sessions: number; engagedUsers: number; adoptionRateFormatted: string }>;
+  teams: Array<{ teamName: string; sessions: number; engagedUsers: number; adoptionRate: number; adoptionRateFormatted: string }>;
 }
 
 export interface AgentPresenterInput {
@@ -47,13 +47,14 @@ export class AgentPresenter {
       medianMergeHours: 4.5,
     };
 
-    const teams: Array<{ teamName: string; sessions: number; engagedUsers: number; adoptionRateFormatted: string }> = [];
+    const teams: Array<{ teamName: string; sessions: number; engagedUsers: number; adoptionRate: number; adoptionRateFormatted: string }> = [];
     if (agentAdoption?.byTeam) {
       for (const [team, stats] of Object.entries(agentAdoption.byTeam)) {
         teams.push({
           teamName: team,
           sessions: stats.sessions,
           engagedUsers: stats.engagedUsers,
+          adoptionRate: stats.adoptionRate,
           adoptionRateFormatted: `${(stats.adoptionRate * 100).toFixed(1)}%`,
         });
       }

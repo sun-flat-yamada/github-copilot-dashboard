@@ -11,6 +11,8 @@ import {
   LineChart,
   BrainCircuit,
   ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
   Users as UsersIcon,
   ChevronDown,
   ChevronUp,
@@ -21,11 +23,18 @@ import { useCurrency } from '../contexts/CurrencyContext';
 
 export type UserSortMetric =
   | 'default'
+  | 'user'
+  | 'department'
+  | 'cost_center'
+  | 'organization'
+  | 'plan'
+  | 'status'
   | 'acceptances'
   | 'suggestions'
   | 'acceptance_rate'
   | 'chats'
   | 'cost'
+  | 'excess'
   | 'days_inactive';
 
 interface UserDetailTableProps {
@@ -49,6 +58,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
   const [statusFilter, setStatusFilter] = useState<UserSeatStatus | 'all'>(initialStatus);
   const [selectedDept, setSelectedDept] = useState<string>('all');
   const [sortBy, setSortBy] = useState<UserSortMetric>('default');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedUserLogin, setSelectedUserLogin] = useState<string | null>(initialSelectedLogin || null);
 
   const { users, scope_type } = data;
@@ -81,6 +91,36 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
     setSelectedUserLogin((prev) => (prev === login ? null : login));
   };
 
+  const handleSort = (metric: UserSortMetric) => {
+    if (sortBy === metric) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(metric);
+      const isDescDefault =
+        metric === 'acceptances' ||
+        metric === 'suggestions' ||
+        metric === 'acceptance_rate' ||
+        metric === 'chats' ||
+        metric === 'cost' ||
+        metric === 'excess' ||
+        metric === 'days_inactive';
+      setSortOrder(isDescDefault ? 'desc' : 'asc');
+    }
+  };
+
+  const renderSortIcon = (metric: UserSortMetric) => {
+    if (sortBy !== metric) {
+      return <ArrowUpDown className="w-3 h-3 text-slate-500 opacity-60 group-hover:opacity-100 transition-opacity ml-1 shrink-0" />;
+    }
+    return sortOrder === 'asc' ? (
+      <ArrowUp className="w-3 h-3 text-indigo-400 ml-1 shrink-0" />
+    ) : (
+      <ArrowDown className="w-3 h-3 text-indigo-400 ml-1 shrink-0" />
+    );
+  };
+
+  const handleDefaultSort = () => handleSort('default');
+
   // フィルタリング & ソート
   const filteredUsers = useMemo(() => {
     const list = users.filter((u) => {
@@ -108,27 +148,54 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
       const profA = profileMap.get(a.login.toLowerCase());
       const profB = profileMap.get(b.login.toLowerCase());
 
+      let cmp = 0;
       switch (sortBy) {
+        case 'user':
+          cmp = (a.display_name || a.login).localeCompare(b.display_name || b.login);
+          break;
+        case 'department':
+          cmp = (a.department || '').localeCompare(b.department || '');
+          break;
+        case 'cost_center':
+          cmp = (a.cost_center || '').localeCompare(b.cost_center || '');
+          break;
+        case 'organization':
+          cmp = (a.organization || '').localeCompare(b.organization || '');
+          break;
+        case 'plan':
+          cmp = (a.plan_type || '').localeCompare(b.plan_type || '');
+          break;
+        case 'status':
+          cmp = a.days_inactive - b.days_inactive;
+          break;
         case 'acceptances':
-          return (profB?.total_acceptances ?? 0) - (profA?.total_acceptances ?? 0);
+          cmp = (profA?.total_acceptances ?? 0) - (profB?.total_acceptances ?? 0);
+          break;
         case 'suggestions':
-          return (profB?.total_suggestions ?? 0) - (profA?.total_suggestions ?? 0);
+          cmp = (profA?.total_suggestions ?? 0) - (profB?.total_suggestions ?? 0);
+          break;
         case 'acceptance_rate':
-          return (profB?.acceptance_rate ?? 0) - (profA?.acceptance_rate ?? 0);
+          cmp = (profA?.acceptance_rate ?? 0) - (profB?.acceptance_rate ?? 0);
+          break;
         case 'chats':
-          return (profB?.total_chats ?? 0) - (profA?.total_chats ?? 0);
-        case 'cost': {
+          cmp = (profA?.total_chats ?? 0) - (profB?.total_chats ?? 0);
+          break;
+        case 'cost':
+        case 'excess': {
           const costA = scope_type === 'daily' ? a.prorated_daily_cost_usd : a.monthly_cost_usd;
           const costB = scope_type === 'daily' ? b.prorated_daily_cost_usd : b.monthly_cost_usd;
-          return costB - costA;
+          cmp = costA - costB;
+          break;
         }
         case 'days_inactive':
-          return b.days_inactive - a.days_inactive;
+          cmp = a.days_inactive - b.days_inactive;
+          break;
         default:
           return 0;
       }
+      return sortOrder === 'asc' ? cmp : -cmp;
     });
-  }, [users, searchTerm, statusFilter, selectedDept, sortBy, profileMap, scope_type]);
+  }, [users, searchTerm, statusFilter, selectedDept, sortBy, sortOrder, profileMap, scope_type]);
 
   // CSVエクスポート
   const handleExportCsv = () => {
@@ -316,22 +383,119 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
         <table className="w-full text-left text-xs text-slate-300 border-collapse">
           <thead className="sticky top-0 z-20 bg-slate-950 text-slate-400 uppercase tracking-wider font-semibold shadow-md">
             <tr className="border-b border-slate-800">
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-center w-14">#</th>
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3">ユーザー / 表示名</th>
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3">任意仕訳グループ</th>
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3">Cost Center</th>
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3">Organization</th>
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3">プラン</th>
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3">稼働状況</th>
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-center w-14 cursor-pointer select-none hover:text-slate-200" onClick={handleDefaultSort} title="標準順">#</th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('user')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>ユーザー / 表示名</span>
+                  {renderSortIcon('user')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('department')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>任意仕訳グループ</span>
+                  {renderSortIcon('department')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('cost_center')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>Cost Center</span>
+                  {renderSortIcon('cost_center')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('organization')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>Organization</span>
+                  {renderSortIcon('organization')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('plan')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>プラン</span>
+                  {renderSortIcon('plan')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('status')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>稼働状況</span>
+                  {renderSortIcon('status')}
+                </div>
+              </th>
               {hasUsageMetrics && (
                 <>
-                  <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right">提案数</th>
-                  <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right">受諾採用数</th>
-                  <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right">受諾率</th>
-                  <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right">AIチャット</th>
+                  <th
+                    className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                    onClick={() => handleSort('suggestions')}
+                  >
+                    <div className="flex items-center justify-end space-x-1">
+                      <span>提案数</span>
+                      {renderSortIcon('suggestions')}
+                    </div>
+                  </th>
+                  <th
+                    className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                    onClick={() => handleSort('acceptances')}
+                  >
+                    <div className="flex items-center justify-end space-x-1">
+                      <span>受諾採用数</span>
+                      {renderSortIcon('acceptances')}
+                    </div>
+                  </th>
+                  <th
+                    className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                    onClick={() => handleSort('acceptance_rate')}
+                  >
+                    <div className="flex items-center justify-end space-x-1">
+                      <span>受諾率</span>
+                      {renderSortIcon('acceptance_rate')}
+                    </div>
+                  </th>
+                  <th
+                    className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                    onClick={() => handleSort('chats')}
+                  >
+                    <div className="flex items-center justify-end space-x-1">
+                      <span>AIチャット</span>
+                      {renderSortIcon('chats')}
+                    </div>
+                  </th>
                 </>
               )}
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right">費用 / 超過請求 ({scope_type === 'daily' ? '日割り' : '月額'})</th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('cost')}
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>利用費用 ({scope_type === 'daily' ? '日割り' : '月額'})</span>
+                  {renderSortIcon('cost')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('excess')}
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>超過請求 (USD)</span>
+                  {renderSortIcon('excess')}
+                </div>
+              </th>
               <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-center w-24">
                 <ActionColumnHeader />
               </th>
@@ -340,7 +504,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
           <tbody className="divide-y divide-slate-800/60 bg-slate-900/40">
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan={hasUsageMetrics ? 13 : 9} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={hasUsageMetrics ? 14 : 10} className="px-4 py-8 text-center text-slate-500">
                   一致するユーザーが見つかりませんでした。
                 </td>
               </tr>
@@ -452,14 +616,20 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                           const cost = scope_type === 'daily' ? u.prorated_daily_cost_usd : u.monthly_cost_usd;
                           const costDual = formatMoney(cost);
                           return (
-                            <>
-                              <div className="font-mono font-semibold text-slate-200">
-                                {costDual.usd} {costDual.sub && <span className="text-[11px] text-slate-400">({costDual.sub})</span>}
-                              </div>
-                              <div className="text-[10px] text-amber-400 font-mono">
-                                超過: {costDual.usd} {costDual.sub && `(${costDual.sub})`}
-                              </div>
-                            </>
+                            <div className="font-mono font-semibold text-slate-200">
+                              {costDual.usd} {costDual.sub && <span className="text-[11px] text-slate-400">({costDual.sub})</span>}
+                            </div>
+                          );
+                        })()}
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono">
+                        {(() => {
+                          const cost = scope_type === 'daily' ? u.prorated_daily_cost_usd : u.monthly_cost_usd;
+                          const costDual = formatMoney(cost);
+                          return (
+                            <div className="text-[11px] font-semibold text-amber-400">
+                              {costDual.usd} {costDual.sub && <span className="text-[10px] text-amber-300/80">({costDual.sub})</span>}
+                            </div>
                           );
                         })()}
                       </td>
@@ -515,7 +685,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                     </tr>
                     {isSelected && (
                       <tr key={`${u.login}-drilldown`} className="bg-slate-950">
-                        <td colSpan={hasUsageMetrics ? 13 : 9} className="p-0 border-b-2 border-indigo-500/60">
+                        <td colSpan={hasUsageMetrics ? 14 : 10} className="p-0 border-b-2 border-indigo-500/60">
                           <UserDrilldownPanel
                             login={u.login}
                             displayName={u.display_name}

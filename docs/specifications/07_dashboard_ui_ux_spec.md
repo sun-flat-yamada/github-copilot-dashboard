@@ -130,3 +130,13 @@ Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint 
 4. **Semantic Token Architecture (Tailwind CSS v4)**:
    - Utilizes CSS variables (`--color-slate-*`) under `html.light` and `[data-theme="light"]` selectors, automatically adapting canvas backgrounds (`#f8fafc`), cards (`#ffffff`), borders (`#e2e8f0`), and typography (`#0f172a`).
    - Dynamically binds Recharts gridlines, axis labels, and floating tooltips to theme tokens for high legibility across all views.
+
+### 2.11 Separate Cost/Overage Columns & Universal Table Sorting Specification
+1. **Independent Columns for Usage Cost and Excess Billing**:
+   - In `MonthlyReportUserTable`, `MonthlyReportCharts` (3-Axis Allocation Table), `UserDetailTable`, and `GroupUsageRanking`, usage cost (`利用費用` / `利用料金 (USD)`) and excess billing (`超過請求 (USD)`) are displayed in dedicated, separate columns rather than merged.
+   - The excess billing (Net Billable Overage) column is rendered with amber accents (`text-amber-400`) and monospace font (`font-mono`) to clearly distinguish billable overages after free-tier budget deductions.
+2. **Universal Multi-Column Sorting Across All Tables**:
+   - All table components throughout the dashboard (`MonthlyReportUserTable`, `MonthlyReportCharts`, `UserDetailTable`, `GroupUsageRanking`, `AdoptionMaturityView`, `AgentActivityView`, `CreditsView`, `ModelRadarView`) provide interactive bidirectional sorting on every sortable column header.
+   - **Sort Indicators**: Subdued `ArrowUpDown` for inactive columns, dynamic `ArrowUp` (ascending) / `ArrowDown` (descending) for active columns with alternating sort order on consecutive clicks.
+   - **Accessibility & UX**: All sortable headers include `cursor-pointer select-none` and hover highlight feedback for intuitive data inspection.
+

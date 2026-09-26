@@ -6,6 +6,8 @@ import {
   Landmark,
   Building2,
   ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
   LineChart,
 } from 'lucide-react';
 
@@ -17,7 +19,16 @@ interface GroupUsageRankingProps {
   onSelectUserForTrend: (login: string) => void;
 }
 
-type SortMetric = 'suggestions' | 'acceptances' | 'chats' | 'cost' | 'acceptance_rate';
+type SortMetric =
+  | 'index'
+  | 'user'
+  | 'group'
+  | 'suggestions'
+  | 'acceptances'
+  | 'chats'
+  | 'cost'
+  | 'excess'
+  | 'acceptance_rate';
 
 export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
   data,
@@ -27,8 +38,36 @@ export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
   onSelectUserForTrend,
 }) => {
   const [sortBy, setSortBy] = useState<SortMetric>('acceptances');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const { user_profiles = [], scope_type, scope_key, date_range } = data;
+
+  const handleSort = (metric: SortMetric) => {
+    if (sortBy === metric) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(metric);
+      const isDescDefault =
+        metric === 'acceptances' ||
+        metric === 'suggestions' ||
+        metric === 'chats' ||
+        metric === 'cost' ||
+        metric === 'excess' ||
+        metric === 'acceptance_rate';
+      setSortOrder(isDescDefault ? 'desc' : 'asc');
+    }
+  };
+
+  const renderSortIcon = (metric: SortMetric) => {
+    if (sortBy !== metric) {
+      return <ArrowUpDown className="w-3 h-3 text-slate-500 opacity-60 group-hover:opacity-100 transition-opacity ml-1 shrink-0" />;
+    }
+    return sortOrder === 'asc' ? (
+      <ArrowUp className="w-3 h-3 text-indigo-400 ml-1 shrink-0" />
+    ) : (
+      <ArrowDown className="w-3 h-3 text-indigo-400 ml-1 shrink-0" />
+    );
+  };
 
   // 選択された軸におけるグループ一覧
   const availableGroups = useMemo(() => {
@@ -53,22 +92,41 @@ export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
 
     // 2. ソート
     return filtered.sort((a, b) => {
+      let cmp = 0;
       switch (sortBy) {
+        case 'user':
+          cmp = (a.display_name || a.login).localeCompare(b.display_name || b.login);
+          break;
+        case 'group': {
+          const gA = grouping === 'department' ? a.department : grouping === 'cost_center' ? a.cost_center : a.organization;
+          const gB = grouping === 'department' ? b.department : grouping === 'cost_center' ? b.cost_center : b.organization;
+          cmp = (gA || '').localeCompare(gB || '');
+          break;
+        }
         case 'acceptances':
-          return b.total_acceptances - a.total_acceptances;
+          cmp = a.total_acceptances - b.total_acceptances;
+          break;
         case 'suggestions':
-          return b.total_suggestions - a.total_suggestions;
+          cmp = a.total_suggestions - b.total_suggestions;
+          break;
         case 'chats':
-          return b.total_chats - a.total_chats;
+          cmp = a.total_chats - b.total_chats;
+          break;
         case 'cost':
-          return b.total_cost_usd - a.total_cost_usd;
+        case 'excess':
+          cmp = a.total_cost_usd - b.total_cost_usd;
+          break;
         case 'acceptance_rate':
-          return b.acceptance_rate - a.acceptance_rate;
+          cmp = a.acceptance_rate - b.acceptance_rate;
+          break;
+        case 'index':
         default:
-          return b.total_acceptances - a.total_acceptances;
+          cmp = a.total_acceptances - b.total_acceptances;
+          break;
       }
+      return sortOrder === 'asc' ? cmp : -cmp;
     });
-  }, [user_profiles, selectedGroup, grouping, sortBy]);
+  }, [user_profiles, selectedGroup, grouping, sortBy, sortOrder]);
 
   const dimensionLabel =
     grouping === 'department'
@@ -214,21 +272,86 @@ export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
         <table className="w-full text-left text-xs text-slate-300">
           <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
             <tr>
-              <th className="px-4 py-3 text-center w-14">#</th>
-              <th className="px-4 py-3">ユーザー / 表示名</th>
-              <th className="px-4 py-3">{dimensionLabel}</th>
-              <th className="px-4 py-3 text-right">AIコード提案数</th>
-              <th className="px-4 py-3 text-right">受諾採用数</th>
-              <th className="px-4 py-3 text-right">受諾率</th>
-              <th className="px-4 py-3 text-right">AIチャット数</th>
-              <th className="px-4 py-3 text-right">利用料金 / 超過請求</th>
+              <th className="px-4 py-3 text-center w-14 cursor-pointer select-none hover:text-slate-200" onClick={() => handleSort('index')} title="連番順">#</th>
+              <th
+                className="px-4 py-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('user')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>ユーザー / 表示名</span>
+                  {renderSortIcon('user')}
+                </div>
+              </th>
+              <th
+                className="px-4 py-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('group')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>{dimensionLabel}</span>
+                  {renderSortIcon('group')}
+                </div>
+              </th>
+              <th
+                className="px-4 py-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('suggestions')}
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>AIコード提案数</span>
+                  {renderSortIcon('suggestions')}
+                </div>
+              </th>
+              <th
+                className="px-4 py-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('acceptances')}
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>受諾採用数</span>
+                  {renderSortIcon('acceptances')}
+                </div>
+              </th>
+              <th
+                className="px-4 py-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('acceptance_rate')}
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>受諾率</span>
+                  {renderSortIcon('acceptance_rate')}
+                </div>
+              </th>
+              <th
+                className="px-4 py-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('chats')}
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>AIチャット数</span>
+                  {renderSortIcon('chats')}
+                </div>
+              </th>
+              <th
+                className="px-4 py-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('cost')}
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>利用料金 (USD)</span>
+                  {renderSortIcon('cost')}
+                </div>
+              </th>
+              <th
+                className="px-4 py-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('excess')}
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>超過請求 (USD)</span>
+                  {renderSortIcon('excess')}
+                </div>
+              </th>
               <th className="px-4 py-3 text-center w-24">アクション</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60 bg-slate-900/40">
             {rankedUsers.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={10} className="px-4 py-8 text-center text-slate-500">
                   該当するユーザーが存在しません。
                 </td>
               </tr>
@@ -279,12 +402,14 @@ export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
                     </td>
 
                     <td className="px-4 py-3 text-right">
-                      <div className="font-mono font-semibold text-slate-200">
+                      <span className="font-mono font-semibold text-slate-200">
                         ${u.total_cost_usd.toFixed(2)}
-                      </div>
-                      <div className="text-[10px] text-amber-400 font-mono">
-                        超過: ${u.total_cost_usd.toFixed(2)}
-                      </div>
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono">
+                      <span className="text-[11px] font-semibold text-amber-400">
+                        ${u.total_cost_usd.toFixed(2)}
+                      </span>
                     </td>
 
                     <td className="px-4 py-3 text-center">

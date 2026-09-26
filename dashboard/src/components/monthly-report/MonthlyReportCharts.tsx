@@ -7,6 +7,9 @@ import {
   PieChart as PieIcon,
   Cpu,
   BarChart3,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import {
   PieChart,
@@ -66,6 +69,30 @@ export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({
     return Object.values(rawGroup).sort((a: any, b: any) => b.total_cost_usd - a.total_cost_usd);
   }, [reportData, currentGrouping]);
 
+  type GroupSortKey = 'name' | 'seats' | 'requests' | 'cost' | 'excess' | 'share';
+  const [groupSortKey, setGroupSortKey] = useState<GroupSortKey>('cost');
+  const [groupSortOrder, setGroupSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const handleGroupSort = (key: GroupSortKey) => {
+    if (groupSortKey === key) {
+      setGroupSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setGroupSortKey(key);
+      setGroupSortOrder(key === 'name' ? 'asc' : 'desc');
+    }
+  };
+
+  const renderGroupSortIcon = (key: GroupSortKey) => {
+    if (groupSortKey !== key) {
+      return <ArrowUpDown className="w-3 h-3 text-slate-500 opacity-60 group-hover:opacity-100 transition-opacity ml-1 shrink-0" />;
+    }
+    return groupSortOrder === 'asc' ? (
+      <ArrowUp className="w-3 h-3 text-emerald-400 ml-1 shrink-0" />
+    ) : (
+      <ArrowDown className="w-3 h-3 text-emerald-400 ml-1 shrink-0" />
+    );
+  };
+
   const pieChartData = useMemo(() => {
     return groupSummaries.map((g: any) => ({
       name: g.group_name,
@@ -75,6 +102,40 @@ export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({
       users: g.total_seats,
     }));
   }, [groupSummaries]);
+
+  // テーブル表示用のソート済みグループ集計
+  const sortedTableSummaries = useMemo(() => {
+    return [...groupSummaries].sort((a: any, b: any) => {
+      let cmp = 0;
+      switch (groupSortKey) {
+        case 'name':
+          cmp = (a.group_name || '').localeCompare(b.group_name || '');
+          break;
+        case 'seats':
+          cmp = (a.total_seats || 0) - (b.total_seats || 0);
+          break;
+        case 'requests':
+          cmp = (a.total_suggestions || 0) - (b.total_suggestions || 0);
+          break;
+        case 'cost':
+          cmp = (a.total_cost_usd || 0) - (b.total_cost_usd || 0);
+          break;
+        case 'excess': {
+          const excessA = Number(a.net_cost_usd ?? a.total_cost_usd ?? 0);
+          const excessB = Number(b.net_cost_usd ?? b.total_cost_usd ?? 0);
+          cmp = excessA - excessB;
+          break;
+        }
+        case 'share':
+          cmp = (a.total_cost_usd || 0) - (b.total_cost_usd || 0);
+          break;
+        default:
+          cmp = 0;
+          break;
+      }
+      return groupSortOrder === 'asc' ? cmp : -cmp;
+    });
+  }, [groupSummaries, groupSortKey, groupSortOrder]);
 
   // 日別消費トレンド (日付昇順に防御的に再ソート)
   const sortedDailyTrends = useMemo(() => {
@@ -171,15 +232,64 @@ export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-slate-800 text-slate-400 font-semibold">
-                  <th className="py-2 px-3">グループ名</th>
-                  <th className="py-2 px-3 text-right">人数</th>
-                  <th className="py-2 px-3 text-right">リクエスト数</th>
-                  <th className="py-2 px-3 text-right">利用費用 / 超過請求 (USD)</th>
-                  <th className="py-2 px-3 text-right">シェア</th>
+                  <th
+                    className="py-2 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                    onClick={() => handleGroupSort('name')}
+                  >
+                    <div className="flex items-center space-x-1">
+                      <span>グループ名</span>
+                      {renderGroupSortIcon('name')}
+                    </div>
+                  </th>
+                  <th
+                    className="py-2 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                    onClick={() => handleGroupSort('seats')}
+                  >
+                    <div className="flex items-center justify-end space-x-1">
+                      <span>人数</span>
+                      {renderGroupSortIcon('seats')}
+                    </div>
+                  </th>
+                  <th
+                    className="py-2 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                    onClick={() => handleGroupSort('requests')}
+                  >
+                    <div className="flex items-center justify-end space-x-1">
+                      <span>リクエスト数</span>
+                      {renderGroupSortIcon('requests')}
+                    </div>
+                  </th>
+                  <th
+                    className="py-2 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                    onClick={() => handleGroupSort('cost')}
+                  >
+                    <div className="flex items-center justify-end space-x-1">
+                      <span>利用費用 (USD)</span>
+                      {renderGroupSortIcon('cost')}
+                    </div>
+                  </th>
+                  <th
+                    className="py-2 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                    onClick={() => handleGroupSort('excess')}
+                  >
+                    <div className="flex items-center justify-end space-x-1">
+                      <span>超過請求 (USD)</span>
+                      {renderGroupSortIcon('excess')}
+                    </div>
+                  </th>
+                  <th
+                    className="py-2 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                    onClick={() => handleGroupSort('share')}
+                  >
+                    <div className="flex items-center justify-end space-x-1">
+                      <span>シェア</span>
+                      {renderGroupSortIcon('share')}
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {groupSummaries.map((g: any, idx: number) => {
+                {sortedTableSummaries.map((g: any, idx: number) => {
                   const percent =
                     reportData.overview.total_net_spend_usd > 0
                       ? ((g.total_cost_usd / reportData.overview.total_net_spend_usd) * 100).toFixed(1)
@@ -211,12 +321,14 @@ export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({
                         {g.total_suggestions.toLocaleString()}
                       </td>
                       <td className="py-2.5 px-3 text-right">
-                        <div className="font-semibold text-slate-100">${g.total_cost_usd.toFixed(2)}</div>
-                        <div className="text-[10px] text-amber-400 font-mono">
-                          超過: ${Number(g.net_cost_usd ?? g.total_cost_usd).toFixed(2)}
-                        </div>
+                        <span className="font-semibold text-slate-100 font-mono">${g.total_cost_usd.toFixed(2)}</span>
                       </td>
-                      <td className="py-2.5 px-3 text-right text-slate-400">{percent}%</td>
+                      <td className="py-2.5 px-3 text-right font-mono">
+                        <span className="text-[11px] text-amber-400 font-medium">
+                          ${Number(g.net_cost_usd ?? g.total_cost_usd).toFixed(2)}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3 text-right text-slate-400 font-mono">{percent}%</td>
                     </tr>
                   );
                 })}

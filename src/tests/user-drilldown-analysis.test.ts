@@ -82,7 +82,7 @@ describe('User Detail Table Inline Drilldown Analysis Tests', () => {
     );
     assert.match(
       content,
-      /colSpan=\{hasUsageMetrics \? 13 : 9\}/,
+      /colSpan=\{hasUsageMetrics \? 14 : 10\}/,
       'Drilldown row must span full table columns'
     );
   });
