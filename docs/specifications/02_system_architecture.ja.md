@@ -168,6 +168,25 @@ flowchart TD
 - **ViewOrchestrator**: 表示条件（`canRender`）および派生データの準備状況（`requiredDerivedData`）を検証し、表示可能ビューの切り替えを安全に調停。
 - **Presenter**: ビュー表示に必要なフォーマット・計算（通貨表記、比率、ソート、フィルタ結果等）を React / DOM から完全に切り離した純粋 TypeScript クラスとして実装し、ブラウザ不要の高速単体テストを実現。
 
+### 4.3 FinOps 動的マルチ通貨 & EA 契約単価サブシステム
+企業の Enterprise Agreement (EA) 契約や多国籍通貨管理に対応した動的課金計算レイヤーを装備する：
+- **`EnterpriseBillingConfig`**: 通貨定義（JPY/EUR/USD）、為替レート、ボリュームディスカウント率（0-100%）、および直接契約単価（`customPricePerCredit`: 例 `1.273円 / AIC`、`customSeatPricing`）を管理。直接指定時はそれを最優先適用。
+- **`Money` Value Object**: 任意精度（小数第3位等）の通貨フォーマット（`formatWithCurrency`）、割引適用（`applyDiscount`）、通貨換算（`convertCurrency`）を一元提供。
+- **`BillingConfigLoader`**: 環境変数 `COPILOT_BILLING_CONFIG` または `data/config/billing.json` から安全にロードし、未指定時は標準 USD レートへ自動フォールバック。
+
+### 4.4 フロントエンド Code Splitting & バンドル最適化アーキテクチャ
+ブラウザ初期表示パフォーマンスを極大化するため、以下のコード分割アーキテクチャを適用：
+- **純粋ブラウザ Repository 分離**: `HttpJsonMetricsRepository`（`fetch` のみ使用）と `FsJsonMetricsRepository`（Node.js `fs` 使用）を物理分離し、ブラウザバンドルから Node.js モジュール解決を完全排除（Vite externalize 警告 0 件）。
+- **On-demand View Lazy Loading**: 重量級 View（Model Radar, Deep Analysis, Credits, Agent Activity, Adoption Maturity）を `React.lazy` および `<Suspense>` で非同期分割。
+- **UI スケルトン保護**: チャンク読み込み中のチラつき・レイアウトシフトを抑止するパルススケルトン（`ViewSkeleton`）を配備。
+- **Rollup Manual Chunks**: `vendor-react`, `vendor-charts`, `vendor-icons`, `vendor-zod` にベンダーライブラリを適切に分離し、メイン JS チャンクを **300 kB 以下 (gzip 80 kB 以下)** に抑制。
+
+### 4.5 セキュリティ & GPG 鍵管理ガバナンス
+48KB を超える大規模ユーザーマッピングの安全運用のため、AES-256 GPG 対称暗号化ワークアラウンドを採用：
+- 暗号化ブロブは `copilot-data` ブランチの `data/config/` にのみ格納。
+- 実行時のみ `$RUNNER_TEMP` に平文復号され、ジョブ終了時にランナーごと完全破棄。
+- 鍵ローテーション手順書およびコンプライアンス監査基準は [GPG鍵管理およびユーザー属性マッピング運用標準ガイド](../security/01_gpg_key_management_and_user_mapping_guide.ja.md) を参照。
+
 ---
 
 ## 5. ディレクトリ構成仕様
@@ -177,34 +196,38 @@ flowchart TD
 ├── .github/
 │   └── workflows/                      # GitHub Actions ワークフロー
 ├── docs/
+│   ├── security/                       # セキュリティ運用標準ガイド (GPG鍵管理等)
 │   └── specifications/                 # SDD仕様書群 (01〜15)
 ├── src/
 │   ├── domain/                         # Layer 1: Domain
-│   │   ├── entities/                   # エンティティ (copilot, views, model-benchmark 等)
+│   │   ├── entities/                   # エンティティ (copilot, views, billing-config 等)
 │   │   ├── value-objects/              # 値オブジェクト (Money, HealthScore, DateRange 等)
 │   │   ├── rules/                      # ビジネスルール (SeatClassification, AdoptionPhase 等)
 │   │   └── ports/                      # ポート (ICopilotDataSource, IStorageWriter 等)
 │   ├── application/                    # Layer 2: Application
 │   │   ├── store/                      # DataStore, Reducer, State, DerivedDataGraph
-│   │   ├── services/                   # ScopeManager, FilterService, DemoModeService 等
+│   │   ├── services/                   # ScopeManager, FilterService, CreditsBillingService 等
 │   │   ├── views/                      # ViewPluginRegistry, ViewOrchestrator
 │   │   └── pipeline/                   # PipelineOrchestrator
 │   ├── adapters/                       # Layer 3: Adapters
 │   │   ├── github-api/                 # ACL, RawApiFetcher, Normalizers, Zod Schemas
-│   │   ├── storage/                    # StaticJsonMetricsRepository, ForkSafeStorageWriter
+│   │   ├── storage/                    # HttpJsonMetricsRepository, FsJsonMetricsRepository, BillingConfigLoader
 │   │   ├── presenters/                 # Overview, Users, Trend, Budget, DeepAnalysis, ModelRadar, Credits, Agent, Adoption
-│   │   ├── views/                      # ViewPlugin 定義 & レジストリ登録 (全9種)
+│   │   ├── views/                      # ViewPlugin 定義 & レジストリ登録 (全9種、lazy分割対応)
 │   │   └── composition-root.ts         # バックエンド Composition Root (createPipelineApp)
 │   ├── frameworks/                     # Layer 4: Frameworks
 │   │   ├── react/                      # DashboardProvider, useStoreSelector, useViewPlugin
-│   │   └── composition-root.ts         # フロントエンド Composition Root (createDashboardApp)
+│   │   ├── composition-root.ts         # フロントエンド Composition Root (HttpJsonMetricsRepository注入)
+│   │   └── cli-composition-root.ts     # CLI Composition Root (FsJsonMetricsRepository注入)
 │   └── cli/
 │       └── run-pipeline.ts             # CLI実行エントリポイント (createPipelineApp経由)
 ├── dashboard/                          # フロントエンド SPA (Vite + React + Tailwind)
 │   └── src/
 │       ├── components/                 # UIコンポーネント & Viewコンポーネント
-│       ├── App.tsx / AppV2.tsx
+│       │   └── common/ViewSkeleton.tsx # Suspense用統一スケルトン
+│       ├── App.tsx                     # メインSPAコンポーネント (React.lazy + Suspense)
 │       └── main.tsx
 └── package.json
 ```
+
 
