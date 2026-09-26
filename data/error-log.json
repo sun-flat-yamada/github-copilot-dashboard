@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-09-25T03:45:35.631Z",
+  "generated_at": "2026-09-26T03:51:35.705Z",
   "total_issues": 2,
   "errors_count": 0,
   "warnings_count": 2,
   "issues": [
     {
-      "id": "issue-1790307935630-k7ifi",
-      "timestamp": "2026-09-25T03:45:35.630Z",
+      "id": "issue-1790394695704-6l9nl",
+      "timestamp": "2026-09-26T03:51:35.704Z",
       "severity": "warning",
       "category": "api_auth",
       "target": "config:copilot-metrics",
@@ -14,8 +14,8 @@
       "details": "Set COPILOT_ENTERPRISE (enterprise-wide) or COPILOT_ORGS (comma-separated org slugs) as a repository/organization Actions variable to enable live metrics collection. Monthly Usage Report (CSV import) and other credential-independent features remain unaffected."
     },
     {
-      "id": "issue-1790307935630-svc78",
-      "timestamp": "2026-09-25T03:45:35.630Z",
+      "id": "issue-1790394695704-8or4t",
+      "timestamp": "2026-09-26T03:51:35.704Z",
       "severity": "warning",
       "category": "api_auth",
       "target": "config:copilot-billing-seats",
