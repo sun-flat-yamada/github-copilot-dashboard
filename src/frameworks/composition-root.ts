@@ -1,7 +1,7 @@
 import { DataStore } from '../application/store/DataStore.js';
 import { DerivedDataGraph } from '../application/store/derived/DerivedDataGraph.js';
 import { registerCoreDerivedNodes } from '../application/store/derived/nodes/index.js';
-import { StaticJsonMetricsRepository } from '../adapters/storage/StaticJsonMetricsRepository.js';
+import { HttpJsonMetricsRepository } from '../adapters/storage/HttpJsonMetricsRepository.js';
 import { IMetricsRepository } from '../domain/ports/IMetricsRepository.js';
 import { ScopeManager } from '../application/services/ScopeManager.js';
 
@@ -22,7 +22,7 @@ export function createDashboardApp(initialDemoMode: boolean = false): DashboardA
     isLoading: true,
   });
 
-  const repository: IMetricsRepository = new StaticJsonMetricsRepository();
+  const repository: IMetricsRepository = new HttpJsonMetricsRepository();
 
   const loadScope = async (scopeType: 'daily' | 'monthly' | 'custom', key: string) => {
     store.dispatch({ type: 'SET_LOADING', isLoading: true });
