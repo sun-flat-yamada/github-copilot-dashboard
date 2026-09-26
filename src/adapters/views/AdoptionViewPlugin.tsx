@@ -1,7 +1,13 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { ViewPlugin, ViewPluginProps } from './ViewPlugin.js';
 import { AdoptionPresenter, AdoptionViewModel } from '../presenters/AdoptionPresenter.js';
-import { AdoptionMaturityView } from '../../../dashboard/src/components/views/AdoptionMaturityView.js';
+import { ViewSkeleton } from '../../../dashboard/src/components/common/ViewSkeleton.js';
+
+const AdoptionMaturityView = lazy(() =>
+  import('../../../dashboard/src/components/views/AdoptionMaturityView.js').then((m) => ({
+    default: m.AdoptionMaturityView,
+  }))
+);
 
 export const AdoptionViewComponent: React.FC<ViewPluginProps<AdoptionViewModel>> = (props) => {
   const { presenter, currentData, agentAdoption } = props;
@@ -10,7 +16,11 @@ export const AdoptionViewComponent: React.FC<ViewPluginProps<AdoptionViewModel>>
     agentAdoption,
   });
 
-  return <AdoptionMaturityView viewModel={viewModel} />;
+  return (
+    <Suspense fallback={<ViewSkeleton />}>
+      <AdoptionMaturityView viewModel={viewModel} />
+    </Suspense>
+  );
 };
 
 export const AdoptionViewPlugin: ViewPlugin<AdoptionViewModel> = {
