@@ -10,7 +10,11 @@ import { BenchmarkDataset } from '../../domain/entities/model-benchmark.js';
 import { PathResolver } from './PathResolver.js';
 import { CacheService } from '../../application/services/CacheService.js';
 
-export class StaticJsonMetricsRepository implements IMetricsRepository {
+/**
+ * Pure Browser / HTTP implementation of IMetricsRepository.
+ * Zero dependency on Node.js core modules (fs, path).
+ */
+export class HttpJsonMetricsRepository implements IMetricsRepository {
   private cache = new CacheService<any>(100);
 
   private async fetchJson<T>(relativePath: string, isDemoMode: boolean = false): Promise<T> {
@@ -27,24 +31,9 @@ export class StaticJsonMetricsRepository implements IMetricsRepository {
 
     for (const url of candidateUrls) {
       try {
-        let data: T;
-        // Node.js 環境で fs が利用可能かつローカルファイルパスの場合
-        if (typeof window === 'undefined' && typeof process !== 'undefined') {
-          const fs = await import('fs');
-          const path = await import('path');
-          const cleanRel = url.replace(/^\.?\//, '');
-          const localPath = path.resolve(process.cwd(), cleanRel);
-          if (fs.existsSync(localPath)) {
-            data = JSON.parse(fs.readFileSync(localPath, 'utf-8'));
-            this.cache.set(cacheKey, data);
-            return data;
-          }
-        }
-
-        // ブラウザ または HTTP fetch
         const response = await fetch(url);
         if (response.ok) {
-          data = (await response.json()) as T;
+          const data = (await response.json()) as T;
           this.cache.set(cacheKey, data);
           return data;
         }

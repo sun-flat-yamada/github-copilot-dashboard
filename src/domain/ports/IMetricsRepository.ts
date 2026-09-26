@@ -9,7 +9,7 @@ import { BenchmarkDataset } from '../entities/model-benchmark.js';
 
 /**
  * Port interface for persistent metric storage and retrieval.
- * Implemented by: StaticJsonMetricsRepository
+ * Implemented by: HttpJsonMetricsRepository (Browser), FsJsonMetricsRepository (Node/CLI)
  */
 export interface IMetricsRepository {
   fetchIndex(isDemoMode?: boolean): Promise<IndexMetadata>;
