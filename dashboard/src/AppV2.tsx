@@ -7,7 +7,6 @@ import { useViewPlugin } from '../../src/frameworks/react/hooks/useViewPlugin';
 import { useTheme } from './hooks/useTheme';
 import { DashboardHeader } from './components/layout/DashboardHeader';
 import { ViewNavigation } from './components/layout/ViewNavigation';
-import { ScopeSelector } from './components/ScopeSelector';
 import { GroupingSelector } from './components/GroupingSelector';
 import { TagFilterBar } from './components/TagFilterBar';
 import { ErrorLogModal } from './components/ErrorLogModal';
@@ -94,16 +93,7 @@ export const AppV2: React.FC = () => {
 
       <main className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col space-y-6">
         <div className="flex flex-col space-y-3 bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80 shadow-sm">
-          {activeSource === 'live_metrics' && (
-            <ScopeSelector
-              indexMeta={indexMeta}
-              scopeType={scopeType}
-              selectedKey={selectedKey}
-              onScopeChange={(type, key) => dispatch({ type: 'SET_SCOPE', scopeType: type, key })}
-            />
-          )}
-
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1 border-t border-slate-800/60">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <GroupingSelector
               currentGrouping={grouping}
               onGroupingChange={(dim: GroupingDimension) => dispatch({ type: 'SET_GROUPING', dimension: dim })}
