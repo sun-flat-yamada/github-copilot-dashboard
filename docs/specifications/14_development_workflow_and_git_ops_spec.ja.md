@@ -8,22 +8,28 @@
 エージェント間や作業間のファイル競合・未コミット変更の巻き込み・マージ事故を防止し、常にクリーンで追跡性の高いリニアコミット履歴（Linear History）を維持するため、以下のコアサイクルを定義する。
 
 ```text
-[Issue作成]
+[Step 1: Issue作成]
    │ (要件・受け入れ基準の定義、gh issue create)
    ▼
-[Worktree作業環境の作成]
+[Step 2: Antigravity 実装計画 (Implementation Plan) & タスク策定]
+   │ (implementation_plan.md / task.md アーティファクト生成、対話的Proceed承認)
+   ▼
+[Step 3: Worktree作業環境の作成]
    │ (リポジトリ同階層に独立ディレクトリを展開: ../<repo>-worktrees/<branch>)
    ▼
-[SDD策定 & 実装 & ローカル品質ゲート]
+[Step 4: SDD策定 & 実装 & ローカル品質ゲート]
    │ (Atomic Commits, Conventional Commits, 5重検証)
    ▼
-[最新BaseへのRebase & PR作成]
+[Step 5: Walkthrough アーティファクト生成 & エビデンス封印]
+   │ (walkthrough.md 生成、テストログ・差分の封印)
+   ▼
+[Step 6: 最新BaseへのRebase & PR作成]
    │ (git fetch && git rebase, Closes #<issue>, gh pr create)
    ▼
-[Rebaseマージ & Worktreeクリーンアップ]
+[Step 7: Rebaseマージ & Worktreeクリーンアップ]
    │ (Rebase and Merge, git worktree remove, ブランチ削除)
    ▼
-[完了 / 履歴の直線性維持]
+[完了 / 履歴の直線性維持 & エビデンス保証]
 ```
 
 ---
@@ -59,7 +65,21 @@
 
 ---
 
-### 3.2. ステップ 2: Worktree作業環境の作成 (並行エージェント分離)
+### 3.2. ステップ 2: Antigravity 実装計画 (Implementation Plan) & タスク策定 (Pre-Execution Gate)
+
+コードの変更やWorktreeの作成に着手する前に、AIエージェントは必ずAntigravityのアーティファクト管理規約に基づき実装計画を策定する。
+
+1. **`implementation_plan.md` の生成**:
+   - 会話セッション固有のBrainディレクトリ（`<appDataDir>\brain\<conversation-id>\implementation_plan.md`）に `write_to_file` で書き込む。
+   - `ArtifactMetadata` に `{ "UserFacing": true, "RequestFeedback": true, "Summary": "..." }` を指定する。
+   - `RequestFeedback: true` によりAntigravity UIに対話型の **"Proceed"** ボタンを表示させ、ユーザーの承認（またはフィードバック）を得るまでコード変更を実行しない。
+   - 計画書には、変更コンテキスト、ユーザー確認必須事項（`> [!IMPORTANT]` 等）、変更対象ファイル（`[NEW]`, `[MODIFY]`, `[DELETE]` と `file:///` リンク）、自動/手動検証計画を明記する。
+2. **`task.md` の初期化**:
+   - チェックリスト形式（`- [ ]`, `- [/]`, `- [x]`）で進捗を追跡するタスクファイルを初期化（`RequestFeedback: false`）。
+
+---
+
+### 3.3. ステップ 3: Worktree作業環境の作成 (並行エージェント分離)
 
 複数エージェントが同一作業コピーで作業すると、ファイルの保存競合や未コミットファイルの混入、Gitインデックスのロック破損が発生する。
 そのため、**メイン作業ツリーでの直接作業を禁止し、リポジトリと同階層にWorktreeを展開する**。
@@ -101,7 +121,7 @@ npm ci
 
 ---
 
-### 3.3. ステップ 3: SDD策定・実装・ローカル品質ゲート
+### 3.4. ステップ 4: SDD策定・実装・ローカル品質ゲート
 
 1. **仕様書先行更新 (SDD原則)**:
    - 設計判断や新機能は `docs/specifications/` を先に更新する。
@@ -109,7 +129,9 @@ npm ci
    - コミットは単一の関心事ごとに細かく分割する。
    - コミットメッセージは [Conventional Commits](https://www.conventionalcommits.org/) に厳格に従う。
      - `feat: ...`, `fix: ...`, `docs: ...`, `refactor: ...`, `test: ...`
-3. **ローカル品質ゲート (必須)**:
+3. **タスク進捗更新**:
+   - 作業完了に伴い、`task.md` のチェック項目を `- [/]` から `- [x]` へ更新する。
+4. **ローカル品質ゲート (必須)**:
    コミットおよびPR作成前に、作業Worktree内で必ず全検証を通過させる。
    ```bash
    npm run fork:verify   # コード・データ分離(SDD-05)の確認
@@ -121,7 +143,18 @@ npm ci
 
 ---
 
-### 3.4. ステップ 4: 最新BaseへのRebase & PR作成
+### 3.5. ステップ 5: Walkthrough アーティファクト生成 & エビデンス封印
+
+全品質ゲートが正常（Exit Code 0）に通過した後、変更内容の検証エビデンスを封印する。
+
+1. **`walkthrough.md` の生成**:
+   - 会話セッション固有のBrainディレクトリ（`<appDataDir>\brain\<conversation-id>\walkthrough.md`）に `write_to_file` で書き込む。
+   - `ArtifactMetadata` に `{ "UserFacing": true, "RequestFeedback": false, "Summary": "..." }` を指定する。
+   - 変更の概要、変更ファイル一覧と diff サマリ、5重品質ゲートの実行結果テーブルを記録する。
+
+---
+
+### 3.6. ステップ 6: 最新BaseへのRebase & PR作成
 
 作業中にベースブランチ（`origin/main`）が進行している可能性があるため、必ず最新のBaseの上にRebaseして競合を解消する。
 
@@ -151,7 +184,7 @@ npm ci
 
 ---
 
-### 3.5. ステップ 5: Rebaseマージ & クリーンアップ
+### 3.7. ステップ 7: Rebaseマージ & クリーンアップ
 
 #### マージ方式の選定基準: なぜRebaseマージなのか？
 本プロジェクトでは、**GitHub上のマージ方式として "Rebase and merge"（または fast-forward）を標準**とする。
