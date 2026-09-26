@@ -36,6 +36,7 @@ flowchart TD
 エンタープライズ組織での本番稼働に向けた完全手順書：
 - **完全無料の GitHub Pages**: 追加のクラウド費用・サーバー運用ゼロでの自動配信。
 - **個人情報秘匿とユーザー属性マッピング**: `COPILOT_USER_MAPPING` の設定、CSV形式対応、および48KB超過時のGPG暗号化運用。
+- **USD常時基本表示 & サブ表示通貨・契約課金設定**: `COPILOT_BILLING_CONFIG`（為替レート、EAボリュームディスカウント、AI Credits契約単価）の設定とUI通貨切替。
 - **認証とデータ取得スコープ**: Fine-grained PAT、Enterprise単位／複数Org単位、認証フォールバック機能。
 - **EMU・Fork制限組織向け手順**: GitHub Fork を使えない組織向けのミラー複製方式 ([SDD-13](specifications/13_fork_restricted_environment_setup_guide.ja.md))。
 

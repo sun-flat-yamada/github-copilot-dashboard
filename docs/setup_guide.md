@@ -15,12 +15,16 @@ This comprehensive guide details how to install, configure, and operate **github
    - [Standard JSON Format](#standard-json-format)
    - [Flat CSV Format](#flat-csv-format)
    - [GPG Encryption & Payloads > 48KB](#gpg-encryption--payloads--48kb)
-5. [Authentication & Ingestion Scopes](#5-authentication--ingestion-scopes)
+5. [Currency Display & Enterprise Billing Configuration (EA Contract / AI Credits)](#5-currency-display--enterprise-billing-configuration-ea-contract--ai-credits)
+   - [Permanent USD Primary Display with Optional Sub-Currency](#permanent-usd-primary-display-with-optional-sub-currency)
+   - [COPILOT_BILLING_CONFIG Setup](#copilot_billing_config-setup)
+   - [Parameters & EA Contract Pricing Overrides](#parameters--ea-contract-pricing-overrides)
+6. [Authentication & Ingestion Scopes](#6-authentication--ingestion-scopes)
    - [Fine-grained PAT Setup](#fine-grained-pat-setup)
    - [Enterprise vs. Organization Scope](#enterprise-vs-organization-scope)
    - [Mock Mode & Graceful Credentials](#mock-mode--graceful-credentials)
-6. [Upstream Synchronization & Fork Maintenance](#6-upstream-synchronization--fork-maintenance)
-7. [Operational Troubleshooting](#7-operational-troubleshooting)
+7. [Upstream Synchronization & Fork Maintenance](#7-upstream-synchronization--fork-maintenance)
+8. [Operational Troubleshooting](#8-operational-troubleshooting)
 
 ---
 
@@ -105,7 +109,47 @@ GitHub Actions variables and secrets have a strict 48KB payload limit. For large
 
 ---
 
-## 5. Authentication & Ingestion Scopes
+## 5. Currency Display & Enterprise Billing Configuration (EA Contract / AI Credits)
+
+This dashboard adheres to global FinOps best practices by enforcing **permanent USD ($) primary display** while providing **optional secondary sub-currency display** (e.g. JPY `¥`, EUR `€`) tailored to your organization.
+
+### Permanent USD Primary Display with Optional Sub-Currency
+- **USD ($) is ALWAYS displayed as the primary currency** across all 9 analysis views, KPI summary cards, cost allocation charts, budget cards, and user detail tables.
+- When a sub-currency is configured or selected, the localized secondary amount is appended in parentheses (e.g., `$2,975.00 (¥461,125)` or `$0.010 / AIC (¥1.273 / AIC)`).
+- Viewers can dynamically switch the secondary sub-currency (USD Only / USD + JPY / USD + EUR) using the Currency Selector in the header, with preferences preserved in browser `localStorage`.
+
+### COPILOT_BILLING_CONFIG Setup
+Configure the environment variable under **Settings** > **Secrets and variables** > **Actions** > **Variables** (or Secrets) as `COPILOT_BILLING_CONFIG`, or place a static config file at `data/config/billing.json`:
+
+```json
+{
+  "subCurrency": {
+    "code": "JPY",
+    "symbol": "¥",
+    "exchangeRateFromUSD": 155.0,
+    "displayDecimals": 0
+  },
+  "discountPercent": 15,
+  "customPricePerCredit": 1.273,
+  "customSeatPricing": {
+    "enterpriseMonthly": 5000
+  }
+}
+```
+
+### Parameters & EA Contract Pricing Overrides
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `subCurrency` | `object` | `null` | Secondary sub-currency configuration (`code`: 'JPY', `symbol`: '¥', `exchangeRateFromUSD`: 155.0, `displayDecimals`: 0) |
+| `discountPercent` | `number` | `0` | Enterprise Agreement (EA) volume discount percentage (0 to 100%) |
+| `customPricePerCredit` | `number` | undefined | Direct contractual unit price per AI Credit in sub-currency (e.g., 1.273 JPY/AIC). Takes precedence over discount calculation. |
+| `customSeatPricing` | `object` | undefined | Fixed contractual seat price overrides (`businessMonthly`, `enterpriseMonthly`) |
+| `seatPricing` | `object` | 19 / 39 USD | Standard base seat list prices in USD |
+| `creditsPricing` | `object` | 0.01 USD | Standard base AI Credit list price in USD per AIC |
+
+---
+
+## 6. Authentication & Ingestion Scopes
 
 ### Fine-grained PAT Setup
 Generate a Personal Access Token (PAT) with the following scopes and register it as secret `COPILOT_READ_TOKEN`:
@@ -131,7 +175,7 @@ Configure either variable under **Settings** > **Secrets and variables** > **Act
 
 ---
 
-## 6. Upstream Synchronization & Fork Maintenance
+## 7. Upstream Synchronization & Fork Maintenance
 
 To pull improvements and AI model updates from upstream:
 
@@ -156,7 +200,7 @@ git push origin main
 
 ---
 
-## 7. Operational Troubleshooting
+## 8. Operational Troubleshooting
 
 - **403 Rate Limit or Permission Denied**: Check the 80%×80% anomaly modal in the dashboard header or export `error-log.json` to inspect the failing API endpoint.
 - **Secret Scan Failure**: Run `npm run secret-scan` locally to locate high-entropy strings or hardcoded tokens before committing.

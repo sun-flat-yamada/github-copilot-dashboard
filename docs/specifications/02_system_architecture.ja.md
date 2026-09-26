@@ -168,10 +168,12 @@ flowchart TD
 - **ViewOrchestrator**: 表示条件（`canRender`）および派生データの準備状況（`requiredDerivedData`）を検証し、表示可能ビューの切り替えを安全に調停。
 - **Presenter**: ビュー表示に必要なフォーマット・計算（通貨表記、比率、ソート、フィルタ結果等）を React / DOM から完全に切り離した純粋 TypeScript クラスとして実装し、ブラウザ不要の高速単体テストを実現。
 
-### 4.3 FinOps 動的マルチ通貨 & EA 契約単価サブシステム
+### 4.3 FinOps 常時USD基本表示 & サブ表示通貨・EA契約単価サブシステム
 企業の Enterprise Agreement (EA) 契約や多国籍通貨管理に対応した動的課金計算レイヤーを装備する：
-- **`EnterpriseBillingConfig`**: 通貨定義（JPY/EUR/USD）、為替レート、ボリュームディスカウント率（0-100%）、および直接契約単価（`customPricePerCredit`: 例 `1.273円 / AIC`、`customSeatPricing`）を管理。直接指定時はそれを最優先適用。
-- **`Money` Value Object**: 任意精度（小数第3位等）の通貨フォーマット（`formatWithCurrency`）、割引適用（`applyDiscount`）、通貨換算（`convertCurrency`）を一元提供。
+- **常時USD基本表示 & サブ表示通貨併記**: 全9分析画面・KPI・チャート・テーブルにおいて、USD（`$`）が常時基本通貨として表示され、オプションで日本円（JPY）やユーロ（EUR）などのサブ通貨がカッコ書きで併記される（例: `$2,975.00 (¥461,125)`）。
+- **`CurrencyContext` & `CurrencySelector`**: 画面上部ヘッダーのセレクターから、閲覧者自身がリアルタイムにサブ表示通貨（USDのみ / USD+JPY / USD+EUR）を切り替え可能（ブラウザの `localStorage` に保持）。
+- **`EnterpriseBillingConfig`**: 通貨定義（USD基本、任意の `subCurrency` JPY/EUR等）、為替レート、ボリュームディスカウント率（0-100%）、および直接契約単価（`customPricePerCredit`: 例 `1.273円 / AIC`、`customSeatPricing`）を管理。直接指定時はそれを最優先適用。
+- **`Money` Value Object**: USD基本とサブ通貨を統合フォーマットする `formatWithSubCurrency`、構造化出力を返す `formatDual`、任意精度フォーマット、割引適用を一元提供。
 - **`BillingConfigLoader`**: 環境変数 `COPILOT_BILLING_CONFIG` または `data/config/billing.json` から安全にロードし、未指定時は標準 USD レートへ自動フォールバック。
 
 ### 4.4 フロントエンド Code Splitting & バンドル最適化アーキテクチャ
