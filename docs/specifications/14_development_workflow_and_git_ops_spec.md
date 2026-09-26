@@ -11,16 +11,22 @@ To eliminate file collision, untracked change leakage, and merge hazards between
 [Step 1: Issue Creation]
    │ (Define intent & acceptance criteria via gh issue create)
    ▼
-[Step 2: Worktree Work Environment Provisioning]
+[Step 2: Antigravity Implementation Plan & Task Orchestration]
+   │ (implementation_plan.md / task.md artifacts with ArtifactMetadata, Proceed gate)
+   ▼
+[Step 3: Worktree Work Environment Provisioning]
    │ (Deploy isolated directory at peer sibling level: ../<repo>-worktrees/<branch>)
    ▼
-[Step 3: SDD Definition, Implementation & Local Quality Gate]
+[Step 4: SDD Definition, Implementation & Local Quality Gate]
    │ (Atomic Commits, Conventional Commits, 5-stage validation)
    ▼
-[Step 4: Rebase onto Latest Base & PR Creation]
+[Step 5: Walkthrough Artifact Generation & Evidence Sealing]
+   │ (walkthrough.md generation, test logs & diff evidence sealing)
+   ▼
+[Step 6: Rebase onto Latest Base & PR Creation]
    │ (git fetch && git rebase, Closes #<issue>, gh pr create)
    ▼
-[Step 5: Rebase Merge & Worktree Cleanup]
+[Step 7: Rebase Merge & Worktree Cleanup]
    │ (Rebase and Merge, git worktree remove, branch prune)
    ▼
 [Completed / Walkthrough Evidence Sealed & Pristine Linear History Preserved]
@@ -61,7 +67,21 @@ All changes start with a dedicated GitHub Issue.
 
 ---
 
-### 3.2. Step 2: Worktree Provisioning (Multi-Agent Isolation)
+### 3.2. Step 2: Antigravity Implementation Plan & Task Orchestration (Pre-Execution Gate)
+
+Before provisioning worktrees or modifying code, autonomous agents must formulate an implementation plan conforming to Google Antigravity's artifact management architecture.
+
+1. **`implementation_plan.md` Generation**:
+   - Write to the conversation-scoped brain directory (`<appDataDir>\brain\<conversation-id>\implementation_plan.md`) using `write_to_file`.
+   - Specify `ArtifactMetadata` with `{ "UserFacing": true, "RequestFeedback": true, "Summary": "..." }`.
+   - `RequestFeedback: true` instructs the Antigravity UI to render the interactive **Proceed** button, pausing execution until the user provides review and approval.
+   - The plan details user reviews (`> [!IMPORTANT]`), proposed changes categorized by `[NEW]`, `[MODIFY]`, `[DELETE]` with clickable `file:///` links, and the automated/manual verification plan.
+2. **`task.md` Initialization**:
+   - Initialize a dynamic task tracking checklist (`- [ ]`, `- [/]`, `- [x]`) with `ArtifactMetadata` (`RequestFeedback: false`, `UserFacing: true`).
+
+---
+
+### 3.3. Step 3: Worktree Provisioning (Multi-Agent Isolation)
 
 When multiple agents work on the same checkout, file locks, overwrite race conditions, and git index corruption occur.
 Therefore, **direct work on the main working tree is forbidden; agents must provision a Worktree at the peer sibling level**.
@@ -103,14 +123,16 @@ npm ci
 
 ---
 
-### 3.3. Step 3: SDD Definition, Implementation & Local Quality Gate
+### 3.4. Step 4: SDD Definition, Implementation & Local Quality Gate
 
 1. **Specification First (SDD Principle)**:
    - Update `docs/specifications/` before or alongside architectural additions.
 2. **Atomic Commits & Conventional Commits**:
    - Keep commits small, isolated, and focused on one concern.
    - Follow [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `docs:`, `refactor:`, `test:`.
-3. **Local Quality Gate (Mandatory)**:
+3. **Task Checklist Tracking**:
+   - As tasks complete, update items in `task.md` from `[/]` to `[x]`.
+4. **Local Quality Gate (Mandatory)**:
    Run all validation checks within the worktree before opening a PR:
    ```bash
    npm run fork:verify   # Code-Data Decoupling (SDD-05) verification
@@ -122,7 +144,18 @@ npm ci
 
 ---
 
-### 3.4. Step 4: Rebase onto Latest Base & PR Creation
+### 3.5. Step 5: Walkthrough Artifact Generation & Evidence Sealing
+
+Once all local quality gates pass cleanly (Exit Code 0), seal the implementation evidence before submitting the PR:
+
+1. **`walkthrough.md` Generation**:
+   - Write to the conversation-scoped brain directory (`<appDataDir>\brain\<conversation-id>\walkthrough.md`) using `write_to_file`.
+   - Specify `ArtifactMetadata` with `{ "UserFacing": true, "RequestFeedback": false, "Summary": "..." }`.
+   - Document the concise summary, modified file listings with diff indicators, and the complete 5-stage quality gate verification results table.
+
+---
+
+### 3.6. Step 6: Rebase onto Latest Base & PR Creation
 
 1. **Rebase onto Upstream Base**:
    ```bash
@@ -150,7 +183,7 @@ npm ci
 
 ---
 
-### 3.5. Step 5: Rebase Merge & Cleanup
+### 3.7. Step 7: Rebase Merge & Cleanup
 
 #### Why Rebase & Merge?
 - **Linear History**: Eliminates noisy `Merge branch 'main' into ...` commits, creating a clean chronological progression.

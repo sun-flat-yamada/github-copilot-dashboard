@@ -31,10 +31,10 @@ When multiple AI agents work concurrently on the codebase:
 
 ---
 
-## 3. The 5-Step Change Lifecycle
+## 3. The End-to-End Change Lifecycle
 
 ```text
-[Step 1: Issue] ──> [Step 2: Sibling Worktree] ──> [Step 3: Quality Gate] ──> [Step 4: PR (Rebased)] ──> [Step 5: Rebase Merge & Clean]
+[Step 1: Issue] ──> [Step 2: Antigravity Plan (Artifact)] ──> [Step 3: Sibling Worktree] ──> [Step 4: Quality Gate & SDD] ──> [Step 5: Walkthrough Evidence] ──> [Step 6: PR (Rebased)] ──> [Step 7: Rebase Merge & Clean]
 ```
 
 ### Step 1: Issue Creation
@@ -42,7 +42,13 @@ When multiple AI agents work concurrently on the codebase:
 - Every non-trivial change must correspond to an Issue specifying **Why**, **What**, and **Acceptance Criteria**.
 - Create via GitHub Web or `gh issue create`. Record the Issue number (`#<id>`).
 
-### Step 2: Sibling Worktree Provisioning
+### Step 2: Antigravity Implementation Plan & Task Orchestration (Pre-Execution Gate)
+
+- Before provisioning worktrees or modifying code, autonomous agents must formulate an `implementation_plan.md` artifact in `<appDataDir>\brain\<conversation-id>\` using `write_to_file` with `ArtifactMetadata` (`RequestFeedback: true`, `UserFacing: true`).
+- Initialize `task.md` (`RequestFeedback: false`, `UserFacing: true`) to track execution checklists.
+- Await user approval via the interactive **Proceed** button before proceeding to worktree provisioning.
+
+### Step 3: Sibling Worktree Provisioning
 - Fetch latest base: `git fetch origin main`
 - Create worktree at sibling level:
   ```bash
@@ -51,16 +57,21 @@ When multiple AI agents work concurrently on the codebase:
   ```
 - Alternatively run helper: `npm run worktree:add feat/<id>-<slug>`
 
-### Step 3: Implementation & Local Quality Gate
+### Step 4: Implementation & Local Quality Gate
 - Apply Specification-Driven Development (SDD): Update specs under `docs/specifications/` if architecture or behavior changes.
 - Atomic & Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`).
+- Update `task.md` continuously to reflect progress.
 - Run the 5 mandatory checks within the worktree:
   ```bash
   npm run fork:verify && npm run typecheck && npm test && npm run secret-scan && npm run build
   ```
   *(All checks must exit 0 cleanly with ZERO detected secrets or PII).*
 
-### Step 4: Rebase onto Base & Pull Request
+### Step 5: Walkthrough Artifact Generation & Evidence Sealing
+- Generate `walkthrough.md` in `<appDataDir>\brain\<conversation-id>\` with `ArtifactMetadata` (`RequestFeedback: false`, `UserFacing: true`).
+- Seal git diffs, file modifications, and the 5-stage quality gate verification results.
+
+### Step 6: Rebase onto Base & Pull Request
 - Rebase onto updated base to resolve conflicts early:
   ```bash
   git fetch origin main
@@ -72,7 +83,7 @@ When multiple AI agents work concurrently on the codebase:
   gh pr create --base main --head feat/<id>-<slug> --title "feat: ... (#<id>)" --body "... Closes #<id>"
   ```
 
-### Step 5: Rebase Merge & Pruning
+### Step 7: Rebase Merge & Pruning
 - Merge using **Rebase & Merge** to maintain a linear commit history:
   ```bash
   gh pr merge <id> --rebase --delete-branch
