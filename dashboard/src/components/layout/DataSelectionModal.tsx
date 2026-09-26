@@ -262,28 +262,48 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
 
       <div className="relative bg-slate-900 border border-slate-700/90 rounded-2xl w-[92vw] max-w-5xl h-[85vh] max-h-[820px] shadow-2xl overflow-hidden flex flex-col z-10 animate-in zoom-in-95 duration-200">
         {/* モーダルヘッダー */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/80 flex-shrink-0">
+        <div className="px-6 py-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950/80 flex-shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-md">
+            <div className="p-2 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-md shrink-0">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
               <h3 id="data-selection-modal-title" className="text-base sm:text-lg font-bold text-white tracking-tight">
                 分析対象データの選択と絞り込み
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-400 hidden sm:block">
                 ダッシュボード全体の集計母数となるデータソースおよび絞り込み条件（AND）を設定します
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
-            aria-label="閉じる"
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+          <div className="flex items-center justify-between sm:justify-end space-x-3">
+            {/* 選択ユーザー数 リアルタイム表示 */}
+            <div className="flex items-center space-x-2 text-xs">
+              <span className="text-slate-400 font-medium">選択ユーザー数:</span>
+              {previewStats.matchedCount === 0 ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-950/80 text-rose-300 border border-rose-800 font-bold shadow-sm">
+                  <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                  <span>該当 0 件 (条件が厳しすぎます)</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-950/80 text-indigo-300 border border-indigo-700 font-medium shadow-sm">
+                  <span>該当:</span>
+                  <strong className="text-white font-bold">{previewStats.matchedCount}</strong>
+                  <span className="text-slate-300">/ {previewStats.totalCount} 名</span>
+                </span>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+              aria-label="閉じる"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* 2カラムボディ */}
@@ -699,24 +719,11 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
 
         {/* モーダルフッター */}
         <div className="px-6 py-3.5 border-t border-slate-800 bg-slate-950/80 flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
-          {/* 該当件数リアルタイムプレビュー */}
-          <div className="flex items-center space-x-2 text-xs">
-            <span className="text-slate-400">集計対象プレビュー:</span>
-            {previewStats.matchedCount === 0 ? (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-950/80 text-rose-300 border border-rose-800 font-bold">
-                <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
-                <span>該当 0 件 (条件が厳しすぎます)</span>
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-950/80 text-indigo-300 border border-indigo-700 font-medium">
-                <span>該当:</span>
-                <strong className="text-white font-bold">{previewStats.matchedCount}</strong>
-                <span>/ {previewStats.totalCount} 名</span>
-              </span>
-            )}
+          <div className="text-[11px] text-slate-500 hidden sm:block">
+            ※ 適用するとダッシュボード全体の集計・分析結果が即時再計算されます
           </div>
 
-          <div className="flex items-center space-x-2.5">
+          <div className="flex items-center space-x-2.5 ml-auto">
             <button
               type="button"
               onClick={onClose}
