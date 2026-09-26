@@ -196,6 +196,15 @@ export class MockDataGenerator {
       const createdDaysAgo = 60 + Math.floor(Math.random() * 120);
       const createdAt = new Date(this.baseDate.getTime() - createdDaysAgo * 24 * 60 * 60 * 1000);
 
+      let aiCreditsUsed = 0;
+      if (rand < 0.7) {
+        aiCreditsUsed = Math.floor(30 + Math.random() * 150);
+      } else if (rand < 0.85) {
+        aiCreditsUsed = Math.floor(Math.random() * 15);
+      } else {
+        aiCreditsUsed = 0;
+      }
+
       seats.push({
         assignee: {
           login,
@@ -216,6 +225,9 @@ export class MockDataGenerator {
           name: `Team-${(i % 6) + 1}`,
           slug: `team-${(i % 6) + 1}`,
         },
+        ai_credits_used: aiCreditsUsed,
+        prepaid: i % 10 === 0,
+        billing_effective_date: createdAt.toISOString().slice(0, 10),
       });
     }
 
@@ -319,6 +331,45 @@ export class MockDataGenerator {
         copilot_in_cli: {
           total_engaged_users: Math.floor(engagedUsers * 0.22),
           total_cli_completions: Math.floor((150 + Math.random() * 100) * activityFactor),
+        },
+        copilot_ide_agent: {
+          total_engaged_users: Math.floor(engagedUsers * 0.45),
+          total_sessions: Math.floor((300 + Math.random() * 150) * activityFactor),
+          total_user_messages: Math.floor((900 + Math.random() * 400) * activityFactor),
+          totals_by_vscode_agent: [
+            { agent_name: 'workspace', total_sessions: Math.floor(180 * activityFactor), total_engaged_users: Math.floor(engagedUsers * 0.35), total_user_messages: Math.floor(500 * activityFactor) },
+            { agent_name: 'terminal', total_sessions: Math.floor(80 * activityFactor), total_engaged_users: Math.floor(engagedUsers * 0.2), total_user_messages: Math.floor(250 * activityFactor) },
+          ],
+          totals_by_custom_agent: [
+            { agent_name: 'fintech-reviewer', total_sessions: Math.floor(40 * activityFactor), total_engaged_users: Math.floor(engagedUsers * 0.15), total_user_messages: Math.floor(150 * activityFactor) },
+          ],
+          totals_by_mcp: [
+            { server_name: 'postgres-context', total_invocations: Math.floor(50 * activityFactor), total_engaged_users: Math.floor(engagedUsers * 0.12), success_rate: 0.98 },
+            { server_name: 'github-ops', total_invocations: Math.floor(65 * activityFactor), total_engaged_users: Math.floor(engagedUsers * 0.18), success_rate: 0.96 },
+            { server_name: 'jira-tracker', total_invocations: Math.floor(30 * activityFactor), total_engaged_users: Math.floor(engagedUsers * 0.08), success_rate: 0.94 },
+          ],
+        },
+        ai_credits: {
+          total_used: Math.floor((350 + Math.random() * 200) * activityFactor),
+          by_model: {
+            'claude-3-7-sonnet': Math.floor((180 + Math.random() * 90) * activityFactor),
+            'gpt-4o': Math.floor((90 + Math.random() * 40) * activityFactor),
+            'o1': Math.floor((50 + Math.random() * 30) * activityFactor),
+            'gemini-2-0-flash': Math.floor((30 + Math.random() * 20) * activityFactor),
+          },
+        },
+        prs_created_by_agent: {
+          total_prs_created_by_agent: Math.floor((12 + Math.random() * 8) * activityFactor),
+          total_prs_merged_by_agent: Math.floor((9 + Math.random() * 6) * activityFactor),
+          median_time_to_merge_hours: 4.5,
+        },
+        code_generation: {
+          total_lines_added: Math.floor((4000 + Math.random() * 2000) * activityFactor),
+          total_lines_deleted: Math.floor((1200 + Math.random() * 600) * activityFactor),
+          by_mode: {
+            agent_session: { lines_added: Math.floor(2500 * activityFactor), lines_deleted: Math.floor(700 * activityFactor) },
+            inline_completion: { lines_added: Math.floor(1500 * activityFactor), lines_deleted: Math.floor(500 * activityFactor) },
+          },
         },
       });
     }
@@ -495,6 +546,20 @@ export class MockDataGenerator {
 
       const overallRate = totalSuggestions > 0 ? Number((totalAcceptances / totalSuggestions).toFixed(4)) : 0;
       const totalCost = seat.plan_type === 'enterprise' ? 39 : 19;
+      const aiCreditsUsed = seat.ai_credits_used ?? Math.floor(Math.random() * 80);
+
+      // コホート比率: 40% Code First, 30% Agent First, 20% Multi-Agent, 10% 未設定
+      const cohortRand = (profiles.length * 17) % 100;
+      let adoptionPhase: 'no_cohort' | 'code_first' | 'agent_first' | 'multi_agent';
+      if (cohortRand < 40) {
+        adoptionPhase = 'code_first';
+      } else if (cohortRand < 70) {
+        adoptionPhase = 'agent_first';
+      } else if (cohortRand < 90) {
+        adoptionPhase = 'multi_agent';
+      } else {
+        adoptionPhase = 'no_cohort';
+      }
 
       profiles.push({
         login,
@@ -511,6 +576,9 @@ export class MockDataGenerator {
         total_cost_usd: totalCost,
         model_usage_totals: modelTotals,
         daily_history: dailyHistory,
+        ai_credits_used_28d: aiCreditsUsed,
+        ai_adoption_phase: adoptionPhase,
+        total_agent_sessions: Math.floor(totalChats * 0.35),
       });
     }
 
@@ -522,7 +590,7 @@ export class MockDataGenerator {
    */
   public generateMonthlyUsageReportCSV(monthStr: string = '2026-08'): string {
     const lines: string[] = [
-      'date,username,product,sku,model,quantity,unit_type,applied_cost_per_quantity,gross_amount,discount_amount,net_amount,organization,cost_center_name',
+      'date,username,product,sku,model,quantity,unit_type,applied_cost_per_quantity,gross_amount,discount_amount,net_amount,organization,cost_center_name,ai_credits_consumed,token_count',
     ];
 
     const models = [
@@ -561,7 +629,7 @@ export class MockDataGenerator {
       const sku = isEnterprise ? 'copilot_enterprise' : 'copilot_business';
       const cost = isEnterprise ? 39.0 : 19.0;
       lines.push(
-        `${monthStr}-01,${u.login},copilot,${sku},,1,seats,${cost.toFixed(2)},${cost.toFixed(2)},0.00,${cost.toFixed(2)},${u.org},${u.cc}`
+        `${monthStr}-01,${u.login},copilot,${sku},,1,seats,${cost.toFixed(2)},${cost.toFixed(2)},0.00,${cost.toFixed(2)},${u.org},${u.cc},0,0`
       );
     }
 
@@ -582,9 +650,11 @@ export class MockDataGenerator {
         const gross = Number((reqCount * modelChoice.rate).toFixed(4));
         const discount = day % 5 === 0 ? Number((gross * 0.1).toFixed(4)) : 0;
         const net = Number((gross - discount).toFixed(4));
+        const credits = Math.floor(reqCount * 0.5);
+        const tokens = reqCount * 320;
 
         lines.push(
-          `${dateStr},${u.login},copilot,copilot_premium_request,"${modelChoice.name}",${reqCount},requests,${modelChoice.rate.toFixed(4)},${gross.toFixed(4)},${discount.toFixed(4)},${net.toFixed(4)},${u.org},${u.cc}`
+          `${dateStr},${u.login},copilot,copilot_premium_request,"${modelChoice.name}",${reqCount},requests,${modelChoice.rate.toFixed(4)},${gross.toFixed(4)},${discount.toFixed(4)},${net.toFixed(4)},${u.org},${u.cc},${credits},${tokens}`
         );
       }
     }

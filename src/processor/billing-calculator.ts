@@ -4,9 +4,20 @@ import {
   CostCenterBudget,
   EnrichedUserSeat,
   EnterpriseCostCenter,
-  UserSeatStatus,
 } from '../types/copilot.js';
 import { AttributeResolver } from '../collector/attribute-resolver.js';
+import { getSeatPricing, Money } from '../domain/value-objects/Money.js';
+import { SeatClassificationRule } from '../domain/rules/SeatClassificationRule.js';
+import { SeatBillingRule } from '../domain/rules/SeatBillingRule.js';
+import { CreditsBillingService } from '../application/services/CreditsBillingService.js';
+
+export const getCopilotPricing = (): Record<CopilotPlanType, number> => {
+  const pricing = getSeatPricing();
+  return {
+    business: pricing.business.amount,
+    enterprise: pricing.enterprise.amount,
+  };
+};
 
 export const COPILOT_PRICING: Record<CopilotPlanType, number> = {
   business: 19.0,
@@ -80,29 +91,43 @@ export class BillingCalculator {
       isDataUnavailable = true;
     }
 
+    const pricing = getCopilotPricing();
     const planType: CopilotPlanType = seat.plan_type === 'business' ? 'business' : 'enterprise';
-    const monthlyCost = COPILOT_PRICING[planType];
+    const monthlyCost = pricing[planType];
     const proratedDailyCost = Number((monthlyCost / daysInMonth).toFixed(4));
 
     // 非アクティブ日数とステータス判定
     let daysInactive = 999;
-    let status: UserSeatStatus = 'never_used';
+    let daysSinceCreation = 999;
+    if (seat.created_at) {
+      const createdDate = new Date(seat.created_at);
+      const diffMs = this.referenceDate.getTime() - createdDate.getTime();
+      daysSinceCreation = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+    }
 
     if (seat.last_activity_at) {
       const lastAct = new Date(seat.last_activity_at);
       const diffMs = this.referenceDate.getTime() - lastAct.getTime();
       daysInactive = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
-
-      if (daysInactive <= 14) {
-        status = 'active';
-      } else if (daysInactive <= 30) {
-        status = 'low_active';
-      } else {
-        status = 'idle';
-      }
-    } else {
-      status = 'never_used';
     }
+
+    const status = SeatClassificationRule.classify({
+      daysInactive,
+      daysSinceCreation,
+      aiCreditsUsed28d: seat.ai_credits_used,
+    });
+
+    const aiCreditsUsed28d = seat.ai_credits_used ?? 0;
+    const aiCreditsCostUsd = CreditsBillingService.calculateCreditsCost(aiCreditsUsed28d).amount;
+
+    const seatBilling = SeatBillingRule.evaluate({
+      createdAt: seat.created_at,
+      planType,
+      monthlyPrice: Money.fromUsd(monthlyCost),
+      targetMonth: this.referenceDate.toISOString().slice(0, 7),
+      daysInMonth,
+      isPrepaid: seat.prepaid ?? false,
+    });
 
     return {
       login: attr.login,
@@ -123,6 +148,10 @@ export class BillingCalculator {
       tags: attr.tags,
       is_data_unavailable: isDataUnavailable,
       cost_center_error: costCenterError,
+      ai_credits_used_28d: aiCreditsUsed28d,
+      ai_credits_cost_usd: aiCreditsCostUsd,
+      prepaid: seatBilling.isPrepaid,
+      billing_effective_date: seatBilling.billingEffectiveDate,
     };
   }
 
