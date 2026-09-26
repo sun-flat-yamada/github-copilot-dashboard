@@ -28,11 +28,12 @@ import { UserTrendViewer } from './components/UserTrendViewer';
 import { MonthlyReportKpis } from './components/monthly-report/MonthlyReportKpis';
 import { MonthlyReportCharts } from './components/monthly-report/MonthlyReportCharts';
 import { MonthlyReportUserTable } from './components/monthly-report/MonthlyReportUserTable';
-import { ModelRadarView } from './components/ModelRadarView';
-import { DeepAnalysisView } from './components/DeepAnalysisView';
-import { CreditsView } from './components/views/CreditsView';
-import { AgentActivityView } from './components/views/AgentActivityView';
-import { AdoptionMaturityView } from './components/views/AdoptionMaturityView';
+import { ViewSkeleton } from './components/common/ViewSkeleton';
+const ModelRadarView = React.lazy(() => import('./components/ModelRadarView').then(m => ({ default: m.ModelRadarView })));
+const DeepAnalysisView = React.lazy(() => import('./components/DeepAnalysisView').then(m => ({ default: m.DeepAnalysisView })));
+const CreditsView = React.lazy(() => import('./components/views/CreditsView').then(m => ({ default: m.CreditsView })));
+const AgentActivityView = React.lazy(() => import('./components/views/AgentActivityView').then(m => ({ default: m.AgentActivityView })));
+const AdoptionMaturityView = React.lazy(() => import('./components/views/AdoptionMaturityView').then(m => ({ default: m.AdoptionMaturityView })));
 import { CreditsPresenter } from '../../src/adapters/presenters/CreditsPresenter';
 import { AgentPresenter } from '../../src/adapters/presenters/AgentPresenter';
 import { AdoptionPresenter } from '../../src/adapters/presenters/AdoptionPresenter';
@@ -652,67 +653,70 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* View 6: ディープ分析 (Deep Analysis) */}
-        {activeView === 'deep_analysis' && (
-          <div className="flex flex-col space-y-6 w-full">
-            <DeepAnalysisView
-              aggregatedData={currentData}
-              userProfiles={deepAnalysisProfiles}
-              sourceInfo={deepAnalysisSourceInfo}
-              initialSelectedLogin={focusedUserLogin}
-              onSelectLogin={setFocusedUserLogin}
-            />
-          </div>
-        )}
+        {/* Lazy Loaded Dynamic Views (Suspense wrapped) */}
+        <React.Suspense fallback={<ViewSkeleton />}>
+          {/* View 6: ディープ分析 (Deep Analysis) */}
+          {activeView === 'deep_analysis' && (
+            <div className="flex flex-col space-y-6 w-full">
+              <DeepAnalysisView
+                aggregatedData={currentData}
+                userProfiles={deepAnalysisProfiles}
+                sourceInfo={deepAnalysisSourceInfo}
+                initialSelectedLogin={focusedUserLogin}
+                onSelectLogin={setFocusedUserLogin}
+              />
+            </div>
+          )}
 
-        {/* View 7: AIモデル特性レーダー (Model Radar) */}
-        {activeView === 'model_radar' && (
-          <div className="w-full">
-            <ModelRadarView
-              initialSelectedModelId={focusedRadarModelId}
-              aggregatedData={currentData}
-              monthlyReportData={currentReportData}
-              onNavigateToTrend={(modelId) => {
-                setFocusedRadarModelId(modelId);
-                setActiveView('trend');
-              }}
-            />
-          </div>
-        )}
+          {/* View 7: AIモデル特性レーダー (Model Radar) */}
+          {activeView === 'model_radar' && (
+            <div className="w-full">
+              <ModelRadarView
+                initialSelectedModelId={focusedRadarModelId}
+                aggregatedData={currentData}
+                monthlyReportData={currentReportData}
+                onNavigateToTrend={(modelId) => {
+                  setFocusedRadarModelId(modelId);
+                  setActiveView('trend');
+                }}
+              />
+            </div>
+          )}
 
-        {/* View 8: AI Credits & コスト分析 (Credits) */}
-        {activeView === 'credits' && (
-          <div className="w-full">
-            <CreditsView
-              viewModel={CreditsPresenter.present({
-                currentData,
-                currentReportData,
-              })}
-            />
-          </div>
-        )}
+          {/* View 8: AI Credits & コスト分析 (Credits) */}
+          {activeView === 'credits' && (
+            <div className="w-full">
+              <CreditsView
+                viewModel={CreditsPresenter.present({
+                  currentData,
+                  currentReportData,
+                })}
+              />
+            </div>
+          )}
 
-        {/* View 9: AI Agent & MCP 活用動向 (Agent) */}
-        {activeView === 'agent' && (
-          <div className="w-full">
-            <AgentActivityView
-              viewModel={AgentPresenter.present({
-                currentData,
-              })}
-            />
-          </div>
-        )}
+          {/* View 9: AI Agent & MCP 活用動向 (Agent) */}
+          {activeView === 'agent' && (
+            <div className="w-full">
+              <AgentActivityView
+                viewModel={AgentPresenter.present({
+                  currentData,
+                })}
+              />
+            </div>
+          )}
 
-        {/* View 10: AI 採用成熟度 (Adoption) */}
-        {activeView === 'adoption' && (
-          <div className="w-full">
-            <AdoptionMaturityView
-              viewModel={AdoptionPresenter.present({
-                currentData,
-              })}
-            />
-          </div>
-        )}
+          {/* View 10: AI 採用成熟度 (Adoption) */}
+          {activeView === 'adoption' && (
+            <div className="w-full">
+              <AdoptionMaturityView
+                viewModel={AdoptionPresenter.present({
+                  currentData,
+                })}
+              />
+            </div>
+          )}
+        </React.Suspense>
       </main>
 
       {/* 異常検出ログモーダル */}

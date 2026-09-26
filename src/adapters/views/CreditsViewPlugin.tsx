@@ -1,7 +1,13 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { ViewPlugin, ViewPluginProps } from './ViewPlugin.js';
 import { CreditsPresenter, CreditsViewModel } from '../presenters/CreditsPresenter.js';
-import { CreditsView } from '../../../dashboard/src/components/views/CreditsView.js';
+import { ViewSkeleton } from '../../../dashboard/src/components/common/ViewSkeleton.js';
+
+const CreditsView = lazy(() =>
+  import('../../../dashboard/src/components/views/CreditsView.js').then((m) => ({
+    default: m.CreditsView,
+  }))
+);
 
 export const CreditsViewComponent: React.FC<ViewPluginProps<CreditsViewModel>> = (props) => {
   const { presenter, currentData, currentReportData, creditsAnalysis } = props;
@@ -11,7 +17,11 @@ export const CreditsViewComponent: React.FC<ViewPluginProps<CreditsViewModel>> =
     creditsAnalysis,
   });
 
-  return <CreditsView viewModel={viewModel} />;
+  return (
+    <Suspense fallback={<ViewSkeleton />}>
+      <CreditsView viewModel={viewModel} />
+    </Suspense>
+  );
 };
 
 export const CreditsViewPlugin: ViewPlugin<CreditsViewModel> = {

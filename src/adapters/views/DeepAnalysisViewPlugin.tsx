@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { ViewPlugin, ViewPluginProps } from './ViewPlugin.js';
 import { DeepAnalysisPresenter, DeepAnalysisViewModel } from '../presenters/DeepAnalysisPresenter.js';
-import { DeepAnalysisView } from '../../../dashboard/src/components/DeepAnalysisView.js';
+import { ViewSkeleton } from '../../../dashboard/src/components/common/ViewSkeleton.js';
 import { DeepAnalysisDataSourceInfo } from '../../domain/entities/deep-analysis.js';
+
+const DeepAnalysisView = lazy(() =>
+  import('../../../dashboard/src/components/DeepAnalysisView.js').then((m) => ({
+    default: m.DeepAnalysisView,
+  }))
+);
 
 export const DeepAnalysisViewComponent: React.FC<ViewPluginProps<DeepAnalysisViewModel>> = (props) => {
   const {
@@ -14,15 +20,17 @@ export const DeepAnalysisViewComponent: React.FC<ViewPluginProps<DeepAnalysisVie
   } = props;
 
   return (
-    <div className="flex flex-col space-y-6 w-full">
-      <DeepAnalysisView
-        aggregatedData={currentData}
-        userProfiles={deepAnalysisProfiles}
-        sourceInfo={deepAnalysisSourceInfo as DeepAnalysisDataSourceInfo | undefined}
-        initialSelectedLogin={focusedUserLogin}
-        onSelectLogin={setFocusedUserLogin || (() => {})}
-      />
-    </div>
+    <Suspense fallback={<ViewSkeleton />}>
+      <div className="flex flex-col space-y-6 w-full">
+        <DeepAnalysisView
+          aggregatedData={currentData}
+          userProfiles={deepAnalysisProfiles}
+          sourceInfo={deepAnalysisSourceInfo as DeepAnalysisDataSourceInfo | undefined}
+          initialSelectedLogin={focusedUserLogin}
+          onSelectLogin={setFocusedUserLogin || (() => {})}
+        />
+      </div>
+    </Suspense>
   );
 };
 
