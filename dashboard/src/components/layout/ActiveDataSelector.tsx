@@ -164,71 +164,135 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
     return { matched: 0, total: 0 };
   })();
 
+  // フィルター要素の分配 (少なくとも6要素を表示、上段・下段の2行均等配分)
+  const MAX_VISIBLE_BADGES = 6;
+  const visibleBadges = filterBadges.slice(0, MAX_VISIBLE_BADGES);
+  const remainingCount = filterBadges.length - visibleBadges.length;
+  const splitIndex =
+    visibleBadges.length <= 3
+      ? visibleBadges.length
+      : Math.ceil(visibleBadges.length / 2);
+  const firstRowBadges = visibleBadges.slice(0, splitIndex);
+  const secondRowBadges = visibleBadges.slice(splitIndex);
+
+  // ホバー時チップ用テキスト (全内容およびショートカットTipsを明記)
+  const getTooltipText = () => {
+    const shortcutText = '(ショートカット: / または Ctrl+K)';
+    const sourceInfo = `【${details.title}】期間/スコープ: ${details.subtitle}`;
+
+    if (!isFiltered) {
+      return `${sourceInfo}\nフィルター: なし (全体: ${counts.total}名)\nクリックしてデータソースおよびフィルター条件を変更 ${shortcutText}`;
+    }
+
+    const filterList = filterBadges.map((b) => b.label).join(', ');
+    return `${sourceInfo}\n適用フィルター (${filterBadges.length}件 / 該当: ${counts.matched}名 / 全体: ${counts.total}名):\n・${filterList}\nクリックしてデータソースおよびフィルター条件を変更 ${shortcutText}`;
+  };
+
   return (
-    <div className="flex items-center space-x-1.5">
-      {/* 統合データバッジ & トリガーボタン */}
+    <div className="flex items-center space-x-1.5 h-full">
+      {/* 統合データバッジ & トリガーボタン (タイトル表示部と同等の高さを活用した2行レイアウト) */}
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700/80 hover:border-indigo-500/80 hover:bg-slate-850 transition-all cursor-pointer shadow-sm group select-none max-w-[500px]"
-        title="クリックして分析対象データソースおよびANDフィルター条件を変更 (ショートカット: / または Ctrl+K)"
+        className="flex items-center space-x-2.5 px-3 py-1 sm:py-1.5 rounded-xl bg-slate-900 border border-slate-700/80 hover:border-indigo-500/80 hover:bg-slate-850 transition-all cursor-pointer shadow-sm group select-none max-w-full"
+        title={getTooltipText()}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
       >
-        {/* ソースインジケーター */}
-        <div className="flex items-center space-x-1.5 shrink-0">
-          <span className="relative flex h-2 w-2">
-            <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${details.dotColor}`} />
-            <span className={`relative inline-flex rounded-full h-2 w-2 ${details.dotColor}`} />
-          </span>
-          <div className="p-1 rounded-md bg-slate-800 text-slate-300 group-hover:text-white">
+        {/* ソースインジケーター & 2行ソース情報 (タイトル表示部と調和する階層構造) */}
+        <div className="flex items-center space-x-2 shrink-0">
+          <div className="relative flex items-center justify-center p-1.5 rounded-lg bg-slate-800 text-slate-300 group-hover:text-white shrink-0">
+            <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+              <span
+                className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${details.dotColor}`}
+              />
+              <span
+                className={`relative inline-flex rounded-full h-2 w-2 ${details.dotColor}`}
+              />
+            </span>
             {details.icon}
+          </div>
+          <div className="flex flex-col text-left justify-center shrink-0">
+            <span className="text-xs font-bold text-white tracking-tight leading-none">
+              {details.title}
+            </span>
+            <span className="inline-flex items-center text-[10px] px-1.5 py-0.2 rounded border bg-slate-950/70 border-slate-700/80 text-slate-300 font-mono leading-tight mt-1 self-start">
+              {details.subtitle}
+            </span>
           </div>
         </div>
 
-        {/* ソース名称 & 期間 */}
-        <div className="flex items-center space-x-1.5 shrink-0 text-left">
-          <span className="text-xs font-bold text-white tracking-tight">
-            {details.title}
-          </span>
-          <span className="text-[11px] px-1.5 py-0.2 rounded border bg-slate-950/70 border-slate-700 text-slate-300 font-mono">
-            {details.subtitle}
-          </span>
-        </div>
-
         {/* ディバイダー */}
-        <div className="w-px h-3.5 bg-slate-700 shrink-0" />
+        <div className="w-px h-8 bg-slate-700/80 shrink-0" />
 
-        {/* フィルター要約ピル (未適用時は「全体」、適用時はチップ要約) */}
-        <div className="flex items-center space-x-1 overflow-hidden shrink min-w-0">
+        {/* フィルター要約ピル (タイトル部と同等の高さを活用した2行配置・少なくとも6要素表示) */}
+        <div className="flex flex-col justify-center min-w-0 shrink">
           {!isFiltered ? (
-            <span className="text-[11px] text-slate-400 truncate">
-              フィルタなし (全体: {counts.total}名)
-            </span>
-          ) : (
-            <div className="flex items-center space-x-1 truncate">
-              <Filter className="w-3 h-3 text-purple-400 shrink-0" />
-              {filterBadges.slice(0, 2).map((b) => (
-                <span
-                  key={b.key}
-                  className="text-[10px] px-1.5 py-0.2 rounded bg-purple-950/80 text-purple-300 border border-purple-800 font-medium truncate max-w-[100px]"
-                >
-                  {b.label}
-                </span>
-              ))}
-              {filterBadges.length > 2 && (
-                <span className="text-[10px] px-1 py-0.2 rounded bg-slate-800 text-slate-300 font-bold">
-                  +{filterBadges.length - 2}
-                </span>
-              )}
-              <span className="text-[11px] text-indigo-300 font-semibold ml-1 shrink-0">
-                ({counts.matched}名)
+            <div className="flex flex-col text-left justify-center px-0.5">
+              <span className="text-[11px] text-slate-300 font-medium leading-none">
+                フィルタなし
               </span>
+              <span className="text-[10px] text-slate-500 font-mono leading-tight mt-1">
+                全体: {counts.total}名
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-col justify-center space-y-1 min-w-0">
+              {/* 1行目: 最大3要素 */}
+              <div className="flex items-center space-x-1 min-w-0">
+                <Filter className="w-3 h-3 text-purple-400 shrink-0" />
+                {firstRowBadges.map((b) => (
+                  <span
+                    key={b.key}
+                    title={b.label}
+                    className="text-[10px] px-1.5 py-0.2 rounded bg-purple-950/80 text-purple-300 border border-purple-800 font-medium truncate max-w-[85px] sm:max-w-[110px]"
+                  >
+                    {b.label}
+                  </span>
+                ))}
+                {secondRowBadges.length === 0 && (
+                  <span className="text-[10px] text-indigo-300 font-semibold ml-0.5 shrink-0 whitespace-nowrap">
+                    ({counts.matched}名)
+                  </span>
+                )}
+              </div>
+              {/* 2行目: 次の最大3要素 + 残数 + 該当人数 */}
+              {secondRowBadges.length > 0 && (
+                <div className="flex items-center space-x-1 min-w-0">
+                  {secondRowBadges.map((b) => (
+                    <span
+                      key={b.key}
+                      title={b.label}
+                      className="text-[10px] px-1.5 py-0.2 rounded bg-purple-950/80 text-purple-300 border border-purple-800 font-medium truncate max-w-[85px] sm:max-w-[110px]"
+                    >
+                      {b.label}
+                    </span>
+                  ))}
+                  {remainingCount > 0 && (
+                    <span
+                      title={`他 ${remainingCount} 件: ${filterBadges
+                        .slice(MAX_VISIBLE_BADGES)
+                        .map((b) => b.label)
+                        .join(', ')}`}
+                      className="text-[10px] px-1 py-0.2 rounded bg-slate-800 text-slate-300 font-bold shrink-0"
+                    >
+                      +{remainingCount}
+                    </span>
+                  )}
+                  <span className="text-[10px] text-indigo-300 font-semibold ml-0.5 shrink-0 whitespace-nowrap">
+                    ({counts.matched}名)
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform duration-200 shrink-0 ml-1 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown
+          className={`w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform duration-200 shrink-0 ml-0.5 ${
+            isOpen ? 'rotate-180' : ''
+          }`}
+        />
       </button>
 
       {/* ワンクリック全解除ボタン */}
@@ -236,7 +300,7 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
         <button
           type="button"
           onClick={onResetFilterCriteria}
-          className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-rose-700/80 hover:bg-rose-950/50 text-slate-400 hover:text-rose-300 transition-all cursor-pointer shadow-sm"
+          className="self-stretch p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-rose-700/80 hover:bg-rose-950/50 text-slate-400 hover:text-rose-300 transition-all cursor-pointer shadow-sm flex items-center justify-center shrink-0"
           title="すべてのフィルター条件を即座に解除して全体表示に戻す"
           aria-label="フィルター全解除"
         >
