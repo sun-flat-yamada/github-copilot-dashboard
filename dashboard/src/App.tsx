@@ -96,6 +96,14 @@ export const App: React.FC = () => {
     isDemoMode,
     toggleDemoMode,
     activeDataIsDemoSourced,
+    // 統合フィルター条件 (2階層特定モデル & SDD-15)
+    filterCriteria,
+    setFilterCriteria,
+    resetFilterCriteria,
+    datasetVersionKey,
+    availableCostCenters,
+    availableOrganizations,
+    availableGroups: hookAvailableGroups,
   } = useDashboardData('live_metrics');
 
   // ディープ分析用データ統合フック (Live Metrics / Monthly Report / User Upload 全対応)
@@ -299,6 +307,15 @@ export const App: React.FC = () => {
         uploadedData={uploadedData}
         onUploadFileLoaded={handleUploadFileLoaded}
         onClearUploadedFile={handleClearUploadedFile}
+        filterCriteria={filterCriteria}
+        onApplyFilterCriteria={setFilterCriteria}
+        onResetFilterCriteria={resetFilterCriteria}
+        availableCostCenters={availableCostCenters}
+        availableOrganizations={availableOrganizations}
+        availableGroups={hookAvailableGroups}
+        availableTags={availableTags}
+        currentScopeData={currentData}
+        currentReportData={currentReportData}
         repoInfo={repoInfo}
         isStarred={isStarred}
         onToggleStar={handleToggleStar}
@@ -320,8 +337,8 @@ export const App: React.FC = () => {
         activeSource={activeSource}
       />
 
-      {/* 3. メインコンテンツエリア (フルレスポンシブ & 1カラム垂直スタック ★要件5) */}
-      <main className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col space-y-6">
+      {/* 3. メインコンテンツエリア (フルレスポンシブ & 1カラム垂直スタック ★要件5 & 構造的リアクティビティキーイング SDD-15) */}
+      <main className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col space-y-6" key={datasetVersionKey}>
         {/* コントロールバー: スコープ表示 & 3軸グループセレクタ & タグANDフィルター ★要件7 */}
         <div className="flex flex-col space-y-3 bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80 shadow-sm">
           {/* Live Metrics 時のみスコープセレクタ表示 */}

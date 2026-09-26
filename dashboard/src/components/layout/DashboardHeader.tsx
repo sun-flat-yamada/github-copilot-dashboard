@@ -4,6 +4,9 @@ import {
   AnalysisScopeType,
   IndexMetadata,
   MonthlyReportAggregatedData,
+  ScopeAggregatedData,
+  FilterCriteria,
+  DEFAULT_FILTER_CRITERIA,
 } from '../../../../src/types/copilot';
 import { ActiveDataSelector } from './ActiveDataSelector';
 import { CurrencySelector } from './CurrencySelector';
@@ -32,6 +35,16 @@ interface DashboardHeaderProps {
   uploadedData: MonthlyReportAggregatedData | null;
   onUploadFileLoaded: (data: MonthlyReportAggregatedData) => void;
   onClearUploadedFile: () => void;
+  // 統合フィルター条件 (2階層特定モデル & SDD-15)
+  filterCriteria?: FilterCriteria;
+  onApplyFilterCriteria?: (criteria: FilterCriteria) => void;
+  onResetFilterCriteria?: () => void;
+  availableCostCenters?: string[];
+  availableOrganizations?: string[];
+  availableGroups?: string[];
+  availableTags?: string[];
+  currentScopeData?: ScopeAggregatedData | null;
+  currentReportData?: MonthlyReportAggregatedData | null;
   repoInfo: RepoInfo;
   isStarred: boolean;
   onToggleStar: () => void;
@@ -123,6 +136,15 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   uploadedData,
   onUploadFileLoaded,
   onClearUploadedFile,
+  filterCriteria = DEFAULT_FILTER_CRITERIA,
+  onApplyFilterCriteria = () => {},
+  onResetFilterCriteria = () => {},
+  availableCostCenters = [],
+  availableOrganizations = [],
+  availableGroups = [],
+  availableTags = [],
+  currentScopeData = null,
+  currentReportData = null,
   repoInfo,
   isStarred,
   onToggleStar,
@@ -201,7 +223,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
         {/* 右側アクション (アクティブデータ選択、リポジトリリンク、エラー通知) */}
         <div className="flex items-center space-x-2 sm:space-x-3 text-xs min-w-0 flex-shrink justify-end">
-          {/* アクティブデータセレクター (要件1: Live Metrics / Monthly Report / User Upload) */}
+          {/* アクティブデータセレクター (要件1: 自動定期収集 / 月次レポート / オンデマンドCSV ＋ 要件2: ANDフィルター) */}
           <ActiveDataSelector
             activeSource={activeSource}
             onSelectSource={onSelectSource}
@@ -215,6 +237,15 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             uploadedData={uploadedData}
             onUploadFileLoaded={onUploadFileLoaded}
             onClearUploadedFile={onClearUploadedFile}
+            filterCriteria={filterCriteria}
+            onApplyFilterCriteria={onApplyFilterCriteria}
+            onResetFilterCriteria={onResetFilterCriteria}
+            availableCostCenters={availableCostCenters}
+            availableOrganizations={availableOrganizations}
+            availableGroups={availableGroups}
+            availableTags={availableTags}
+            currentScopeData={currentScopeData}
+            currentReportData={currentReportData}
           />
 
           {/* 通貨セレクター (USD常時基本表示 + 任意サブ通貨切り替え) */}

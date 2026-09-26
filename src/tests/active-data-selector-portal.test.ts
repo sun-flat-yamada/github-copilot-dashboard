@@ -3,10 +3,14 @@ import assert from 'node:assert';
 import * as fs from 'fs';
 import * as path from 'path';
 
-describe('ActiveDataSelector Viewport Layout, Pinned Offset & React Portal Tests', () => {
-  const componentPath = path.resolve(
+describe('ActiveDataSelector & DataSelectionModal Viewport Layout & React Portal Tests', () => {
+  const triggerComponentPath = path.resolve(
     process.cwd(),
     'dashboard/src/components/layout/ActiveDataSelector.tsx'
+  );
+  const modalComponentPath = path.resolve(
+    process.cwd(),
+    'dashboard/src/components/layout/DataSelectionModal.tsx'
   );
   const specJaPath = path.resolve(
     process.cwd(),
@@ -17,21 +21,36 @@ describe('ActiveDataSelector Viewport Layout, Pinned Offset & React Portal Tests
     'docs/specifications/07_dashboard_ui_ux_spec.md'
   );
 
-  it('verifies ActiveDataSelector imports createPortal from react-dom', () => {
-    const content = fs.readFileSync(componentPath, 'utf-8');
+  it('verifies ActiveDataSelector embeds DataSelectionModal and provides modal trigger & reset', () => {
+    const content = fs.readFileSync(triggerComponentPath, 'utf-8');
     assert.match(
       content,
-      /import\s+.*createPortal.*from\s+['"]react-dom['"]/,
-      'ActiveDataSelector must import createPortal from react-dom'
+      /import\s+.*DataSelectionModal.*from\s+['"]\.\/DataSelectionModal['"]/,
+      'ActiveDataSelector must import DataSelectionModal'
+    );
+    assert.match(
+      content,
+      /<DataSelectionModal/,
+      'ActiveDataSelector must render DataSelectionModal'
+    );
+    assert.match(
+      content,
+      /onResetFilterCriteria/,
+      'ActiveDataSelector must support one-click reset for filter criteria'
     );
   });
 
-  it('verifies ActiveDataSelector mounts modal via createPortal to document.body', () => {
-    const content = fs.readFileSync(componentPath, 'utf-8');
+  it('verifies DataSelectionModal imports createPortal from react-dom and mounts to document.body', () => {
+    const content = fs.readFileSync(modalComponentPath, 'utf-8');
+    assert.match(
+      content,
+      /import\s+.*createPortal.*from\s+['"]react-dom['"]/,
+      'DataSelectionModal must import createPortal from react-dom'
+    );
     assert.match(
       content,
       /createPortal\s*\(/,
-      'ActiveDataSelector must call createPortal to mount modal'
+      'DataSelectionModal must call createPortal to mount modal'
     );
     assert.match(
       content,
@@ -40,51 +59,30 @@ describe('ActiveDataSelector Viewport Layout, Pinned Offset & React Portal Tests
     );
     assert.match(
       content,
-      /typeof\s+document\s*!==\s*['"]undefined['"]/,
+      /typeof\s+document\s*(!==|===)\s*['"]undefined['"]/,
       'Must include SSR/safe environment guard before accessing document'
     );
   });
 
-  it('verifies ActiveDataSelector pins top offset and avoids viewport vertical centering', () => {
-    const content = fs.readFileSync(componentPath, 'utf-8');
-    // Must use items-start to pin top offset instead of items-center
+  it('verifies DataSelectionModal utilizes screen real estate with fixed modal height and internal scrolling', () => {
+    const content = fs.readFileSync(modalComponentPath, 'utf-8');
+    // Screen utilization: large width and height
     assert.match(
       content,
-      /items-start/,
-      'Modal container must use items-start to pin top offset and prevent jitter on tab switch'
+      /w-\[92vw\]\s+max-w-5xl\s+h-\[85vh\]/,
+      'Modal card must utilize screen real estate (w-[92vw] max-w-5xl h-[85vh])'
     );
-    assert.doesNotMatch(
-      content,
-      /items-center justify-center.*bg-black/,
-      'Must not vertically center the backdrop container to avoid vertical shifting'
-    );
-    // Top padding offset
-    assert.match(
-      content,
-      /pt-16\s+sm:pt-20/,
-      'Modal container must have top padding offset (pt-16 sm:pt-20)'
-    );
-  });
-
-  it('verifies ActiveDataSelector fixes modal card height and enables internal scrolling', () => {
-    const content = fs.readFileSync(componentPath, 'utf-8');
-    // Fixed vertical height
-    assert.match(
-      content,
-      /h-\[600px\]/,
-      'Modal card must enforce fixed vertical height h-[600px] to prevent height jumping'
-    );
-    // Fixed headers, tabs and footers
+    // Fixed headers and footers
     assert.match(
       content,
       /flex-shrink-0/,
-      'Header, tabs and footer must set flex-shrink-0'
+      'Header and footer must set flex-shrink-0 to prevent collapsing'
     );
     // Internal body scroll container
     assert.match(
       content,
-      /flex-1\s+min-h-0\s+overflow-y-auto/,
-      'Modal body must have flex-1 min-h-0 overflow-y-auto for internal scrolling'
+      /overflow-y-auto/,
+      'Modal body columns must enable internal vertical scrolling'
     );
     // Dialog accessibility semantics
     assert.match(
@@ -99,7 +97,7 @@ describe('ActiveDataSelector Viewport Layout, Pinned Offset & React Portal Tests
     );
   });
 
-  it('verifies SDD specifications reflect pinned top offset and fixed height layout', () => {
+  it('verifies SDD specifications reflect createPortal isolation, large modal layout, and reactive update contract', () => {
     const jaContent = fs.readFileSync(specJaPath, 'utf-8');
     const enContent = fs.readFileSync(specEnPath, 'utf-8');
 
@@ -110,13 +108,13 @@ describe('ActiveDataSelector Viewport Layout, Pinned Offset & React Portal Tests
     );
     assert.match(
       jaContent,
-      /items-start pt-16 sm:pt-20/,
-      '07_dashboard_ui_ux_spec.ja.md must document pinned top offset'
+      /DataSelectionModal/,
+      '07_dashboard_ui_ux_spec.ja.md must document DataSelectionModal'
     );
     assert.match(
       jaContent,
-      /h-\[600px\]/,
-      '07_dashboard_ui_ux_spec.ja.md must document fixed modal height'
+      /datasetVersionKey/,
+      '07_dashboard_ui_ux_spec.ja.md must document reactive datasetVersionKey guarantee'
     );
 
     assert.match(
@@ -126,13 +124,13 @@ describe('ActiveDataSelector Viewport Layout, Pinned Offset & React Portal Tests
     );
     assert.match(
       enContent,
-      /items-start pt-16 sm:pt-20/,
-      '07_dashboard_ui_ux_spec.md must document pinned top offset'
+      /DataSelectionModal/,
+      '07_dashboard_ui_ux_spec.md must document DataSelectionModal'
     );
     assert.match(
       enContent,
-      /h-\[600px\]/,
-      '07_dashboard_ui_ux_spec.md must document fixed modal height'
+      /datasetVersionKey/,
+      '07_dashboard_ui_ux_spec.md must document reactive datasetVersionKey guarantee'
     );
   });
 });

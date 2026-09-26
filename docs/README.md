@@ -40,7 +40,11 @@ Step-by-step instructions for deploying and operating the dashboard in enterpris
 - **Authentication & Scopes**: Personal Access Tokens, Enterprise vs. Organization scopes, and Graceful Credentials handling.
 - **EMU & Fork-Restricted Orgs**: Mirror duplication procedures without GitHub Fork ([SDD-13](specifications/13_fork_restricted_environment_setup_guide.md)).
 
-### 3. [🤖 AI Models & Token Pricing Reference](models_pricing.md)
+### 3. [📖 User Manuals](manuals/user_guide_data_selection_and_filtering.md)
+Practical guides for dashboard users and administrators:
+- **[Data Selection & Hierarchical AND Filtering Guide](manuals/user_guide_data_selection_and_filtering.md)**: Comprehensive manual for the two-tier data selection model (automated data, monthly reports, on-demand CSVs), multi-axis AND filters, and keyboard shortcuts.
+
+### 4. [🤖 AI Models & Token Pricing Reference](models_pricing.md)
 Official 2026 reference prices and token cost metrics for all supported models:
 - **OpenAI Family**: GPT-6 Astra, GPT-5.6 (Sol/Terra/Luna), GPT-5.5, GPT-5.4, GPT-5.3-Codex, GPT-5 mini.
 - **Anthropic Family**: Claude 5 (Opus/Sonnet/Fable), Claude 4.8, Claude 4.7, Claude 4.6, Claude 4.5 Haiku.

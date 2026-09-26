@@ -40,7 +40,11 @@ flowchart TD
 - **認証とデータ取得スコープ**: Fine-grained PAT、Enterprise単位／複数Org単位、認証フォールバック機能。
 - **EMU・Fork制限組織向け手順**: GitHub Fork を使えない組織向けのミラー複製方式 ([SDD-13](specifications/13_fork_restricted_environment_setup_guide.ja.md))。
 
-### 3. [🤖 AIモデル & トークン単価リファレンス](models_pricing.md)
+### 3. [📖 ユーザー利用マニュアル (User Manuals)](manuals/user_guide_data_selection_and_filtering.ja.md)
+ダッシュボード利用者のための実践操作マニュアル：
+- **[分析対象データ選択 & ANDフィルター利用ガイド](manuals/user_guide_data_selection_and_filtering.ja.md)**: 2階層データ特定モデル（自動定期収集・月次レポート・オンデマンドCSV）および多軸ANDフィルター（組織・属性・正規表現検索）、ショートカット操作の完全ガイド。
+
+### 4. [🤖 AIモデル & トークン単価リファレンス](models_pricing.md)
 2026年最新の GitHub Copilot サポートAIモデル一覧とトークン単価表：
 - **OpenAI シリーズ**: GPT-6 Astra, GPT-5.6 (Sol/Terra/Luna), GPT-5.5, GPT-5.4, GPT-5.3-Codex, GPT-5 mini
 - **Anthropic シリーズ**: Claude 5 (Opus/Sonnet/Fable), Claude 4.8, Claude 4.7, Claude 4.6, Claude 4.5 Haiku
