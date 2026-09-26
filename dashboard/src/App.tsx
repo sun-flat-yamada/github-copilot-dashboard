@@ -12,7 +12,6 @@ import { useDeepAnalysisData } from './hooks/useDeepAnalysisData';
 import { useTheme } from './hooks/useTheme';
 import { DashboardHeader } from './components/layout/DashboardHeader';
 import { ViewNavigation } from './components/layout/ViewNavigation';
-import { ScopeSelector } from './components/ScopeSelector';
 import { GroupingSelector } from './components/GroupingSelector';
 import { TagFilterBar } from './components/TagFilterBar';
 import { CollapsibleSection } from './components/common/CollapsibleSection';
@@ -339,19 +338,9 @@ export const App: React.FC = () => {
 
       {/* 3. メインコンテンツエリア (フルレスポンシブ & 1カラム垂直スタック ★要件5 & 構造的リアクティビティキーイング SDD-15) */}
       <main className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col space-y-6" key={datasetVersionKey}>
-        {/* コントロールバー: スコープ表示 & 3軸グループセレクタ & タグANDフィルター ★要件7 */}
+        {/* コントロールバー: 3軸グループセレクタ & タグANDフィルター ★要件7 */}
         <div className="flex flex-col space-y-3 bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80 shadow-sm">
-          {/* Live Metrics 時のみスコープセレクタ表示 */}
-          {activeSource === 'live_metrics' && (
-            <ScopeSelector
-              indexMeta={indexMeta}
-              scopeType={scopeType}
-              selectedKey={selectedKey}
-              onScopeChange={handleScopeChange}
-            />
-          )}
-
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1 border-t border-slate-800/60">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <GroupingSelector
               currentGrouping={currentGrouping}
               onGroupingChange={handleGroupingChange}

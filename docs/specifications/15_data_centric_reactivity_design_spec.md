@@ -14,7 +14,7 @@
 
 ## 1. Purpose & Background
 
-This dashboard keeps the **Active Data Source selector (`ActiveDataSelector`)**, **Scope selector (`ScopeSelector`)**, and **Tag AND filter bar (`TagFilterBar`)** permanently mounted as a shared, global control bar, beneath which 6 dedicated analysis Views (`ViewNavigation`, SDD-01 FR-8) are switched in and out.
+This dashboard keeps the **Active Data Source selector (`ActiveDataSelector`)** (consolidating scope selection), main control bar **3-axis Group selector (`GroupingSelector`)**, and **Tag AND filter bar (`TagFilterBar`)** permanently mounted as shared, global controls, beneath which 6 dedicated analysis Views (`ViewNavigation`, SDD-01 FR-8) are switched in and out.
 
 This structure carries a subtle, easy-to-miss structural trap:
 
@@ -70,7 +70,7 @@ The structural lessons common to both cases are generalized in Sections 2 and 3 
 - **Do not casually introduce a "one-time initialization flag"**: A flag such as `hasInitializedRef.current = true` that, once set, never reverts to `false`, permanently blocks recomputation for the lifetime of the component instance — and since the View is never remounted on filter/scope change, this permanently blocks legitimate future data-tracking too. When a default auto-selection needs to coexist with manual user selection, split this into **two refs with distinct intent**:
   - `isManualSelectionRef`: `true` only once the user has explicitly interacted. While `true`, suppress system auto-recomputation.
   - (If needed) `appliedXxxRef`: records the last-applied explicit value, used solely to prevent infinite loops from reapplying the same value.
-- **Design around the fact that Views are not unmounted**: Since `TagFilterBar` / `ScopeSelector` / `ActiveDataSelector` are rendered as siblings outside each View, changes to them do not remount the View. Views must clearly separate "effects that run once on mount" from "effects that must run every time the Active Selected Data changes."
+- **Design around the fact that Views are not unmounted**: Since `TagFilterBar` / `GroupingSelector` / `ActiveDataSelector` are rendered as siblings outside each View, changes to them do not remount the View. Views must clearly separate "effects that run once on mount" from "effects that must run every time the Active Selected Data changes."
 
 ### 3.4 Fallback Path Parity
 - When a value can be computed via multiple data-source paths (e.g., Live Metrics preferred, falling back to Monthly Report when empty), **the fallback path must reference derived data filtered under the exact same conditions as the primary path**. A path being a "fallback" is never a valid excuse for skipping filter support.
