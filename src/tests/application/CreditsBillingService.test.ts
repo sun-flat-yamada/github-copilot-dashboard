@@ -20,6 +20,20 @@ describe('CreditsBillingService Tests (P6-A-9)', () => {
       const cost = CreditsBillingService.calculateCreditsCost(200, 0.08);
       assert.equal(cost.amount, 16.0);
     });
+
+    it('calculates cost using EA contractual custom rate (e.g. 1.273 JPY/AIC)', () => {
+      const eaConfig = {
+        currency: { code: 'JPY', symbol: '¥', exchangeRateFromUSD: 150, displayDecimals: 0 },
+        seatPricing: { businessMonthlyUSD: 19, enterpriseMonthlyUSD: 39 },
+        creditsPricing: { costPerCreditUSD: 0.01, includedCreditsPerSeat: 3900 },
+        discountPercent: 15,
+        customPricePerCredit: 1.273, // Contractual exact unit rate
+      };
+      const cost = CreditsBillingService.calculateCreditsCost(1000, undefined, eaConfig);
+      assert.equal(cost.amount, 1273);
+      assert.equal(cost.currency, 'JPY');
+      assert.equal(cost.formatWithCurrency(eaConfig.currency), '¥1,273');
+    });
   });
 
   describe('calculateModelCredits', () => {

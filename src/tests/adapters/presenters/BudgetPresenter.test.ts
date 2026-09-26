@@ -54,7 +54,7 @@ describe('BudgetPresenter Tests', () => {
 
     // Card 1
     assert.strictEqual(vm.cards[0].costCenterName, 'Core Engineering');
-    assert.strictEqual(vm.cards[0].spendingLimitFormatted, '$1000.00');
+    assert.strictEqual(vm.cards[0].spendingLimitFormatted, '$1,000.00');
     assert.strictEqual(vm.cards[0].currentSpendFormatted, '$850.00');
     assert.strictEqual(vm.cards[0].status, 'normal');
     assert.strictEqual(vm.cards[0].isOverBudget, false);
@@ -65,8 +65,9 @@ describe('BudgetPresenter Tests', () => {
     assert.strictEqual(vm.cards[1].isOverBudget, true);
 
     // Summary
-    assert.strictEqual(vm.summary.totalLimitFormatted, '$3000.00');
-    assert.strictEqual(vm.summary.totalSpendFormatted, '$3050.00');
+    assert.strictEqual(vm.currencySymbol, '$');
+    assert.strictEqual(vm.summary.totalLimitFormatted, '$3,000.00');
+    assert.strictEqual(vm.summary.totalSpendFormatted, '$3,050.00');
     assert.strictEqual(vm.summary.alertCount, 1);
     assert.strictEqual(vm.summary.overallUtilizationPercent, 102);
   });

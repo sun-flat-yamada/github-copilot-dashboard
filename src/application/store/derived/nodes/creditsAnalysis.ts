@@ -2,10 +2,16 @@ import { DerivedDataNode } from '../DerivedDataGraph.js';
 import { DataStoreState } from '../../DataStoreState.js';
 import { ScopeAggregatedData, MonthlyReportAggregatedData } from '../../../../domain/entities/copilot.js';
 import { CreditsBillingService } from '../../../services/CreditsBillingService.js';
+import { BillingConfigLoader } from '../../../../adapters/storage/BillingConfigLoader.js';
+import { calculateEffectiveCreditRate } from '../../../../domain/entities/billing-config.js';
 
 export interface CreditsAnalysisResult {
   totalCreditsConsumed: number;
   totalCreditsCostUsd: number;
+  effectiveCreditRate: number;
+  currencySymbol: string;
+  currencyCode: string;
+  discountPercent: number;
   byModel: Record<string, { credits: number; costUsd: number }>;
   byCostCenter: Record<string, { credits: number; costUsd: number; budgetStatus?: string }>;
   topConsumers: Array<{ login: string; credits: number; costUsd: number; department?: string; costCenter?: string }>;
@@ -71,9 +77,12 @@ export const creditsAnalysisNode: DerivedDataNode<CreditsAnalysisResult> = {
       }
     }
 
-    // コスト計算
-    const modelCreditsSummary = CreditsBillingService.calculateModelCredits(byModelCredits);
-    const totalCostUsd = CreditsBillingService.calculateCreditsCost(totalCredits).amount;
+    // コスト計算 (EnterpriseBillingConfig 反映)
+    const billingConfig = BillingConfigLoader.load();
+    const effectiveCreditRate = calculateEffectiveCreditRate(billingConfig);
+
+    const modelCreditsSummary = CreditsBillingService.calculateModelCredits(byModelCredits, {}, effectiveCreditRate);
+    const totalCostUsd = CreditsBillingService.calculateCreditsCost(totalCredits, effectiveCreditRate, billingConfig).amount;
 
     const byModelResult: Record<string, { credits: number; costUsd: number }> = {};
     for (const [model, detail] of Object.entries(modelCreditsSummary.byModel)) {
@@ -85,7 +94,7 @@ export const creditsAnalysisNode: DerivedDataNode<CreditsAnalysisResult> = {
 
     const byCostCenterResult: Record<string, { credits: number; costUsd: number; budgetStatus?: string }> = {};
     for (const [cc, credits] of Object.entries(byCostCenterCredits)) {
-      const cost = CreditsBillingService.calculateCreditsCost(credits).amount;
+      const cost = CreditsBillingService.calculateCreditsCost(credits, effectiveCreditRate, billingConfig).amount;
       byCostCenterResult[cc] = {
         credits,
         costUsd: cost,
@@ -96,7 +105,7 @@ export const creditsAnalysisNode: DerivedDataNode<CreditsAnalysisResult> = {
       .map(([login, val]) => ({
         login,
         credits: val.credits,
-        costUsd: CreditsBillingService.calculateCreditsCost(val.credits).amount,
+        costUsd: CreditsBillingService.calculateCreditsCost(val.credits, effectiveCreditRate, billingConfig).amount,
         department: val.department,
         costCenter: val.costCenter,
       }))
@@ -106,6 +115,10 @@ export const creditsAnalysisNode: DerivedDataNode<CreditsAnalysisResult> = {
     return {
       totalCreditsConsumed: totalCredits,
       totalCreditsCostUsd: totalCostUsd,
+      effectiveCreditRate,
+      currencySymbol: billingConfig.currency.symbol,
+      currencyCode: billingConfig.currency.code,
+      discountPercent: billingConfig.discountPercent,
       byModel: byModelResult,
       byCostCenter: byCostCenterResult,
       topConsumers,

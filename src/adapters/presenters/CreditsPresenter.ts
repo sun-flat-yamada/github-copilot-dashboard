@@ -1,8 +1,13 @@
 import { ScopeAggregatedData, MonthlyReportAggregatedData } from '../../domain/entities/copilot.js';
 import { CreditsAnalysisResult } from '../../application/store/derived/nodes/creditsAnalysis.js';
+import { BillingConfigLoader } from '../storage/BillingConfigLoader.js';
+import { calculateEffectiveCreditRate } from '../../domain/entities/billing-config.js';
 
 export interface CreditsViewModel {
   hasData: boolean;
+  currencySymbol: string;
+  effectiveRateFormatted: string;
+  discountPercent: number;
   totalCreditsUsed: number;
   totalCreditsUsedFormatted: string;
   totalCreditsCostUsd: number;
@@ -27,9 +32,23 @@ export class CreditsPresenter {
     const { currentData, creditsAnalysis } = input;
     const hasData = Boolean(creditsAnalysis || currentData?.credits_summary || currentData?.users);
 
+    const billingConfig = BillingConfigLoader.load();
+    const sym = creditsAnalysis?.currencySymbol ?? billingConfig.currency.symbol;
+    const decimals = billingConfig.currency.displayDecimals;
+    const effectiveRate = creditsAnalysis?.effectiveCreditRate ?? calculateEffectiveCreditRate(billingConfig);
+    const discountPercent = creditsAnalysis?.discountPercent ?? billingConfig.discountPercent;
+
+    const formatMoney = (val: number) => {
+      const formattedNum = val.toLocaleString('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      });
+      return `${sym}${formattedNum}`;
+    };
+
     const userCreditsSum = currentData?.users?.reduce((acc, u) => acc + (u.ai_credits_used_28d || 0), 0) ?? 0;
     const totalCredits = creditsAnalysis?.totalCreditsConsumed ?? (currentData as any)?.overview?.total_ai_credits_used ?? userCreditsSum;
-    const totalCreditsCost = creditsAnalysis?.totalCreditsCostUsd ?? (totalCredits * 0.01);
+    const totalCreditsCost = creditsAnalysis?.totalCreditsCostUsd ?? (totalCredits * effectiveRate);
     const totalSpend = currentData?.overview?.total_spend_usd ?? 0;
     const totalCombinedCost = totalSpend + totalCreditsCost;
 
@@ -47,7 +66,7 @@ export class CreditsPresenter {
         byModel.push({
           modelName: model,
           credits: stats.credits,
-          costUsdFormatted: `$${stats.costUsd.toFixed(2)}`,
+          costUsdFormatted: formatMoney(stats.costUsd),
           percentage: pct,
         });
       }
@@ -59,7 +78,7 @@ export class CreditsPresenter {
         byCostCenter.push({
           costCenter: cc,
           credits: stats.credits,
-          costUsdFormatted: `$${stats.costUsd.toFixed(2)}`,
+          costUsdFormatted: formatMoney(stats.costUsd),
           status: stats.budgetStatus,
         });
       }
@@ -71,7 +90,7 @@ export class CreditsPresenter {
         topConsumers.push({
           login: c.login,
           credits: c.credits,
-          costUsdFormatted: `$${c.costUsd.toFixed(2)}`,
+          costUsdFormatted: formatMoney(c.costUsd),
           department: c.department,
           costCenter: c.costCenter,
         });
@@ -86,21 +105,27 @@ export class CreditsPresenter {
         topConsumers.push({
           login: u.login,
           credits,
-          costUsdFormatted: `$${(credits * 0.01).toFixed(2)}`,
+          costUsdFormatted: formatMoney(credits * effectiveRate),
           department: u.department,
           costCenter: u.cost_center,
         });
       }
     }
 
+    const ratePrecision = effectiveRate < 0.01 || !Number.isInteger(effectiveRate * 100) ? 3 : 2;
+    const effectiveRateFormatted = `${sym}${effectiveRate.toFixed(ratePrecision)} / AIC`;
+
     return {
       hasData,
+      currencySymbol: sym,
+      effectiveRateFormatted,
+      discountPercent,
       totalCreditsUsed: totalCredits,
       totalCreditsUsedFormatted: `${totalCredits.toLocaleString()} Credits`,
       totalCreditsCostUsd: totalCreditsCost,
-      totalCreditsCostFormatted: `$${totalCreditsCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      totalCreditsCostFormatted: formatMoney(totalCreditsCost),
       totalCombinedCostUsd: totalCombinedCost,
-      totalCombinedCostFormatted: `$${totalCombinedCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      totalCombinedCostFormatted: formatMoney(totalCombinedCost),
       poolUtilizationPercent: poolUtilization,
       poolStatus,
       byModel,

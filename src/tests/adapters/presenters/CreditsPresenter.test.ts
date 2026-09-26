@@ -7,6 +7,10 @@ test('CreditsPresenter: transforms analysis result into view model', () => {
   const analysis: CreditsAnalysisResult = {
     totalCreditsConsumed: 12500,
     totalCreditsCostUsd: 125.0,
+    effectiveCreditRate: 0.01,
+    currencySymbol: '$',
+    currencyCode: 'USD',
+    discountPercent: 0,
     byModel: {
       'claude-3-7-sonnet': { credits: 6000, costUsd: 60.0 },
       'o1': { credits: 4000, costUsd: 40.0 },
@@ -30,6 +34,8 @@ test('CreditsPresenter: transforms analysis result into view model', () => {
   });
 
   assert.strictEqual(vm.hasData, true);
+  assert.strictEqual(vm.currencySymbol, '$');
+  assert.strictEqual(vm.effectiveRateFormatted, '$0.01 / AIC');
   assert.strictEqual(vm.totalCreditsUsed, 12500);
   assert.strictEqual(vm.totalCreditsCostUsd, 125.0);
   assert.strictEqual(vm.totalCombinedCostUsd, 2625.0);
