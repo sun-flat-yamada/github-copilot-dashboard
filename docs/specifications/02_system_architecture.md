@@ -168,6 +168,25 @@ All 9 analysis views (Overview, Users, Trend, Budget, DeepAnalysis, ModelRadar, 
 - **ViewOrchestrator**: Validates rendering prerequisites (`canRender`) and data completeness (`requiredDerivedData`) before activating views.
 - **Presenter**: Transforms raw aggregates into display-ready view models completely outside the React render loop, enabling rapid headless unit testing.
 
+### 4.3 FinOps Dynamic Multi-Currency & Enterprise Agreement (EA) Subsystem
+Provides dynamic billing computation supporting enterprise-negotiated discounting and currency conversions:
+- **`EnterpriseBillingConfig`**: Manages currency properties (JPY/EUR/USD), conversion rates, volume discount percentages (0-100%), and direct enterprise contract rates (`customPricePerCredit`: e.g. `1.273 JPY / AIC`, `customSeatPricing`). Direct contract rates override calculated rates with top priority.
+- **`Money` Value Object**: Provides arbitrary-precision currency formatting (`formatWithCurrency`), discount application (`applyDiscount`), and currency conversion (`convertCurrency`).
+- **`BillingConfigLoader`**: Safely parses configuration from environment variable `COPILOT_BILLING_CONFIG` or `data/config/billing.json`, falling back to standard USD rules when omitted.
+
+### 4.4 Frontend Code Splitting & Performance Architecture
+Maximizes initial page load performance via architectural bundle decomposition:
+- **Strict Browser Repository Isolation**: Physically separates `HttpJsonMetricsRepository` (pure `fetch` client) from `FsJsonMetricsRepository` (Node.js `fs` client), eliminating Node.js polyfill leaks and eradicating Vite externalization warnings.
+- **On-Demand View Lazy Loading**: Asynchronously splits heavy analytical views (Model Radar, Deep Analysis, Credits, Agent Activity, Adoption Maturity) via `React.lazy` and `<Suspense>`.
+- **UI Skeleton Protection**: Employs an animated pulsing skeleton component (`ViewSkeleton`) to prevent layout shifts during async chunk arrival.
+- **Rollup Chunk Partitioning**: Groups vendor dependencies into `vendor-react`, `vendor-charts`, `vendor-icons`, and `vendor-zod`, keeping the initial entry chunk at **< 300 kB (< 80 kB gzip)**.
+
+### 4.5 Security & GPG Key Management Governance
+Enforces AES-256 symmetric GPG encryption for enterprise user mappings exceeding GitHub's 48KB secret limit:
+- Encrypted blobs are isolated exclusively to `data/config/` on the `copilot-data` orphan branch.
+- Plaintext mapping is reconstituted strictly inside `$RUNNER_TEMP` at runtime and destroyed immediately upon runner exit.
+- Refer to [GPG Key Management & Operational Security Guide](../security/01_gpg_key_management_and_user_mapping_guide.md) for key rotation runbooks and compliance audit checklists.
+
 ---
 
 ## 5. Directory Layout Specification
@@ -177,33 +196,36 @@ All 9 analysis views (Overview, Users, Trend, Budget, DeepAnalysis, ModelRadar, 
 ├── .github/
 │   └── workflows/                      # GitHub Actions workflows
 ├── docs/
+│   ├── security/                       # Operational security guides (GPG key management, etc.)
 │   └── specifications/                 # SDD Specifications (01-15)
 ├── src/
 │   ├── domain/                         # Layer 1: Domain
-│   │   ├── entities/                   # Domain entities (copilot, views, model-benchmark, etc.)
+│   │   ├── entities/                   # Domain entities (copilot, views, billing-config, etc.)
 │   │   ├── value-objects/              # Value objects (Money, HealthScore, DateRange)
 │   │   ├── rules/                      # Business rules (SeatClassification, AdoptionPhase, etc.)
 │   │   └── ports/                      # Port interfaces (ICopilotDataSource, IStorageWriter, etc.)
 │   ├── application/                    # Layer 2: Application
 │   │   ├── store/                      # DataStore, Reducer, State, DerivedDataGraph
-│   │   ├── services/                   # ScopeManager, FilterService, DemoModeService, etc.
+│   │   ├── services/                   # ScopeManager, FilterService, CreditsBillingService, etc.
 │   │   ├── views/                      # ViewPluginRegistry, ViewOrchestrator
 │   │   └── pipeline/                   # PipelineOrchestrator
 │   ├── adapters/                       # Layer 3: Adapters
 │   │   ├── github-api/                 # ACL, RawApiFetcher, Normalizers, Zod Schemas
-│   │   ├── storage/                    # StaticJsonMetricsRepository, ForkSafeStorageWriter
+│   │   ├── storage/                    # HttpJsonMetricsRepository, FsJsonMetricsRepository, BillingConfigLoader
 │   │   ├── presenters/                 # Overview, Users, Trend, Budget, DeepAnalysis, ModelRadar, Credits, Agent, Adoption
-│   │   ├── views/                      # ViewPlugin manifests & component loaders (9 plugins)
+│   │   ├── views/                      # ViewPlugin manifests & lazy component loaders (9 plugins)
 │   │   └── composition-root.ts         # Backend Composition Root (createPipelineApp)
 │   ├── frameworks/                     # Layer 4: Frameworks
 │   │   ├── react/                      # DashboardProvider, useStoreSelector, useViewPlugin
-│   │   └── composition-root.ts         # Frontend Composition Root (createDashboardApp)
+│   │   ├── composition-root.ts         # Frontend Composition Root (injects HttpJsonMetricsRepository)
+│   │   └── cli-composition-root.ts     # CLI Composition Root (injects FsJsonMetricsRepository)
 │   └── cli/
 │       └── run-pipeline.ts             # CLI entrypoint via createPipelineApp
 ├── dashboard/                          # Frontend SPA (Vite + React + Tailwind)
 │   └── src/
 │       ├── components/                 # UI & view components
-│       ├── App.tsx / AppV2.tsx
+│       │   └── common/ViewSkeleton.tsx # Suspense skeleton placeholder
+│       ├── App.tsx                     # Main SPA component (React.lazy + Suspense)
 │       └── main.tsx
 └── package.json
 ```
