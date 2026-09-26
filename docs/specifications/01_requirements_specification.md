@@ -93,17 +93,32 @@ The aggregation engine and dashboard must support rapid switching between data s
 - Implement progressive disclosure via accordion sections: Block 0 (Executive Summary) is expanded by default, subsequent blocks start collapsed showing title, icon, and summary chips.
 - Provide global `[Expand All]` and `[Collapse All]` controls.
 
-### FR-8: 6 Dedicated Analysis Views Navigation (`ViewNavigation`)
-- Transition from legacy mode switching to 6 dedicated purpose-built analysis views (with rankings consolidated into User Details):
-  1. `overview` (Executive Cost Allocation & Overview)
-  2. `users` (User Details & Usage Rankings)
-  3. `trend` (User Model Trends & Development Metrics)
-  4. `budget` (Cost Center Budget Tracking)
-  5. `deep_analysis` (Deep Diagnostics & Efficiency Modeling)
+### FR-8: 9 Dedicated Analysis Views Navigation (`ViewNavigation`)
+- Transition from legacy mode switching to 9 dedicated purpose-built plugin views:
+  1. `overview` (Executive Cost Allocation & Summary)
+  2. `users` (User Details & Activity Breakdown)
+  3. `trend` (User Model Trends & Acceptance Metrics)
+  4. `budget` (Cost Center Budget Tracking & FinOps)
+  5. `deep_analysis` (Deep Diagnostics & 9 Inefficiency Behavioral Rules)
   6. `model_radar` (AI Model Characteristic Benchmark Radar)
-- Dynamically enable or disable views according to the capabilities of the currently active data source.
+  7. `credits` (GitHub AI Credits & Consumption Analysis)
+  8. `agent` (AI Agent & MCP Activity Dynamics)
+  9. `adoption` (AI Adoption Maturity Cohorts & Impact Dashboard)
+- Dynamically enable or disable views according to data source compatibility and ViewPluginRegistry contracts (`canRender`).
 
-### FR-9: Cross-View Data-Centric Reactivity
+### FR-9: GitHub AI Credits & Shared Pool Consumption
+- Visualize shared organizational credits consumption (3,900 credits/seat monthly allowance), token-equivalent cost conversions ($0.01/credit), and monthly user quota limits (`ai_credits_limit_monthly`).
+- Automatically aggregate base seat costs and credits overages into Total Combined Cost with cost center budget attribution.
+
+### FR-10: AI Agent, MCP Tools & PR Lifecycle Metrics
+- Track sessions, message volume, and invocations across VS Code Agent, custom agents, 3rd-party agents, MCP (Model Context Protocol) servers, skills, and slash commands.
+- Quantify coding agent outcomes through automated PR creation, merge volume, and median merge duration (`outcome_indicators`).
+
+### FR-11: Adoption Maturity Cohorts (GitHub Impact Dashboard Alignment)
+- Classify all evaluated users into 4 standardized maturity cohorts (`no_cohort`, `code_first`, `agent_first`, `multi_agent`).
+- Provide organizational maturity pyramid distributions and team-level cohort portfolio metrics to support strategic AI enablement.
+
+### FR-12: Cross-View Data-Centric Reactivity
 - Every analysis View (FR-8) must render its displayed content (KPI figures, default selections, charts, derived usage percentages, etc.) as a **pure function of "the analysis target data the user currently has actively selected"** — i.e., the combination of the active data source type (FR-3-1) × time/group scope (FR-3-2) × Tag AND filter (FR-6).
 - When a View is already mounted and visible and the user changes only the scope or tag filter (without revisiting the View tab itself), that View's displayed content, default selections, and derived aggregates **must immediately recompute and track the change without requiring a remount**. Implementations that "compute once on first render and never again" violate this requirement.
 - When a computed value has a cross-data-source fallback path (e.g., falling back to Monthly Usage Report aggregates when Live Metrics data is empty), **the fallback path must equally honor the active filters**. Being a "fallback" path is never a valid excuse for ignoring filter state.

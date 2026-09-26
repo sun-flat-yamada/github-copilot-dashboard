@@ -125,8 +125,8 @@ suzuki,Suzuki Ken,Design,CC-200,,業務委託;リモート`;
     assert.strictEqual(resAll.length, 5);
   });
 
-  it('ANALYSIS_VIEW_REGISTRY defines all 6 consolidated analysis views with clean capability contracts', () => {
-    assert.strictEqual(ANALYSIS_VIEW_REGISTRY.length, 6);
+  it('ANALYSIS_VIEW_REGISTRY defines all 9 consolidated analysis views with clean capability contracts', () => {
+    assert.strictEqual(ANALYSIS_VIEW_REGISTRY.length, 9);
 
     const ids = ANALYSIS_VIEW_REGISTRY.map((v) => v.id);
     assert.deepStrictEqual(ids, [
@@ -136,6 +136,9 @@ suzuki,Suzuki Ken,Design,CC-200,,業務委託;リモート`;
       'budget',
       'deep_analysis',
       'model_radar',
+      'credits',
+      'agent',
+      'adoption',
     ]);
 
     for (const view of ANALYSIS_VIEW_REGISTRY) {

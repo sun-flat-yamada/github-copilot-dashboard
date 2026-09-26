@@ -6,7 +6,10 @@ export type AnalysisViewId =
   | 'trend'
   | 'budget'
   | 'deep_analysis'
-  | 'model_radar';
+  | 'model_radar'
+  | 'credits'
+  | 'agent'
+  | 'adoption';
 
 export type ViewCapability =
   | 'kpi_summary'
@@ -16,7 +19,10 @@ export type ViewCapability =
   | 'user_trend'
   | 'budget_cards'
   | 'deep_diagnostics'
-  | 'model_radar';
+  | 'model_radar'
+  | 'credits_analysis'
+  | 'agent_activity'
+  | 'adoption_maturity';
 
 export interface AnalysisViewDefinition {
   id: AnalysisViewId;
@@ -86,5 +92,38 @@ export const ANALYSIS_VIEW_REGISTRY: AnalysisViewDefinition[] = [
     iconName: 'Compass',
     supportedDataSources: ['live_metrics', 'monthly_report', 'user_upload'],
     requiredCapabilities: ['model_radar'],
+  },
+  {
+    id: 'credits',
+    title: 'AI Credits & コスト分析',
+    shortTitle: 'AI Credits',
+    description: '組織プール消費・モデル別クレジット内訳・個人上限と超過ステータス',
+    iconName: 'Coins',
+    supportedDataSources: ['live_metrics', 'monthly_report', 'user_upload'],
+    requiredCapabilities: ['credits_analysis'],
+    badge: '2026.06+',
+    badgeColor: 'amber',
+  },
+  {
+    id: 'agent',
+    title: 'AI Agent & MCP 活用動向',
+    shortTitle: 'Agent活用',
+    description: 'VS Code Agent・カスタムAgent・MCPツール呼出・Coding Agent PRの統合分析',
+    iconName: 'Bot',
+    supportedDataSources: ['live_metrics', 'monthly_report', 'user_upload'],
+    requiredCapabilities: ['agent_activity'],
+    badge: 'New',
+    badgeColor: 'purple',
+  },
+  {
+    id: 'adoption',
+    title: 'AI 採用成熟度 (Impact Dashboard)',
+    shortTitle: '採用成熟度',
+    description: 'No Cohort / Code First / Agent First / Multi-Agent の成熟度コホート推移',
+    iconName: 'TrendingUp',
+    supportedDataSources: ['live_metrics', 'monthly_report', 'user_upload'],
+    requiredCapabilities: ['adoption_maturity'],
+    badge: 'Impact',
+    badgeColor: 'emerald',
   },
 ];

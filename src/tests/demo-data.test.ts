@@ -7,12 +7,16 @@ import {
   IndexMetadata,
   ScopeAggregatedData,
   MonthlyReportAggregatedData,
+  GroupSummary,
 } from '../types/copilot.js';
 import { checkIsDemoMode } from '../application/services/DemoModeService.js';
 import { resolveDataPath, getCandidateDataUrls } from '../../dashboard/src/utils/pathResolver.js';
 import { checkDataIsolation } from '../../scripts/verify-fork-health.js';
 import { setupForkDemoData } from '../../scripts/setup-fork-demo.js';
 import { loadDemoUserMapping } from '../collector/demo-mapping-loader.js';
+import { CreditsPresenter } from '../adapters/presenters/CreditsPresenter.js';
+import { AgentPresenter } from '../adapters/presenters/AgentPresenter.js';
+import { AdoptionPresenter } from '../adapters/presenters/AdoptionPresenter.js';
 
 describe('Live Metrics DEMO Data & Referencing Tests', () => {
   const projectRoot = path.resolve(import.meta.dirname, '../..');
@@ -363,8 +367,9 @@ describe('Live Metrics DEMO Data & Referencing Tests', () => {
     const decryptedJson = loadDemoUserMapping(projectRoot);
     assert.ok(decryptedJson, 'loadDemoUserMapping must return decrypted JSON string');
 
-    const parsedMapping = JSON.parse(decryptedJson);
-    assert.ok(Array.isArray(parsedMapping), 'Decrypted mapping must be an array');
+    const parsed = JSON.parse(decryptedJson);
+    const parsedMapping = Array.isArray(parsed) ? parsed : parsed.mappings;
+    assert.ok(Array.isArray(parsedMapping), 'Decrypted mapping must be an array or contain an array of mappings');
     assert.ok(parsedMapping.length >= 80, 'Must contain at least 80 mock users');
 
     const costCenters = new Set(parsedMapping.map((u: any) => u.cost_center_override).filter(Boolean));
@@ -440,6 +445,141 @@ describe('Live Metrics DEMO Data & Referencing Tests', () => {
     assert.ok(fs.existsSync(publicGpgPath), 'dashboard/public/data/demo/config/copilot-user-mapping.demo.json.gpg must exist');
     assert.ok(fs.statSync(dataGpgPath).size > 100, 'GPG mapping file must not be empty');
     assert.ok(fs.statSync(publicGpgPath).size > 100, 'Public GPG mapping file must not be empty');
+  });
+
+  // ==========================================
+  // Phase 6-C-9: 8 New DEMO Dataset Validations
+  // ==========================================
+
+  it('① validates DEMO index.json AI Credits summary contract and cost summation equation', () => {
+    const indexPath = path.join(demoDataDir, 'index.json');
+    const indexData = JSON.parse(fs.readFileSync(indexPath, 'utf-8')) as IndexMetadata;
+
+    const summary = indexData.summary;
+    assert.ok((summary.total_ai_credits_used ?? 0) > 0, 'total_ai_credits_used must be > 0');
+    assert.ok((summary.total_ai_credits_cost_usd ?? 0) > 0, 'total_ai_credits_cost_usd must be > 0');
+    assert.ok(summary.total_combined_cost_usd !== undefined, 'total_combined_cost_usd must be defined');
+
+    const expectedCombined = Number(
+      ((summary.total_monthly_spend_usd ?? 0) + (summary.total_ai_credits_cost_usd ?? 0)).toFixed(2)
+    );
+    assert.equal(
+      Number((summary.total_combined_cost_usd ?? 0).toFixed(2)),
+      expectedCombined,
+      'total_combined_cost_usd must equal total_monthly_spend_usd + total_ai_credits_cost_usd'
+    );
+    assert.ok((summary.credits_pool_utilization_percent ?? 0) >= 0, 'credits_pool_utilization_percent must be >= 0');
+  });
+
+  it('② validates daily and monthly partitions contain Agent metrics completeness', () => {
+    const monthlyPath = path.join(demoDataDir, 'processed/monthly/2026-09.json');
+    const monthlyData = JSON.parse(fs.readFileSync(monthlyPath, 'utf-8')) as ScopeAggregatedData;
+
+    assert.ok(monthlyData.agent_summary, 'Monthly partition must include agent_summary');
+    assert.ok(monthlyData.agent_summary.total_sessions > 0, 'total_sessions must be > 0');
+    assert.ok(monthlyData.agent_summary.total_messages > 0, 'total_messages must be > 0');
+    assert.ok(monthlyData.agent_summary.engaged_users > 0, 'engaged_users must be > 0');
+    assert.ok(monthlyData.agent_summary.adoption_rate > 0, 'adoption_rate must be > 0');
+  });
+
+  it('③ validates DEMO user seats are enriched with ai_adoption_phase and ai_credits_used_28d', () => {
+    const monthlyPath = path.join(demoDataDir, 'processed/monthly/2026-09.json');
+    const monthlyData = JSON.parse(fs.readFileSync(monthlyPath, 'utf-8')) as ScopeAggregatedData;
+
+    assert.ok(monthlyData.users.length > 0, 'Must have users');
+    const phases = new Set<string>();
+    let creditsUsersCount = 0;
+
+    for (const u of monthlyData.users) {
+      if (u.ai_adoption_phase) {
+        phases.add(u.ai_adoption_phase);
+      }
+      if ((u.ai_credits_used_28d ?? 0) > 0) {
+        creditsUsersCount++;
+      }
+    }
+
+    assert.ok(phases.size >= 2, `Users must be distributed across multiple adoption phases (found: ${phases.size})`);
+    assert.ok(creditsUsersCount > 0, 'At least some users must have ai_credits_used_28d > 0');
+  });
+
+  it('④ validates daily_trends contain agent_sessions, agent_engaged_users, and ai_credits_used', () => {
+    const monthlyPath = path.join(demoDataDir, 'processed/monthly/2026-09.json');
+    const monthlyData = JSON.parse(fs.readFileSync(monthlyPath, 'utf-8')) as ScopeAggregatedData;
+
+    assert.ok(monthlyData.daily_trends && monthlyData.daily_trends.length > 0, 'daily_trends must not be empty');
+    for (const d of monthlyData.daily_trends) {
+      assert.ok(d.agent_sessions !== undefined, `Day ${d.date} must contain agent_sessions`);
+      assert.ok(d.agent_engaged_users !== undefined, `Day ${d.date} must contain agent_engaged_users`);
+      assert.ok(d.ai_credits_used !== undefined, `Day ${d.date} must contain ai_credits_used`);
+    }
+  });
+
+  it('⑤ validates decrypted DEMO GPG user mapping adheres to V2 schema with teams, projects, role, and target_adoption_phase', () => {
+    const decryptedJson = loadDemoUserMapping(projectRoot);
+    assert.ok(decryptedJson, 'loadDemoUserMapping must return JSON string');
+
+    const parsed = JSON.parse(decryptedJson);
+    const mappings = Array.isArray(parsed) ? parsed : parsed.mappings || [];
+    assert.ok(mappings.length >= 80, 'Must have >= 80 mappings');
+
+    const withTeams = mappings.filter((m: any) => m.teams && m.teams.length > 0);
+    const withProjects = mappings.filter((m: any) => m.projects && m.projects.length > 0);
+    const withRole = mappings.filter((m: any) => Boolean(m.role));
+    const withTargetPhase = mappings.filter((m: any) => Boolean(m.target_adoption_phase));
+
+    assert.ok(withTeams.length > 0, 'Must have users with teams defined in V2 mapping');
+    assert.ok(withProjects.length > 0, 'Must have users with projects defined in V2 mapping');
+    assert.ok(withRole.length > 0, 'Must have users with role defined in V2 mapping');
+    assert.ok(withTargetPhase.length > 0, 'Must have users with target_adoption_phase defined in V2 mapping');
+  });
+
+  it('⑥ validates Team API metrics and by_team structure in DEMO monthly partition', () => {
+    const monthlyPath = path.join(demoDataDir, 'processed/monthly/2026-09.json');
+    const monthlyData = JSON.parse(fs.readFileSync(monthlyPath, 'utf-8')) as ScopeAggregatedData;
+
+    assert.ok(monthlyData.by_team, 'by_team must be defined in ScopeAggregatedData');
+    const teamKeys = Object.keys(monthlyData.by_team);
+    assert.ok(teamKeys.length > 0, 'Must have at least one team in by_team');
+
+    for (const key of teamKeys) {
+      const teamSummary: GroupSummary = (monthlyData.by_team as Record<string, GroupSummary>)[key];
+      assert.ok(teamSummary.total_seats > 0, `Team ${key} must have total_seats > 0`);
+      assert.ok(teamSummary.active_seats >= 0, `Team ${key} must have valid active_seats`);
+      assert.ok(teamSummary.total_cost_usd >= 0, `Team ${key} must have valid total_cost_usd`);
+    }
+  });
+
+  it('⑦ validates derived data derivation feasibility for 3 new Views (Credits, Agent, Adoption)', () => {
+    const monthlyPath = path.join(demoDataDir, 'processed/monthly/2026-09.json');
+    const monthlyData = JSON.parse(fs.readFileSync(monthlyPath, 'utf-8')) as ScopeAggregatedData;
+
+    // Credits View Model
+    const creditsVm = CreditsPresenter.present({ currentData: monthlyData });
+    assert.equal(creditsVm.hasData, true, 'Credits ViewModel must have hasData: true');
+    assert.ok(creditsVm.totalCreditsUsed > 0, 'Credits ViewModel must have totalCreditsUsed > 0');
+    assert.ok(creditsVm.totalCreditsCostUsd > 0, 'Credits ViewModel must have totalCreditsCostUsd > 0');
+
+    // Agent View Model
+    const agentVm = AgentPresenter.present({ currentData: monthlyData });
+    assert.equal(agentVm.hasData, true, 'Agent ViewModel must have hasData: true');
+    assert.ok(agentVm.totalSessions > 0, 'Agent ViewModel must have totalSessions > 0');
+    assert.ok(agentVm.engagedUsers > 0, 'Agent ViewModel must have engagedUsers > 0');
+
+    // Adoption View Model
+    const adoptionVm = AdoptionPresenter.present({ currentData: monthlyData });
+    assert.equal(adoptionVm.hasData, true, 'Adoption ViewModel must have hasData: true');
+    assert.equal(adoptionVm.stages.length, 4, 'Adoption ViewModel must define exactly 4 maturity stages');
+    assert.ok(adoptionVm.totalEvaluatedUsers > 0, 'Adoption ViewModel must evaluate > 0 users');
+  });
+
+  it('⑧ validates Code Generation (code_generation_summary) metrics in DEMO monthly partition', () => {
+    const monthlyPath = path.join(demoDataDir, 'processed/monthly/2026-09.json');
+    const monthlyData = JSON.parse(fs.readFileSync(monthlyPath, 'utf-8')) as ScopeAggregatedData;
+
+    assert.ok(monthlyData.code_generation_summary, 'Monthly partition must include code_generation_summary');
+    assert.ok(monthlyData.code_generation_summary.total_lines_added > 0, 'total_lines_added must be > 0');
+    assert.ok(monthlyData.code_generation_summary.total_lines_deleted >= 0, 'total_lines_deleted must be >= 0');
   });
 });
 

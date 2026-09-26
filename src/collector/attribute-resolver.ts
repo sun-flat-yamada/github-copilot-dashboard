@@ -7,6 +7,12 @@ export interface ResolvedUserAttribute {
   costCenterOverride?: string;
   notes?: string;
   tags?: string[];
+  teams?: string[];
+  projects?: string[];
+  role?: string;
+  aiCreditsLimitMonthly?: number;
+  targetAdoptionPhase?: string;
+  targetAcceptanceRate?: number;
 }
 
 export class AttributeResolver {
@@ -115,6 +121,12 @@ export class AttributeResolver {
     const notes = mapped?.notes;
     // tagsはPII(個人特定情報)ではないためアノニマイズ対象外 (notesと同様の扱い)
     const tags = mapped?.tags;
+    let teams = (mapped as any)?.teams;
+    let projects = (mapped as any)?.projects;
+    const role = (mapped as any)?.role;
+    const aiCreditsLimitMonthly = (mapped as any)?.ai_credits_limit_monthly;
+    const targetAdoptionPhase = (mapped as any)?.target_adoption_phase;
+    const targetAcceptanceRate = (mapped as any)?.target_acceptance_rate;
 
     // アノニマイズ（匿名化）モードの処理
     if (this.isAnonymize) {
@@ -123,6 +135,12 @@ export class AttributeResolver {
       login = `dev_${hash.substring(0, 8)}`;
       if (department !== '未分類 (Unassigned)') {
         department = `Group-${this.simpleHash(department).substring(0, 4)}`;
+      }
+      if (teams && Array.isArray(teams)) {
+        teams = teams.map((t: string) => `Team-${this.simpleHash(t).substring(0, 4)}`);
+      }
+      if (projects && Array.isArray(projects)) {
+        projects = projects.map((p: string) => `Project-${this.simpleHash(p).substring(0, 4)}`);
       }
     }
 
@@ -133,6 +151,12 @@ export class AttributeResolver {
       costCenterOverride,
       notes,
       tags,
+      teams,
+      projects,
+      role,
+      aiCreditsLimitMonthly,
+      targetAdoptionPhase,
+      targetAcceptanceRate,
     };
   }
 

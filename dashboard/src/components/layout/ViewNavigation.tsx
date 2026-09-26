@@ -10,6 +10,8 @@ import {
   Landmark,
   BrainCircuit,
   Compass,
+  Coins,
+  TrendingUp,
 } from 'lucide-react';
 
 const defaultPluginRegistry = createDefaultViewPluginRegistry();
@@ -39,6 +41,8 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   Landmark: <Landmark className="w-3.5 h-3.5" />,
   BrainCircuit: <BrainCircuit className="w-3.5 h-3.5 text-cyan-400" />,
   Compass: <Compass className="w-3.5 h-3.5 text-purple-400" />,
+  Coins: <Coins className="w-3.5 h-3.5 text-amber-400" />,
+  TrendingUp: <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />,
 };
 
 export const ViewNavigation: React.FC<ViewNavigationProps> = ({
@@ -90,6 +94,12 @@ export const ViewNavigation: React.FC<ViewNavigationProps> = ({
                         ? 'bg-white/20 text-white'
                         : view.badgeColor === 'cyan'
                         ? 'bg-cyan-950 text-cyan-300 border border-cyan-800/60'
+                        : view.badgeColor === 'amber'
+                        ? 'bg-amber-950 text-amber-300 border border-amber-800/60'
+                        : view.badgeColor === 'purple'
+                        ? 'bg-purple-950 text-purple-300 border border-purple-800/60'
+                        : view.badgeColor === 'emerald'
+                        ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/60'
                         : 'bg-slate-800 text-slate-400'
                     }`}
                   >

@@ -30,6 +30,12 @@ import { MonthlyReportCharts } from './components/monthly-report/MonthlyReportCh
 import { MonthlyReportUserTable } from './components/monthly-report/MonthlyReportUserTable';
 import { ModelRadarView } from './components/ModelRadarView';
 import { DeepAnalysisView } from './components/DeepAnalysisView';
+import { CreditsView } from './components/views/CreditsView';
+import { AgentActivityView } from './components/views/AgentActivityView';
+import { AdoptionMaturityView } from './components/views/AdoptionMaturityView';
+import { CreditsPresenter } from '../../src/adapters/presenters/CreditsPresenter';
+import { AgentPresenter } from '../../src/adapters/presenters/AgentPresenter';
+import { AdoptionPresenter } from '../../src/adapters/presenters/AdoptionPresenter';
 import {
   RefreshCw,
   PieChart as PieIcon,
@@ -670,6 +676,40 @@ export const App: React.FC = () => {
                 setFocusedRadarModelId(modelId);
                 setActiveView('trend');
               }}
+            />
+          </div>
+        )}
+
+        {/* View 8: AI Credits & コスト分析 (Credits) */}
+        {activeView === 'credits' && (
+          <div className="w-full">
+            <CreditsView
+              viewModel={CreditsPresenter.present({
+                currentData,
+                currentReportData,
+              })}
+            />
+          </div>
+        )}
+
+        {/* View 9: AI Agent & MCP 活用動向 (Agent) */}
+        {activeView === 'agent' && (
+          <div className="w-full">
+            <AgentActivityView
+              viewModel={AgentPresenter.present({
+                currentData,
+              })}
+            />
+          </div>
+        )}
+
+        {/* View 10: AI 採用成熟度 (Adoption) */}
+        {activeView === 'adoption' && (
+          <div className="w-full">
+            <AdoptionMaturityView
+              viewModel={AdoptionPresenter.present({
+                currentData,
+              })}
             />
           </div>
         )}
