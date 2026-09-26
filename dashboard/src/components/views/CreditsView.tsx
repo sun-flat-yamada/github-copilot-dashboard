@@ -1,12 +1,17 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { CreditsViewModel } from '../../../../src/adapters/presenters/CreditsPresenter';
-import { Coins, DollarSign, Layers, PieChart, AlertTriangle, ShieldCheck, Users } from 'lucide-react';
+import { Coins, DollarSign, Layers, PieChart, AlertTriangle, ShieldCheck, Users, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 
 interface CreditsViewProps {
   viewModel: CreditsViewModel;
 }
 
+type CreditsConsumerSortKey = 'login' | 'department' | 'costCenter' | 'credits' | 'costUsd';
+
 export const CreditsView: React.FC<CreditsViewProps> = ({ viewModel }) => {
+  const [sortKey, setSortKey] = useState<CreditsConsumerSortKey>('credits');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
   if (!viewModel.hasData) {
     return (
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center text-slate-500">
@@ -27,6 +32,50 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ viewModel }) => {
     byCostCenter,
     topConsumers,
   } = viewModel;
+
+  const handleSort = (key: CreditsConsumerSortKey) => {
+    if (sortKey === key) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir(key === 'login' || key === 'department' || key === 'costCenter' ? 'asc' : 'desc');
+    }
+  };
+
+  const renderSortIcon = (key: CreditsConsumerSortKey) => {
+    if (sortKey !== key) {
+      return <ArrowUpDown className="w-3 h-3 text-slate-500 opacity-60 group-hover:opacity-100 transition-opacity" />;
+    }
+    return sortDir === 'asc' ? (
+      <ArrowUp className="w-3 h-3 text-cyan-400" />
+    ) : (
+      <ArrowDown className="w-3 h-3 text-cyan-400" />
+    );
+  };
+
+  const sortedConsumers = useMemo(() => {
+    return [...topConsumers].sort((a, b) => {
+      let diff = 0;
+      switch (sortKey) {
+        case 'login':
+          diff = a.login.localeCompare(b.login, 'ja');
+          break;
+        case 'department':
+          diff = (a.department || '').localeCompare(b.department || '', 'ja');
+          break;
+        case 'costCenter':
+          diff = (a.costCenter || '').localeCompare(b.costCenter || '', 'ja');
+          break;
+        case 'credits':
+          diff = a.credits - b.credits;
+          break;
+        case 'costUsd':
+          diff = a.costUsd - b.costUsd;
+          break;
+      }
+      return sortDir === 'asc' ? diff : -diff;
+    });
+  }, [topConsumers, sortKey, sortDir]);
 
   return (
     <div className="space-y-6">
@@ -183,15 +232,55 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ viewModel }) => {
             <table className="w-full text-left text-xs">
               <thead className="border-b border-slate-800 text-slate-400 uppercase tracking-wider text-[10px]">
                 <tr>
-                  <th className="py-2.5 px-3">GitHub ユーザー</th>
-                  <th className="py-2.5 px-3">部署 / チーム</th>
-                  <th className="py-2.5 px-3">Cost Center</th>
-                  <th className="py-2.5 px-3 text-right">消費 Credits</th>
-                  <th className="py-2.5 px-3 text-right">換算費用</th>
+                  <th
+                    className="py-2.5 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors"
+                    onClick={() => handleSort('login')}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>GitHub ユーザー</span>
+                      {renderSortIcon('login')}
+                    </div>
+                  </th>
+                  <th
+                    className="py-2.5 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors"
+                    onClick={() => handleSort('department')}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>部署 / チーム</span>
+                      {renderSortIcon('department')}
+                    </div>
+                  </th>
+                  <th
+                    className="py-2.5 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors"
+                    onClick={() => handleSort('costCenter')}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Cost Center</span>
+                      {renderSortIcon('costCenter')}
+                    </div>
+                  </th>
+                  <th
+                    className="py-2.5 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors"
+                    onClick={() => handleSort('credits')}
+                  >
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span>消費 Credits</span>
+                      {renderSortIcon('credits')}
+                    </div>
+                  </th>
+                  <th
+                    className="py-2.5 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors"
+                    onClick={() => handleSort('costUsd')}
+                  >
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span>換算費用</span>
+                      {renderSortIcon('costUsd')}
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {topConsumers.map((u) => (
+                {sortedConsumers.map((u) => (
                   <tr key={u.login} className="hover:bg-slate-850/50 transition-colors">
                     <td className="py-2.5 px-3 font-semibold text-slate-200 font-mono">{u.login}</td>
                     <td className="py-2.5 px-3 text-slate-400">{u.department || '未設定'}</td>

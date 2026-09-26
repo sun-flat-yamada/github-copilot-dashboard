@@ -23,7 +23,7 @@ export interface CreditsViewModel {
   poolStatus: 'normal' | 'warning' | 'exceeded';
   byModel: Array<{ modelName: string; credits: number; costUsdFormatted: string; percentage: number }>;
   byCostCenter: Array<{ costCenter: string; credits: number; costUsdFormatted: string; status?: string }>;
-  topConsumers: Array<{ login: string; credits: number; costUsdFormatted: string; department?: string; costCenter?: string }>;
+  topConsumers: Array<{ login: string; credits: number; costUsd: number; costUsdFormatted: string; department?: string; costCenter?: string }>;
 }
 
 export interface CreditsPresenterInput {
@@ -86,12 +86,13 @@ export class CreditsPresenter {
       }
     }
 
-    const topConsumers: Array<{ login: string; credits: number; costUsdFormatted: string; department?: string; costCenter?: string }> = [];
+    const topConsumers: Array<{ login: string; credits: number; costUsd: number; costUsdFormatted: string; department?: string; costCenter?: string }> = [];
     if (creditsAnalysis?.topConsumers) {
       for (const c of creditsAnalysis.topConsumers) {
         topConsumers.push({
           login: c.login,
           credits: c.credits,
+          costUsd: c.costUsd,
           costUsdFormatted: formatMoney(c.costUsd),
           department: c.department,
           costCenter: c.costCenter,
@@ -104,10 +105,12 @@ export class CreditsPresenter {
         .slice(0, 10);
       for (const u of sortedUsers) {
         const credits = u.ai_credits_used_28d || 0;
+        const costUsd = credits * effectiveRate;
         topConsumers.push({
           login: u.login,
           credits,
-          costUsdFormatted: formatMoney(credits * effectiveRate),
+          costUsd,
+          costUsdFormatted: formatMoney(costUsd),
           department: u.department,
           costCenter: u.cost_center,
         });

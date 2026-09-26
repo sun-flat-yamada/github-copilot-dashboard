@@ -1,11 +1,25 @@
 import React, { useState, useMemo } from 'react';
-import { Users, Search, Download, ArrowUpDown, BrainCircuit, ChevronDown, ChevronUp, LineChart } from 'lucide-react';
+import { Users, Search, Download, ArrowUpDown, ArrowUp, ArrowDown, BrainCircuit, ChevronDown, ChevronUp, LineChart } from 'lucide-react';
 import { GroupingDimension, MonthlyReportAggregatedData, UserUsageProfile } from '../../../../src/types/copilot';
 import { adaptReportToProfiles } from '../../utils/deepAnalysisAdapter';
 import { formatElapsedActivity } from '../../utils/dateFormatters';
 import { ActionColumnHeader } from '../common/ActionColumnHeader';
 import { UserDrilldownPanel } from '../UserDrilldownPanel';
 import { useCurrency } from '../../contexts/CurrencyContext';
+
+export type MonthlyUserSortKey =
+  | 'index'
+  | 'user'
+  | 'department'
+  | 'cost_center'
+  | 'organization'
+  | 'primary_model'
+  | 'requests'
+  | 'spend'
+  | 'excess'
+  | 'last_activity';
+
+export type MonthlyUserSortOrder = 'asc' | 'desc';
 
 interface MonthlyReportUserTableProps {
   reportData: MonthlyReportAggregatedData;
@@ -30,7 +44,8 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
 }) => {
   const [userSearchQuery, setUserSearchQuery] = useState<string>('');
   const [localGroupFilter, setLocalGroupFilter] = useState<string>('all');
-  const [userSortBy, setUserSortBy] = useState<'spend' | 'requests'>('spend');
+  const [sortKey, setSortKey] = useState<MonthlyUserSortKey>('spend');
+  const [sortOrder, setSortOrder] = useState<MonthlyUserSortOrder>('desc');
   const [selectedUserLogin, setSelectedUserLogin] = useState<string | null>(initialSelectedLogin || null);
   const { formatMoney } = useCurrency();
 
@@ -77,6 +92,34 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
     setSelectedUserLogin((prev) => (prev === login ? null : login));
   };
 
+  const handleSort = (key: MonthlyUserSortKey) => {
+    if (sortKey === key) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      const isDescDefault = key === 'requests' || key === 'spend' || key === 'excess' || key === 'last_activity';
+      setSortOrder(isDescDefault ? 'desc' : 'asc');
+    }
+  };
+
+  const handleDropdownSortChange = (val: 'spend' | 'requests') => {
+    setSortKey(val);
+    setSortOrder('desc');
+  };
+
+  const renderSortIcon = (key: MonthlyUserSortKey) => {
+    if (sortKey !== key) {
+      return <ArrowUpDown className="w-3 h-3 text-slate-500 opacity-60 group-hover:opacity-100 transition-opacity ml-1 shrink-0" />;
+    }
+    return sortOrder === 'asc' ? (
+      <ArrowUp className="w-3 h-3 text-indigo-400 ml-1 shrink-0" />
+    ) : (
+      <ArrowDown className="w-3 h-3 text-indigo-400 ml-1 shrink-0" />
+    );
+  };
+
+  const handleIndexSort = () => handleSort('index');
+
   // フィルタ・ソートされたユーザー明細
   const filteredUsers = useMemo(() => {
     return reportData.user_details
@@ -101,10 +144,49 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
         return matchesSearch && matchesGroup;
       })
       .sort((a, b) => {
-        if (userSortBy === 'spend') return b.total_spend_usd - a.total_spend_usd;
-        return b.total_requests - a.total_requests;
+        let cmp = 0;
+        switch (sortKey) {
+          case 'user':
+            cmp = (a.display_name || a.login).localeCompare(b.display_name || b.login);
+            break;
+          case 'department':
+            cmp = (a.department || '').localeCompare(b.department || '');
+            break;
+          case 'cost_center':
+            cmp = (a.cost_center || '').localeCompare(b.cost_center || '');
+            break;
+          case 'organization':
+            cmp = (a.organization || '').localeCompare(b.organization || '');
+            break;
+          case 'primary_model':
+            cmp = (a.primary_model || '').localeCompare(b.primary_model || '');
+            break;
+          case 'requests':
+            cmp = a.total_requests - b.total_requests;
+            break;
+          case 'spend': {
+            const costA = a.gross_spend_usd ?? a.total_spend_usd;
+            const costB = b.gross_spend_usd ?? b.total_spend_usd;
+            cmp = costA - costB;
+            break;
+          }
+          case 'excess': {
+            const excessA = a.net_spend_usd ?? a.total_spend_usd;
+            const excessB = b.net_spend_usd ?? b.total_spend_usd;
+            cmp = excessA - excessB;
+            break;
+          }
+          case 'last_activity':
+            cmp = (a.last_activity_date || '').localeCompare(b.last_activity_date || '');
+            break;
+          case 'index':
+          default:
+            cmp = 0;
+            break;
+        }
+        return sortOrder === 'asc' ? cmp : -cmp;
       });
-  }, [reportData, userSearchQuery, activeGroup, grouping, userSortBy]);
+  }, [reportData, userSearchQuery, activeGroup, grouping, sortKey, sortOrder]);
 
   // CSV エクスポート
   const handleExportCsv = () => {
@@ -157,7 +239,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
             <span>ユーザー別 利用・費用明細 ({filteredUsers.length}名)</span>
             <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
               <ArrowUpDown className="w-3 h-3 text-slate-400" />
-              <span>{userSortBy === 'spend' ? '利用費用順' : 'リクエスト順'}</span>
+              <span>{sortKey === 'spend' ? '利用費用順' : sortKey === 'requests' ? 'リクエスト順' : '並び替え適用中'}</span>
             </span>
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -198,12 +280,15 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
           </select>
 
           <select
-            value={userSortBy}
-            onChange={(e) => setUserSortBy(e.target.value as any)}
+            value={sortKey === 'spend' && sortOrder === 'desc' ? 'spend' : sortKey === 'requests' && sortOrder === 'desc' ? 'requests' : ''}
+            onChange={(e) => handleDropdownSortChange(e.target.value as any)}
             className="bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none"
           >
             <option value="spend">費用 降順</option>
             <option value="requests">リクエスト数 降順</option>
+            {sortKey !== 'spend' && sortKey !== 'requests' && (
+              <option value="" disabled>カスタム並び替え中</option>
+            )}
           </select>
 
           <button
@@ -222,15 +307,88 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
         <table className="w-full text-left text-xs border-collapse">
           <thead className="sticky top-0 z-20 bg-slate-950 text-slate-400 font-semibold shadow-md">
             <tr className="border-b border-slate-800">
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-center w-14">#</th>
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3">GitHub ユーザー</th>
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3">部署 / 仕訳グループ</th>
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3">Cost Center</th>
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3">Organization</th>
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3">主利用モデル</th>
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-right">総リクエスト</th>
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-right">利用費用 / 超過請求 (USD)</th>
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-right">最終利用日</th>
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-center w-14 cursor-pointer select-none hover:text-slate-200" onClick={handleIndexSort} title="連番順">#</th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('user')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>GitHub ユーザー</span>
+                  {renderSortIcon('user')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('department')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>部署 / 仕訳グループ</span>
+                  {renderSortIcon('department')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('cost_center')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>Cost Center</span>
+                  {renderSortIcon('cost_center')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('organization')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>Organization</span>
+                  {renderSortIcon('organization')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('primary_model')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>主利用モデル</span>
+                  {renderSortIcon('primary_model')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('requests')}
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>総リクエスト</span>
+                  {renderSortIcon('requests')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('spend')}
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>利用費用 (USD)</span>
+                  {renderSortIcon('spend')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('excess')}
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>超過請求 (USD)</span>
+                  {renderSortIcon('excess')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('last_activity')}
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>最終利用日</span>
+                  {renderSortIcon('last_activity')}
+                </div>
+              </th>
               <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-center w-24">
                 <ActionColumnHeader />
               </th>
@@ -239,7 +397,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
           <tbody className="divide-y divide-slate-800/60">
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan={10} className="text-center py-8 text-slate-500">
+                <td colSpan={11} className="text-center py-8 text-slate-500">
                   該当するユーザーレコードがありません。
                 </td>
               </tr>
@@ -294,18 +452,22 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                       <td className="py-2.5 px-3 text-right">
                         {(() => {
                           const gross = u.gross_spend_usd ?? u.total_spend_usd;
-                          const net = u.net_spend_usd ?? u.total_spend_usd;
                           const grossDual = formatMoney(gross);
+                          return (
+                            <div className="font-bold text-slate-100 font-mono">
+                              {grossDual.usd} {grossDual.sub && <span className="text-[11px] text-slate-400 font-normal">({grossDual.sub})</span>}
+                            </div>
+                          );
+                        })()}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-mono">
+                        {(() => {
+                          const net = u.net_spend_usd ?? u.total_spend_usd;
                           const netDual = formatMoney(net);
                           return (
-                            <>
-                              <div className="font-bold text-slate-100">
-                                {grossDual.usd} {grossDual.sub && <span className="text-[11px] text-slate-400 font-normal">({grossDual.sub})</span>}
-                              </div>
-                              <div className="text-[10px] text-amber-400 font-mono">
-                                超過: {netDual.usd} {netDual.sub && `(${netDual.sub})`}
-                              </div>
-                            </>
+                            <div className="text-[11px] font-semibold text-amber-400">
+                              {netDual.usd} {netDual.sub && <span className="text-[10px] text-amber-300/80 font-normal">({netDual.sub})</span>}
+                            </div>
                           );
                         })()}
                       </td>
@@ -374,7 +536,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                     </tr>
                     {isSelected && (
                       <tr key={`${u.login}-drilldown`} className="bg-slate-950">
-                        <td colSpan={10} className="p-0 border-b-2 border-indigo-500/60">
+                        <td colSpan={11} className="p-0 border-b-2 border-indigo-500/60">
                           <UserDrilldownPanel
                             login={u.login}
                             displayName={u.display_name}
