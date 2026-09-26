@@ -1,12 +1,18 @@
 import React from 'react';
 import { DollarSign, Sparkles, Users, Cpu, Boxes } from 'lucide-react';
 import { MonthlyReportAggregatedData } from '../../../../src/types/copilot';
+import { useCurrency } from '../../contexts/CurrencyContext';
 
 interface MonthlyReportKpisProps {
   reportData: MonthlyReportAggregatedData;
 }
 
 export const MonthlyReportKpis: React.FC<MonthlyReportKpisProps> = ({ reportData }) => {
+  const { formatMoney } = useCurrency();
+  const grossDual = formatMoney(reportData.overview.total_gross_spend_usd);
+  const netDual = formatMoney(reportData.overview.total_net_spend_usd);
+  const discountDual = formatMoney(reportData.overview.total_discount_usd);
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
       {/* カード 1: 利用費用 & 超過請求費用 */}
@@ -20,20 +26,27 @@ export const MonthlyReportKpis: React.FC<MonthlyReportKpisProps> = ({ reportData
         <div className="mt-2 space-y-1.5">
           <div>
             <span className="text-[10px] text-slate-400 block font-medium">利用費用 (総額):</span>
-            <span className="text-xl font-black text-white tracking-tight">
-              ${reportData.overview.total_gross_spend_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-            </span>
+            <div className="flex items-baseline space-x-1.5 flex-wrap">
+              <span className="text-xl font-black text-white tracking-tight">
+                {grossDual.usd}
+              </span>
+              {grossDual.sub && (
+                <span className="text-xs font-semibold text-slate-400">
+                  ({grossDual.sub})
+                </span>
+              )}
+            </div>
           </div>
-          <div className="pt-1.5 border-t border-slate-800/80 flex items-center justify-between">
+          <div className="pt-1.5 border-t border-slate-800/80 flex items-center justify-between flex-wrap gap-1">
             <span className="text-[11px] text-amber-400 font-medium">超過請求費用:</span>
             <span className="font-mono font-bold text-amber-300 text-sm">
-              ${reportData.overview.total_net_spend_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              {netDual.usd} {netDual.sub && <span className="text-[11px] text-amber-400/80 font-normal">({netDual.sub})</span>}
             </span>
           </div>
         </div>
         {reportData.overview.total_discount_usd > 0 && (
           <div className="mt-1 text-[10px] text-emerald-400/90 text-right">
-            無料枠控除: -${reportData.overview.total_discount_usd.toFixed(2)}
+            無料枠控除: -{discountDual.usd} {discountDual.sub && `(-${discountDual.sub})`}
           </div>
         )}
       </div>

@@ -1,12 +1,17 @@
 import { ScopeAggregatedData, MonthlyReportAggregatedData } from '../../domain/entities/copilot.js';
 import { CreditsAnalysisResult } from '../../application/store/derived/nodes/creditsAnalysis.js';
 import { BillingConfigLoader } from '../storage/BillingConfigLoader.js';
-import { calculateEffectiveCreditRate } from '../../domain/entities/billing-config.js';
+import { calculateDualCreditRate } from '../../domain/entities/billing-config.js';
+import { Money } from '../../domain/value-objects/Money.js';
 
 export interface CreditsViewModel {
   hasData: boolean;
   currencySymbol: string;
+  subCurrencySymbol?: string;
+  subCurrencyCode?: string;
   effectiveRateFormatted: string;
+  effectiveRateUsdFormatted: string;
+  effectiveRateSubFormatted?: string;
   discountPercent: number;
   totalCreditsUsed: number;
   totalCreditsUsedFormatted: string;
@@ -33,17 +38,14 @@ export class CreditsPresenter {
     const hasData = Boolean(creditsAnalysis || currentData?.credits_summary || currentData?.users);
 
     const billingConfig = BillingConfigLoader.load();
-    const sym = creditsAnalysis?.currencySymbol ?? billingConfig.currency.symbol;
-    const decimals = billingConfig.currency.displayDecimals;
-    const effectiveRate = creditsAnalysis?.effectiveCreditRate ?? calculateEffectiveCreditRate(billingConfig);
+    const subCurrency = billingConfig.subCurrency ?? (billingConfig.currency.code !== 'USD' ? billingConfig.currency : null);
+    const dualRate = calculateDualCreditRate(billingConfig);
+    const sym = '$';
+    const effectiveRate = creditsAnalysis?.effectiveCreditRate ?? dualRate.usdRate;
     const discountPercent = creditsAnalysis?.discountPercent ?? billingConfig.discountPercent;
 
-    const formatMoney = (val: number) => {
-      const formattedNum = val.toLocaleString('en-US', {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals,
-      });
-      return `${sym}${formattedNum}`;
+    const formatMoney = (usdVal: number) => {
+      return Money.formatDualAmount(usdVal, subCurrency).combined;
     };
 
     const userCreditsSum = currentData?.users?.reduce((acc, u) => acc + (u.ai_credits_used_28d || 0), 0) ?? 0;
@@ -112,13 +114,14 @@ export class CreditsPresenter {
       }
     }
 
-    const ratePrecision = effectiveRate < 0.01 || !Number.isInteger(effectiveRate * 100) ? 3 : 2;
-    const effectiveRateFormatted = `${sym}${effectiveRate.toFixed(ratePrecision)} / AIC`;
-
     return {
       hasData,
       currencySymbol: sym,
-      effectiveRateFormatted,
+      subCurrencySymbol: subCurrency?.symbol,
+      subCurrencyCode: subCurrency?.code,
+      effectiveRateFormatted: dualRate.formattedCombined,
+      effectiveRateUsdFormatted: dualRate.formattedUSD,
+      effectiveRateSubFormatted: dualRate.formattedSub,
       discountPercent,
       totalCreditsUsed: totalCredits,
       totalCreditsUsedFormatted: `${totalCredits.toLocaleString()} Credits`,

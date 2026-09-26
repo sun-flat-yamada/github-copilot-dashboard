@@ -1,6 +1,7 @@
 import React from 'react';
 import { CostCenterBudget } from '../../../src/types/copilot';
 import { Landmark, ShieldCheck, AlertTriangle, AlertOctagon, TrendingUp, Gift, DollarSign } from 'lucide-react';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 interface CostCenterBudgetCardsProps {
   budgets?: CostCenterBudget[];
@@ -23,6 +24,15 @@ export const CostCenterBudgetCards: React.FC<CostCenterBudgetCardsProps> = ({ bu
   const totalNetBillable = budgets.reduce((sum, b) => sum + b.net_billable_spend_usd, 0);
   const totalRemaining = budgets.reduce((sum, b) => sum + b.remaining_budget_usd, 0);
   const totalUtilization = totalLimit > 0 ? Number(((totalNetBillable / totalLimit) * 100).toFixed(1)) : 0;
+
+  const { formatMoney } = useCurrency();
+  const formatMoneyRound = (val: number) => formatMoney(val, { precisionUSD: 0, precisionSub: 0 });
+
+  const totalLimitDual = formatMoneyRound(totalLimit);
+  const totalFreeDual = formatMoneyRound(totalFree);
+  const totalCurrentDual = formatMoneyRound(totalCurrent);
+  const totalNetBillableDual = formatMoneyRound(totalNetBillable);
+  const totalRemainingDual = formatMoneyRound(totalRemaining);
 
   return (
     <div className="flex flex-col space-y-6">
@@ -48,26 +58,31 @@ export const CostCenterBudgetCards: React.FC<CostCenterBudgetCardsProps> = ({ bu
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs shrink-0">
           <div className="bg-slate-950/70 border border-slate-800/80 p-3 rounded-xl">
             <span className="text-slate-400 block mb-0.5">総 Limit設定値</span>
-            <span className="text-base font-bold text-slate-100 font-mono">${totalLimit.toLocaleString()}</span>
+            <span className="text-base font-bold text-slate-100 font-mono">{totalLimitDual.usd}</span>
+            {totalLimitDual.sub && <span className="text-[10px] text-slate-400 block font-mono">({totalLimitDual.sub})</span>}
           </div>
           <div className="bg-slate-950/70 border border-slate-800/80 p-3 rounded-xl">
             <span className="text-emerald-400 block mb-0.5 flex items-center space-x-1">
               <Gift className="w-3 h-3" />
               <span>総 無料枠</span>
             </span>
-            <span className="text-base font-bold text-emerald-300 font-mono">${totalFree.toLocaleString()}</span>
+            <span className="text-base font-bold text-emerald-300 font-mono">{totalFreeDual.usd}</span>
+            {totalFreeDual.sub && <span className="text-[10px] text-emerald-400/80 block font-mono">({totalFreeDual.sub})</span>}
           </div>
           <div className="bg-slate-950/70 border border-slate-800/80 p-3 rounded-xl">
             <span className="text-slate-400 block mb-0.5">総 利用費用</span>
-            <span className="text-base font-bold text-slate-200 font-mono">${totalCurrent.toLocaleString()}</span>
+            <span className="text-base font-bold text-slate-200 font-mono">{totalCurrentDual.usd}</span>
+            {totalCurrentDual.sub && <span className="text-[10px] text-slate-400 block font-mono">({totalCurrentDual.sub})</span>}
           </div>
           <div className="bg-slate-950/70 border border-slate-800/80 p-3 rounded-xl">
             <span className="text-amber-400 block mb-0.5 font-medium">超過請求費用</span>
-            <span className="text-base font-bold text-amber-300 font-mono">${totalNetBillable.toLocaleString()}</span>
+            <span className="text-base font-bold text-amber-300 font-mono">{totalNetBillableDual.usd}</span>
+            {totalNetBillableDual.sub && <span className="text-[10px] text-amber-400/80 block font-mono">({totalNetBillableDual.sub})</span>}
           </div>
           <div className="bg-slate-950/70 border border-slate-800/80 p-3 rounded-xl">
             <span className="text-indigo-400 block mb-0.5">総 残余枠</span>
-            <span className="text-base font-bold text-indigo-300 font-mono">${totalRemaining.toLocaleString()}</span>
+            <span className="text-base font-bold text-indigo-300 font-mono">{totalRemainingDual.usd}</span>
+            {totalRemainingDual.sub && <span className="text-[10px] text-indigo-400/80 block font-mono">({totalRemainingDual.sub})</span>}
           </div>
           <div className="bg-slate-950/70 border border-slate-800/80 p-3 rounded-xl">
             <span className="text-purple-400 block mb-0.5">全体 消化率</span>
@@ -81,6 +96,11 @@ export const CostCenterBudgetCards: React.FC<CostCenterBudgetCardsProps> = ({ bu
         {budgets.map((b) => {
           const isExceeded = b.status === 'exceeded';
           const isWarning = b.status === 'warning';
+          const bLimit = formatMoneyRound(b.spending_limit_usd);
+          const bFree = formatMoneyRound(b.free_tier_budget_usd);
+          const bSpend = formatMoneyRound(b.current_spend_usd);
+          const bNet = formatMoneyRound(b.net_billable_spend_usd);
+          const bRem = formatMoneyRound(b.remaining_budget_usd);
 
           return (
             <div
@@ -126,7 +146,7 @@ export const CostCenterBudgetCards: React.FC<CostCenterBudgetCardsProps> = ({ bu
                       <DollarSign className="w-3.5 h-3.5 text-slate-500" />
                       <span>Limit設定値:</span>
                     </span>
-                    <strong className="font-mono text-slate-100">${b.spending_limit_usd.toLocaleString()}</strong>
+                    <strong className="font-mono text-slate-100">{bLimit.usd}{bLimit.sub ? ` (${bLimit.sub})` : ''}</strong>
                   </div>
 
                   <div className="flex items-center justify-between text-emerald-300">
@@ -134,7 +154,7 @@ export const CostCenterBudgetCards: React.FC<CostCenterBudgetCardsProps> = ({ bu
                       <Gift className="w-3.5 h-3.5 text-emerald-500" />
                       <span>無料枠 (Credit):</span>
                     </span>
-                    <span className="font-mono font-medium text-emerald-400">-${b.free_tier_budget_usd.toLocaleString()}</span>
+                    <span className="font-mono font-medium text-emerald-400">-{bFree.usd}{bFree.sub ? ` (-${bFree.sub})` : ''}</span>
                   </div>
 
                   <div className="flex items-center justify-between text-slate-200">
@@ -142,17 +162,17 @@ export const CostCenterBudgetCards: React.FC<CostCenterBudgetCardsProps> = ({ bu
                       <TrendingUp className="w-3.5 h-3.5 text-slate-500" />
                       <span>利用費用 (使用済):</span>
                     </span>
-                    <span className="font-mono font-bold text-slate-200">${b.current_spend_usd.toLocaleString()}</span>
+                    <span className="font-mono font-bold text-slate-200">{bSpend.usd}{bSpend.sub ? ` (${bSpend.sub})` : ''}</span>
                   </div>
 
                   <div className="flex items-center justify-between text-amber-300 text-xs pt-1 border-t border-slate-800/60 font-medium">
                     <span>超過請求費用:</span>
-                    <span className="font-mono font-bold text-amber-400">${b.net_billable_spend_usd.toLocaleString()}</span>
+                    <span className="font-mono font-bold text-amber-400">{bNet.usd}{bNet.sub ? ` (${bNet.sub})` : ''}</span>
                   </div>
 
                   <div className="flex items-center justify-between text-indigo-300 font-semibold text-xs pt-0.5">
                     <span>残余Budget枠:</span>
-                    <span className="font-mono text-indigo-400">${b.remaining_budget_usd.toLocaleString()}</span>
+                    <span className="font-mono text-indigo-400">{bRem.usd}{bRem.sub ? ` (${bRem.sub})` : ''}</span>
                   </div>
                 </div>
               </div>

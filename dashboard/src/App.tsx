@@ -23,6 +23,7 @@ import { UsageMetricsCharts } from './components/UsageMetricsCharts';
 import { UserDetailTable } from './components/UserDetailTable';
 import { ErrorLogModal } from './components/ErrorLogModal';
 import { AboutModal } from './components/AboutModal';
+import { CurrencyProvider } from './contexts/CurrencyContext';
 import { CostCenterBudgetCards } from './components/CostCenterBudgetCards';
 import { UserTrendViewer } from './components/UserTrendViewer';
 import { MonthlyReportKpis } from './components/monthly-report/MonthlyReportKpis';
@@ -282,8 +283,9 @@ export const App: React.FC = () => {
   }, [currentReportData, rawCurrentData]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-indigo-500 selection:text-white transition-colors duration-200">
-      {/* 1. トップナビゲーションバー (ヘッダー部にアクティブデータ選択を統合 ★要件1) */}
+    <CurrencyProvider indexMeta={indexMeta}>
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-indigo-500 selection:text-white transition-colors duration-200">
+        {/* 1. トップナビゲーションバー (ヘッダー部にアクティブデータ選択を統合 ★要件1) */}
       <DashboardHeader
         activeSource={activeSource}
         onSelectSource={setActiveSource}
@@ -735,6 +737,7 @@ export const App: React.FC = () => {
         repoInfo={repoInfo}
       />
     </div>
+    </CurrencyProvider>
   );
 };
 

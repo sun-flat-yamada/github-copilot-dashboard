@@ -17,6 +17,7 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ viewModel }) => {
   }
 
   const {
+    effectiveRateFormatted,
     totalCreditsUsedFormatted,
     totalCreditsCostFormatted,
     totalCombinedCostFormatted,
@@ -63,7 +64,7 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ viewModel }) => {
           <div className="bg-slate-950/80 border border-slate-800/90 p-4 rounded-xl">
             <span className="text-xs text-slate-400 block mb-1 flex items-center gap-1.5">
               <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-              <span>AI Credits 換算費用 ($0.01/c)</span>
+              <span>AI Credits 換算費用 ({effectiveRateFormatted})</span>
             </span>
             <span className="text-2xl font-black text-emerald-300 font-mono">{totalCreditsCostFormatted}</span>
           </div>

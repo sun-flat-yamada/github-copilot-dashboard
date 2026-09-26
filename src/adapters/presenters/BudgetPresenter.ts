@@ -1,5 +1,6 @@
 import { CostCenterBudget, DataSourceType } from '../../domain/entities/copilot.js';
 import { BillingConfigLoader } from '../storage/BillingConfigLoader.js';
+import { Money } from '../../domain/value-objects/Money.js';
 
 export interface FormattedBudgetCard {
   costCenterId: string;
@@ -9,6 +10,10 @@ export interface FormattedBudgetCard {
   freeTierFormatted: string;
   netBillableFormatted: string;
   remainingBudgetFormatted: string;
+  spendingLimitUsd?: string;
+  currentSpendUsd?: string;
+  spendingLimitSub?: string;
+  currentSpendSub?: string;
   utilizationPercent: number;
   status: 'normal' | 'warning' | 'exceeded';
   statusColor: string;
@@ -29,6 +34,8 @@ export interface BudgetSummaryViewModel {
 export interface BudgetViewModel {
   hasBudgets: boolean;
   currencySymbol: string;
+  subCurrencySymbol?: string;
+  subCurrencyCode?: string;
   activeSource: DataSourceType;
   cards: FormattedBudgetCard[];
   summary: BudgetSummaryViewModel;
@@ -47,23 +54,19 @@ export class BudgetPresenter {
     const targetBudgets = isReportSource ? (reportBudgets || budgets || []) : (budgets || []);
 
     const billingConfig = BillingConfigLoader.load();
-    const sym = billingConfig.currency.symbol;
-    const decimals = billingConfig.currency.displayDecimals;
-    const rate = billingConfig.currency.exchangeRateFromUSD;
+    const subCurrency = billingConfig.subCurrency ?? (billingConfig.currency.code !== 'USD' ? billingConfig.currency : null);
+    const sym = '$';
 
     const formatMoney = (usdVal: number) => {
-      const converted = usdVal * rate;
-      const formattedNum = converted.toLocaleString('en-US', {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals,
-      });
-      return `${sym}${formattedNum}`;
+      return Money.formatDualAmount(usdVal, subCurrency).combined;
     };
 
     if (!targetBudgets || targetBudgets.length === 0) {
       return {
         hasBudgets: false,
         currencySymbol: sym,
+        subCurrencySymbol: subCurrency?.symbol,
+        subCurrencyCode: subCurrency?.code,
         activeSource,
         cards: [],
         summary: {
@@ -105,14 +108,24 @@ export class BudgetPresenter {
         alertCount++;
       }
 
+      const dualLimit = Money.formatDualAmount(limit, subCurrency);
+      const dualSpend = Money.formatDualAmount(spend, subCurrency);
+      const dualFree = Money.formatDualAmount(free, subCurrency);
+      const dualBillable = Money.formatDualAmount(billable, subCurrency);
+      const dualRemaining = Money.formatDualAmount(remaining, subCurrency);
+
       return {
         costCenterId: b.cost_center_id,
         costCenterName: b.cost_center_name || b.cost_center_code,
-        spendingLimitFormatted: formatMoney(limit),
-        currentSpendFormatted: formatMoney(spend),
-        freeTierFormatted: formatMoney(free),
-        netBillableFormatted: formatMoney(billable),
-        remainingBudgetFormatted: formatMoney(remaining),
+        spendingLimitFormatted: dualLimit.combined,
+        currentSpendFormatted: dualSpend.combined,
+        freeTierFormatted: dualFree.combined,
+        netBillableFormatted: dualBillable.combined,
+        remainingBudgetFormatted: dualRemaining.combined,
+        spendingLimitUsd: dualLimit.usd,
+        currentSpendUsd: dualSpend.usd,
+        spendingLimitSub: dualLimit.sub,
+        currentSpendSub: dualSpend.sub,
         utilizationPercent: utilization,
         status: b.status,
         statusColor,
@@ -125,15 +138,17 @@ export class BudgetPresenter {
     return {
       hasBudgets: true,
       currencySymbol: sym,
+      subCurrencySymbol: subCurrency?.symbol,
+      subCurrencyCode: subCurrency?.code,
       activeSource,
       cards,
       summary: {
         totalLimitFormatted: formatMoney(totalLimit),
-        totalLimitRaw: totalLimit * rate,
+        totalLimitRaw: totalLimit,
         totalSpendFormatted: formatMoney(totalSpend),
-        totalSpendRaw: totalSpend * rate,
+        totalSpendRaw: totalSpend,
         totalRemainingFormatted: formatMoney(totalRemaining),
-        totalRemainingRaw: totalRemaining * rate,
+        totalRemainingRaw: totalRemaining,
         overallUtilizationPercent: overallUtilization,
         alertCount,
       },

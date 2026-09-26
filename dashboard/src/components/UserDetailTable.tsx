@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { ActionColumnHeader } from './common/ActionColumnHeader';
 import { UserDrilldownPanel } from './UserDrilldownPanel';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 export type UserSortMetric =
   | 'default'
@@ -51,6 +52,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
   const [selectedUserLogin, setSelectedUserLogin] = useState<string | null>(initialSelectedLogin || null);
 
   const { users, scope_type } = data;
+  const { formatMoney } = useCurrency();
 
   // 部署一覧の抽出
   const departments = useMemo(() => {
@@ -446,12 +448,20 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                       )}
 
                       <td className="px-4 py-3 text-right">
-                        <div className="font-mono font-semibold text-slate-200">
-                          ${(scope_type === 'daily' ? u.prorated_daily_cost_usd : u.monthly_cost_usd).toFixed(2)}
-                        </div>
-                        <div className="text-[10px] text-amber-400 font-mono">
-                          超過: ${(scope_type === 'daily' ? u.prorated_daily_cost_usd : u.monthly_cost_usd).toFixed(2)}
-                        </div>
+                        {(() => {
+                          const cost = scope_type === 'daily' ? u.prorated_daily_cost_usd : u.monthly_cost_usd;
+                          const costDual = formatMoney(cost);
+                          return (
+                            <>
+                              <div className="font-mono font-semibold text-slate-200">
+                                {costDual.usd} {costDual.sub && <span className="text-[11px] text-slate-400">({costDual.sub})</span>}
+                              </div>
+                              <div className="text-[10px] text-amber-400 font-mono">
+                                超過: {costDual.usd} {costDual.sub && `(${costDual.sub})`}
+                              </div>
+                            </>
+                          );
+                        })()}
                       </td>
 
                       <td className="px-4 py-3 text-center">

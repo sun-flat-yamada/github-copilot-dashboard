@@ -168,10 +168,12 @@ All 9 analysis views (Overview, Users, Trend, Budget, DeepAnalysis, ModelRadar, 
 - **ViewOrchestrator**: Validates rendering prerequisites (`canRender`) and data completeness (`requiredDerivedData`) before activating views.
 - **Presenter**: Transforms raw aggregates into display-ready view models completely outside the React render loop, enabling rapid headless unit testing.
 
-### 4.3 FinOps Dynamic Multi-Currency & Enterprise Agreement (EA) Subsystem
-Provides dynamic billing computation supporting enterprise-negotiated discounting and currency conversions:
-- **`EnterpriseBillingConfig`**: Manages currency properties (JPY/EUR/USD), conversion rates, volume discount percentages (0-100%), and direct enterprise contract rates (`customPricePerCredit`: e.g. `1.273 JPY / AIC`, `customSeatPricing`). Direct contract rates override calculated rates with top priority.
-- **`Money` Value Object**: Provides arbitrary-precision currency formatting (`formatWithCurrency`), discount application (`applyDiscount`), and currency conversion (`convertCurrency`).
+### 4.3 FinOps Permanent USD Primary & Optional Sub-Currency Subsystem
+Provides enterprise billing computation with permanent USD primary display and localized secondary currency support:
+- **Permanent USD Primary & Dual Display**: Enforces permanent USD ($) primary display across all 9 analysis views, KPI summary cards, charts, and user tables, with optional secondary sub-currency display in parentheses (e.g. `$2,975.00 (¥461,125)`).
+- **`CurrencyContext` & `CurrencySelector`**: Header dropdown enables real-time sub-currency switching (USD Only / USD + JPY / USD + EUR) with localStorage persistence.
+- **`EnterpriseBillingConfig`**: Manages base USD currency, optional `subCurrency` (JPY/EUR), conversion rates, volume discount percentages (0-100%), and direct enterprise contract rates (`customPricePerCredit`: e.g. `1.273 JPY / AIC`, `customSeatPricing`). Direct contract rates override calculated rates with top priority.
+- **`Money` Value Object**: Provides unified dual-currency formatting (`formatWithSubCurrency`), structured output (`formatDual`), arbitrary precision, and discount application.
 - **`BillingConfigLoader`**: Safely parses configuration from environment variable `COPILOT_BILLING_CONFIG` or `data/config/billing.json`, falling back to standard USD rules when omitted.
 
 ### 4.4 Frontend Code Splitting & Performance Architecture

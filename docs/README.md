@@ -36,6 +36,7 @@ Every feature and data contract in this project is engineered using **Specificat
 Step-by-step instructions for deploying and operating the dashboard in enterprise environments:
 - **Zero-Cost GitHub Pages**: Automated hosting without cloud infrastructure.
 - **Privacy & User Mapping**: Configure `COPILOT_USER_MAPPING`, CSV format, and GPG encryption for mappings > 48KB.
+- **Permanent USD & Secondary Sub-Currency Display**: Configure `COPILOT_BILLING_CONFIG` (exchange rates, EA discounts, AI Credits unit prices) and interactive UI switcher.
 - **Authentication & Scopes**: Personal Access Tokens, Enterprise vs. Organization scopes, and Graceful Credentials handling.
 - **EMU & Fork-Restricted Orgs**: Mirror duplication procedures without GitHub Fork ([SDD-13](specifications/13_fork_restricted_environment_setup_guide.md)).
 

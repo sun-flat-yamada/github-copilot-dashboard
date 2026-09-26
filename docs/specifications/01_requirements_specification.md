@@ -125,7 +125,8 @@ The aggregation engine and dashboard must support rapid switching between data s
 - The detailed design policy, implementation conventions, and known anti-patterns for satisfying this requirement are defined in [SDD-15: Data-Centric Reactivity Design Specification](15_data_centric_reactivity_design_spec.md).
 
 ### FR-13: FinOps Dynamic Multi-Currency & Enterprise Agreement (EA) Pricing
-- Support dynamic multi-currency conversion including JPY (Japanese Yen), EUR (Euro), and USD (US Dollar).
+- Enforce permanent USD ($) primary display across all 9 analysis views, KPI summary cards, charts, and user tables, with optional secondary sub-currency display in parentheses (e.g. `$2,975.00 (¥461,125)` or `$100.00 (€92.00)`).
+- Provide a header Currency Selector allowing viewers to dynamically toggle sub-currency display (USD Only / USD + JPY / USD + EUR) in real time with localStorage persistence.
 - Enable volume discount percentage application (0-100%) and direct enterprise contract unit rate overrides (e.g., custom credit rate such as `1.273 JPY / AIC` with arbitrary precision or custom seat pricing). Direct contract rates shall always take highest priority over calculated discounts.
 - Seamlessly inject configuration via environment variable `COPILOT_BILLING_CONFIG` or `data/config/billing.json`, with safe fallback to default standard USD rates when omitted.
 

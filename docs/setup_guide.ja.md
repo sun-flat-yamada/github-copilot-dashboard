@@ -15,12 +15,16 @@
    - [標準 JSON 形式](#標準-json-形式)
    - [CSV 形式](#csv-形式)
    - [GPG暗号化運用 & 48KB制限の回避](#gpg暗号化運用--48kb制限の回避)
-5. [認証トークン & データ取得スコープ](#5-認証トークン--データ取得スコープ)
+5. [通貨表示 & 契約課金（EA契約 / AI Credits）の設定](#5-通貨表示--契約課金ea契約--ai-creditsの設定)
+   - [USD 常時基本表示 & サブ表示通貨の併記](#usd-常時基本表示--サブ表示通貨の併記)
+   - [COPILOT_BILLING_CONFIG の設定](#copilot_billing_config-の設定)
+   - [パラメータ仕様 & EA契約ボリュームディスカウント](#パラメータ仕様--ea契約ボリュームディスカウント)
+6. [認証トークン & データ取得スコープ](#6-認証トークン--データ取得スコープ)
    - [Fine-grained PAT の発行](#fine-grained-pat-の発行)
    - [Enterprise 単位 vs Organization 単位](#enterprise-単位-vs-organization-単位)
    - [モックモード & 認証フォールバック](#モックモード--認証フォールバック)
-6. [本家（Upstream）更新の同期 & 運用保守](#6-本家upstream更新の同期--運用保守)
-7. [トラブルシューティング](#7-トラブルシューティング)
+7. [本家（Upstream）更新の同期 & 運用保守](#7-本家upstream更新の同期--運用保守)
+8. [トラブルシューティング](#8-トラブルシューティング)
 
 ---
 
@@ -103,7 +107,47 @@ GitHub Actions の Variables/Secrets は最大 48KB に制限されています�
 
 ---
 
-## 5. 認証トークン & データ取得スコープ
+## 5. 通貨表示 & 契約課金（EA契約 / AI Credits）の設定
+
+本ダッシュボードは、グローバル標準の **USD（米ドル）常時基本表示** と、組織に応じた **サブ表示通貨（JPY 円、EUR ユーロ等）の併記** に完全対応しています。
+
+### USD 常時基本表示 & サブ表示通貨の併記
+- **全9分析画面・KPI・チャート・テーブルにおいて、USD（`$`）が常時基本通貨として表示**されます。
+- サブ通貨を設定した場合、USDの横にカッコ書きでサブ通貨額が併記されます（例: `$2,975.00 (¥461,125)` や `$0.010 / AIC (¥1.273 / AIC)`）。
+- 画面上部ヘッダーの「通貨: USD / USD+JPY / USD+EUR」ドロップダウンセレクターから、閲覧者自身がリアルタイムに切り替えることも可能です（ブラウザの `localStorage` に保持されます）。
+
+### COPILOT_BILLING_CONFIG の設定
+**Settings** > **Secrets and variables** > **Actions** > **Variables**（または Secrets）に `COPILOT_BILLING_CONFIG` を登録するか、リポジトリの `data/config/billing.json` に設定を配置します。
+
+```json
+{
+  "subCurrency": {
+    "code": "JPY",
+    "symbol": "¥",
+    "exchangeRateFromUSD": 155.0,
+    "displayDecimals": 0
+  },
+  "discountPercent": 15,
+  "customPricePerCredit": 1.273,
+  "customSeatPricing": {
+    "enterpriseMonthly": 5000
+  }
+}
+```
+
+### パラメータ仕様 & EA契約ボリュームディスカウント
+| パラメータ | 型 | デフォルト | 説明 |
+|---|---|---|---|
+| `subCurrency` | `object` | `null` | サブ表示通貨設定（`code`: 'JPY', `symbol`: '¥', `exchangeRateFromUSD`: 155.0, `displayDecimals`: 0） |
+| `discountPercent` | `number` | `0` | Enterprise Agreement (EA) ボリュームディスカウント率（0〜100%） |
+| `customPricePerCredit` | `number` | 未設定 | 企業個別の直接契約AI Credits単価（サブ通貨指定時はサブ通貨での単価、例: 1.273 JPY/AIC。指定時はディスカウント計算より優先） |
+| `customSeatPricing` | `object` | 未設定 | 個別契約シート単価（`businessMonthly`, `enterpriseMonthly`） |
+| `seatPricing` | `object` | 19 / 39 USD | 標準シート定価（USD） |
+| `creditsPricing` | `object` | 0.01 USD | 標準クレジット定価（USD/AIC） |
+
+---
+
+## 6. 認証トークン & データ取得スコープ
 
 ### Fine-grained PAT の発行
 以下の権限を持つ個人アクセストークン（PAT）を発行し、GitHub Actions Secret `COPILOT_READ_TOKEN` に登録します：
@@ -129,7 +173,7 @@ GitHub Actions の Variables/Secrets は最大 48KB に制限されています�
 
 ---
 
-## 6. 本家（Upstream）更新の同期 & 運用保守
+## 7. 本家（Upstream）更新の同期 & 運用保守
 
 本家リポジトリで新しいAIモデルや集計機能がリリースされた場合、以下の手順で安全に同期できます：
 
@@ -154,7 +198,7 @@ git push origin main
 
 ---
 
-## 7. トラブルシューティング
+## 8. トラブルシューティング
 
 - **API 403 / レート制限 / 権限エラー**: ヘッダー右上の異常検知アイコン（80%×80%モーダル）を開くか、`error-log.json` をダウンロードして発生エンドポイントを確認してください。
 - **シークレットスキャン検知**: コミット前に `npm run secret-scan` を実行し、誤ってトークンや内部パスが含まれていないか特定してください。

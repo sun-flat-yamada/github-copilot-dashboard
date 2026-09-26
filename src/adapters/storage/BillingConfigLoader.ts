@@ -14,6 +14,7 @@ export const CurrencyConfigSchema = z.object({
 
 export const BillingConfigSchema = z.object({
   currency: CurrencyConfigSchema.default(DEFAULT_CURRENCY_USD),
+  subCurrency: CurrencyConfigSchema.nullable().optional(),
   seatPricing: z.object({
     businessMonthlyUSD: z.number().nonnegative().default(19),
     enterpriseMonthlyUSD: z.number().nonnegative().default(39),
@@ -35,6 +36,7 @@ export class BillingConfigLoader {
    * Loads and validates EnterpriseBillingConfig.
    * Checks process.env.COPILOT_BILLING_CONFIG or raw JSON string.
    * Falls back cleanly to DEFAULT_BILLING_CONFIG on missing or invalid configuration.
+   * Auto-promotes legacy non-USD currency to subCurrency to enforce USD as permanent primary.
    */
   static load(rawConfigStr?: string): EnterpriseBillingConfig {
     const configStr = rawConfigStr || (typeof process !== 'undefined' ? process.env?.COPILOT_BILLING_CONFIG : undefined);
