@@ -3,7 +3,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
-import { UserAttributeMapping } from '../src/types/copilot.js';
+import { UserAttributeMappingV2, UserAttributeMappingDocumentV2 } from '../src/domain/entities/user-mapping.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,17 +13,23 @@ export const DEFAULT_DEMO_MAPPING_PASSPHRASE = 'copilot-demo-secret-passphrase-2
 export const DEMO_MAPPING_GPG_RELATIVE_PATH = 'fixtures/demo/copilot-user-mapping.demo.json.gpg';
 
 /**
- * 2026 LTS DEMO データセット専用のユーザーマッピング一覧を生成
+ * 2026 LTS DEMO データセット専用のユーザーマッピング一覧を生成 (v2.0 Schema)
  * (Live Metrics 85名 + Monthly Usage Report ユーザーを完全網羅)
  */
-export function buildDemoUserMappings(): UserAttributeMapping[] {
-  const mappings: UserAttributeMapping[] = [
+export function buildDemoUserMappings(): UserAttributeMappingV2[] {
+  const mappings: UserAttributeMappingV2[] = [
     // Live Metrics 主要コアメンバー
     {
       github_user: 'taro-tanaka',
       display_name: '田中 太郎',
       department: 'コア決済基盤チーム',
       cost_center_override: 'FinTech-Division',
+      teams: ['FinTech-Core', 'Backend-Guild'],
+      projects: ['Payments-Gateway-V2', 'Settlement-Engine'],
+      role: 'Staff Engineer',
+      ai_credits_limit_monthly: 500,
+      target_adoption_phase: 'multi_agent',
+      target_acceptance_rate: 0.38,
       notes: 'リードエンジニア / 正社員',
       tags: ['正社員', 'リード', '決済'],
     },
@@ -32,6 +38,12 @@ export function buildDemoUserMappings(): UserAttributeMapping[] {
       display_name: '鈴木 花子',
       department: 'LLM応用プロダクトG',
       cost_center_override: 'Research-and-AI',
+      teams: ['AI-Research', 'LLM-Product'],
+      projects: ['Autonomous-Agent-Platform'],
+      role: 'Senior AI Researcher',
+      ai_credits_limit_monthly: 1000,
+      target_adoption_phase: 'multi_agent',
+      target_acceptance_rate: 0.42,
       notes: 'AIリサーチャー / 正社員',
       tags: ['正社員', 'AI推進'],
     },
@@ -40,6 +52,12 @@ export function buildDemoUserMappings(): UserAttributeMapping[] {
       display_name: '佐藤 健二',
       department: 'SRE & クラウド基盤部',
       cost_center_override: 'Cloud-Platform',
+      teams: ['Cloud-SRE', 'Infra-Core'],
+      projects: ['Global-K8s-Mesh'],
+      role: 'Principal SRE',
+      ai_credits_limit_monthly: 400,
+      target_adoption_phase: 'agent_first',
+      target_acceptance_rate: 0.32,
       notes: 'インフラSRE / 正社員',
       tags: ['正社員', 'SRE', 'インフラ'],
     },
@@ -48,6 +66,12 @@ export function buildDemoUserMappings(): UserAttributeMapping[] {
       display_name: '高橋 悠希',
       department: 'モバイルアプリ開発部',
       cost_center_override: 'FinTech-Division',
+      teams: ['Mobile-Core', 'iOS-Team'],
+      projects: ['FinTech-App-Next'],
+      role: 'Mobile Tech Lead',
+      ai_credits_limit_monthly: 300,
+      target_adoption_phase: 'code_first',
+      target_acceptance_rate: 0.30,
       notes: 'iOS / Android Lead / 正社員',
       tags: ['正社員', 'モバイル'],
     },
@@ -56,6 +80,12 @@ export function buildDemoUserMappings(): UserAttributeMapping[] {
       display_name: '伊藤 美香',
       department: '業務システム改革推進室',
       cost_center_override: 'Enterprise-IT',
+      teams: ['Internal-DX', 'Workflow-Automation'],
+      projects: ['ERP-Modernization'],
+      role: 'Senior DX Specialist',
+      ai_credits_limit_monthly: 200,
+      target_adoption_phase: 'agent_first',
+      target_acceptance_rate: 0.28,
       notes: '社内DX担当 / 正社員',
       tags: ['正社員', '社内DX'],
     },
@@ -64,6 +94,12 @@ export function buildDemoUserMappings(): UserAttributeMapping[] {
       display_name: 'Alex Rivera (Partner)',
       department: 'コア決済基盤チーム',
       cost_center_override: 'FinTech-Division',
+      teams: ['FinTech-Core'],
+      projects: ['Payments-Gateway-V2'],
+      role: 'External Specialist',
+      ai_credits_limit_monthly: 150,
+      target_adoption_phase: 'code_first',
+      target_acceptance_rate: 0.35,
       notes: '業務委託パートナー / フルリモート',
       tags: ['業務委託', 'リモート', '決済'],
     },
@@ -72,6 +108,12 @@ export function buildDemoUserMappings(): UserAttributeMapping[] {
       display_name: '山田 大樹',
       department: 'SRE & クラウド基盤部',
       cost_center_override: 'Cloud-Platform',
+      teams: ['Cloud-SRE'],
+      projects: ['Global-K8s-Mesh'],
+      role: 'Platform Engineer',
+      ai_credits_limit_monthly: 350,
+      target_adoption_phase: 'agent_first',
+      target_acceptance_rate: 0.33,
       notes: 'Kubernetes Platformer / 正社員',
       tags: ['正社員', 'SRE', 'Kubernetes'],
     },
@@ -201,16 +243,29 @@ export function buildDemoUserMappings(): UserAttributeMapping[] {
   const lastNames = ['加藤', '吉田', '山田', '佐々木', '山口', '松本', '井上', '木村', '林', '斎藤', '清水', '山崎', '森', '池田', '橋本'];
 
   for (let i = 8; i <= 85; i++) {
+    const isContractor = i % 5 === 0;
     const tpl = deptTemplates[(i - 8) % deptTemplates.length];
     const lastName = lastNames[(i * 3) % lastNames.length];
     const firstName = firstNames[(i * 7) % firstNames.length];
-    const isContractor = i % 8 === 0;
+    const phaseOptions: ('code_first' | 'agent_first' | 'multi_agent' | 'no_cohort')[] = [
+      'code_first',
+      'code_first',
+      'agent_first',
+      'multi_agent',
+    ];
+    const targetPhase = phaseOptions[i % phaseOptions.length];
 
     mappings.push({
       github_user: `developer-${i}`,
       display_name: isContractor ? `${lastName} ${firstName} (Partner)` : `${lastName} ${firstName}`,
       department: tpl.dept,
       cost_center_override: tpl.cc,
+      teams: [tpl.dept.replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'Dev-Team'],
+      projects: [`Project-${(i % 5) + 1}`],
+      role: tpl.role,
+      ai_credits_limit_monthly: isContractor ? 100 : 250,
+      target_adoption_phase: targetPhase,
+      target_acceptance_rate: 0.32,
       notes: isContractor ? `業務委託パートナー / ${tpl.role}` : `${tpl.role} / 正社員`,
       tags: isContractor ? ['業務委託', ...tpl.tags.filter((t) => t !== '正社員')] : tpl.tags,
     });
@@ -220,7 +275,7 @@ export function buildDemoUserMappings(): UserAttributeMapping[] {
 }
 
 /**
- * GPG暗号化ファイル (AES256) を生成
+ * GPG暗号化ファイル (AES256) を生成 (v2.0 Schema)
  */
 export function generateDemoMappingGpg(
   outputPath?: string,
@@ -233,7 +288,13 @@ export function generateDemoMappingGpg(
   const mappings = buildDemoUserMappings();
 
   try {
-    fs.writeFileSync(tempJsonPath, JSON.stringify(mappings, null, 2), 'utf-8');
+    const envelope: UserAttributeMappingDocumentV2 = {
+      schema_version: '2.0',
+      generated_at: new Date().toISOString(),
+      description: 'GitHub Copilot Enterprise User Attribute Mapping (v2.0 Schema / 2026 LTS)',
+      mappings,
+    };
+    fs.writeFileSync(tempJsonPath, JSON.stringify(envelope, null, 2), 'utf-8');
 
     if (fs.existsSync(targetPath)) {
       fs.unlinkSync(targetPath);

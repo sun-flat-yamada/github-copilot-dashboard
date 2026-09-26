@@ -44,7 +44,11 @@ export class AttributeResolver {
     if (raw.startsWith('[') || raw.startsWith('{')) {
       try {
         const parsed = JSON.parse(raw);
-        const list: UserAttributeMapping[] = Array.isArray(parsed) ? parsed : [parsed];
+        const list: UserAttributeMapping[] = Array.isArray(parsed)
+          ? parsed
+          : Array.isArray(parsed.mappings)
+            ? parsed.mappings
+            : [parsed];
         for (const item of list) {
           if (item && item.github_user) {
             this.mappings.set(item.github_user.toLowerCase(), item);

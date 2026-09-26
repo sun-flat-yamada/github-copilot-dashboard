@@ -118,7 +118,7 @@ describe('Deep Analysis Multi-Source Adaptation & Diagnostics', () => {
     assert.ok(!isNaN(result.healthScore));
     assert.ok(result.healthScore >= 0 && result.healthScore <= 100);
     assert.ok(['healthy', 'warning', 'critical'].includes(result.healthStatus));
-    assert.strictEqual(result.patterns.length, 5);
+    assert.strictEqual(result.patterns.length, 9);
 
     // 各パターンの確率が 0-100 の範囲内であること
     for (const pattern of result.patterns) {

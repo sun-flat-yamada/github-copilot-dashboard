@@ -627,3 +627,337 @@ export function calculateAutonomyMetrics(
   }
 
 export { calculateAutonomyMetrics as analyzeAutonomyDepth };
+
+/**
+ * 6. クレジット過剰消費型 (Credit Burn Overdrive)
+ */
+export function diagnoseCreditBurnOverdrive(
+  creditsConsumed: number,
+  creditsLimit: number = 3900,
+  acceptances: number = 0,
+  agentSessions: number = 0
+): InefficiencyPatternResult {
+  let prob = 0;
+  const factors: ContributingFactor[] = [];
+  const recommendations: string[] = [];
+
+  const limit = creditsLimit > 0 ? creditsLimit : 3900;
+  const ratio = creditsConsumed / limit;
+  const totalOutcomes = acceptances + agentSessions;
+
+  if (creditsConsumed > 0) {
+    if (ratio >= 1.5 || (creditsConsumed >= 3500 && totalOutcomes < 10)) {
+      prob = Math.min(96, Math.round(75 + (ratio - 1.5) * 30));
+    } else if (ratio >= 1.0 || (creditsConsumed >= 2000 && totalOutcomes < 5)) {
+      prob = Math.round(45 + (ratio - 1.0) * 40);
+    } else if (ratio >= 0.7) {
+      prob = Math.round(20 + (ratio - 0.7) * 50);
+    } else {
+      prob = Math.max(3, Math.round(15 * ratio));
+    }
+  } else {
+    prob = 0;
+  }
+
+  prob = Math.max(0, Math.min(96, prob));
+  const riskLevel = getRiskLevel(prob);
+
+  factors.push({
+    metricName: 'AIクレジット消費ペース',
+    currentValueFormatted: `${creditsConsumed} Credits / 月間上限 ${limit} Credits (${(ratio * 100).toFixed(1)}%)`,
+    recommendedThresholdFormatted: '≤ 100.0% (月次予算内)',
+    description:
+      ratio >= 1.5
+        ? '月間割当クレジットを50%以上超過しており、予算の枯渇リスクが極めて高い状態です。'
+        : ratio >= 1.0
+        ? '月間上限を超過しており、組織プール枠を圧迫しています。'
+        : 'クレジット消費ペースは許容範囲内です。',
+    severity: ratio >= 1.5 ? 'danger' : ratio >= 1.0 ? 'warning' : 'good',
+  });
+
+  factors.push({
+    metricName: '成果あたりのクレジット消費',
+    currentValueFormatted: `${(creditsConsumed / Math.max(1, totalOutcomes)).toFixed(1)} Credits / 成果`,
+    recommendedThresholdFormatted: '< 30.0 Credits / 成果',
+    description:
+      totalOutcomes === 0 && creditsConsumed > 500
+        ? 'クレジットを消費しているにもかかわらずコード受諾やAgent完了がゼロで、成果が伴っていません。'
+        : totalOutcomes > 0 && creditsConsumed / totalOutcomes > 80
+        ? '1成果あたりのクレジット消費量が過大で、費用対効果が著しく低下しています。'
+        : '成果に対するクレジット消費効率は良好です。',
+    severity: (totalOutcomes === 0 && creditsConsumed > 500) || (totalOutcomes > 0 && creditsConsumed / totalOutcomes > 80) ? 'danger' : 'good',
+  });
+
+  if (prob >= 60) {
+    recommendations.push(
+      '【定型タスクの軽量モデル化】要約やボイラープレート生成には Gemini 2.0 Flash または GPT-4o を指定し、クレジット消費を抑えてください。',
+      '【Agent自律ループの制限】Agentタスクを実行する際はステップ数やタイムアウトを設定し、無限反復や不要なファイル走査を防いでください。',
+      '【月間クレジット上限の設定】個人別・プロジェクト別のアラート閾値（80%）を設定し、計画的な利用を推進してください。'
+    );
+  } else {
+    recommendations.push('AIクレジットの消費バランスは健全です。');
+  }
+
+  return {
+    id: 'credit_burn_overdrive',
+    name: 'クレジット過剰消費型',
+    nameEn: 'Credit Burn Overdrive',
+    probabilityPercent: prob,
+    riskLevel,
+    tagline: 'AI Creditsの消費ペースが突出し費用対効果に見合わない過大消費が発生している兆候',
+    summary:
+      prob >= 70
+        ? '強い兆候を検出しました。月間クレジット上限を大幅に超過、または成果創出に対してクレジット消費が過大です。'
+        : prob >= 40
+        ? '中程度の傾向があります。高コストタスクの切り分けとモデル選択の最適化を検討してください。'
+        : '兆候は検出されませんでした。適切なクレジット配分のもとで運用されています。',
+    contributingFactors: factors,
+    recommendations,
+    isExpandedDefault: prob >= 60,
+  };
+}
+
+/**
+ * 7. Agent セッション途中放棄型 (Agent Session Abandonment)
+ */
+export function diagnoseAgentAbandonment(
+  totalSessions: number,
+  shortSessions: number = 0,
+  completedSessions: number = 0
+): InefficiencyPatternResult {
+  let prob = 0;
+  const factors: ContributingFactor[] = [];
+  const recommendations: string[] = [];
+
+  const abandonedSessions = Math.max(0, totalSessions - completedSessions);
+  const abandonmentRate = totalSessions > 0 ? abandonedSessions / totalSessions : 0;
+  const shortRate = totalSessions > 0 ? shortSessions / totalSessions : 0;
+
+  if (totalSessions >= 5) {
+    if (abandonmentRate >= 0.6 || shortRate >= 0.5) {
+      prob = Math.min(95, Math.round(70 + (abandonmentRate - 0.6) * 60));
+    } else if (abandonmentRate >= 0.35 || shortRate >= 0.3) {
+      prob = Math.round(40 + (abandonmentRate - 0.35) * 80);
+    } else {
+      prob = Math.max(5, Math.round(25 * abandonmentRate));
+    }
+  } else {
+    prob = totalSessions > 0 ? 10 : 0;
+  }
+
+  prob = Math.max(0, Math.min(95, prob));
+  const riskLevel = getRiskLevel(prob);
+
+  factors.push({
+    metricName: 'Agentセッション放棄率',
+    currentValueFormatted: `${(abandonmentRate * 100).toFixed(1)}% (${abandonedSessions}/${totalSessions} 件放棄)`,
+    recommendedThresholdFormatted: '< 30.0%',
+    description:
+      abandonmentRate >= 0.5
+        ? 'Agentセッションの半数以上がタスク完了に至らず途中で放棄されています。'
+        : abandonmentRate >= 0.3
+        ? 'Agentへの指示が途中で途切れる傾向があります。'
+        : 'Agentセッションは順調に成果完了まで継続されています。',
+    severity: abandonmentRate >= 0.5 ? 'danger' : abandonmentRate >= 0.3 ? 'warning' : 'good',
+  });
+
+  factors.push({
+    metricName: '短時間中断セッション率',
+    currentValueFormatted: `${(shortRate * 100).toFixed(1)}% (${shortSessions} 件)`,
+    recommendedThresholdFormatted: '< 20.0%',
+    description:
+      shortRate >= 0.4
+        ? '開始後わずか1〜2ターンで中断されたセッションが多く、プロンプトの前提不足やツールのエラーが疑われます。'
+        : 'セッション継続期間は安定しています。',
+    severity: shortRate >= 0.4 ? 'warning' : 'neutral',
+  });
+
+  if (prob >= 60) {
+    recommendations.push(
+      '【指示タスクの小粒度化】Agentに1度に大きな課題を任せず、ステップごとに分割してゴールを明確にしてください。',
+      '【受け入れ条件（Acceptance Criteria）の明記】期待する出力・テストコマンド・成功条件をプロンプトで明示することで、Agentの迷走を防止できます。',
+      '【ルールファイル（AGENTS.md）の整備】プロジェクト規約やディレクトリ構造をあらかじめ定義しておくと、セッション立ち上がり時の手戻りを劇的に削減できます。'
+    );
+  } else {
+    recommendations.push('Agentセッションは高い完了率で有効に活用されています。');
+  }
+
+  return {
+    id: 'agent_abandonment',
+    name: 'Agent セッション途中放棄型',
+    nameEn: 'Agent Session Abandonment',
+    probabilityPercent: prob,
+    riskLevel,
+    tagline: 'Agentセッションを開始するものの途中で諦めて破棄または手動修正に切り替えている兆候',
+    summary:
+      prob >= 70
+        ? '強い兆候を検出しました。Agentセッションの過半数が完了せずに放棄されており、プロンプト設計やコンテキスト不足に起因する空回りの疑いがあります。'
+        : prob >= 40
+        ? '中程度の傾向があります。Agentへのタスクの切り出し方を見直すことで完了率を高められます。'
+        : '兆候は検出されませんでした。Agentがタスクを完遂するワークフローが定着しています。',
+    contributingFactors: factors,
+    recommendations,
+    isExpandedDefault: prob >= 60,
+  };
+}
+
+/**
+ * 8. モデルコスト不整合型 (Model Cost Mismatch)
+ */
+export function diagnoseModelCostMismatch(
+  heavyModelRequests: number,
+  totalRequests: number,
+  acceptanceRate: number
+): InefficiencyPatternResult {
+  let prob = 0;
+  const factors: ContributingFactor[] = [];
+  const recommendations: string[] = [];
+
+  const heavyRatio = totalRequests > 0 ? heavyModelRequests / totalRequests : 0;
+
+  if (totalRequests >= 10) {
+    if (heavyRatio >= 0.70 && acceptanceRate < 0.20) {
+      prob = Math.min(95, Math.round(70 + (heavyRatio - 0.70) * 50 + (0.20 - acceptanceRate) * 50));
+    } else if (heavyRatio >= 0.55 && acceptanceRate < 0.25) {
+      prob = Math.round(45 + (heavyRatio - 0.55) * 50);
+    } else {
+      prob = Math.max(4, Math.round(20 * heavyRatio));
+    }
+  } else {
+    prob = totalRequests > 0 ? 8 : 0;
+  }
+
+  prob = Math.max(0, Math.min(95, prob));
+  const riskLevel = getRiskLevel(prob);
+
+  factors.push({
+    metricName: '高コスト推論モデル利用比率',
+    currentValueFormatted: `${(heavyRatio * 100).toFixed(1)}% (${heavyModelRequests}/${totalRequests} 件)`,
+    recommendedThresholdFormatted: '< 50.0%',
+    description:
+      heavyRatio >= 0.7
+        ? '高コストな最上位モデル（o1 / Claude 3.7 Sonnet等）に極端に偏っており、コスト対効果の不整合が懸念されます。'
+        : 'モデルの利用比率はバランスの取れた範囲内です。',
+    severity: heavyRatio >= 0.7 ? 'danger' : heavyRatio >= 0.5 ? 'warning' : 'good',
+  });
+
+  factors.push({
+    metricName: 'コード受諾率',
+    currentValueFormatted: `${(acceptanceRate * 100).toFixed(1)}%`,
+    recommendedThresholdFormatted: '≥ 25.0%',
+    description:
+      acceptanceRate < 0.20
+        ? '最上位モデルを投入しているにもかかわらずコード受諾率が低く、タスクとモデルの選定ミスマッチが発生しています。'
+        : 'コード受諾率は良好な水準です。',
+    severity: acceptanceRate < 0.20 ? 'danger' : acceptanceRate < 0.25 ? 'warning' : 'good',
+  });
+
+  if (prob >= 60) {
+    recommendations.push(
+      '【タスク難度に応じたモデル選定】定型コード生成、ユニットテスト生成、構文チェックには高速・低コストなモデル（Gemini 2.0 Flash / GPT-4o）を第一選択にしてください。',
+      '【最上位モデルの投入基準の策定】複雑な並行処理設計や難関アルゴリズム検証など、明確に推論能力が必要なタスクに限定して最上位モデルを活用してください。'
+    );
+  } else {
+    recommendations.push('タスク特性に合わせた適切なモデル選定が行われています。');
+  }
+
+  return {
+    id: 'model_cost_mismatch',
+    name: 'モデルコスト不整合型',
+    nameEn: 'Model Cost Mismatch',
+    probabilityPercent: prob,
+    riskLevel,
+    tagline: '軽量・定型タスクに対して最上位推論モデルを過剰投入しコスト不整合が発生している兆候',
+    summary:
+      prob >= 70
+        ? '強い兆候を検出しました。高コストモデルを多用している一方で受諾率が低く、費用対効果の大きな不整合が生じています。'
+        : prob >= 40
+        ? '中程度の傾向があります。用途に応じたモデルの使い分けルールを設けることでコストを削減できます。'
+        : '兆候は検出されませんでした。モデルコストと成果のバランスが保たれています。',
+    contributingFactors: factors,
+    recommendations,
+    isExpandedDefault: prob >= 60,
+  };
+}
+
+/**
+ * 9. レビュー迂回・ノーチェックマージ型 (Review Bypass / Unchecked Agent PR)
+ */
+export function diagnoseReviewBypass(
+  agentPrs: number,
+  unreviewedPrs: number,
+  medianMergeMinutes: number = 60
+): InefficiencyPatternResult {
+  let prob = 0;
+  const factors: ContributingFactor[] = [];
+  const recommendations: string[] = [];
+
+  const unreviewedRatio = agentPrs > 0 ? unreviewedPrs / agentPrs : 0;
+
+  if (agentPrs >= 3) {
+    if (unreviewedRatio >= 0.60 || medianMergeMinutes < 15) {
+      prob = Math.min(95, Math.round(70 + unreviewedRatio * 20 + Math.max(0, 15 - medianMergeMinutes)));
+    } else if (unreviewedRatio >= 0.35 || medianMergeMinutes < 30) {
+      prob = Math.round(40 + unreviewedRatio * 30);
+    } else {
+      prob = Math.max(3, Math.round(15 * unreviewedRatio));
+    }
+  } else {
+    prob = agentPrs > 0 ? 5 : 0;
+  }
+
+  prob = Math.max(0, Math.min(95, prob));
+  const riskLevel = getRiskLevel(prob);
+
+  factors.push({
+    metricName: 'レビュー未実施マージ率',
+    currentValueFormatted: `${(unreviewedRatio * 100).toFixed(1)}% (${unreviewedPrs}/${agentPrs} 件)`,
+    recommendedThresholdFormatted: '< 20.0%',
+    description:
+      unreviewedRatio >= 0.60
+        ? 'Agent生成PRの過半数が人間のレビューを経ずにマージされており、品質・セキュリティ上の重大なリスクがあります。'
+        : unreviewedRatio >= 0.35
+        ? 'レビュー未実施のAgent PRが散見されます。'
+        : 'Agent生成PRに対して適切なレビューが実施されています。',
+    severity: unreviewedRatio >= 0.60 ? 'danger' : unreviewedRatio >= 0.35 ? 'warning' : 'good',
+  });
+
+  factors.push({
+    metricName: 'PRマージ時間の中央値',
+    currentValueFormatted: `${medianMergeMinutes.toFixed(0)} 分`,
+    recommendedThresholdFormatted: '≥ 30 分 (十分な検証時間)',
+    description:
+      medianMergeMinutes < 15
+        ? 'PR作成からマージまでの時間が極めて短く、コード差分やテスト結果の十分な精査が行われていない恐れがあります。'
+        : '十分な検証・レビュー時間を経てマージされています。',
+    severity: medianMergeMinutes < 15 ? 'warning' : 'good',
+  });
+
+  if (prob >= 60) {
+    recommendations.push(
+      '【ブランチ保護ルールの徹底】Agent作成PRであっても、最低1名の承認（Required Reviewers）をマージ必須条件に設定してください。',
+      '【自動テストCIの義務化】AI生成コードの品質担保のため、ユニットテストおよび統合テストのパスをブランチプロテクションで強制してください。',
+      '【AIアノテーションの確認】PR概要にAgentが生成したコード範囲を明示し、レビュー担当者が重点的に確認できるようにしてください。'
+    );
+  } else {
+    recommendations.push('Agent作成PRに対する適切なレビューと品質管理が行われています。');
+  }
+
+  return {
+    id: 'review_bypass',
+    name: 'レビュー迂回・ノーチェックマージ型',
+    nameEn: 'Review Bypass / Unchecked Agent PR',
+    probabilityPercent: prob,
+    riskLevel,
+    tagline: 'AI/Agentが生成したPRを十分な人間レビューなしに即時マージしている品質リスクの兆候',
+    summary:
+      prob >= 70
+        ? '強い兆候を検出しました。Agentが作成したPRがレビューなし、または極めて短時間でマージされており、バグ混入やセキュリティ低下のリスクが高い状態です。'
+        : prob >= 40
+        ? '中程度の傾向があります。Agent PRに対するレビュー体制の標準化を推奨します。'
+        : '兆候は検出されませんでした。安全で品質の高いマージフローが維持されています。',
+    contributingFactors: factors,
+    recommendations,
+    isExpandedDefault: prob >= 60,
+  };
+}
