@@ -149,3 +149,7 @@ The bottom footer provides an instant preview to verify the impact of your filte
 
 ### Q2. Is my on-demand CSV safe from leakage?
 **Yes.** All processing is performed strictly inside your browser's local memory. No data is sent over the network.
+
+### Q3. How is the reliability of auto-collected data selection patterns guaranteed?
+**A3. Through an exhaustive test dataset matrix (`src/tests/fixtures/auto-collected-data-fixtures.ts`) and a dedicated test suite (`src/tests/auto-collected-selection-matrix.test.ts`).**
+All selection patterns—including multi-month (`2026-09`, `2026-08`, `2026-07`), daily (weekdays vs. weekends), unassigned CostCenters/Orgs/Groups, multi-tag AND combinations, regular expression variations (prefixes, suffixes, OR, Japanese, negative lookaheads), ReDoS prevention, and real-time preview computation—are continuously verified to pass 100% in CI/CD.
