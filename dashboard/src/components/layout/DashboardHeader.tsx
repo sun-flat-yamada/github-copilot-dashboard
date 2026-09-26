@@ -200,11 +200,16 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3 sm:gap-6">
         {/* ブランド & タイトル & Aboutボタン */}
-        <div className="flex items-center space-x-2.5 sm:space-x-3 flex-shrink-0 min-w-max">
-          <div className="p-2 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/20 flex-shrink-0">
+        <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
+          <div
+            className="p-2 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/20 flex-shrink-0"
+            title="GitHub Copilot Analytics"
+          >
             <Sparkles className="w-5 h-5" />
           </div>
-          <div className="flex flex-col justify-center">
+
+          {/* タイトル & 動作モードバッジ & サブタイトル (十分な表示幅がある場合: xl以上で表示、幅不足時はアイコン表示のみ) */}
+          <div className="hidden xl:flex flex-col justify-center">
             <div className="flex items-center space-x-1.5 sm:space-x-2">
               <h1 className="text-sm sm:text-base font-bold text-white tracking-tight whitespace-nowrap">
                 GitHub Copilot Analytics
@@ -240,19 +245,21 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   <span>LIVE</span>
                 </span>
               )}
-              <button
-                onClick={onOpenAboutModal}
-                className="p-1 rounded-lg text-slate-400 hover:text-indigo-300 hover:bg-slate-800 transition-colors flex items-center cursor-pointer flex-shrink-0"
-                title="システム情報・分析作成日時 (About)"
-                aria-label="About"
-              >
-                <Info className="w-3.5 h-3.5" />
-              </button>
             </div>
-            <p className="text-[11px] sm:text-xs text-slate-400 hidden md:block whitespace-nowrap">
+            <p className="text-[11px] sm:text-xs text-slate-400 whitespace-nowrap">
               Copilot Insights for All Users
             </p>
           </div>
+
+          {/* Information アイコン (幅不足時でも Sparkles アイコンの隣に常時残り、他要素と被らない) */}
+          <button
+            onClick={onOpenAboutModal}
+            className="p-1 rounded-lg text-slate-400 hover:text-indigo-300 hover:bg-slate-800 transition-colors flex items-center cursor-pointer flex-shrink-0"
+            title="システム情報・分析作成日時 (About)"
+            aria-label="About"
+          >
+            <Info className="w-3.5 h-3.5" />
+          </button>
         </div>
 
         {/* 右側アクション (アクティブデータ選択、リポジトリリンク、エラー通知) */}
