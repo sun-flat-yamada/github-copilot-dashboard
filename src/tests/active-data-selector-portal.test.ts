@@ -133,4 +133,44 @@ describe('ActiveDataSelector & DataSelectionModal Viewport Layout & React Portal
       '07_dashboard_ui_ux_spec.md must document reactive datasetVersionKey guarantee'
     );
   });
+
+  it('verifies ActiveDataSelector renders at least 6 filter elements in 2-row layout with responsive truncation and full tooltip with shortcut tips', () => {
+    const content = fs.readFileSync(triggerComponentPath, 'utf-8');
+
+    // Display at least 6 filter elements
+    assert.match(
+      content,
+      /MAX_VISIBLE_BADGES\s*=\s*6/,
+      'ActiveDataSelector must configure at least 6 visible filter elements'
+    );
+    assert.match(
+      content,
+      /firstRowBadges/,
+      'ActiveDataSelector must split badges into first row'
+    );
+    assert.match(
+      content,
+      /secondRowBadges/,
+      'ActiveDataSelector must split badges into second row'
+    );
+
+    // Responsive truncation
+    assert.match(
+      content,
+      /truncate/,
+      'Filter badges must use truncate for responsive ellipsis'
+    );
+
+    // Comprehensive hover tooltip with shortcut tips
+    assert.match(
+      content,
+      /getTooltipText/,
+      'ActiveDataSelector must generate comprehensive tooltip text'
+    );
+    assert.match(
+      content,
+      /ショートカット:\s*\/.*Ctrl\+K/,
+      'Tooltip text must preserve keyboard shortcut tips'
+    );
+  });
 });
