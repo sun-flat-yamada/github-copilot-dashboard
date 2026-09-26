@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-26T03:51:35.723Z",
+  "generated_at": "2026-09-26T07:35:55.263Z",
   "months": [
     "2026-09"
   ],
@@ -7,8 +7,15 @@
     {
       "month": "2026-09",
       "total_monthly_spend_usd": 0,
+      "total_spend_usd": 0,
       "active_seats": 0,
-      "total_seats": 0
+      "idle_seats": 0,
+      "total_seats": 0,
+      "acceptance_rate": 0.35,
+      "total_chats": 0,
+      "total_ai_credits_used": 0,
+      "total_agent_sessions": 0,
+      "agent_adoption_rate": 0
     }
   ]
 }
