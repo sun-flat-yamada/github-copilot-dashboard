@@ -1,14 +1,19 @@
+import * as fs from 'fs';
 import { ICopilotDataSource } from '../../domain/ports/ICopilotDataSource.js';
 import { IAttributeResolver } from '../../domain/ports/IAttributeResolver.js';
 import { IStorageWriter } from '../../domain/ports/IStorageWriter.js';
 import { BillingCalculator } from '../../processor/billing-calculator.js';
 import { MetricsAggregator } from '../../processor/metrics-aggregator.js';
+import { ReportParser } from '../../processor/report-parser.js';
+import { MockDataGenerator } from '../../collector/mock-generator.js';
 import {
   CostCenterBudget,
   IndexMetadata,
   UserUsageProfile,
 } from '../../domain/entities/copilot.js';
 import { AttributeResolver } from '../../collector/attribute-resolver.js';
+import { loadUserMappingFromFile } from '../../collector/mapping-file-loader.js';
+import { loadDemoUserMapping } from '../../collector/demo-mapping-loader.js';
 
 export interface PipelineOrchestratorDependencies {
   dataSource: ICopilotDataSource;
@@ -36,10 +41,18 @@ export class PipelineOrchestrator {
     console.log('=====================================================');
 
     // 下位互換用の AttributeResolver (プロセッサ層の既存クラスとの連携)
+    let mappingConfig = loadUserMappingFromFile(process.env.COPILOT_USER_MAPPING_FILE);
+    if (!mappingConfig && !process.env.COPILOT_USER_MAPPING && !process.env.COPILOT_USER_MAPPING_BASE64 && this.isMock) {
+      mappingConfig = loadDemoUserMapping();
+      if (mappingConfig) {
+        console.log('🔐 AttributeResolver: Auto-loaded DEMO user mappings from GPG-encrypted fixture.');
+      }
+    }
     const legacyResolver = new AttributeResolver(
-      process.env.COPILOT_USER_MAPPING || process.env.COPILOT_USER_MAPPING_BASE64
+      mappingConfig || process.env.COPILOT_USER_MAPPING || process.env.COPILOT_USER_MAPPING_BASE64
     );
     const aggregator = new MetricsAggregator();
+    const reportParser = new ReportParser(legacyResolver);
 
     console.log(`📋 AttributeResolver: Loaded ${this.resolver.getMappingCount()} mapping(s).`);
 
@@ -57,7 +70,11 @@ export class PipelineOrchestrator {
 
     const hasLiveMetrics = metrics.length > 0;
     if (!hasLiveMetrics) {
-      console.warn('⚠️  No Copilot metrics retrieved. Continuing without live metrics.');
+      console.warn(
+        '⚠️  No Copilot metrics retrieved (COPILOT_READ_TOKEN / COPILOT_ENTERPRISE / COPILOT_ORGS may be unset, ' +
+          'or the credential lacks Enterprise Owner permission). Continuing without live metrics — ' +
+          'Monthly Usage Report (CSV) and other credential-independent features remain available.'
+      );
     }
 
     // 2. 料金計算・エンリッチメント
@@ -78,6 +95,7 @@ export class PipelineOrchestrator {
 
     // エラーログの保存
     const issues = this.dataSource.getIssues();
+    console.log(`🔍 Detected ${issues.length} data fetch issue(s) during collection.`);
     this.storage.saveErrorLog(issues);
 
     // 4. Budgets と Profiles
@@ -94,12 +112,15 @@ export class PipelineOrchestrator {
       costCenterBudgets = BillingCalculator.computeCostCenterBudgets(enrichedSeats, costCenters, budgetConfig);
     }
 
+    console.log(`💰 Prepared ${costCenterBudgets.length} cost center budget(s) and ${userProfiles.length} user profile(s).`);
+
     // 5. スコープ集計 & 保存
     const availableDays: string[] = [];
     let monthKey: string | undefined;
+    let startDate: string | undefined;
+    let endDate: string | undefined;
 
     if (hasLiveMetrics) {
-      console.log('⚙️ Aggregating daily, monthly, and custom scopes...');
       const recentMetrics = metrics.slice(-30);
       for (const m of recentMetrics) {
         const dailyData = aggregator.aggregateScope(
@@ -134,60 +155,129 @@ export class PipelineOrchestrator {
       );
       this.storage.saveScopeData('monthly', monthlyData.scope_key, monthlyData);
 
-      const latest30d = aggregator.aggregateScope(
+      // Deep Analysis アーカイブ保存
+      this.storage.saveDeepAnalysisArchive(monthKey, userProfiles);
+
+      // カスタム期間 (直近30日)
+      startDate = metrics[0].date;
+      endDate = referenceDate;
+      const customData = aggregator.aggregateScope(
         'custom',
         'latest-30d',
-        recentMetrics,
+        metrics,
         enrichedSeats,
         {
-          start: recentMetrics[0].date,
-          end: recentMetrics[recentMetrics.length - 1].date,
-          days_count: recentMetrics.length,
+          start: startDate,
+          end: endDate,
+          days_count: metrics.length,
         },
         issues,
         costCenterBudgets,
         userProfiles
       );
-      this.storage.saveScopeData('custom', 'latest-30d', latest30d);
+      this.storage.saveScopeData('custom', 'latest-30d', customData);
     }
 
-    // 6. IndexMetadata の保存
-    const activeSeats = enrichedSeats.filter((s) => s.status === 'active' || s.status === 'low_active').length;
-    const idleSeats = enrichedSeats.filter((s) => s.status === 'idle' || s.status === 'never_used').length;
-    const totalSpend = enrichedSeats.reduce((sum, s) => sum + s.monthly_cost_usd, 0);
-    const idleWaste = enrichedSeats
-      .filter((s) => s.status === 'idle' || s.status === 'never_used')
-      .reduce((sum, s) => sum + s.monthly_cost_usd, 0);
+    // 6. Monthly Usage Report (CSV) の検出・集計・保存
+    console.log('📑 Processing Monthly Usage Reports (CSV)...');
 
-    const availableMonths = monthKey ? [monthKey] : [];
+    if (this.isMock) {
+      const mockGen = new MockDataGenerator();
+      const mockMonths = ['2026-08', '2026-09'];
+      for (const m of mockMonths) {
+        const existingCsvs = this.storage.getRawReportFiles(m);
+        if (existingCsvs.length === 0) {
+          const mockCsv = mockGen.generateMonthlyUsageReportCSV(m);
+          this.storage.saveRawReportFile(m, `copilot_monthly_usage_${m}.csv`, mockCsv);
+        }
+      }
+    }
+
+    const availableReportMonths = this.storage.getStoredReportMonths();
+    console.log(`📊 Found ${availableReportMonths.length} monthly usage report partition(s): ${availableReportMonths.join(', ')}`);
+
+    for (const repMonth of availableReportMonths) {
+      const csvFiles = this.storage.getRawReportFiles(repMonth);
+      for (const csvPath of csvFiles) {
+        try {
+          const csvContent = fs.readFileSync(csvPath, 'utf-8');
+          const fileName = csvPath.split(/[\\/]/).pop() || `${repMonth}.csv`;
+          const rawRecords = reportParser.parseRecords(csvContent);
+          if (rawRecords.length > 0) {
+            const aggregatedReport = reportParser.aggregate(rawRecords, repMonth, fileName, 'persisted');
+            this.storage.saveReportData(repMonth, aggregatedReport);
+            console.log(`✅ Aggregated monthly report for ${repMonth}: ${rawRecords.length} records, $${aggregatedReport.overview.total_net_spend_usd} total net spend.`);
+          }
+        } catch (err) {
+          console.warn(`⚠️ Warning: Failed to parse report CSV at ${csvPath}:`, err);
+        }
+      }
+    }
+
+    // 7. ローリング1年トレンド
+    const storedProcMonths = this.storage.getStoredProcessedMonths();
+    const allMonthsSet = new Set<string>();
+    if (monthKey) allMonthsSet.add(monthKey);
+    for (const m of storedProcMonths) allMonthsSet.add(m);
+    const allRecordedMonths = Array.from(allMonthsSet).sort().reverse();
+    const rolling12Months = allRecordedMonths.slice(0, 12);
+
+    const rollingTrendEntries = rolling12Months.map((m) => ({
+      month: m,
+      total_monthly_spend_usd: Number(enrichedSeats.reduce((sum, u) => sum + u.monthly_cost_usd, 0).toFixed(2)),
+      active_seats: enrichedSeats.filter((u) => u.status === 'active' || u.status === 'low_active').length,
+      total_seats: enrichedSeats.length,
+    }));
+
+    this.storage.saveRolling1YearTrend({
+      generated_at: new Date().toISOString(),
+      months: rolling12Months,
+      trends: rollingTrendEntries,
+    });
+
+    // 8. IndexMetadata の保存
+    const totalMonthlySpend = enrichedSeats.reduce((sum, u) => sum + u.monthly_cost_usd, 0);
+    const idleSeats = enrichedSeats.filter((u) => u.status === 'idle' || u.status === 'never_used');
+    const idleWasteSpend = idleSeats.reduce((sum, u) => sum + u.monthly_cost_usd, 0);
 
     const indexMeta: IndexMetadata = {
       repository: {
-        owner: process.env.GITHUB_REPOSITORY_OWNER || 'unknown',
-        name: process.env.GITHUB_REPOSITORY?.split('/')[1] || 'unknown',
-        is_fork: process.env.GITHUB_REPOSITORY_IS_FORK === 'true',
+        owner: process.env.GITHUB_REPOSITORY_OWNER || 'proud-corp',
+        name: process.env.GITHUB_REPOSITORY?.split('/')[1] || 'github-copilot-dashboard',
+        is_fork: process.env.IS_FORK === 'true',
       },
       generated_at: new Date().toISOString(),
       data_retention_days: 365,
-      available_months: availableMonths,
-      all_recorded_months: availableMonths,
-      available_days: availableDays,
-      is_mock_mode: this.isMock,
+      available_months: rolling12Months,
+      all_recorded_months: allRecordedMonths,
+      available_days: availableDays.reverse(),
+      available_reports: availableReportMonths,
+      rolling_1year_trend_file: 'trends/rolling-1year.json',
+      deep_analysis_months: this.storage.getStoredDeepAnalysisMonths(),
+      is_mock_mode: this.isMock || (!hasLiveMetrics && enrichedSeats.length === 0),
       default_scopes: {
-        latest_day: availableDays.length > 0 ? availableDays[availableDays.length - 1] : undefined,
-        latest_month: monthKey,
+        latest_day: hasLiveMetrics ? referenceDate : undefined,
+        latest_month: monthKey || rolling12Months[0],
+        latest_report: availableReportMonths[0],
+        latest_range: startDate && endDate ? { start: startDate, end: endDate } : undefined,
       },
       summary: {
         total_seats: enrichedSeats.length,
-        active_seats_30d: activeSeats,
-        idle_seats_30d: idleSeats,
-        total_monthly_spend_usd: totalSpend,
-        idle_waste_spend_usd: idleWaste,
+        active_seats_30d: enrichedSeats.length - idleSeats.length,
+        idle_seats_30d: idleSeats.length,
+        total_monthly_spend_usd: Number(totalMonthlySpend.toFixed(2)),
+        idle_waste_spend_usd: Number(idleWasteSpend.toFixed(2)),
       },
-      issues,
+      issues: issues,
     };
 
     this.storage.saveIndex(indexMeta);
-    console.log('🎉 Pipeline run completed successfully.');
+
+    console.log('=====================================================');
+    console.log('🎉 Pipeline completed successfully!');
+    console.log(`📊 Total Seats: ${indexMeta.summary.total_seats}`);
+    console.log(`💰 Total Monthly Spend: $${indexMeta.summary.total_monthly_spend_usd}`);
+    console.log(`⚠️ Idle Seats Detected: ${indexMeta.summary.idle_seats_30d} ($${indexMeta.summary.idle_waste_spend_usd} waste/month)`);
+    console.log('=====================================================');
   }
 }
