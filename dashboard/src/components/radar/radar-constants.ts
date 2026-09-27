@@ -48,8 +48,8 @@ export const PRESETS: RadarPreset[] = [
   {
     id: 'tier-versatile',
     name: '🛠️ Versatile (実務バランス)',
-    description: 'Claude Sonnet 5 / GPT-5.4 / Gemini 3.8 Flash / Grok 4.6 (標準実務・俊敏性重視)',
-    modelIds: ['claude-sonnet-5', 'gpt-5-4', 'gemini-3-8-flash', 'grok-4-6'],
+    description: 'Claude Sonnet 5 / GPT-5.6 Terra / Gemini 3.8 Flash / Grok 4.6 (標準実務・俊敏性重視)',
+    modelIds: ['claude-sonnet-5', 'gpt-5-6-terra', 'gemini-3-8-flash', 'grok-4-6'],
   },
   {
     id: 'tier-lightweight',
