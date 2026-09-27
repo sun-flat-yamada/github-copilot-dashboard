@@ -131,9 +131,29 @@ GitHub Actions の Variables/Secrets は最大 48KB に制限されています�
   "customPricePerCredit": 1.273,
   "customSeatPricing": {
     "enterpriseMonthly": 5000
-  }
+  },
+  "periods": [
+    {
+      "startMonth": "2025-04",
+      "endMonth": "2026-03",
+      "discountPercent": 20,
+      "customPricePerCredit": 1.25,
+      "customPricePerCreditCurrency": "JPY",
+      "customSeatPricing": {
+        "businessMonthly": 2400,
+        "enterpriseMonthly": 4800,
+        "currency": "JPY"
+      },
+      "exchangeRateFromUSD": 155.0
+    }
+  ]
 }
 ```
+
+> [!NOTE]
+> - **USDは「GitHubのカタログ価格(USD)」**: ダッシュボードの主たるUSD表示はGitHub公式カタログ価格（Enterprise: \$39/月、Business: \$19/月、Credits: \$0.01/AIC）を表します。サブ通貨として **「EA契約 USD (EA-USD)」** を選択することで、EA契約ディスカウント適用後のUSD金額（例: `$39.00 ($33.15 EA)`）を並列比較できます。
+> - **期間外のフォールバック**: `periods` で指定された期間（`startMonth` 〜 `endMonth`）に該当しない月は、デフォルト設定値へ自動フォールバックします。
+> - **公的オープンデータによる為替レート自動算出**: 設定値が存在しない区間の為替レート（USD/JPY, USD/EUR等）は、欧州中央銀行 (ECB) および日本銀行 (BOJ) 公表の信頼できる公的データから自動算出されます。
 
 ### パラメータ仕様 & EA契約ボリュームディスカウント
 | パラメータ | 型 | デフォルト | 説明 |
@@ -144,6 +164,7 @@ GitHub Actions の Variables/Secrets は最大 48KB に制限されています�
 | `customSeatPricing` | `object` | 未設定 | 個別契約シート単価（`businessMonthly`, `enterpriseMonthly`） |
 | `seatPricing` | `object` | 19 / 39 USD | 標準シート定価（USD） |
 | `creditsPricing` | `object` | 0.01 USD | 標準クレジット定価（USD/AIC） |
+| `periods` | `array` | `[]` | 期間別パラメータ設定リスト（`startMonth`, `endMonth`, 各プランの月額・単価・ディスカウント率・為替レート） |
 
 ---
 

@@ -134,7 +134,11 @@ Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint 
    - Automatically closes upon outside clicks (`mousedown`) or pressing the `Escape` key.
 3. **Menu Organization**:
    - **Display Mode (Theme)**: Real-time display of current mode (Dark / Light) with an accessible one-click toggle button (`Sun` / `Moon`). Preferences persist in `localStorage` under `copilot_dashboard_theme`.
-   - **Sub-Currency Selection**: Grounded on baseline USD (`$`) display, allows selecting an optional secondary currency (USD Only, USD + JPY, USD + EUR, custom, etc.). Preferences persist in `localStorage` under `copilot_dashboard_preferred_sub_currency`.
+   - **Sub-Currency Selection & Catalog USD / EA-USD Display**:
+     - **GitHub Catalog Price (USD) as Primary Baseline**: The primary USD currency (`$`) strictly represents the official GitHub Catalog list price. Dedicated tooltips and indicators are embedded across CurrencySelector, KPI cards, and table headers.
+     - **EA Contract USD (EA-USD) Sub-Currency Display**: Introduces "USD + EA-USD ($) [EA Contract Price]" into the sub-currency selector, rendering both the list price and discounted EA price (e.g. `$39.00 ($33.15 EA)`) side-by-side.
+     - **Public Exchange Rate Auto-Calculation**: Automatically computes USD-to-target currency exchange rates from official European Central Bank (ECB) and Bank of Japan (BOJ) data for any unconfigured period.
+     - **Persistence**: Preferences persist in `localStorage` under `copilot_dashboard_preferred_sub_currency`.
 4. **Semantic Token Architecture (Tailwind CSS v4)**:
    - Utilizes CSS variables (`--color-slate-*`) under `html.light` and `[data-theme="light"]` selectors, automatically adapting canvas backgrounds (`#f8fafc`), cards (`#ffffff`), borders (`#e2e8f0`), and typography (`#0f172a`).
    - Dynamically binds Recharts gridlines, axis labels, and floating tooltips to theme tokens for high legibility across all views.

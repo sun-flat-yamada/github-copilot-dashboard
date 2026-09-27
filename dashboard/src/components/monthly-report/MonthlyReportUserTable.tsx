@@ -365,6 +365,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
               <th
                 className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('spend')}
+                title="利用費用 (GitHubのカタログ価格(USD)基準)"
               >
                 <div className="flex items-center justify-end space-x-1">
                   <span>利用費用 (USD)</span>
@@ -374,6 +375,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
               <th
                 className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('excess')}
+                title="超過請求 (GitHubのカタログ価格(USD))"
               >
                 <div className="flex items-center justify-end space-x-1">
                   <span>超過請求 (USD)</span>

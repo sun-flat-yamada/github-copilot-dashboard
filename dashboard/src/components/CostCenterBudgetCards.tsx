@@ -48,6 +48,9 @@ export const CostCenterBudgetCards: React.FC<CostCenterBudgetCardsProps> = ({ bu
               <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-md bg-indigo-950 text-indigo-300 border border-indigo-800">
                 GitHub Enterprise Billing
               </span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700" title="各金額のUSD値はGitHubの公式カタログ価格(USD)に基づきます">
+                USD=カタログ価格
+              </span>
             </div>
             <p className="text-xs text-slate-400 mt-1">
               各Cost Centerに割り当てられた上限Budget額、無料枠、および現在の消化状況を一元管理します。
