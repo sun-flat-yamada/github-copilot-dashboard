@@ -32,12 +32,12 @@ export const PatternDrilldownChart: React.FC<PatternDrilldownChartProps> = ({ dr
     <div className="space-y-5">
       {/* チャートエリア: 日次推移 & モデル構成比率 */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 pt-2">
-        {/* 日次アクティビティ推移 (提案 vs 受諾 & 受諾率) */}
+        {/* 日次アクティビティ推移 (提案 vs 受諾 & Inline補完受諾率) */}
         <div className="lg:col-span-8 bg-slate-950/70 border border-slate-800 rounded-xl p-4">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-bold text-slate-300 flex items-center space-x-1.5">
               <Activity className="w-3.5 h-3.5 text-indigo-400" />
-              <span>期間内の日次推移 (コード提案・受諾・受諾率)</span>
+              <span>期間内の日次推移 (コード提案・受諾・Inline補完受諾率)</span>
             </span>
             <span className="text-[10px] text-slate-500">
               {drilldown.dailyActivity.length} 日分のログ
@@ -93,7 +93,7 @@ export const PatternDrilldownChart: React.FC<PatternDrilldownChartProps> = ({ dr
                   yAxisId="right"
                   type="monotone"
                   dataKey="rate"
-                  name="受諾率 (%)"
+                  name="Inline補完受諾率 (%)"
                   stroke="#10b981"
                   strokeWidth={2}
                   dot={{ r: 2 }}

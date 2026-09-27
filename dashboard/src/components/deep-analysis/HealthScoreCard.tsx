@@ -93,7 +93,7 @@ export const HealthScoreCard: React.FC<HealthScoreCardProps> = ({ diagnosticResu
           </div>
 
           <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
-            <span className="text-[11px] text-slate-400 font-medium">提案受諾率</span>
+            <span className="text-[11px] text-slate-400 font-medium">Inline補完受諾率</span>
             <div
               className={`text-lg font-bold mt-0.5 ${
                 metricsSummary.acceptanceRatePercent >= 30

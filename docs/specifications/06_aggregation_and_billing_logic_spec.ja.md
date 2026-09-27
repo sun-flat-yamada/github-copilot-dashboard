@@ -100,8 +100,8 @@ $$\text{Potential Monthly Savings} = \sum_{u \in \text{Idle} \cup \text{NeverUse
 ## 4. 利用量メトリクス集計指標 & 分析ガイドライン
 
 ### 4.1 基本指標の定義
-1. **コード受諾率 (Code Completion Acceptance Rate)**:
-   $$\text{Acceptance Rate} = \frac{\text{Total Code Acceptances}}{\text{Total Code Suggestions}} \times 100\%$$
+1. **Inline補完受諾率 (Inline Completion Acceptance Rate)**:
+   $$\text{Inline Acceptance Rate} = \frac{\text{Total Code Acceptances}}{\text{Total Code Suggestions}} \times 100\%$$
    - **対象範囲**: エディタ内のインライン補完（Ghost Text）のみ。
 2. **コード生成寄与度 (Lines Accepted Ratio)**:
    受諾された総行数と提案総行数の比率（$\frac{\text{Lines Accepted}}{\text{Lines Suggested}} \times 100\%$）。
@@ -118,10 +118,10 @@ $$\text{Potential Monthly Savings} = \sum_{u \in \text{Idle} \cup \text{NeverUse
 > この結果、以下の現象が発生します：
 > 1. **分母の機械的膨張**: エディタ上でエージェントの生成コードを閲覧・確認する際のキーストロークやカーソル移動により、裏でゴーストテキスト（Suggestions）のみが生成・破棄（暗黙的拒否）され、分母が累積する。
 > 2. **分子の非加算**: CLIやエージェントがファイルに直接適用したパッチやコマンド実行は、IDEコード補完の受諾（Acceptances）には一切カウントされない。
-> 3. **見かけ上の受諾率激減**: 先進的な活用者ほど受諾率が10%〜15%以下に低下する「受諾率の逆転（パラドックス）」が生じる。
+> 3. **見かけ上の受諾率激減**: 先進的な活用者ほどInline補完受諾率が10%〜15%以下に低下する「受諾率の逆転（パラドックス）」が生じる。
 
 ### 4.3 推奨分析設計（サーフェス別分離評価）
-組織および個人の開発生産性を評価する際は、受諾率単一の数値に依存せず、以下の複合評価を実施する：
+組織および個人の開発生産性を評価する際は、Inline補完受諾率単一の数値に依存せず、以下の複合評価を実施する：
 - **サーフェス別分離**: IDEコード補完（手動コーディング補助）、Chat/CLI（対話・コマンド実行）、Agent（自律タスク実行）を別セグメントとして計測する。
 - **アウトカム指標との連動**: プルリクエスト作成速度、サイクルタイム、PRサマリー作成率（`total_pr_summaries_created`）、AIクレジット消費等の成果ベース指標と突き合わせて総合判断する。
-- **ワークフロー分類軸としての活用**: 受諾率を「手動補完中心型」と「CLI/Agent自律型」の開発スタイル分類フィルターとして用いる。
+- **ワークフロー分類軸としての活用**: Inline補完受諾率を「手動補完中心型」と「CLI/Agent自律型」の開発スタイル分類フィルターとして用いる。
