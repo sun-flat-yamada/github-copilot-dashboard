@@ -241,8 +241,10 @@ export class InefficiencyDiagnosticEngine {
     // 組織全体の平均ベンチマーク計算
     const peerMetrics = this.calculatePeerBenchmark(allProfiles, scopeType, customRange);
 
+    const totalAgentSessions = profile.total_agent_sessions || 0;
+
     // 9つの非効率パターンの判定
-    const p1 = diagnoseTabSpamming(totalSuggestions, totalAcceptances, acceptanceRate, activeDays);
+    const p1 = diagnoseTabSpamming(totalSuggestions, totalAcceptances, acceptanceRate, activeDays, totalAgentSessions, totalChats);
     const p2 = diagnoseOverkillModel(totalChats, modelTotals);
     const p3 = diagnoseContextBlindChat(totalChats, totalAcceptances, activeDays, filteredHistory);
     const p4 = diagnosePassiveSeat(periodInfo.totalDays, activeDays, totalSuggestions, totalChats);
@@ -257,7 +259,6 @@ export class InefficiencyDiagnosticEngine {
       totalCreditsConsumed = profile.ai_credits_used_28d;
     }
     const creditsLimit = (profile as any).ai_credits_limit_monthly || 3900;
-    const totalAgentSessions = profile.total_agent_sessions || 0;
     const shortSessions = Math.round(totalAgentSessions * 0.25);
     const completedSessions = (profile as any).completed_agent_sessions ?? Math.round(totalAgentSessions * 0.7);
     const heavyModelRequests = (modelTotals['o1'] || 0) + (modelTotals['claude-3-7-sonnet'] || 0);
@@ -267,7 +268,7 @@ export class InefficiencyDiagnosticEngine {
 
     const p6 = diagnoseCreditBurnOverdrive(totalCreditsConsumed, creditsLimit, totalAcceptances, totalAgentSessions);
     const p7 = diagnoseAgentAbandonment(totalAgentSessions, shortSessions, completedSessions);
-    const p8 = diagnoseModelCostMismatch(heavyModelRequests, totalChats, acceptanceRate);
+    const p8 = diagnoseModelCostMismatch(heavyModelRequests, totalChats, acceptanceRate, totalAgentSessions);
     const p9 = diagnoseReviewBypass(agentPrs, unreviewedPrs, mergeMins);
 
     const patterns = [p1, p2, p3, p4, p5, p6, p7, p8, p9];

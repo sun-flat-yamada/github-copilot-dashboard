@@ -326,8 +326,14 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
             </div>
 
             {/* 受諾率 */}
-            <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-xl">
-              <span className="text-[11px] text-slate-400 block">コード受諾率</span>
+            <div 
+              className="p-3 bg-slate-900/80 border border-slate-800 rounded-xl"
+              title="IDEコード補完（Ghost Text）の受諾率です。Copilot CLIやAutopilot自律モードの作業は含まれません。"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-slate-400 block">コード受諾率</span>
+                <span className="text-[9px] text-slate-500 font-normal">※IDE補完</span>
+              </div>
               <span className="text-lg font-bold font-mono text-purple-300 mt-1 block">
                 {acceptanceRateVal}%
               </span>

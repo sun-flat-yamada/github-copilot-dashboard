@@ -64,7 +64,7 @@ Evaluates 5 prevalent AI coding anti-patterns:
 
 | Pattern ID | Pattern Name | Indicators & Evaluation Rationale | Risk Thresholds |
 | :--- | :--- | :--- | :--- |
-| `tab_spamming_roulette` | **Generation Roulette / Passive Tab Spamming** | High suggestion volume (>40/day) paired with extremely low acceptance (<15%). Indicates repetitive regeneration and blind tab-spamming. | Prob $\ge 70\%$: High<br>40–69%: Medium |
+| `tab_spamming_roulette` | **Generation Roulette / Passive Tab Spamming** | High suggestion volume (>40/day) paired with extremely low acceptance (<15%). Indicates repetitive regeneration and blind tab-spamming.<br>**[CLI/Autopilot Compensation]**: For users actively utilizing Agent sessions or CLI/Chat workflows, manual completion acceptance rates are structurally depressed (Acceptance Rate Paradox). The diagnostic automatically suppresses penalty to Healthy/Low. | Prob $\ge 70\%$: High<br>40–69%: Medium<br>*Suppressed to Healthy/Low for Agent/CLI users* |
 | `overkill_model_addiction` | **Overkill Heavy Model Addiction** | Heavy reasoning models (e.g., o1) exceed 70% of routine interactions without utilizing lightweight models (e.g., Gemini Flash). | Prob $\ge 70\%$: High<br>40–69%: Medium |
 | `context_blind_chat_churn` | **Context-Blind Chat Churn** | Excessive chat turns (>15/day) with negligible code adoption. Excludes high-yield inline pair-programming ($\ge 20$ lines/prompt). | Prob $\ge 70\%$: High<br>40–69%: Medium |
 | `passive_seat_disengaged` | **Disengaged / Abandoned Seat Candidate** | Active days under 20% of the period, or nominal usage indicating lack of workflow onboarding. | Prob $\ge 70\%$: High<br>40–69%: Medium |
