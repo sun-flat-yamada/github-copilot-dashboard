@@ -293,10 +293,10 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
             </div>
             <div>
               <h3 id="data-selection-modal-title" className="text-base sm:text-lg font-bold text-white tracking-tight">
-                分析対象データの選択と絞り込み
+                分析対象データ
               </h3>
               <p className="text-xs text-slate-400 hidden sm:block">
-                ダッシュボード全体の集計母数となるデータソースおよび絞り込み条件（AND）を設定します
+                ダッシュボード全体の集計母数となるデータソースの選択および絞り込み条件（AND）を設定します
               </p>
             </div>
           </div>
