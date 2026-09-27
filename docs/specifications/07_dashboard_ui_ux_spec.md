@@ -29,7 +29,8 @@ The dashboard is designed as a responsive Single Page Application (SPA) optimize
 |  | Total Spend  |  | Total Seats  |  | Active Rate  |  | Acceptance % |                       |
 |  |  $6,240.00   |  |  160 seats   |  |  86.2% (138) |  |  32.8%        |                       |
 |  +--------------+  +--------------+  +--------------+  +--------------+                       |
-|                                                                    [Expand All] [Collapse All] |
++-----------------------------------------------------------------------------------------------+
+| [Detailed Analysis Sections] (5 Sections)                                          [⤓] [⤒]     |
 +-----------------------------------------------------------------------------------------------+
 +-----------------------------------------------------------------------------------------------+
 | [Block 1: Collapsible Section (Default: Collapsed with Summary Chip Badges)]                 |
@@ -80,7 +81,7 @@ The center of the header prominently displays the currently active dataset, allo
 ### 2.4 Progressive Disclosure via Accordions
 - **Block 0 (Summary Block)**: Always expanded at the top, presenting executive KPI summaries.
 - **Block 1..N (Feature Blocks)**: Collapsed by default, displaying title, icon, and summary chips (e.g., `12 Departments`, `$6,240.00`).
-- **Batch Controls**: `[Expand All]` and `[Collapse All]` buttons positioned slimly beneath the Overview summary block for instant toggling.
+- **Detailed Analysis Section Header & Batch Icon Controls**: A clean section divider bar positioned beneath the summary block featuring a "Detailed Analysis Sections" heading with section count pill badge (`5 Sections` / `2 Sections`). Rounded compact icon buttons (`[⤓]` / `[⤒]`, `ChevronsDown` / `ChevronsUp`) are placed on the right, providing high accessibility with hover tooltips (`title`) and `aria-label`. Negative margins are eliminated to structurally prevent visual overlap with neighboring blocks.
 
 ### 2.5 Anomaly Detection & Error Handling (Error & Warning Detection)
 Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint disruptions):

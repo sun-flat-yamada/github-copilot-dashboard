@@ -45,6 +45,7 @@ import {
   AlertCircle,
   ChevronsDown,
   ChevronsUp,
+  LayoutGrid,
 } from 'lucide-react';
 
 const ALL_SECTION_IDS = [
@@ -351,27 +352,44 @@ export const App: React.FC = () => {
               <MonthlyReportKpis reportData={currentReportData} />
             )}
 
-            {/* アコーディオン全開閉ボタン (要件6) */}
-            <div className="flex items-center justify-end space-x-2 -mb-2">
-              <button
-                type="button"
-                onClick={() => expandAll()}
-                className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 transition cursor-pointer"
-                title="すべての個別要素を展開"
-              >
-                <ChevronsDown className="w-3.5 h-3.5" />
-                <span>すべて展開</span>
-              </button>
+            {/* 詳細分析セクションヘッダー ＆ 一括開閉アイコンコントロール (★要件6, Issue #118) */}
+            <div className="flex items-center justify-between pt-2 pb-1 border-b border-slate-800/80">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-1.5 rounded-lg bg-indigo-950/60 border border-indigo-800/50 text-indigo-400">
+                  <LayoutGrid className="w-4 h-4" />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <h3 className="text-sm font-bold text-slate-200 tracking-tight">
+                    詳細分析セクション
+                  </h3>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800/90 text-slate-400 font-mono border border-slate-700/50">
+                    {activeSource === 'live_metrics' ? '5 セクション' : '2 セクション'}
+                  </span>
+                </div>
+              </div>
 
-              <button
-                type="button"
-                onClick={collapseAll}
-                className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 transition cursor-pointer"
-                title="すべての個別要素を収納"
-              >
-                <ChevronsUp className="w-3.5 h-3.5" />
-                <span>すべて折りたたむ</span>
-              </button>
+              {/* スマートなアイコン化開閉ボタン群 (ツールチップ付き) */}
+              <div className="flex items-center space-x-1.5">
+                <button
+                  type="button"
+                  onClick={() => expandAll()}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/80 transition-all cursor-pointer shadow-sm"
+                  title="すべての個別要素を展開"
+                  aria-label="すべての個別要素を展開"
+                >
+                  <ChevronsDown className="w-4 h-4" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={collapseAll}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/80 transition-all cursor-pointer shadow-sm"
+                  title="すべての個別要素を収納"
+                  aria-label="すべての個別要素を収納"
+                >
+                  <ChevronsUp className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {/* 個別要素ブロック (初期折りたたみ ★要件6, 1カラム垂直スタック ★要件5) */}
