@@ -519,34 +519,41 @@ Tier: ${(model.extended_capabilities?.tier || model.capabilities?.tier || '標�
           <div className="inline-flex items-center rounded-lg bg-slate-900 p-0.5 border border-slate-800 text-[10px]">
             <button
               onClick={() => onSidebarModeChange('expanded')}
-              className={`px-1.5 py-0.5 rounded font-bold transition-all flex items-center space-x-1 ${
+              className={`rounded font-bold transition-all flex items-center ${
+                isCompact ? 'p-1' : 'px-1.5 py-0.5 space-x-1'
+              } ${
                 sidebarMode === 'expanded'
                   ? 'bg-indigo-600 text-white shadow'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
               title="表示 (通常幅・フル名称表示)"
+              aria-label="表示 (通常幅・フル名称表示)"
             >
-              <Maximize2 className="w-3 h-3" />
-              <span className="hidden sm:inline">表示</span>
+              <Maximize2 className="w-3 h-3 flex-shrink-0" />
+              {!isCompact && <span className="hidden sm:inline whitespace-nowrap">表示</span>}
             </button>
             <button
               onClick={() => onSidebarModeChange('compact')}
-              className={`px-1.5 py-0.5 rounded font-bold transition-all flex items-center space-x-1 ${
+              className={`rounded font-bold transition-all flex items-center ${
+                isCompact ? 'p-1' : 'px-1.5 py-0.5 space-x-1'
+              } ${
                 sidebarMode === 'compact'
                   ? 'bg-purple-600 text-white shadow'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
               title="省幅表示 (略称表示・ホバーでフル名称)"
+              aria-label="省幅表示 (略称表示・ホバーでフル名称)"
             >
-              <Minimize2 className="w-3 h-3" />
-              <span className="hidden sm:inline">省幅</span>
+              <Minimize2 className="w-3 h-3 flex-shrink-0" />
+              {!isCompact && <span className="hidden sm:inline whitespace-nowrap">省幅</span>}
             </button>
             <button
               onClick={() => onSidebarModeChange('collapsed')}
               className="p-1 rounded text-slate-400 hover:text-rose-300 hover:bg-slate-800 transition-colors"
               title="非表示 (折りたたみ)"
+              aria-label="非表示 (折りたたみ)"
             >
-              <PanelLeftClose className="w-3 h-3" />
+              <PanelLeftClose className="w-3 h-3 flex-shrink-0" />
             </button>
           </div>
         </div>

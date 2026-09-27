@@ -263,6 +263,11 @@ test('AI Model Radar Selector Sidebar and Abbreviation Tests', async (t) => {
     assert.ok(sidebarContent.includes('<PanelLeftOpen className="w-3.5 h-3.5'), 'Must show PanelLeftOpen icon in collapsed mode');
     assert.ok(!sidebarContent.includes('<span>\n              モデル選択\n            </span>'), 'Must NOT have "モデル選択" text in collapsed mode');
 
+    // 省幅（compact）状態での表示切替ボタンアイコン単独表示 & 改行防止（!isCompact && span whitespace-nowrap）
+    assert.ok(sidebarContent.includes("!isCompact && <span className=\"hidden sm:inline whitespace-nowrap\">表示</span>"), 'Must hide "表示" label in compact mode to prevent 1-char wrapping');
+    assert.ok(sidebarContent.includes("!isCompact && <span className=\"hidden sm:inline whitespace-nowrap\">省幅</span>"), 'Must hide "省幅" label in compact mode to prevent 1-char wrapping');
+    assert.ok(sidebarContent.includes("isCompact ? 'p-1' : 'px-1.5 py-0.5 space-x-1'"), 'Must use compact padding p-1 when isCompact is true');
+
     // 詳細カード切り替えウィジェットの非表示・未選択時制御
     assert.ok(viewContent.includes('if (!dataset || selectedModels.length === 0) return null;'), 'focusedModel must be null when 0 models are selected');
     assert.ok(viewContent.includes('モデルが選択されていません'), 'Must render empty state message in detail card widget');
