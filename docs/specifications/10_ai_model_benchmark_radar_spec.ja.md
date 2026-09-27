@@ -107,17 +107,18 @@ flowchart TD
     3. **Balanced (1M超長文・設計リファクタ標準)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / 1M窓, Arch 99, SWE 78.5)
     4. **High-Value (1M超長文・大量コード低コスト一括解析)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / 1M窓, Arch 93, SWE 71.0)
 - **🏛️ 設計に推奨 (`recommended-architecture`)**:
-  - **選定根拠**: 高度なシステム設計、アーキテクチャ選定、データモデル策定、トレードオフ分析のため、極限論理推論と設計性能を持つモデル群。新世代フラッグシップ `Claude Opus 5.5` を追加。
-  - **構成モデル (4選)**:
+  - **選定根拠**: 高度なシステム設計、アーキテクチャ選定、データモデル策定、トレードオフ分析のため、極限論理推論と設計性能を持つモデル群。新世代フラッグシップ `Claude Opus 5.5` および確立された実績を持つ `Claude Opus 5` を追加・維持。
+  - **構成モデル (5選)**:
     1. **Premier Flagship (最上位極限推論・高難度アーキテクチャ)**: `GPT-6 Astra` (In: $10.0, Out: $50.0 / Logic 99, Arch 96, SWE 82.4)
     2. **Next-Gen Frontier (最新最高峰推論・制御性向上)**: `Claude Opus 5.5` (In: $4.0, Out: $20.0 / Logic 99, Arch 99, SWE 81.8)
-    3. **Balanced (実務アーキテクチャ・モジュール構造化)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / Logic 99, Arch 99, SWE 78.5)
-    4. **High-Value (高コスパ・高速設計壁打ち＆比較)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / Logic 95, Arch 93, SWE 71.0)
+    3. **High-End (確立された最高峰推論・大局的設計)**: `Claude Opus 5` (In: $5.0, Out: $25.0 / Logic 98, Arch 99, SWE 81.0)
+    4. **Balanced (実務アーキテクチャ・モジュール構造化)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / Logic 99, Arch 99, SWE 78.5)
+    5. **High-Value (高コスパ・高速設計壁打ち＆比較)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / Logic 95, Arch 93, SWE 71.0)
 
 #### カテゴリ・メーカー別標準プリセット
 - **🌟 2026 旗艦選 (`flagship-2026`)**: 2026年各社最前線フラッグシップスナップショット（Claude Opus 5.5 / Claude Opus 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3）。
 - **💡 実用性能で高コスパ (`practical-high-value`)**: 実用コーディング性能と抜群の費用対効果を両立（Claude Sonnet 5 / Gemini 3.8 Flash / GPT-6 Luna / GPT-5.6 Luna / Kimi K2.7 Code） ※高コスパ代表として GPT-6 Luna および GPT-5.6 Luna を維持・追加。
-- **⚡ Powerful (最上位推論) (`tier-powerful`)**: 最高峰コーディング・推論群（GPT-6 Astra / Claude Opus 5.5 / Claude Opus 5 / GPT-5.5 / Kimi K3） ※GPT-5.6 Sol は GPT-5.5 へ移行、Opus 5.5 を追加。
+- **⚡ Powerful (最上位推論) (`tier-powerful`)**: 最高峰コーディング・推論群（GPT-6 Astra / Claude Opus 5.5 / Claude Opus 5 / GPT-6 Sol / Kimi K3） ※GPT-6 Sol を追加し、GPT-5.5 を整理。
 - **🛠️ Versatile (実務バランス) (`tier-versatile`)**: 標準実務・俊敏性重視（Claude Sonnet 5 / GPT-5.4 / Gemini 3.8 Flash / Grok 4.6） ※GPT-5.6 Terra は GPT-5.4 へ移行。
 - **🚀 Lightweight (超高速・低コスト) (`tier-lightweight`)**: 日常インライン・超高速補完（GPT-6 Luna / GPT-5.6 Luna / Gemini 3.5 Flash / MAI-Code-1.1-Flash / GPT-5.4 mini） ※超高速・低コスト代表として GPT-6 Luna を追加、GPT-5.6 Luna を維持。
 - **🟠 Anthropic 主力 (`vendor-anthropic`)**: Anthropic 2026最新（Claude Sonnet 5 / Claude Opus 5.5 / Claude Opus 5 / Claude Fable 5.1 / Claude Haiku 4.5） ※Opus 5.5 を追加。

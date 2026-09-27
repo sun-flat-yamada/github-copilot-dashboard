@@ -36,14 +36,14 @@ export const PRESETS: RadarPreset[] = [
   {
     id: 'recommended-architecture',
     name: '🏛️ 設計に推奨',
-    description: 'GPT-6 Astra / Claude Opus 5.5 / Claude Sonnet 5 / Gemini 3.8 Flash (極限論理推論・アーキテクチャ把握のコスト別上位選)',
-    modelIds: ['gpt-6-astra', 'claude-opus-5-5', 'claude-sonnet-5', 'gemini-3-8-flash'],
+    description: 'GPT-6 Astra / Claude Opus 5.5 / Claude Opus 5 / Claude Sonnet 5 / Gemini 3.8 Flash (極限論理推論・アーキテクチャ把握のコスト別上位選)',
+    modelIds: ['gpt-6-astra', 'claude-opus-5-5', 'claude-opus-5', 'claude-sonnet-5', 'gemini-3-8-flash'],
   },
   {
     id: 'tier-powerful',
     name: '⚡ Powerful (最上位推論)',
-    description: 'GPT-6 Astra / Claude Opus 5.5 / Claude Opus 5 / GPT-5.5 / Kimi K3 (最高峰コーディング・推論群)',
-    modelIds: ['gpt-6-astra', 'claude-opus-5-5', 'claude-opus-5', 'gpt-5-5', 'kimi-k3'],
+    description: 'GPT-6 Astra / Claude Opus 5.5 / Claude Opus 5 / GPT-6 Sol / Kimi K3 (最高峰コーディング・推論群)',
+    modelIds: ['gpt-6-astra', 'claude-opus-5-5', 'claude-opus-5', 'gpt-6-sol', 'kimi-k3'],
   },
   {
     id: 'tier-versatile',
