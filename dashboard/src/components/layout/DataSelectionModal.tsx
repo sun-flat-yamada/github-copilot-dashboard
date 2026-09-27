@@ -31,6 +31,7 @@ import {
   X,
   FileCheck,
   Calendar,
+  Building2,
 } from 'lucide-react';
 
 interface DataSelectionModalProps {
@@ -698,18 +699,27 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
             {/* カテゴリ A: 組織・財務軸 */}
             <div className="p-3.5 rounded-xl bg-slate-950/40 border border-slate-800 space-y-3">
               <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-300">
-                <Landmark className="w-3.5 h-3.5 text-indigo-400" />
-                <span>カテゴリ A: 組織・財務軸 (CostCenter / Organization)</span>
+                <Landmark className="w-3.5 h-3.5 text-amber-400" />
+                <span>カテゴリ A: 組織・財務軸 (</span>
+                <span className="text-amber-400">CostCenter</span>
+                <span className="text-slate-500">/</span>
+                <span className="text-blue-400">Organization</span>
+                <span>)</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-400 block mb-1">
-                    CostCenter (コストセンター)
+                  <label className="text-[11px] font-semibold text-amber-300 flex items-center space-x-1 mb-1">
+                    <Landmark className="w-3 h-3 text-amber-400" />
+                    <span>CostCenter (コストセンター)</span>
                   </label>
                   <select
                     value={localCriteria.costCenter}
                     onChange={(e) => setLocalCriteria((prev) => ({ ...prev, costCenter: e.target.value }))}
-                    className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:ring-1 focus:ring-purple-500"
+                    className={`w-full bg-slate-900 border text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none transition ${
+                      localCriteria.costCenter !== 'all'
+                        ? 'border-amber-600 focus:ring-1 focus:ring-amber-500 focus:border-amber-500'
+                        : 'border-slate-700 hover:border-amber-600/60 focus:ring-1 focus:ring-amber-500 focus:border-amber-500'
+                    }`}
                   >
                     <option value="all">すべて (All)</option>
                     <option value="__unassigned__">未割当のみ (Unassigned)</option>
@@ -720,13 +730,18 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-400 block mb-1">
-                    GitHub Organization
+                  <label className="text-[11px] font-semibold text-blue-300 flex items-center space-x-1 mb-1">
+                    <Building2 className="w-3 h-3 text-blue-400" />
+                    <span>GitHub Organization</span>
                   </label>
                   <select
                     value={localCriteria.organization}
                     onChange={(e) => setLocalCriteria((prev) => ({ ...prev, organization: e.target.value }))}
-                    className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:ring-1 focus:ring-purple-500"
+                    className={`w-full bg-slate-900 border text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none transition ${
+                      localCriteria.organization !== 'all'
+                        ? 'border-blue-600 focus:ring-1 focus:ring-blue-500 focus:border-blue-500'
+                        : 'border-slate-700 hover:border-blue-600/60 focus:ring-1 focus:ring-blue-500 focus:border-blue-500'
+                    }`}
                   >
                     <option value="all">すべて (All)</option>
                     <option value="__unassigned__">未割当のみ (Unassigned)</option>
@@ -742,17 +757,26 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
             <div className="p-3.5 rounded-xl bg-slate-950/40 border border-slate-800 space-y-3">
               <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-300">
                 <Briefcase className="w-3.5 h-3.5 text-purple-400" />
-                <span>カテゴリ B: プロジェクト・属性軸 (グループ / Tag)</span>
+                <span>カテゴリ B: プロジェクト・属性軸 (</span>
+                <span className="text-purple-400">ユーザー定義Gr</span>
+                <span className="text-slate-500">/</span>
+                <span className="text-rose-400">Tag</span>
+                <span>)</span>
               </div>
 
               <div>
-                <label className="text-[11px] font-semibold text-slate-400 block mb-1">
-                  ユーザー定義グループ (部署・PJ)
+                <label className="text-[11px] font-semibold text-purple-300 flex items-center space-x-1 mb-1">
+                  <Briefcase className="w-3 h-3 text-purple-400" />
+                  <span>ユーザー定義グループ (部署・PJ)</span>
                 </label>
                 <select
                   value={localCriteria.group}
                   onChange={(e) => setLocalCriteria((prev) => ({ ...prev, group: e.target.value }))}
-                  className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:ring-1 focus:ring-purple-500"
+                  className={`w-full bg-slate-900 border text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none transition ${
+                    localCriteria.group !== 'all'
+                      ? 'border-purple-600 focus:ring-1 focus:ring-purple-500 focus:border-purple-500'
+                      : 'border-slate-700 hover:border-purple-600/60 focus:ring-1 focus:ring-purple-500 focus:border-purple-500'
+                  }`}
                 >
                   <option value="all">すべてのグループ (All)</option>
                   <option value="__unassigned__">未割当のみ (Unassigned)</option>
@@ -764,15 +788,15 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-[11px] font-semibold text-slate-400 flex items-center space-x-1">
-                    <Tag className="w-3 h-3 text-purple-400" />
+                  <label className="text-[11px] font-semibold text-rose-300 flex items-center space-x-1">
+                    <Tag className="w-3 h-3 text-rose-400" />
                     <span>Tag 絞り込み (複数選択時は AND一致)</span>
                   </label>
                   {localCriteria.tags.length > 0 && (
                     <button
                       type="button"
                       onClick={() => setLocalCriteria((prev) => ({ ...prev, tags: [] }))}
-                      className="text-[10px] text-purple-400 hover:text-purple-300"
+                      className="text-[10px] text-rose-400 hover:text-rose-300 transition"
                     >
                       クリア
                     </button>
@@ -792,11 +816,11 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
                           onClick={() => handleToggleTag(tag)}
                           className={`flex items-center space-x-1 px-2 py-0.5 rounded text-xs transition cursor-pointer border ${
                             isSelected
-                              ? 'bg-purple-600 text-white border-purple-500 shadow-sm'
-                              : 'bg-slate-850 text-slate-300 border-slate-700 hover:bg-slate-800'
+                              ? 'bg-rose-600 text-white border-rose-500 shadow-sm hover:bg-rose-500'
+                              : 'bg-slate-850 text-slate-300 border-slate-700 hover:bg-slate-800 hover:border-rose-500/50'
                           }`}
                         >
-                          {isSelected && <Check className="w-3 h-3 text-purple-200" />}
+                          {isSelected && <Check className="w-3 h-3 text-rose-200" />}
                           <span>{tag}</span>
                         </button>
                       );
