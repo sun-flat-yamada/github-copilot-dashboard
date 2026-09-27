@@ -65,6 +65,33 @@ describe('User Detail Table Enhancements & Compact Style Tests', () => {
       assert.match(content, /px-2\.5\s+py-2/);
     });
 
+    it('freezes the first three primary columns (index, user, display name) on horizontal scroll', () => {
+      // Header sticky columns
+      assert.match(content, /sticky\s+top-0\s+left-0\s+z-30/);
+      assert.match(content, /sticky\s+top-0\s+left-12\s+z-30/);
+      assert.match(content, /sticky\s+top-0\s+left-\[188px\]\s+z-30/);
+
+      // Body sticky columns
+      assert.match(content, /sticky\s+left-0\s+z-20/);
+      assert.match(content, /sticky\s+left-12\s+z-20/);
+      assert.match(content, /sticky\s+left-\[188px\]\s+z-20/);
+
+      // Shadow border separation on display_name column
+      assert.match(content, /shadow-\[3px_0_6px_-2px_rgba\(0,0,0,0\.5\)\]/);
+    });
+
+    it('provides toolbar quick navigation buttons and sticky bottom horizontal scroll controller', () => {
+      // Toolbar buttons
+      assert.match(content, /aria-label="左にスクロール"/);
+      assert.match(content, /aria-label="右にスクロール"/);
+
+      // Sticky bottom controller with slider
+      assert.match(content, /sticky\s+bottom-0\s+z-30/);
+      assert.match(content, /aria-label="水平スクロール位置"/);
+      assert.match(content, /aria-label="下部バー左スクロール"/);
+      assert.match(content, /aria-label="下部バー右スクロール"/);
+    });
+
     it('replaces 任意仕訳グループ and similar phrasing with ユーザー定義Gr', () => {
       assert.doesNotMatch(content, /任意仕訳グループ/);
       assert.match(content, /<span>ユーザー定義Gr<\/span>/);
@@ -120,6 +147,33 @@ describe('User Detail Table Enhancements & Compact Style Tests', () => {
 
     it('applies compact padding style to table cells and headers', () => {
       assert.match(content, /py-2\s+px-2\.5/);
+    });
+
+    it('freezes the first three primary columns (index, user, display name) on horizontal scroll', () => {
+      // Header sticky columns
+      assert.match(content, /sticky\s+top-0\s+left-0\s+z-30/);
+      assert.match(content, /sticky\s+top-0\s+left-12\s+z-30/);
+      assert.match(content, /sticky\s+top-0\s+left-\[188px\]\s+z-30/);
+
+      // Body sticky columns
+      assert.match(content, /sticky\s+left-0\s+z-20/);
+      assert.match(content, /sticky\s+left-12\s+z-20/);
+      assert.match(content, /sticky\s+left-\[188px\]\s+z-20/);
+
+      // Shadow border separation on display_name column
+      assert.match(content, /shadow-\[3px_0_6px_-2px_rgba\(0,0,0,0\.5\)\]/);
+    });
+
+    it('provides toolbar quick navigation buttons and sticky bottom horizontal scroll controller', () => {
+      // Toolbar buttons
+      assert.match(content, /aria-label="左にスクロール"/);
+      assert.match(content, /aria-label="右にスクロール"/);
+
+      // Sticky bottom controller with slider
+      assert.match(content, /sticky\s+bottom-0\s+z-30/);
+      assert.match(content, /aria-label="水平スクロール位置"/);
+      assert.match(content, /aria-label="下部バー左スクロール"/);
+      assert.match(content, /aria-label="下部バー右スクロール"/);
     });
 
     it('replaces 任意仕訳グループ and similar phrasing with ユーザー定義Gr', () => {
