@@ -67,7 +67,7 @@ export const OverviewViewComponent: React.FC<ViewPluginProps<OverviewViewModel>>
 
           <CollapsibleSection
             id="allocation"
-            title="グループ別 コスト配賦 & ライセンス稼働状況"
+            title="グループ別 コスト内訳 & ライセンス稼働状況"
             subtitle="選択仕訳軸（部署 / Cost Center / Org）に基づく費用シェアと稼働率"
             icon={<PieIcon className="w-4 h-4 text-purple-400" />}
             summaryChips={
@@ -194,10 +194,10 @@ export const OverviewViewComponent: React.FC<ViewPluginProps<OverviewViewModel>>
 
 export const OverviewViewPlugin: ViewPlugin<OverviewViewModel> = {
   id: 'overview',
-  label: 'コスト配賦 & 総合サマリー',
-  title: 'コスト配賦 & 総合サマリー',
-  shortTitle: 'コスト配賦',
-  description: '3軸（部署・Cost Center・Organization）費用配賦とKPI概況',
+  label: 'コスト内訳 & 総合サマリー',
+  title: 'コスト内訳 & 総合サマリー',
+  shortTitle: 'コスト内訳',
+  description: '3軸（部署・Cost Center・Organization）費用内訳とKPI概況',
   icon: 'PieChart',
   iconName: 'PieChart',
   order: 1,

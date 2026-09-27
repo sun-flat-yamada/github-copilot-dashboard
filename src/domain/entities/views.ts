@@ -39,9 +39,9 @@ export interface AnalysisViewDefinition {
 export const ANALYSIS_VIEW_REGISTRY: AnalysisViewDefinition[] = [
   {
     id: 'overview',
-    title: 'コスト配賦 & 総合サマリー',
-    shortTitle: 'コスト配賦',
-    description: '3軸（部署・Cost Center・Organization）費用配賦とKPI概況',
+    title: 'コスト内訳 & 総合サマリー',
+    shortTitle: 'コスト内訳',
+    description: '3軸（部署・Cost Center・Organization）費用内訳とKPI概況',
     iconName: 'PieChart',
     supportedDataSources: ['live_metrics', 'monthly_report', 'user_upload'],
     requiredCapabilities: ['kpi_summary', 'cost_allocation'],
