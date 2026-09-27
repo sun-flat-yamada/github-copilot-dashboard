@@ -16,7 +16,8 @@ import {
 
 interface CostAllocationChartsProps {
   data: ScopeAggregatedData;
-  grouping: GroupingDimension;
+  grouping?: GroupingDimension;
+  onGroupingChange?: (grouping: GroupingDimension) => void;
 }
 
 const COLORS = [
@@ -32,19 +33,30 @@ const COLORS = [
 
 export const CostAllocationCharts: React.FC<CostAllocationChartsProps> = ({
   data,
-  grouping,
+  grouping: externalGrouping,
+  onGroupingChange,
 }) => {
+  const [internalGrouping, setInternalGrouping] = React.useState<GroupingDimension>('department');
+  const currentGrouping = externalGrouping || internalGrouping;
+
+  const handleGroupingSelect = (dim: GroupingDimension) => {
+    setInternalGrouping(dim);
+    if (onGroupingChange) {
+      onGroupingChange(dim);
+    }
+  };
+
   const summariesRecord =
-    grouping === 'department'
+    currentGrouping === 'department'
       ? data.by_department
-      : grouping === 'cost_center'
+      : currentGrouping === 'cost_center'
       ? data.by_cost_center
       : data.by_organization;
 
   const groupingLabel =
-    grouping === 'department'
+    currentGrouping === 'department'
       ? '仕訳グループ (部署・PJ)'
-      : grouping === 'cost_center'
+      : currentGrouping === 'cost_center'
       ? 'GitHub Cost Center'
       : 'GitHub Organization';
 
@@ -66,19 +78,58 @@ export const CostAllocationCharts: React.FC<CostAllocationChartsProps> = ({
     <div className="flex flex-col space-y-6 w-full">
       {/* 1. コスト配賦 ドーナツチャート */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <h3 className="text-sm font-semibold text-slate-200">
             {groupingLabel} 別 コスト配賦 (USD)
           </h3>
-          <div className="flex items-center space-x-2 text-xs">
-            <span className="text-slate-400">
-              利用費用: <strong className="font-mono text-slate-200">${data.overview.total_spend_usd.toLocaleString()}</strong>
-            </span>
-            {data.overview.total_net_billable_usd !== undefined && (
-              <span className="px-2 py-0.5 rounded bg-amber-950/60 border border-amber-800/40 text-amber-300 font-mono text-[11px]">
-                超過請求: ${data.overview.total_net_billable_usd.toLocaleString()}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* 集計軸切替タブ (インライン) */}
+            <div className="inline-flex rounded-lg bg-slate-950 p-1 border border-slate-800 text-xs">
+              <button
+                type="button"
+                onClick={() => handleGroupingSelect('department')}
+                className={`px-2.5 py-1 rounded-md font-medium transition cursor-pointer ${
+                  currentGrouping === 'department'
+                    ? 'bg-purple-600 text-white shadow'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                部署 (Department)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleGroupingSelect('cost_center')}
+                className={`px-2.5 py-1 rounded-md font-medium transition cursor-pointer ${
+                  currentGrouping === 'cost_center'
+                    ? 'bg-purple-600 text-white shadow'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Cost Center
+              </button>
+              <button
+                type="button"
+                onClick={() => handleGroupingSelect('organization')}
+                className={`px-2.5 py-1 rounded-md font-medium transition cursor-pointer ${
+                  currentGrouping === 'organization'
+                    ? 'bg-purple-600 text-white shadow'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Organization
+              </button>
+            </div>
+
+            <div className="flex items-center space-x-2 text-xs">
+              <span className="text-slate-400">
+                利用費用: <strong className="font-mono text-slate-200">${data.overview.total_spend_usd.toLocaleString()}</strong>
               </span>
-            )}
+              {data.overview.total_net_billable_usd !== undefined && (
+                <span className="px-2 py-0.5 rounded bg-amber-950/60 border border-amber-800/40 text-amber-300 font-mono text-[11px]">
+                  超過請求: ${data.overview.total_net_billable_usd.toLocaleString()}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

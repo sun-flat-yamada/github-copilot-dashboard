@@ -84,8 +84,8 @@ The aggregation engine and dashboard must support rapid switching between data s
 - Support manual triggers via `workflow_dispatch`.
 - Built as a high-speed client-side Single Page Application (SPA).
 
-### FR-6: Multi-Tag AND Filtering (`TagFilterBar`)
-- Dynamically extract distinct tags from user group mapping `tags` attribute (e.g. `["Full-time", "Remote", "AI-Champion"]`) and permit multi-tag selection.
+### FR-6: Multi-Tag AND Filtering (`DataSelectionModal` Consolidation)
+- Dynamically extract distinct tags from user group mapping `tags` attribute (e.g. `["Full-time", "Remote", "AI-Champion"]`) and permit multi-tag selection within the header's Data Selection & Filter Modal (`DataSelectionModal`).
 - Apply **AND logic (must match all selected tags)** to dynamically re-aggregate KPI summary cards, group allocations, rankings, detail tables, and deep analytics.
 
 ### FR-7: Single-Column Vertical Stack Layout & Progressive Disclosure

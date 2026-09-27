@@ -7,8 +7,6 @@ import { useViewPlugin } from '../../src/frameworks/react/hooks/useViewPlugin';
 import { useTheme } from './hooks/useTheme';
 import { DashboardHeader } from './components/layout/DashboardHeader';
 import { ViewNavigation } from './components/layout/ViewNavigation';
-import { GroupingSelector } from './components/GroupingSelector';
-import { TagFilterBar } from './components/TagFilterBar';
 import { ErrorLogModal } from './components/ErrorLogModal';
 import { AboutModal } from './components/AboutModal';
 import { RefreshCw, AlertCircle } from 'lucide-react';
@@ -18,7 +16,6 @@ export const AppV2: React.FC = () => {
   const activeSource = useStoreSelector((s) => s.activeSource);
   const scopeType = useStoreSelector((s) => s.activeScopeType);
   const selectedKey = useStoreSelector((s) => s.activeScopeKey);
-  const selectedTags = useStoreSelector((s) => s.selectedTags);
   const grouping = useStoreSelector((s) => s.groupingDimension);
   const selectedGroup = useStoreSelector((s) => s.selectedGroup);
   const userStatusFilter = useStoreSelector((s) => s.userStatusFilter);
@@ -41,7 +38,6 @@ export const AppV2: React.FC = () => {
 
   const filteredScopeData = derived.get('filteredScopeData') as any;
   const filteredReportData = derived.get('filteredReportData') as any;
-  const availableTags = (derived.get('availableTags') as string[]) || [];
   const availableGroups = (derived.get('availableGroups') as string[]) || [];
 
   const repoInfo = useMemo(() => ({
@@ -92,26 +88,6 @@ export const AppV2: React.FC = () => {
       />
 
       <main className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col space-y-6">
-        <div className="flex flex-col space-y-3 bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80 shadow-sm">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <GroupingSelector
-              currentGrouping={grouping}
-              onGroupingChange={(dim: GroupingDimension) => dispatch({ type: 'SET_GROUPING', dimension: dim })}
-              selectedGroup={selectedGroup || 'all'}
-              onGroupChange={(grp: string) => dispatch({ type: 'SET_SELECTED_GROUP', group: grp })}
-              availableGroups={availableGroups}
-            />
-          </div>
-
-          <TagFilterBar
-            availableTags={availableTags}
-            selectedTags={selectedTags}
-            onToggleTag={(tag: string) => dispatch({ type: 'TOGGLE_TAG', tag })}
-            onClearTags={() => dispatch({ type: 'SET_TAGS', tags: [] })}
-            filteredCount={filteredScopeData?.users?.length || 0}
-            totalCount={indexMeta?.summary?.total_seats || 0}
-          />
-        </div>
 
         {isLoading && (
           <div className="flex flex-col items-center justify-center py-20 space-y-3">
