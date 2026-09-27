@@ -18,49 +18,85 @@ test('AI Model Radar Comparison Presets Tests', async (t) => {
     assert.ok(practicalPreset, 'practical-high-value preset must exist');
     assert.match(practicalPreset.name, /実用性能で高コスパ/, 'Preset name must contain 実用性能で高コスパ');
 
-    // Required models specified by user
+    // Required models specified by user (maintaining gpt-5-6-luna for high-value)
     assert.ok(practicalPreset.modelIds.includes('gpt-5-6-luna'), 'Must include gpt-5-6-luna');
     assert.ok(practicalPreset.modelIds.includes('gemini-3-8-flash'), 'Must include gemini-3-8-flash');
     assert.ok(practicalPreset.modelIds.includes('claude-sonnet-5'), 'Must include claude-sonnet-5');
-
-    // Additional proposed model
     assert.ok(practicalPreset.modelIds.includes('kimi-k2-7-code'), 'Includes kimi-k2-7-code as proposed balanced code model');
     assert.strictEqual(practicalPreset.modelIds.length, 4, 'Preset should contain 4 models');
   });
 
-  await t.test('includes the 2026 flagship 4 preset with Powerful Claude model (Claude Opus 5)', () => {
+  await t.test('includes the 2026 flagship preset with both Claude Opus 5.5 and Opus 5', () => {
     const flagshipPreset = PRESETS.find((p) => p.id === 'flagship-2026');
     assert.ok(flagshipPreset, 'flagship-2026 preset must exist');
-    assert.match(flagshipPreset.name, /2026上 旗艦4選/);
-    assert.strictEqual(flagshipPreset.modelIds.length, 4, 'Must contain 4 models');
-    // Verify Claude Powerful model (claude-opus-5) is selected over versatile
-    assert.ok(flagshipPreset.modelIds.includes('claude-opus-5'), 'Must include claude-opus-5 as Anthropic Powerful flagship');
+    assert.match(flagshipPreset.name, /2026.*旗艦/);
+    assert.strictEqual(flagshipPreset.modelIds.length, 5, 'Must contain 5 models');
+    // Verify both Claude Opus 5.5 and Opus 5 are included
+    assert.ok(flagshipPreset.modelIds.includes('claude-opus-5-5'), 'Must include claude-opus-5-5');
+    assert.ok(flagshipPreset.modelIds.includes('claude-opus-5'), 'Must include claude-opus-5');
     assert.ok(flagshipPreset.modelIds.includes('gpt-6-astra'), 'Must include gpt-6-astra');
     assert.ok(flagshipPreset.modelIds.includes('gemini-3-8-flash'), 'Must include gemini-3-8-flash');
     assert.ok(flagshipPreset.modelIds.includes('kimi-k3'), 'Must include kimi-k3');
   });
 
-  await t.test('includes the 3 new recommended presets (code review, codebase analysis, architecture) with top-3 cost variations', () => {
-    // 1. コードレビュー利用に推奨
+  await t.test('includes recommended presets (code review, codebase analysis, architecture) with Opus 5.5 additions and Opus 5 retention', () => {
+    // 1. コードレビュー利用に推奨 (Opus 5.5 追加、Opus 5 維持)
     const reviewPreset = PRESETS.find((p) => p.id === 'recommended-code-review');
     assert.ok(reviewPreset, 'recommended-code-review preset must exist');
     assert.match(reviewPreset.name, /コードレビュー利用に推奨/);
-    assert.strictEqual(reviewPreset.modelIds.length, 3, 'Must contain top 3 models');
-    assert.deepStrictEqual(reviewPreset.modelIds, ['claude-opus-5', 'claude-sonnet-5', 'gemini-3-8-flash']);
+    assert.strictEqual(reviewPreset.modelIds.length, 4, 'Must contain 4 models');
+    assert.deepStrictEqual(reviewPreset.modelIds, ['claude-opus-5-5', 'claude-opus-5', 'claude-sonnet-5', 'gemini-3-8-flash']);
 
-    // 2. コードベース分析に推奨
+    // 2. コードベース分析に推奨 (Opus 5.5 追加、Opus 5 維持)
     const analysisPreset = PRESETS.find((p) => p.id === 'recommended-codebase-analysis');
     assert.ok(analysisPreset, 'recommended-codebase-analysis preset must exist');
     assert.match(analysisPreset.name, /コードベース分析に推奨/);
-    assert.strictEqual(analysisPreset.modelIds.length, 3, 'Must contain top 3 models');
-    assert.deepStrictEqual(analysisPreset.modelIds, ['claude-opus-5', 'claude-sonnet-5', 'gemini-3-8-flash']);
+    assert.strictEqual(analysisPreset.modelIds.length, 4, 'Must contain 4 models');
+    assert.deepStrictEqual(analysisPreset.modelIds, ['claude-opus-5-5', 'claude-opus-5', 'claude-sonnet-5', 'gemini-3-8-flash']);
 
-    // 3. 設計に推奨
+    // 3. 設計に推奨 (Opus 5.5 を新規追加)
     const archPreset = PRESETS.find((p) => p.id === 'recommended-architecture');
     assert.ok(archPreset, 'recommended-architecture preset must exist');
     assert.match(archPreset.name, /設計に推奨/);
-    assert.strictEqual(archPreset.modelIds.length, 3, 'Must contain top 3 models');
-    assert.deepStrictEqual(archPreset.modelIds, ['gpt-6-astra', 'claude-sonnet-5', 'gemini-3-8-flash']);
+    assert.strictEqual(archPreset.modelIds.length, 4, 'Must contain 4 models');
+    assert.deepStrictEqual(archPreset.modelIds, ['gpt-6-astra', 'claude-opus-5-5', 'claude-sonnet-5', 'gemini-3-8-flash']);
+  });
+
+  await t.test('verifies GPT-5.6 to GPT-5 transition across tier-powerful, tier-versatile, and vendor-openai', () => {
+    // tier-powerful: gpt-5-6-sol -> gpt-5-5, claude-opus-5-5 added (opus-5 kept)
+    const powerfulPreset = PRESETS.find((p) => p.id === 'tier-powerful');
+    assert.ok(powerfulPreset);
+    assert.ok(powerfulPreset.modelIds.includes('claude-opus-5-5'), 'tier-powerful must include claude-opus-5-5');
+    assert.ok(powerfulPreset.modelIds.includes('claude-opus-5'), 'tier-powerful must keep claude-opus-5');
+    assert.ok(powerfulPreset.modelIds.includes('gpt-5-5'), 'tier-powerful must replace gpt-5-6-sol with gpt-5-5');
+    assert.ok(!powerfulPreset.modelIds.includes('gpt-5-6-sol'), 'tier-powerful must NOT include gpt-5-6-sol');
+
+    // tier-versatile: gpt-5-6-terra -> gpt-5-4
+    const versatilePreset = PRESETS.find((p) => p.id === 'tier-versatile');
+    assert.ok(versatilePreset);
+    assert.ok(versatilePreset.modelIds.includes('gpt-5-4'), 'tier-versatile must replace gpt-5-6-terra with gpt-5-4');
+    assert.ok(!versatilePreset.modelIds.includes('gpt-5-6-terra'), 'tier-versatile must NOT include gpt-5-6-terra');
+
+    // tier-lightweight: keeps gpt-5-6-luna
+    const lightweightPreset = PRESETS.find((p) => p.id === 'tier-lightweight');
+    assert.ok(lightweightPreset);
+    assert.ok(lightweightPreset.modelIds.includes('gpt-5-6-luna'), 'tier-lightweight must retain gpt-5-6-luna');
+
+    // vendor-openai: replaced with GPT-5 equivalents
+    const openaiPreset = PRESETS.find((p) => p.id === 'vendor-openai');
+    assert.ok(openaiPreset);
+    assert.ok(openaiPreset.modelIds.includes('gpt-5-5'));
+    assert.ok(openaiPreset.modelIds.includes('gpt-5-4'));
+    assert.ok(openaiPreset.modelIds.includes('gpt-5-mini'));
+    assert.ok(!openaiPreset.modelIds.includes('gpt-5-6-sol'));
+    assert.ok(!openaiPreset.modelIds.includes('gpt-5-6-terra'));
+    assert.ok(!openaiPreset.modelIds.includes('gpt-5-6-luna'));
+
+    // vendor-anthropic: includes opus-5.5 and keeps opus-5
+    const anthropicPreset = PRESETS.find((p) => p.id === 'vendor-anthropic');
+    assert.ok(anthropicPreset);
+    assert.ok(anthropicPreset.modelIds.includes('claude-opus-5-5'));
+    assert.ok(anthropicPreset.modelIds.includes('claude-opus-5'));
   });
 
   await t.test('all presets have unique IDs and non-empty metadata', () => {
@@ -71,7 +107,7 @@ test('AI Model Radar Comparison Presets Tests', async (t) => {
     PRESETS.forEach((p) => {
       assert.ok(p.name.length > 0, `Preset ${p.id} must have a name`);
       assert.ok(p.description.length > 0, `Preset ${p.id} must have a description`);
-      assert.ok(p.modelIds.length > 0 && p.modelIds.length <= 4, `Preset ${p.id} must have 1-4 models`);
+      assert.ok(p.modelIds.length > 0 && p.modelIds.length <= 5, `Preset ${p.id} must have 1-5 models`);
     });
   });
 
