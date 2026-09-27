@@ -98,17 +98,18 @@ Provides instant, pre-configured model comparisons across diverse tiers and scen
     3. **Balanced (1M Standard Refactor)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / 1M ctx, Arch 99, SWE 78.5)
     4. **High-Value (1M High-Volume Low-Cost)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / 1M ctx, Arch 93, SWE 71.0)
 - **🏛️ Recommended for Architecture & Design (`recommended-architecture`)**:
-  - **Rationale**: Extreme reasoning and architecture design capabilities, enhanced with `Claude Opus 5.5`.
-  - **Selected Models (4 Models)**:
+  - **Rationale**: Extreme reasoning and architecture design capabilities, featuring both `Claude Opus 5.5` and `Claude Opus 5`.
+  - **Selected Models (5 Models)**:
     1. **Premier Flagship (Extreme Frontier Reasoning)**: `GPT-6 Astra` (In: $10.0, Out: $50.0 / Logic 99, Arch 96, SWE 82.4)
     2. **Next-Gen Frontier (Steerability & Deep Design)**: `Claude Opus 5.5` (In: $4.0, Out: $20.0 / Logic 99, Arch 99, SWE 81.8)
-    3. **Balanced (Modular Architecture)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / Logic 99, Arch 99, SWE 78.5)
-    4. **High-Value (Fast Brainstorming & Trade-offs)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / Logic 95, Arch 93, SWE 71.0)
+    3. **High-End (Proven Architecture & Macro Reasoning)**: `Claude Opus 5` (In: $5.0, Out: $25.0 / Logic 98, Arch 99, SWE 81.0)
+    4. **Balanced (Modular Architecture)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / Logic 99, Arch 99, SWE 78.5)
+    5. **High-Value (Fast Brainstorming & Trade-offs)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / Logic 95, Arch 93, SWE 71.0)
 
 #### Category & Vendor Presets
 - **🌟 2026 Flagship Selection (`flagship-2026`)**: 2026 premier frontier flagships snapshot (Claude Opus 5.5 / Claude Opus 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3).
 - **💡 Practical High-Value (`practical-high-value`)**: Claude Sonnet 5 / Gemini 3.8 Flash / GPT-6 Luna / GPT-5.6 Luna / Kimi K2.7 Code (*Adds GPT-6 Luna and retains GPT-5.6 Luna as high-value champions*).
-- **⚡ Powerful Reasoning (`tier-powerful`)**: GPT-6 Astra / Claude Opus 5.5 / Claude Opus 5 / GPT-5.5 / Kimi K3 (*GPT-5.6 Sol migrated to GPT-5.5; Opus 5.5 added*).
+- **⚡ Powerful Reasoning (`tier-powerful`)**: GPT-6 Astra / Claude Opus 5.5 / Claude Opus 5 / GPT-6 Sol / Kimi K3 (*Adds GPT-6 Sol; removes GPT-5.5*).
 - **🛠️ Versatile Engineering (`tier-versatile`)**: Claude Sonnet 5 / GPT-5.4 / Gemini 3.8 Flash / Grok 4.6 (*GPT-5.6 Terra migrated to GPT-5.4*).
 - **🚀 Lightweight & Fast (`tier-lightweight`)**: GPT-6 Luna / GPT-5.6 Luna / Gemini 3.5 Flash / MAI-Code-1.1-Flash / GPT-5.4 mini (*Adds GPT-6 Luna and retains GPT-5.6 Luna as lightweight champions*).
 - **🟠 Anthropic Suite (`vendor-anthropic`)**: Claude Sonnet 5 / Claude Opus 5.5 / Claude Opus 5 / Claude Fable 5.1 / Claude Haiku 4.5 (*Opus 5.5 added, Opus 5 retained*).

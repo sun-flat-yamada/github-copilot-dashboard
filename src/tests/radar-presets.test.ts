@@ -55,22 +55,23 @@ test('AI Model Radar Comparison Presets Tests', async (t) => {
     assert.strictEqual(analysisPreset.modelIds.length, 4, 'Must contain 4 models');
     assert.deepStrictEqual(analysisPreset.modelIds, ['claude-opus-5-5', 'claude-opus-5', 'claude-sonnet-5', 'gemini-3-8-flash']);
 
-    // 3. 設計に推奨 (Opus 5.5 を新規追加)
+    // 3. 設計に推奨 (Opus 5.5 および Opus 5 を含む)
     const archPreset = PRESETS.find((p) => p.id === 'recommended-architecture');
     assert.ok(archPreset, 'recommended-architecture preset must exist');
     assert.match(archPreset.name, /設計に推奨/);
-    assert.strictEqual(archPreset.modelIds.length, 4, 'Must contain 4 models');
-    assert.deepStrictEqual(archPreset.modelIds, ['gpt-6-astra', 'claude-opus-5-5', 'claude-sonnet-5', 'gemini-3-8-flash']);
+    assert.strictEqual(archPreset.modelIds.length, 5, 'Must contain 5 models');
+    assert.deepStrictEqual(archPreset.modelIds, ['gpt-6-astra', 'claude-opus-5-5', 'claude-opus-5', 'claude-sonnet-5', 'gemini-3-8-flash']);
   });
 
   await t.test('verifies tier and vendor presets including lightweight GPT-6 Luna and OpenAI lineup updates', () => {
-    // tier-powerful: gpt-5-6-sol -> gpt-5-5, claude-opus-5-5 added (opus-5 kept)
+    // tier-powerful: claude-opus-5-5, claude-opus-5, gpt-6-sol (gpt-5-5 removed)
     const powerfulPreset = PRESETS.find((p) => p.id === 'tier-powerful');
     assert.ok(powerfulPreset);
     assert.ok(powerfulPreset.modelIds.includes('claude-opus-5-5'), 'tier-powerful must include claude-opus-5-5');
     assert.ok(powerfulPreset.modelIds.includes('claude-opus-5'), 'tier-powerful must keep claude-opus-5');
-    assert.ok(powerfulPreset.modelIds.includes('gpt-5-5'), 'tier-powerful must replace gpt-5-6-sol with gpt-5-5');
-    assert.ok(!powerfulPreset.modelIds.includes('gpt-5-6-sol'), 'tier-powerful must NOT include gpt-5-6-sol');
+    assert.ok(powerfulPreset.modelIds.includes('gpt-6-sol'), 'tier-powerful must include gpt-6-sol');
+    assert.ok(!powerfulPreset.modelIds.includes('gpt-5-5'), 'tier-powerful must NOT include gpt-5-5');
+    assert.strictEqual(powerfulPreset.modelIds.length, 5, 'tier-powerful should contain 5 models');
 
     // tier-versatile: gpt-5-6-terra -> gpt-5-4
     const versatilePreset = PRESETS.find((p) => p.id === 'tier-versatile');
