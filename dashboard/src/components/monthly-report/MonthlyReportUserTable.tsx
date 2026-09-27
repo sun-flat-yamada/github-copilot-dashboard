@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Users, Search, Download, ArrowUpDown, ArrowUp, ArrowDown, BrainCircuit, ChevronDown, ChevronUp, LineChart } from 'lucide-react';
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { Users, Search, Download, ArrowUpDown, ArrowUp, ArrowDown, BrainCircuit, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, LineChart } from 'lucide-react';
 import { GroupingDimension, MonthlyReportAggregatedData, UserUsageProfile } from '../../../../src/types/copilot';
 import { adaptReportToProfiles } from '../../utils/deepAnalysisAdapter';
 import { formatElapsedActivity } from '../../utils/dateFormatters';
@@ -50,6 +50,58 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
   const [sortOrder, setSortOrder] = useState<MonthlyUserSortOrder>('desc');
   const [selectedUserLogin, setSelectedUserLogin] = useState<string | null>(initialSelectedLogin || null);
   const { formatMoney } = useCurrency();
+
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollState, setScrollState] = useState({
+    canScrollLeft: false,
+    canScrollRight: false,
+    scrollLeft: 0,
+    scrollWidth: 0,
+    clientWidth: 0,
+    progress: 0,
+  });
+
+  const updateScrollState = useCallback(() => {
+    const el = tableContainerRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    const maxScroll = Math.max(0, scrollWidth - clientWidth);
+    setScrollState({
+      canScrollLeft: scrollLeft > 2,
+      canScrollRight: maxScroll > 2 && scrollLeft < maxScroll - 2,
+      scrollLeft,
+      scrollWidth,
+      clientWidth,
+      progress: maxScroll > 0 ? (scrollLeft / maxScroll) * 100 : 0,
+    });
+  }, []);
+
+  useEffect(() => {
+    const el = tableContainerRef.current;
+    if (!el) return;
+    updateScrollState();
+    el.addEventListener('scroll', updateScrollState, { passive: true });
+    window.addEventListener('resize', updateScrollState);
+    return () => {
+      el.removeEventListener('scroll', updateScrollState);
+      window.removeEventListener('resize', updateScrollState);
+    };
+  }, [updateScrollState, reportData.user_details.length]);
+
+  const scrollTable = (direction: 'left' | 'right') => {
+    const el = tableContainerRef.current;
+    if (!el) return;
+    const delta = direction === 'left' ? -280 : 280;
+    el.scrollBy({ left: delta, behavior: 'smooth' });
+  };
+
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const el = tableContainerRef.current;
+    if (!el) return;
+    const pct = parseFloat(e.target.value);
+    const maxScroll = Math.max(0, el.scrollWidth - el.clientWidth);
+    el.scrollLeft = (pct / 100) * maxScroll;
+  };
 
   const activeGroup = selectedGroup !== undefined ? selectedGroup : localGroupFilter;
 
@@ -302,6 +354,26 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
             )}
           </select>
 
+          {/* 左右スクロールナビゲーションボタン */}
+          <div className="flex items-center space-x-1 border border-slate-700 rounded-lg p-0.5 bg-slate-950" title="テーブルを左右にスクロール">
+            <button
+              onClick={() => scrollTable('left')}
+              disabled={!scrollState.canScrollLeft}
+              aria-label="左にスクロール"
+              className="p-1 rounded hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed text-slate-300 transition"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => scrollTable('right')}
+              disabled={!scrollState.canScrollRight}
+              aria-label="右にスクロール"
+              className="p-1 rounded hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed text-slate-300 transition"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
           <button
             onClick={handleExportCsv}
             className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition"
@@ -314,13 +386,16 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
       </div>
 
       {/* ユーザー一覧テーブル: ヘッダー固定・データ行垂直スクロール & 横スクロール対応 */}
-      <div className="overflow-auto max-h-[600px] rounded-lg border border-slate-800 relative scrollbar-thin scrollbar-thumb-slate-700">
+      <div
+        ref={tableContainerRef}
+        className="overflow-auto max-h-[600px] rounded-lg border border-slate-800 relative scrollbar-thin scrollbar-thumb-slate-700"
+      >
         <table className="w-full text-left text-xs border-collapse whitespace-nowrap min-w-max">
           <thead className="sticky top-0 z-20 bg-slate-950 text-slate-400 font-semibold shadow-md">
             <tr className="border-b border-slate-800">
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2 px-2.5 text-center w-12 cursor-pointer select-none hover:text-slate-200" onClick={handleIndexSort} title="連番順">#</th>
+              <th className="sticky top-0 left-0 z-30 bg-slate-950 border-b border-slate-800 py-2 px-2.5 text-center w-12 min-w-[48px] max-w-[48px] cursor-pointer select-none hover:text-slate-200" onClick={handleIndexSort} title="連番順">#</th>
               <th
-                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2 px-2.5 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                className="sticky top-0 left-12 z-30 bg-slate-950 border-b border-slate-800 py-2 px-2.5 min-w-[140px] w-36 cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('user')}
               >
                 <div className="flex items-center space-x-1">
@@ -329,7 +404,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                 </div>
               </th>
               <th
-                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2 px-2.5 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                className="sticky top-0 left-[188px] z-30 bg-slate-950 border-b border-slate-800 py-2 px-2.5 min-w-[140px] w-36 border-r border-slate-700/80 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.5)] cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('display_name')}
               >
                 <div className="flex items-center space-x-1">
@@ -441,21 +516,27 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                   <React.Fragment key={u.login}>
                     <tr
                       onClick={() => handleToggleUserDrilldown(u.login)}
-                      className={`cursor-pointer transition ${
+                      className={`cursor-pointer transition group ${
                         isSelected
                           ? 'bg-indigo-950/60 border-l-4 border-indigo-500'
                           : 'hover:bg-slate-800/40'
                       }`}
                     >
-                      <td className="py-2 px-2.5 text-center text-slate-500 font-mono text-xs">
+                      <td className={`sticky left-0 z-20 py-2 px-2.5 text-center text-slate-500 font-mono text-xs w-12 min-w-[48px] max-w-[48px] transition-colors ${
+                        isSelected ? 'bg-indigo-950' : 'bg-slate-900 group-hover:bg-slate-800/90'
+                      }`}>
                         {index + 1}
                       </td>
-                      <td className="py-2 px-2.5">
-                        <span className="text-slate-200 font-mono text-xs font-medium">@{u.login}</span>
+                      <td className={`sticky left-12 z-20 py-2 px-2.5 min-w-[140px] w-36 transition-colors ${
+                        isSelected ? 'bg-indigo-950' : 'bg-slate-900 group-hover:bg-slate-800/90'
+                      }`}>
+                        <span className="text-slate-200 font-mono text-xs font-medium truncate block">@{u.login}</span>
                       </td>
-                      <td className="py-2 px-2.5">
+                      <td className={`sticky left-[188px] z-20 py-2 px-2.5 min-w-[140px] w-36 border-r border-slate-700/80 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.5)] transition-colors ${
+                        isSelected ? 'bg-indigo-950' : 'bg-slate-900 group-hover:bg-slate-800/90'
+                      }`}>
                         <div className="flex items-center space-x-1.5">
-                          <span className="font-semibold text-slate-100">{u.display_name}</span>
+                          <span className="font-semibold text-slate-100 truncate">{u.display_name}</span>
                           {isSelected && (
                             <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-500 text-white shrink-0">
                               分析中
@@ -586,24 +667,26 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                     {isSelected && (
                       <tr key={`${u.login}-drilldown`} className="bg-slate-950">
                         <td colSpan={13} className="p-0 border-b-2 border-indigo-500/60 whitespace-normal">
-                          <UserDrilldownPanel
-                            login={u.login}
-                            displayName={u.display_name}
-                            department={u.department}
-                            costCenter={u.cost_center}
-                            organization={u.organization}
-                            primaryModel={u.primary_model}
-                            totalRequests={u.total_requests}
-                            monthlyCostUsd={u.gross_spend_usd ?? u.total_spend_usd}
-                            excessBillingUsd={u.net_spend_usd ?? u.total_spend_usd}
-                            lastActivity={u.last_activity_date}
-                            surface={u.surface}
-                            profile={prof}
-                            allProfiles={effectiveProfiles}
-                            onSelectUserForTrend={onSelectUserForTrend}
-                            onSelectUserForDeepAnalysis={onSelectUserForDeepAnalysis}
-                            onClose={() => setSelectedUserLogin(null)}
-                          />
+                          <div className="sticky left-0 max-w-[calc(100vw-3.5rem)]">
+                            <UserDrilldownPanel
+                              login={u.login}
+                              displayName={u.display_name}
+                              department={u.department}
+                              costCenter={u.cost_center}
+                              organization={u.organization}
+                              primaryModel={u.primary_model}
+                              totalRequests={u.total_requests}
+                              monthlyCostUsd={u.gross_spend_usd ?? u.total_spend_usd}
+                              excessBillingUsd={u.net_spend_usd ?? u.total_spend_usd}
+                              lastActivity={u.last_activity_date}
+                              surface={u.surface}
+                              profile={prof}
+                              allProfiles={effectiveProfiles}
+                              onSelectUserForTrend={onSelectUserForTrend}
+                              onSelectUserForDeepAnalysis={onSelectUserForDeepAnalysis}
+                              onClose={() => setSelectedUserLogin(null)}
+                            />
+                          </div>
                         </td>
                       </tr>
                     )}
@@ -614,6 +697,51 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
           </tbody>
         </table>
       </div>
+
+      {/* 画面下部追従型 水平スクロールコントローラー (Sticky Bottom Bar) */}
+      {scrollState.scrollWidth > scrollState.clientWidth && (
+        <div className="sticky bottom-0 z-30 -mx-5 -mb-5 px-4 py-2 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 rounded-b-xl flex items-center justify-between gap-3 text-xs text-slate-300 shadow-[0_-4px_12px_rgba(0,0,0,0.5)]">
+          <div className="flex items-center space-x-2 shrink-0">
+            <span className="text-[11px] font-semibold text-slate-400">横スクロール</span>
+            <span className="text-[10px] text-indigo-400 font-mono font-bold">
+              {Math.round(scrollState.progress)}%
+            </span>
+          </div>
+
+          <div className="flex-1 max-w-md mx-2 flex items-center">
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={scrollState.progress}
+              onChange={handleSliderChange}
+              aria-label="水平スクロール位置"
+              className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:bg-slate-700 transition"
+            />
+          </div>
+
+          <div className="flex items-center space-x-1 shrink-0">
+            <button
+              onClick={() => scrollTable('left')}
+              disabled={!scrollState.canScrollLeft}
+              aria-label="下部バー左スクロール"
+              title="左にスクロール (280px)"
+              className="p-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-slate-200 transition border border-slate-700"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => scrollTable('right')}
+              disabled={!scrollState.canScrollRight}
+              aria-label="下部バー右スクロール"
+              title="右にスクロール (280px)"
+              className="p-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-slate-200 transition border border-slate-700"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
