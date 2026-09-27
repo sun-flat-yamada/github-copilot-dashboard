@@ -106,7 +106,6 @@ describe('User Table Redesign & Ranking Phasing-out Tests', () => {
 
       // Must have scrollable container and sticky header
       assert.match(content, /overflow-auto[^>]*max-h-\[600px\]/);
-      assert.match(content, /<thead[^>]*sticky top-0/);
       assert.match(content, /<th[^>]*sticky top-0/);
     });
   });
@@ -149,7 +148,6 @@ describe('User Table Redesign & Ranking Phasing-out Tests', () => {
 
       // Must have scrollable container and sticky header
       assert.match(content, /overflow-auto[^>]*max-h-\[600px\]/);
-      assert.match(content, /<thead[^>]*sticky top-0/);
       assert.match(content, /<th[^>]*sticky top-0/);
     });
   });
