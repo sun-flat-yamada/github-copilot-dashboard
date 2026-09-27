@@ -31,7 +31,7 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* 1. 総費用 (利用費用 & 超過請求費用) */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg relative overflow-hidden group hover:border-slate-700 transition-all">
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg relative overflow-hidden group hover:border-slate-700 transition-all" title="GitHubのカタログ価格(USD)基準">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-slate-400">{costLabel}</span>
           <div className="p-2 rounded-lg bg-emerald-950/80 border border-emerald-800/60 text-emerald-400">

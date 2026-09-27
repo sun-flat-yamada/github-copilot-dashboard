@@ -13,7 +13,19 @@ import { CreditsBillingService } from '../application/services/CreditsBillingSer
 import { AdoptionPhaseRule } from '../domain/rules/AdoptionPhaseRule.js';
 import { AdoptionPhase } from '../domain/entities/agent-metrics.js';
 
-export const getCopilotPricing = (): Record<CopilotPlanType, number> => {
+import { BillingConfigLoader } from '../adapters/storage/BillingConfigLoader.js';
+import { calculateEffectiveSeatPrice } from '../domain/entities/billing-config.js';
+
+export const getCopilotPricing = (targetMonth?: string): Record<CopilotPlanType, number> => {
+  if (targetMonth) {
+    const config = BillingConfigLoader.loadForMonth(targetMonth);
+    const biz = calculateEffectiveSeatPrice(config, 'business');
+    const ent = calculateEffectiveSeatPrice(config, 'enterprise');
+    return {
+      business: biz,
+      enterprise: ent,
+    };
+  }
   const pricing = getSeatPricing();
   return {
     business: pricing.business.amount,
@@ -93,7 +105,8 @@ export class BillingCalculator {
       isDataUnavailable = true;
     }
 
-    const pricing = getCopilotPricing();
+    const targetMonth = this.referenceDate.toISOString().slice(0, 7);
+    const pricing = getCopilotPricing(targetMonth);
     const planType: CopilotPlanType = seat.plan_type === 'business' ? 'business' : 'enterprise';
     const monthlyCost = pricing[planType];
     const proratedDailyCost = Number((monthlyCost / daysInMonth).toFixed(4));
@@ -120,7 +133,12 @@ export class BillingCalculator {
     });
 
     const aiCreditsUsed28d = seat.ai_credits_used ?? 0;
-    const aiCreditsCostUsd = CreditsBillingService.calculateCreditsCost(aiCreditsUsed28d).amount;
+    const aiCreditsCostUsd = CreditsBillingService.calculateCreditsCost(
+      aiCreditsUsed28d,
+      undefined,
+      undefined,
+      targetMonth
+    ).amount;
 
     const seatBilling = SeatBillingRule.evaluate({
       createdAt: seat.created_at,

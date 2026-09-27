@@ -275,6 +275,8 @@ export class PipelineOrchestrator {
       billing: {
         currency: billingConfig.currency,
         subCurrency: billingConfig.subCurrency,
+        discountPercent: billingConfig.discountPercent,
+        periods: billingConfig.periods,
       },
       default_scopes: {
         latest_day: hasLiveMetrics ? referenceDate : undefined,

@@ -34,6 +34,29 @@ GitHub Enterprise Billingで定義された各Cost CenterのBudgetに対して�
    - $80\% \le U_{\%} < 100\%$: 注意・警告 (`warning`)
    - $U_{\%} \ge 100\%$: 超過 (`exceeded`)
 
+### 1.4 Enterprise Agreement (EA) 契約料金・期間別パラメータ設定 & 公的為替レート自動算出
+
+#### 1.4.1 USD表記の基準定義 (GitHubカタログ価格)
+- ダッシュボード上の主たる **USD表記は「GitHubのカタログ価格(USD)」(定価: Business \$19/月、Enterprise \$39/月、AI Credits \$0.01/AIC)** を指す。
+- 画面上の各KPIカード、テーブル見出し、およびツールチップにおいて「GitHubのカタログ価格(USD)」であることを明記する。
+- これに伴い、サブ表示通貨に **「EA契約の USD 表示 (EA-USD)」** を提供し、カタログUSD定価とEA契約ディスカウント後USD価格（例: `$39.00 ($33.15 EA)`）を並列比較可能とする。
+
+#### 1.4.2 期間別パラメータ設定 (`periods`)
+企業の契約年度・改定サイクルに対応するため、開始年月 (`startMonth`: YYYY-MM) から終了年月 (`endMonth`: YYYY-MM) の範囲で以下のパラメータを設定可能とする：
+1. **Copilot seat価格**: Enterprise、Business毎の月額および通貨単位（例: `customSeatPricing: { businessMonthly: 2500, enterpriseMonthly: 5000, currency: "JPY" }`）。
+2. **AI Credit単価**: 通貨単位と合わせた個別単価（例: `customPricePerCredit: 1.273`, `customPricePerCreditCurrency: "JPY"`）。
+3. **EAディスカウント率**: ボリュームディスカウント率（例: `discountPercent: 15`）。
+4. **USDから各通貨への変換レート**: 契約適用為替レート（例: `exchangeRateFromUSD: 155.0` または `exchangeRates: { JPY: 155.0, EUR: 0.92 }`）。
+
+**デフォルト値へのフォールバック規則**:
+- 設定された期間（`startMonth` 〜 `endMonth`）に該当しない月の計算は、デフォルト設定値（GitHubカタログ価格および基本設定）を使用する。
+
+#### 1.4.3 設定値非存在区間の公的為替レート自動算出
+- 期間別設定または基本設定において為替レートが指定されていない区間（月）については、一般公開されている信頼できる公的データソースを参照して為替レートを自動算出する：
+  - **欧州中央銀行 (European Central Bank: ECB)** 公式参照為替相場 (Euro foreign exchange reference rates)
+  - **日本銀行 (Bank of Japan: BOJ)** 公表外国為替相場
+- これにより、未設定月や過去履歴の分析時においても、常に公式公表相場に裏付けられた適正な為替換算が自動的に適用される。
+
 ---
 
 ## 2. 3軸グループへの費用配賦アルゴリズム
