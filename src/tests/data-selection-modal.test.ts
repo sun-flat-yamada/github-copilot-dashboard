@@ -163,8 +163,14 @@ describe('Data Selection & Hierarchical AND Filtering Tests', () => {
 
       // Categories
       assert.match(content, /カテゴリ A: 組織・財務軸/);
-      assert.match(content, /カテゴリ B: プロジェクト・属性軸/);
-      assert.match(content, /カテゴリ C: アカウント・個別軸/);
+      assert.match(content, /カテゴリ B: プロジェクト・部署軸/);
+      assert.match(content, /カテゴリ C: タグ・属性軸/);
+      assert.match(content, /カテゴリ D: アカウント・個別軸/);
+
+      // Verify wording unification: no "ユーザー定義グループ" and unified to "ユーザー定義Gr"
+      assert.match(content, /ユーザー定義Gr \(部署・PJ\)/);
+      assert.match(content, /すべてのユーザー定義Gr \(All\)/);
+      assert.doesNotMatch(content, /ユーザー定義グループ/);
 
       // Keyboard shortcuts
       assert.match(content, /handleKeyDown/);
