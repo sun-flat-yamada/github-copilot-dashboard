@@ -225,7 +225,7 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
   // ホバー時チップ用テキスト (全内容およびショートカットTipsを明記)
   const getTooltipText = () => {
     const shortcutText = '(ショートカット: / または Ctrl+K)';
-    const sourceInfo = `【${details.title}】期間/スコープ: ${details.subtitle}`;
+    const sourceInfo = `【分析対象データ: ${details.title}】期間/スコープ: ${details.subtitle}`;
 
     if (!isFiltered) {
       return `${sourceInfo}\nフィルター: なし (全体: ${counts.total}名)\nクリックしてデータソースおよびフィルター条件を変更 ${shortcutText}`;
@@ -243,9 +243,18 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
         onClick={() => setIsOpen(true)}
         className="flex items-center space-x-2.5 h-11 px-3 py-1 sm:py-1.5 rounded-xl bg-slate-900 border border-slate-700/80 hover:border-indigo-500/80 hover:bg-slate-850 transition-all cursor-pointer shadow-sm group select-none max-w-full"
         title={getTooltipText()}
+        aria-label="分析対象データ"
         aria-haspopup="dialog"
         aria-expanded={isOpen}
       >
+        {/* 分析対象データ 明示バッジ */}
+        <span className="text-[11px] font-bold text-indigo-300 px-2 py-0.5 rounded-lg bg-indigo-950/80 border border-indigo-700/70 whitespace-nowrap shrink-0 shadow-xs">
+          分析対象データ
+        </span>
+
+        {/* ディバイダー */}
+        <div className="w-px h-7 bg-slate-700/80 shrink-0" />
+
         {/* ソースインジケーター & 2行ソース情報 (タイトル表示部と調和する階層構造) */}
         <div className="flex items-center space-x-2 shrink-0">
           <div className="relative flex items-center justify-center p-1.5 rounded-lg bg-slate-800 text-slate-300 group-hover:text-white shrink-0">
