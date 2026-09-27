@@ -78,7 +78,11 @@ export const OverviewViewComponent: React.FC<ViewPluginProps<OverviewViewModel>>
             isExpanded={isExpanded('allocation')}
             onToggle={() => toggleSection('allocation')}
           >
-            <CostAllocationCharts data={currentData} grouping={currentGrouping as any} />
+            <CostAllocationCharts
+              data={currentData}
+              grouping={currentGrouping as any}
+              onGroupingChange={onGroupingChange}
+            />
           </CollapsibleSection>
 
           <CollapsibleSection
