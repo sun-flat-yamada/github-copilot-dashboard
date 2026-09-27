@@ -26,16 +26,42 @@ GitHub REST API はカレンダーベースのバージョン体系を採用し�
 
 ---
 
-## 2. Copilot Metrics API
+## 2. Copilot Metrics & Reports API
 
-組織またはEnterprise全体の日次利用メトリクス（コード補完、チャット、PRサマリー、CLI等）を取得する。
+組織またはEnterprise全体の利用メトリクス（IDEコード補完、チャット、PRサマリー、CLI、エージェント等）を取得する。
 
-### 2.1 エンドポイント
-- Enterprise: `GET /enterprises/{enterprise}/copilot/metrics`
-- Organization: `GET /orgs/{org}/copilot/metrics`
-- クエリパラメータ: `since` (ISO 8601 YYYY-MM-DD), `until` (ISO 8601 YYYY-MM-DD)
+### 2.1 エンドポイント体系 & Reports API (2026年9月最新)
+2026年4月をもって旧メトリクスエンドポイント（`/orgs/{org}/copilot/metrics`）は完全廃止（Sunset）となり、最新仕様では署名付きダウンロードURL（NDJSON形式）を返す **Usage Metrics Reports API** が標準採用されている。
 
-### 2.2 レスポンススキーマ (日次配列)
+- **Enterprise Reports**:
+  - `GET /enterprises/{enterprise}/copilot/metrics/reports/enterprise-1-day` (日次NDJSONリンク取得)
+  - `GET /enterprises/{enterprise}/copilot/metrics/reports/enterprise-28-day/latest`
+- **Organization Reports**:
+  - `GET /orgs/{org}/copilot/metrics/reports/organization-1-day`
+  - `GET /orgs/{org}/copilot/metrics/reports/organization-28-day/latest`
+- **User-Level Reports**:
+  - `GET /orgs/{org}/copilot/metrics/reports/users-1-day`
+  - `GET /orgs/{org}/copilot/metrics/reports/users-28-day/latest`
+
+### 2.2 受諾率（Acceptance Rate）のテレメトリ定義とサーフェス分離
+
+#### (1) 受諾率の算出式
+GitHub公式データにおける「受諾率」は、APIレスポンスから以下のように算出される計算指標である：
+- **提案受諾率 (Suggestion Acceptance Rate)**:
+  $$\text{Acceptance Rate} = \frac{\text{total\_code\_acceptances}}{\text{total\_code\_suggestions}} \times 100\%$$
+- **行数受諾率 (Lines Acceptance Rate / Lines Utilization)**:
+  $$\text{Lines Acceptance Rate} = \frac{\text{total\_code\_lines\_accepted}}{\text{total\_code\_lines\_suggested}} \times 100\%$$
+
+#### (2) テレメトリ計上ロジックと暗黙的拒否 (Implicit Rejection)
+- **提案 (Suggestions)**: エディタ上で文字入力や一時停止に伴い、Ghost Text（灰色のインライン補完候補）が表示された時点でカウント。
+- **受諾 (Acceptances)**: ユーザーが `Tab` キー（または受諾ショートカット）で候補を確定した時点でカウント。
+- **暗黙的拒否 (Implicit Rejection)**: Ghost Textが表示された状態で、Tabを押さずにタイピングを続行（Typing through）、`Esc` キー押下、または矢印キー移動した場合、「拒否」と判定され**分母（suggestions）のみが加算**される。
+
+#### (3) 計測サーフェス（Surface）の完全分離
+- **IDEコード補完限定**: 上記受諾率は、エディタ内のインラインコード補完（`copilot_ide_code_completions`）のみを対象とする。
+- **CLI / Chat / Agent の非計上**: GitHub Copilot CLI（`copilot_in_cli`）、Copilot Chat、および Autopilot/Agent モードの自律実行成果（ファイル編集・パッチ適用・Tool Call）は、受諾率の分子・分母には一切含まれない。
+
+### 2.3 レスポンススキーマ (日次配列 / レポート構造)
 
 ```json
 [
