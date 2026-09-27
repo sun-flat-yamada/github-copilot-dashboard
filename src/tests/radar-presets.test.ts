@@ -13,17 +13,18 @@ test('AI Model Radar Comparison Presets Tests', async (t) => {
   const datasetJson = JSON.parse(fs.readFileSync(datasetPath, 'utf-8'));
   const validModelIds = new Set(datasetJson.models.map((m: { id: string }) => m.id));
 
-  await t.test('includes the practical-high-value preset with required models', () => {
+  await t.test('includes the practical-high-value preset with required models including GPT-6 Luna and GPT-5.6 Luna', () => {
     const practicalPreset = PRESETS.find((p) => p.id === 'practical-high-value');
     assert.ok(practicalPreset, 'practical-high-value preset must exist');
     assert.match(practicalPreset.name, /実用性能で高コスパ/, 'Preset name must contain 実用性能で高コスパ');
 
-    // Required models specified by user (maintaining gpt-5-6-luna for high-value)
+    // Required models specified by user (including gpt-6-luna and maintaining gpt-5-6-luna for high-value)
+    assert.ok(practicalPreset.modelIds.includes('gpt-6-luna'), 'Must include gpt-6-luna');
     assert.ok(practicalPreset.modelIds.includes('gpt-5-6-luna'), 'Must include gpt-5-6-luna');
     assert.ok(practicalPreset.modelIds.includes('gemini-3-8-flash'), 'Must include gemini-3-8-flash');
     assert.ok(practicalPreset.modelIds.includes('claude-sonnet-5'), 'Must include claude-sonnet-5');
     assert.ok(practicalPreset.modelIds.includes('kimi-k2-7-code'), 'Includes kimi-k2-7-code as proposed balanced code model');
-    assert.strictEqual(practicalPreset.modelIds.length, 4, 'Preset should contain 4 models');
+    assert.strictEqual(practicalPreset.modelIds.length, 5, 'Preset should contain 5 models');
   });
 
   await t.test('includes the 2026 flagship preset with both Claude Opus 5.5 and Opus 5', () => {
@@ -62,7 +63,7 @@ test('AI Model Radar Comparison Presets Tests', async (t) => {
     assert.deepStrictEqual(archPreset.modelIds, ['gpt-6-astra', 'claude-opus-5-5', 'claude-sonnet-5', 'gemini-3-8-flash']);
   });
 
-  await t.test('verifies GPT-5.6 to GPT-5 transition across tier-powerful, tier-versatile, and vendor-openai', () => {
+  await t.test('verifies tier and vendor presets including lightweight GPT-6 Luna and OpenAI lineup updates', () => {
     // tier-powerful: gpt-5-6-sol -> gpt-5-5, claude-opus-5-5 added (opus-5 kept)
     const powerfulPreset = PRESETS.find((p) => p.id === 'tier-powerful');
     assert.ok(powerfulPreset);
@@ -77,20 +78,23 @@ test('AI Model Radar Comparison Presets Tests', async (t) => {
     assert.ok(versatilePreset.modelIds.includes('gpt-5-4'), 'tier-versatile must replace gpt-5-6-terra with gpt-5-4');
     assert.ok(!versatilePreset.modelIds.includes('gpt-5-6-terra'), 'tier-versatile must NOT include gpt-5-6-terra');
 
-    // tier-lightweight: keeps gpt-5-6-luna
+    // tier-lightweight: keeps gpt-5-6-luna and includes gpt-6-luna
     const lightweightPreset = PRESETS.find((p) => p.id === 'tier-lightweight');
     assert.ok(lightweightPreset);
+    assert.ok(lightweightPreset.modelIds.includes('gpt-6-luna'), 'tier-lightweight must include gpt-6-luna');
     assert.ok(lightweightPreset.modelIds.includes('gpt-5-6-luna'), 'tier-lightweight must retain gpt-5-6-luna');
+    assert.strictEqual(lightweightPreset.modelIds.length, 5, 'tier-lightweight should contain 5 models');
 
-    // vendor-openai: replaced with GPT-5 equivalents
+    // vendor-openai: adds GPT-6 Sol and GPT-5.6 Sol, removes GPT-5.5, GPT-5.4, GPT-5 mini
     const openaiPreset = PRESETS.find((p) => p.id === 'vendor-openai');
     assert.ok(openaiPreset);
-    assert.ok(openaiPreset.modelIds.includes('gpt-5-5'));
-    assert.ok(openaiPreset.modelIds.includes('gpt-5-4'));
-    assert.ok(openaiPreset.modelIds.includes('gpt-5-mini'));
-    assert.ok(!openaiPreset.modelIds.includes('gpt-5-6-sol'));
-    assert.ok(!openaiPreset.modelIds.includes('gpt-5-6-terra'));
-    assert.ok(!openaiPreset.modelIds.includes('gpt-5-6-luna'));
+    assert.ok(openaiPreset.modelIds.includes('gpt-6-astra'), 'vendor-openai must keep gpt-6-astra');
+    assert.ok(openaiPreset.modelIds.includes('gpt-6-sol'), 'vendor-openai must include gpt-6-sol');
+    assert.ok(openaiPreset.modelIds.includes('gpt-5-6-sol'), 'vendor-openai must include gpt-5-6-sol');
+    assert.ok(!openaiPreset.modelIds.includes('gpt-5-5'), 'vendor-openai must NOT include gpt-5-5');
+    assert.ok(!openaiPreset.modelIds.includes('gpt-5-4'), 'vendor-openai must NOT include gpt-5-4');
+    assert.ok(!openaiPreset.modelIds.includes('gpt-5-mini'), 'vendor-openai must NOT include gpt-5-mini');
+    assert.strictEqual(openaiPreset.modelIds.length, 3, 'vendor-openai should contain 3 models');
 
     // vendor-anthropic: includes opus-5.5 and keeps opus-5
     const anthropicPreset = PRESETS.find((p) => p.id === 'vendor-anthropic');
