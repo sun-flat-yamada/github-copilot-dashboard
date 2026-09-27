@@ -391,7 +391,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
         className="overflow-auto max-h-[600px] rounded-lg border border-slate-800 relative scrollbar-thin scrollbar-thumb-slate-700"
       >
         <table className="w-full text-left text-xs border-collapse whitespace-nowrap min-w-max">
-          <thead className="sticky top-0 z-20 bg-slate-950 text-slate-400 font-semibold shadow-md">
+          <thead className="bg-slate-950 text-slate-400 font-semibold shadow-md">
             <tr className="border-b border-slate-800">
               <th className="sticky top-0 left-0 z-30 bg-slate-950 border-b border-slate-800 py-2 px-2.5 text-center w-12 min-w-[48px] max-w-[48px] cursor-pointer select-none hover:text-slate-200" onClick={handleIndexSort} title="連番順">#</th>
               <th
@@ -522,17 +522,17 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                           : 'hover:bg-slate-800/40'
                       }`}
                     >
-                      <td className={`sticky left-0 z-20 py-2 px-2.5 text-center text-slate-500 font-mono text-xs w-12 min-w-[48px] max-w-[48px] transition-colors ${
+                      <td className={`sticky left-0 z-10 py-2 px-2.5 text-center text-slate-500 font-mono text-xs w-12 min-w-[48px] max-w-[48px] transition-colors ${
                         isSelected ? 'bg-indigo-950' : 'bg-slate-900 group-hover:bg-slate-800/90'
                       }`}>
                         {index + 1}
                       </td>
-                      <td className={`sticky left-12 z-20 py-2 px-2.5 min-w-[140px] w-36 transition-colors ${
+                      <td className={`sticky left-12 z-10 py-2 px-2.5 min-w-[140px] w-36 transition-colors ${
                         isSelected ? 'bg-indigo-950' : 'bg-slate-900 group-hover:bg-slate-800/90'
                       }`}>
                         <span className="text-slate-200 font-mono text-xs font-medium truncate block">@{u.login}</span>
                       </td>
-                      <td className={`sticky left-[188px] z-20 py-2 px-2.5 min-w-[140px] w-36 border-r border-slate-700/80 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.5)] transition-colors ${
+                      <td className={`sticky left-[188px] z-10 py-2 px-2.5 min-w-[140px] w-36 border-r border-slate-700/80 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.5)] transition-colors ${
                         isSelected ? 'bg-indigo-950' : 'bg-slate-900 group-hover:bg-slate-800/90'
                       }`}>
                         <div className="flex items-center space-x-1.5">
@@ -700,7 +700,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
 
       {/* 画面下部追従型 水平スクロールコントローラー (Sticky Bottom Bar) */}
       {scrollState.scrollWidth > scrollState.clientWidth && (
-        <div className="sticky bottom-0 z-30 -mx-5 -mb-5 px-4 py-2 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 rounded-b-xl flex items-center justify-between gap-3 text-xs text-slate-300 shadow-[0_-4px_12px_rgba(0,0,0,0.5)]">
+        <div className="sticky bottom-0 z-40 -mx-5 -mb-5 px-4 py-2 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 rounded-b-xl flex items-center justify-between gap-3 text-xs text-slate-300 shadow-[0_-4px_12px_rgba(0,0,0,0.5)]">
           <div className="flex items-center space-x-2 shrink-0">
             <span className="text-[11px] font-semibold text-slate-400">横スクロール</span>
             <span className="text-[10px] text-indigo-400 font-mono font-bold">
