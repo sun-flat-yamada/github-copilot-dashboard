@@ -1,9 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import {
   CurrencyConfig,
-  DEFAULT_CURRENCY_JPY,
-  DEFAULT_CURRENCY_EUR,
 } from '../../../src/domain/entities/billing-config.js';
+import { PublicExchangeRatesService } from '../../../src/domain/services/PublicExchangeRatesService.js';
 import { Money } from '../../../src/domain/value-objects/Money.js';
 import { IndexMetadata } from '../../../src/domain/entities/copilot.js';
 
@@ -47,11 +46,26 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children, in
 
   const availableSubCurrencies = useMemo(() => {
     const list: Array<{ code: string; label: string; config: CurrencyConfig | null }> = [
-      { code: 'none', label: 'USD Only ($)', config: null },
+      { code: 'none', label: 'USD Only ($) [GitHubカタログ価格]', config: null },
     ];
 
+    // EA-USD: Enterprise Agreement discounted USD display option
+    const discountPercent = indexMeta?.billing?.discountPercent ?? 0;
+    const eaRate = Math.max(0, 1 - discountPercent / 100);
+    const eaConfig: CurrencyConfig = {
+      code: 'EA-USD',
+      symbol: '$',
+      exchangeRateFromUSD: eaRate,
+      displayDecimals: 2,
+    };
+    list.push({
+      code: 'EA-USD',
+      label: `USD + EA-USD ($) [EA契約価格${discountPercent > 0 ? ` -${discountPercent}%` : ''}]`,
+      config: eaConfig,
+    });
+
     // If custom subCurrency was defined in billingConfig with non-standard code or rate
-    if (configuredSub && configuredSub.code !== 'USD') {
+    if (configuredSub && configuredSub.code !== 'USD' && configuredSub.code !== 'EA-USD') {
       list.push({
         code: configuredSub.code,
         label: `USD + ${configuredSub.code} (${configuredSub.symbol}) [設定済]`,
@@ -59,24 +73,39 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children, in
       });
     }
 
+    // Dynamic public exchange rate for current context/month from reliable public data (ECB/BOJ)
+    const targetMonth = indexMeta?.default_scopes?.latest_month;
+    const jpyPublicRate = PublicExchangeRatesService.getExchangeRate('JPY', targetMonth);
+    const eurPublicRate = PublicExchangeRatesService.getExchangeRate('EUR', targetMonth);
+
     if (!list.some((c) => c.code === 'JPY')) {
       list.push({
         code: 'JPY',
-        label: 'USD + JPY (¥)',
-        config: DEFAULT_CURRENCY_JPY,
+        label: `USD + JPY (¥) [公的参照: 1$=${jpyPublicRate}円]`,
+        config: {
+          code: 'JPY',
+          symbol: '¥',
+          exchangeRateFromUSD: jpyPublicRate,
+          displayDecimals: 0,
+        },
       });
     }
 
     if (!list.some((c) => c.code === 'EUR')) {
       list.push({
         code: 'EUR',
-        label: 'USD + EUR (€)',
-        config: DEFAULT_CURRENCY_EUR,
+        label: `USD + EUR (€) [公的参照: 1$=${eurPublicRate}€]`,
+        config: {
+          code: 'EUR',
+          symbol: '€',
+          exchangeRateFromUSD: eurPublicRate,
+          displayDecimals: 2,
+        },
       });
     }
 
     return list;
-  }, [configuredSub]);
+  }, [configuredSub, indexMeta]);
 
   // Determine initial code from localStorage or configured subCurrency
   const [subCurrencyCode, setSubCurrencyCodeState] = useState<string>(() => {

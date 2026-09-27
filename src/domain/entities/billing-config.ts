@@ -1,38 +1,83 @@
 /**
  * FinOps & Enterprise Billing Configuration (2026.09 Specification)
  * Supports dynamic multi-currency, exchange rates, and EA volume discounts / custom unit pricing.
+ * Enhanced with period-based billing configuration, public exchange rate auto-calculation,
+ * and EA-USD secondary display support.
  */
 
+import { PublicExchangeRatesService } from '../services/PublicExchangeRatesService.js';
+
 export interface CurrencyConfig {
-  code: string;                // e.g. 'USD', 'JPY', 'EUR', 'GBP' (ISO 4217)
+  code: string;                // e.g. 'USD', 'JPY', 'EUR', 'GBP', 'EA-USD' (ISO 4217 or internal code)
   symbol: string;              // e.g. '$', '¥', '€', '£'
   exchangeRateFromUSD: number; // Conversion rate: 1 USD = N units of target currency
-  displayDecimals: number;     // e.g. 0 for JPY, 2 for USD/EUR
+  displayDecimals: number;     // e.g. 0 for JPY, 2 for USD/EUR/EA-USD
+}
+
+export interface BillingPeriodConfig {
+  startMonth: string; // "YYYY-MM" (inclusive, e.g. '2025-04')
+  endMonth: string;   // "YYYY-MM" (inclusive, e.g. '2026-03')
+  currency?: CurrencyConfig;
+  subCurrency?: CurrencyConfig | null;
+  seatPricing?: {
+    businessMonthlyUSD?: number;
+    enterpriseMonthlyUSD?: number;
+  };
+  creditsPricing?: {
+    costPerCreditUSD?: number;
+    includedCreditsPerSeat?: number;
+  };
+  discountPercent?: number; // EA volume discount percent: 0 to 100
+
+  // Direct Contract Unit Pricing Options (Enterprise Agreement)
+  customPricePerCredit?: number; // Fixed unit price per AI Credit in subCurrency or target currency (e.g. 1.273 JPY/AIC)
+  customPricePerCreditCurrency?: string; // Currency unit (e.g. 'JPY', 'USD')
+  customSeatPricing?: {
+    businessMonthly?: number; // Fixed seat price in target currency
+    enterpriseMonthly?: number; // Fixed seat price in target currency
+    currency?: string; // Currency unit (e.g. 'JPY', 'USD')
+  };
+
+  // Custom Exchange Rate Overrides for this period
+  exchangeRateFromUSD?: number; // Override rate for subCurrency
+  exchangeRates?: Record<string, number>; // Map of currency code to rate relative to 1 USD
 }
 
 export interface EnterpriseBillingConfig {
   currency: CurrencyConfig;        // Base/Primary currency (defaults to DEFAULT_CURRENCY_USD)
-  subCurrency?: CurrencyConfig | null; // Optional secondary/sub display currency (e.g. JPY, EUR)
+  subCurrency?: CurrencyConfig | null; // Optional secondary/sub display currency (e.g. JPY, EUR, EA-USD)
   seatPricing: {
-    businessMonthlyUSD: number;    // Default: 19
-    enterpriseMonthlyUSD: number;  // Default: 39
+    businessMonthlyUSD: number;    // Default: 19 (GitHub Catalog Price USD)
+    enterpriseMonthlyUSD: number;  // Default: 39 (GitHub Catalog Price USD)
   };
   creditsPricing: {
-    costPerCreditUSD: number;      // Default: 0.01
+    costPerCreditUSD: number;      // Default: 0.01 (GitHub Catalog Price USD)
     includedCreditsPerSeat: number;// Default: 3900
   };
   discountPercent: number;         // EA volume discount percent: 0 to 100 (Default: 0)
 
   // Direct Contract Unit Pricing Options (Enterprise Agreement)
   customPricePerCredit?: number;   // Fixed unit price per AI Credit in subCurrency or target currency (e.g. 1.273 JPY/AIC)
+  customPricePerCreditCurrency?: string;
   customSeatPricing?: {
     businessMonthly?: number;      // Fixed seat price in target currency
     enterpriseMonthly?: number;    // Fixed seat price in target currency
+    currency?: string;
   };
+
+  // Optional period-based parameters (startMonth to endMonth)
+  periods?: BillingPeriodConfig[];
 }
 
 export const DEFAULT_CURRENCY_USD: CurrencyConfig = {
   code: 'USD',
+  symbol: '$',
+  exchangeRateFromUSD: 1.0,
+  displayDecimals: 2,
+};
+
+export const DEFAULT_CURRENCY_EA_USD: CurrencyConfig = {
+  code: 'EA-USD',
   symbol: '$',
   exchangeRateFromUSD: 1.0,
   displayDecimals: 2,
@@ -66,6 +111,100 @@ export const DEFAULT_BILLING_CONFIG: EnterpriseBillingConfig = {
   discountPercent: 0,
 };
 
+/**
+ * Resolves the effective billing configuration for a given month ('YYYY-MM').
+ * If a matching period config exists (startMonth <= month <= endMonth), its values
+ * override the base configuration. Otherwise, base configuration defaults are applied.
+ * Exchange rates omitted in the period configuration are automatically resolved
+ * using reliable public exchange rates (ECB / Bank of Japan).
+ */
+export function resolveBillingConfigForMonth(
+  baseConfig: EnterpriseBillingConfig,
+  targetMonth?: string
+): EnterpriseBillingConfig {
+  const ym = targetMonth && targetMonth.length >= 7 ? targetMonth.slice(0, 7) : undefined;
+  let matchingPeriod: BillingPeriodConfig | undefined;
+
+  if (ym && Array.isArray(baseConfig.periods)) {
+    matchingPeriod = baseConfig.periods.find((p) => {
+      const start = p.startMonth.slice(0, 7);
+      const end = p.endMonth.slice(0, 7);
+      return start <= ym && ym <= end;
+    });
+  }
+
+  // Base cloning
+  const resolved: EnterpriseBillingConfig = {
+    currency: { ...baseConfig.currency },
+    subCurrency: baseConfig.subCurrency ? { ...baseConfig.subCurrency } : null,
+    seatPricing: { ...baseConfig.seatPricing },
+    creditsPricing: { ...baseConfig.creditsPricing },
+    discountPercent: baseConfig.discountPercent,
+    customPricePerCredit: baseConfig.customPricePerCredit,
+    customPricePerCreditCurrency: baseConfig.customPricePerCreditCurrency,
+    customSeatPricing: baseConfig.customSeatPricing ? { ...baseConfig.customSeatPricing } : undefined,
+    periods: baseConfig.periods,
+  };
+
+  if (matchingPeriod) {
+    if (matchingPeriod.discountPercent !== undefined) {
+      resolved.discountPercent = matchingPeriod.discountPercent;
+    }
+    if (matchingPeriod.seatPricing) {
+      if (matchingPeriod.seatPricing.businessMonthlyUSD !== undefined) {
+        resolved.seatPricing.businessMonthlyUSD = matchingPeriod.seatPricing.businessMonthlyUSD;
+      }
+      if (matchingPeriod.seatPricing.enterpriseMonthlyUSD !== undefined) {
+        resolved.seatPricing.enterpriseMonthlyUSD = matchingPeriod.seatPricing.enterpriseMonthlyUSD;
+      }
+    }
+    if (matchingPeriod.creditsPricing) {
+      if (matchingPeriod.creditsPricing.costPerCreditUSD !== undefined) {
+        resolved.creditsPricing.costPerCreditUSD = matchingPeriod.creditsPricing.costPerCreditUSD;
+      }
+      if (matchingPeriod.creditsPricing.includedCreditsPerSeat !== undefined) {
+        resolved.creditsPricing.includedCreditsPerSeat = matchingPeriod.creditsPricing.includedCreditsPerSeat;
+      }
+    }
+    if (matchingPeriod.customPricePerCredit !== undefined) {
+      resolved.customPricePerCredit = matchingPeriod.customPricePerCredit;
+      resolved.customPricePerCreditCurrency = matchingPeriod.customPricePerCreditCurrency;
+    }
+    if (matchingPeriod.customSeatPricing) {
+      resolved.customSeatPricing = { ...matchingPeriod.customSeatPricing };
+    }
+    if (matchingPeriod.subCurrency !== undefined) {
+      resolved.subCurrency = matchingPeriod.subCurrency ? { ...matchingPeriod.subCurrency } : null;
+    }
+  }
+
+  // Auto-calculate exchange rate from reliable public data if not explicitly set
+  if (resolved.subCurrency && resolved.subCurrency.code !== 'USD' && resolved.subCurrency.code !== 'EA-USD') {
+    const subCode = resolved.subCurrency.code;
+    let rateOverride: number | undefined;
+
+    if (matchingPeriod) {
+      if (typeof matchingPeriod.exchangeRateFromUSD === 'number' && matchingPeriod.exchangeRateFromUSD > 0) {
+        rateOverride = matchingPeriod.exchangeRateFromUSD;
+      } else if (matchingPeriod.exchangeRates && typeof matchingPeriod.exchangeRates[subCode] === 'number') {
+        rateOverride = matchingPeriod.exchangeRates[subCode];
+      }
+    }
+
+    if (rateOverride !== undefined) {
+      resolved.subCurrency.exchangeRateFromUSD = rateOverride;
+    } else if (resolved.subCurrency.exchangeRateFromUSD <= 0 || !matchingPeriod) {
+      // Use public reliable rate auto-calculation for omitted or non-period months
+      const autoRate = PublicExchangeRatesService.getExchangeRate(subCode, ym);
+      if (autoRate > 0) {
+        resolved.subCurrency.exchangeRateFromUSD = autoRate;
+      }
+    }
+  }
+
+  return resolved;
+}
+
 export interface DualCreditRate {
   usdRate: number;
   subRate?: number;
@@ -75,7 +214,7 @@ export interface DualCreditRate {
 }
 
 /**
- * Calculates dual effective unit prices for AI Credits (Primary USD & optional Sub-currency).
+ * Calculates dual effective unit prices for AI Credits (Catalog USD & optional Sub-currency / EA-USD).
  */
 export function calculateDualCreditRate(config: EnterpriseBillingConfig): DualCreditRate {
   const baseUSD = config.creditsPricing.costPerCreditUSD;
@@ -85,7 +224,14 @@ export function calculateDualCreditRate(config: EnterpriseBillingConfig): DualCr
   let usdRate: number;
   let subRate: number | undefined;
 
-  if (typeof config.customPricePerCredit === 'number' && config.customPricePerCredit >= 0) {
+  const isEaUsd = sub?.code === 'EA-USD';
+
+  if (isEaUsd) {
+    usdRate = baseUSD; // Catalog USD rate
+    subRate = typeof config.customPricePerCredit === 'number' && config.customPricePerCredit >= 0
+      ? config.customPricePerCredit
+      : Math.round(baseUSD * discountMultiplier * 10000) / 10000;
+  } else if (typeof config.customPricePerCredit === 'number' && config.customPricePerCredit >= 0) {
     if (sub && sub.code !== 'USD' && sub.exchangeRateFromUSD > 0) {
       subRate = config.customPricePerCredit;
       usdRate = Math.round((config.customPricePerCredit / sub.exchangeRateFromUSD) * 10000) / 10000;
@@ -111,11 +257,17 @@ export function calculateDualCreditRate(config: EnterpriseBillingConfig): DualCr
   let formattedCombined = formattedUSD;
 
   if (sub && sub.code !== 'USD' && subRate !== undefined) {
-    const subPrecision = !Number.isInteger(subRate)
-      ? (!Number.isInteger(subRate * 100) ? 3 : 2)
-      : sub.displayDecimals;
-    formattedSub = `${sub.symbol}${subRate.toFixed(subPrecision)} / AIC`;
-    formattedCombined = `${formattedUSD} (${formattedSub})`;
+    if (isEaUsd) {
+      const eaPrecision = subRate < 0.01 ? 4 : 3;
+      formattedSub = `$${subRate.toFixed(eaPrecision)} / AIC (EA)`;
+      formattedCombined = `${formattedUSD} (${formattedSub})`;
+    } else {
+      const subPrecision = !Number.isInteger(subRate)
+        ? (!Number.isInteger(subRate * 100) ? 3 : 2)
+        : sub.displayDecimals;
+      formattedSub = `${sub.symbol}${subRate.toFixed(subPrecision)} / AIC`;
+      formattedCombined = `${formattedUSD} (${formattedSub})`;
+    }
   }
 
   return {

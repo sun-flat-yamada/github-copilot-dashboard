@@ -481,6 +481,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
               <th
                 className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('cost')}
+                title="利用費用 (GitHubのカタログ価格(USD)基準)"
               >
                 <div className="flex items-center justify-end space-x-1">
                   <span>利用費用 ({scope_type === 'daily' ? '日割り' : '月額'})</span>
@@ -490,6 +491,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
               <th
                 className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('excess')}
+                title="超過請求 (GitHubのカタログ価格(USD))"
               >
                 <div className="flex items-center justify-end space-x-1">
                   <span>超過請求 (USD)</span>

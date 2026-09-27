@@ -530,6 +530,8 @@ export interface IndexMetadata {
   billing?: {
     currency: CurrencyConfig;
     subCurrency?: CurrencyConfig | null;
+    discountPercent?: number;
+    periods?: any[];
   };
   default_scopes: {
     // ライブ Copilot Metrics/Seats データが1件も無い場合 (認証情報未設定・

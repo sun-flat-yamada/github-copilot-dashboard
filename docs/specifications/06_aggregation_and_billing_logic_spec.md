@@ -34,6 +34,29 @@ Calculates the following financial indicators against each Cost Center budget de
    - $80\% \le U_{\%} < 100\%$: Warning threshold (`warning`)
    - $U_{\%} \ge 100\%$: Exceeded threshold (`exceeded`)
 
+### 1.3 Enterprise Agreement (EA) Contract Pricing, Period Configuration & Public Exchange Rate Auto-Calculation
+
+#### 1.3.1 Baseline USD Definition (GitHub Catalog Price)
+- The primary **USD values throughout the dashboard explicitly represent the "GitHub Catalog Price (USD)" (list price: Business \$19/month, Enterprise \$39/month, AI Credits \$0.01/AIC)**.
+- KPI summary cards, table headers, and UI tooltips clearly denote this as GitHub Catalog Price (USD).
+- An **"EA Contract USD (EA-USD)"** sub-currency display is provided, allowing side-by-side comparison between the catalog list price and EA negotiated discounted price (e.g. `$39.00 ($33.15 EA)`).
+
+#### 1.3.2 Period-Based Parameter Configuration (`periods`)
+To adapt to corporate fiscal years and contract cycles, parameters can be customized for specific date ranges from `startMonth` (YYYY-MM) to `endMonth` (YYYY-MM):
+1. **Copilot Seat Pricing**: Monthly cost and currency unit for Enterprise and Business plans (e.g. `customSeatPricing: { businessMonthly: 2500, enterpriseMonthly: 5000, currency: "JPY" }`).
+2. **AI Credit Unit Price**: Contractual unit price and currency unit (e.g. `customPricePerCredit: 1.273`, `customPricePerCreditCurrency: "JPY"`).
+3. **EA Discount Percentage**: Volume discount rate (e.g. `discountPercent: 15`).
+4. **USD to Target Currency Exchange Rate**: Contract exchange rate (e.g. `exchangeRateFromUSD: 155.0` or `exchangeRates: { JPY: 155.0, EUR: 0.92 }`).
+
+**Default Fallback Rule**:
+- Any month outside the configured `startMonth` to `endMonth` intervals automatically falls back to default baseline values (GitHub catalog price and global configuration).
+
+#### 1.3.3 Public Exchange Rate Auto-Calculation for Unconfigured Periods
+- For periods or months where explicit exchange rates are omitted, conversion rates from USD to target currencies are automatically computed from reliable, publicly available official data sources:
+  - **European Central Bank (ECB)**: Euro foreign exchange reference rates.
+  - **Bank of Japan (BOJ)**: Published foreign exchange statistics.
+- This ensures accurate, grounded currency conversions even across unconfigured historical months or air-gapped evaluation environments.
+
 ---
 
 ## 2. 3-Axis Cost Allocation Algorithm

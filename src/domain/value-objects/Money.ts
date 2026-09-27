@@ -105,6 +105,15 @@ export class Money {
       }
     );
 
+    if (subCurrency.code === 'EA-USD') {
+      const sub = `${subCurrency.symbol}${subFormattedNum} EA`;
+      return {
+        usd,
+        sub,
+        combined: `${usd} (${sub})`,
+      };
+    }
+
     const sub = `${subCurrency.symbol}${subFormattedNum}`;
     return {
       usd,
