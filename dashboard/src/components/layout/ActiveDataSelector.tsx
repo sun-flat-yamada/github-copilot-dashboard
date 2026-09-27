@@ -198,12 +198,12 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
   };
 
   return (
-    <div className="flex items-center space-x-1.5 h-full">
+    <div className="flex items-center space-x-1.5 h-11">
       {/* 統合データバッジ & トリガーボタン (タイトル表示部と同等の高さを活用した2行レイアウト) */}
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="flex items-center space-x-2.5 px-3 py-1 sm:py-1.5 rounded-xl bg-slate-900 border border-slate-700/80 hover:border-indigo-500/80 hover:bg-slate-850 transition-all cursor-pointer shadow-sm group select-none max-w-full"
+        className="flex items-center space-x-2.5 h-11 px-3 py-1 sm:py-1.5 rounded-xl bg-slate-900 border border-slate-700/80 hover:border-indigo-500/80 hover:bg-slate-850 transition-all cursor-pointer shadow-sm group select-none max-w-full"
         title={getTooltipText()}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
@@ -232,7 +232,7 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
         </div>
 
         {/* ディバイダー */}
-        <div className="w-px h-8 bg-slate-700/80 shrink-0" />
+        <div className="w-px h-7 bg-slate-700/80 shrink-0" />
 
         {/* フィルター要約ピル (タイトル部と同等の高さを活用した2行配置・少なくとも6要素表示) */}
         <div className="flex flex-col justify-center min-w-0 shrink">
