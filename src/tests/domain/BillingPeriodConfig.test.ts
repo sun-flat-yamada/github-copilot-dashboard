@@ -180,6 +180,33 @@ describe('Period-based EA Billing Configuration & Public Exchange Rates Tests (#
     assert.strictEqual(dual.combined, '$39.00 ($33.15 EA)');
   });
 
+  it('supports EA-JPY and EA-EUR sub-currency resolution with period exchangeRates', () => {
+    const rawJson = JSON.stringify({
+      currency: { code: 'USD', symbol: '$', exchangeRateFromUSD: 1.0, displayDecimals: 2 },
+      subCurrency: { code: 'EA-JPY', symbol: '¥', exchangeRateFromUSD: 150.0, displayDecimals: 0 },
+      periods: [
+        {
+          startMonth: '2025-04',
+          endMonth: '2026-03',
+          exchangeRates: {
+            JPY: 155.0,
+            EUR: 0.92,
+          },
+        },
+      ],
+    });
+
+    const resolved = BillingConfigLoader.loadForMonth('2025-06', rawJson);
+    assert.strictEqual(resolved.subCurrency?.code, 'EA-JPY');
+    assert.strictEqual(resolved.subCurrency?.exchangeRateFromUSD, 155.0);
+
+    const money = Money.fromUsd(39.0);
+    const dual = money.formatDual(resolved.subCurrency);
+    assert.strictEqual(dual.usd, '$39.00');
+    assert.strictEqual(dual.sub, '¥6,045');
+    assert.strictEqual(dual.combined, '$39.00 (¥6,045)');
+  });
+
   it('normalizes intuitive aliases for seatPricing, creditPricing, and exchangeRates (#115)', () => {
     const rawJsonWithAliases = JSON.stringify({
       discountPercent: 10,

@@ -39,7 +39,7 @@ Calculates the following financial indicators against each Cost Center budget de
 #### 1.3.1 Baseline USD Definition (GitHub Catalog Price)
 - The primary **USD values throughout the dashboard explicitly represent the "GitHub Catalog Price (USD)" (list price: Business \$19/month, Enterprise \$39/month, AI Credits \$0.01/AIC)**.
 - KPI summary cards, table headers, and UI tooltips clearly denote this as GitHub Catalog Price (USD).
-- An **"EA Contract USD (EA-USD)"** sub-currency display is provided, allowing side-by-side comparison between the catalog list price and EA negotiated discounted price (e.g. `$39.00 ($33.15 EA)`).
+- Unified **"EA Contract Rate Sub-Currency Units (EA-USD, EA-JPY, EA-EUR)"** are provided, allowing side-by-side comparison between the catalog list price and user-configured EA contract rate effective prices (e.g. `$39.00 ($33.15 EA)`, `$39.00 (¥4,973)`, `$39.00 (€30.50)`). Options omit bracket descriptions and are unified under a top comment.
 
 #### 1.3.2 Period-Based Parameter Configuration (`periods`)
 To adapt to corporate fiscal years and contract cycles, parameters can be customized for specific date ranges from `startMonth` (YYYY-MM) to `endMonth` (YYYY-MM):

@@ -52,8 +52,8 @@ describe('Header Settings Menu Consolidation Tests (Issue #95)', () => {
 
     assert.match(currencyContent, /availableSubCurrencies/);
     assert.match(currencyContent, /code:\s*'none'/);
-    assert.match(currencyContent, /code:\s*'JPY'/);
-    assert.match(currencyContent, /code:\s*'EUR'/);
+    assert.match(currencyContent, /code:\s*'(EA-)?JPY'/);
+    assert.match(currencyContent, /code:\s*'(EA-)?EUR'/);
     assert.match(currencyContent, /export const useCurrency/);
   });
 });
