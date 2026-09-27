@@ -96,7 +96,7 @@ GitHub Copilot（Copilot Business / Copilot Enterprise）の企業導入が進�
 
 ### FR-8: 9種の分析ビュー切り替え (`ViewNavigation`)
 - モード切り替えから、分析目的に応じた 9 種の専用プラグインビューへの切り替え構成とすること：
-  1. `overview` (コスト配賦 & 総合サマリー)
+  1. `overview` (コスト内訳 & 総合サマリー)
   2. `users` (ユーザー別利用明細 & 活用状況)
   3. `trend` (ユーザー別モデル推移・日次受諾率)
   4. `budget` (Cost Center 予算管理・FinOps)

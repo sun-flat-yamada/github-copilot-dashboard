@@ -338,7 +338,7 @@ export const App: React.FC = () => {
         {/* 分析Viewの描画 (ヘッダー選択データに対して提供 ★要件3 & 4) */}
         {/* ============================================================ */}
 
-        {/* View 1: コスト配賦 & 総合サマリー (Overview) */}
+        {/* View 1: コスト内訳 & 総合サマリー (Overview) */}
         {activeView === 'overview' && (
           <div className="flex flex-col space-y-6 w-full">
             {/* サマリーブロック (常時展開 ★要件6) */}
@@ -393,7 +393,7 @@ export const App: React.FC = () => {
 
                 <CollapsibleSection
                   id="allocation"
-                  title="グループ別 コスト配賦 & ライセンス稼働状況"
+                  title="グループ別 コスト内訳 & ライセンス稼働状況"
                   subtitle="選択仕訳軸（部署 / Cost Center / Org）に基づく費用シェアと稼働率"
                   icon={<PieIcon className="w-4 h-4 text-purple-400" />}
                   summaryChips={
