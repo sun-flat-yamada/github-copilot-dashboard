@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EnterpriseBillingConfig",
+  "description": "GitHub Copilot Dashboard: FinOps & Enterprise Agreement (EA) Billing Configuration Example",
+  "currency": {
+    "code": "USD",
+    "symbol": "$",
+    "exchangeRateFromUSD": 1.0,
+    "displayDecimals": 2
+  },
+  "subCurrency": {
+    "code": "JPY",
+    "symbol": "¥",
+    "exchangeRateFromUSD": 150.0,
+    "displayDecimals": 0
+  },
+  "discountPercent": 15,
+  "seatPricing": {
+    "businessMonthlyUSD": 19,
+    "enterpriseMonthlyUSD": 39
+  },
+  "creditsPricing": {
+    "costPerCreditUSD": 0.01,
+    "includedCreditsPerSeat": 3900
+  },
+  "periods": [
+    {
+      "startMonth": "2025-04",
+      "endMonth": "2026-03",
+      "discountPercent": 20,
+      "seatPricing": {
+        "enterprise": 4800,
+        "business": 2400,
+        "currency": "JPY"
+      },
+      "creditPricing": {
+        "pricePerCredit": 1.25,
+        "currency": "JPY"
+      },
+      "exchangeRates": {
+        "JPY": 155.0,
+        "EUR": 0.92
+      }
+    },
+    {
+      "startMonth": "2026-04",
+      "endMonth": "2027-03",
+      "discountPercent": 15,
+      "seatPricing": {
+        "enterprise": 5000,
+        "business": 2500,
+        "currency": "JPY"
+      },
+      "creditPricing": {
+        "pricePerCredit": 1.273,
+        "currency": "JPY"
+      },
+      "exchangeRateFromUSD": 148.0
+    }
+  ]
+}

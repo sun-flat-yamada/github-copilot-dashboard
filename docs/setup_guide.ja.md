@@ -114,11 +114,21 @@ GitHub Actions の Variables/Secrets は最大 48KB に制限されています�
 ### USD 常時基本表示 & サブ表示通貨の併記
 - **全9分析画面・KPI・チャート・テーブルにおいて、USD（`$`）が常時基本通貨として表示**されます。
 - サブ通貨を設定した場合、USDの横にカッコ書きでサブ通貨額が併記されます（例: `$2,975.00 (¥461,125)` や `$0.010 / AIC (¥1.273 / AIC)`）。
-- 画面上部ヘッダーの「通貨: USD / USD+JPY / USD+EUR」ドロップダウンセレクターから、閲覧者自身がリアルタイムに切り替えることも可能です（ブラウザの `localStorage` に保持されます）。
+- 画面上部ヘッダーの「通貨: USD / USD+EA-USD / USD+JPY / USD+EUR」ドロップダウンセレクターから、閲覧者自身がリアルタイムに切り替えることも可能です（ブラウザの `localStorage` に保持されます）。
 
-### COPILOT_BILLING_CONFIG の設定
-**Settings** > **Secrets and variables** > **Actions** > **Variables**（または Secrets）に `COPILOT_BILLING_CONFIG` を登録するか、リポジトリの `data/config/billing.json` に設定を配置します。
+### 5.1 設定方法（配置場所と適用優先順位）
+課金設定は以下のいずれかの方法で安全に注入できます（環境変数が最優先）：
+1. **GitHub Actions Secrets / Variables**（推奨）:
+   - リポジトリの **Settings** > **Secrets and variables** > **Actions** > **Variables**（または Secrets）に `COPILOT_BILLING_CONFIG` として JSON 文字列を登録します。
+2. **ローカル設定ファイル**（開発・テスト用）:
+   - リポジトリ内の `data/config/billing.json` に設定ファイルを配置します（サンプル: [`examples/config/billing.example.json`](../examples/config/billing.example.json) を参照）。
 
+---
+
+### 5.2 ユースケース別・設定パラメーター具体例
+
+#### 【具体例 1】シンプルなEAボリュームディスカウント（15%OFF ＋ 円換算表示）
+企業全体の契約ディスカウント率（15%）と、社内共通の適用為替レート（155円/ドル）を指定する最も標準的な設定です：
 ```json
 {
   "subCurrency": {
@@ -127,44 +137,93 @@ GitHub Actions の Variables/Secrets は最大 48KB に制限されています�
     "exchangeRateFromUSD": 155.0,
     "displayDecimals": 0
   },
-  "discountPercent": 15,
+  "discountPercent": 15
+}
+```
+
+#### 【具体例 2】日本円での直接契約（シート月額固定価格 ＋ AI Credit個別単価 1.273円/AIC）
+Enterprise Agreementにおいて、USD換算ではなく日本円建てでの固定月額（Enterprise: ¥5,000、Business: ¥2,500）および AI Credit 単価（1.273円/AIC）が直接定められている場合の設定です：
+```json
+{
+  "subCurrency": {
+    "code": "JPY",
+    "symbol": "¥",
+    "exchangeRateFromUSD": 150.0,
+    "displayDecimals": 0
+  },
   "customPricePerCredit": 1.273,
   "customSeatPricing": {
-    "enterpriseMonthly": 5000
-  },
+    "enterpriseMonthly": 5000,
+    "businessMonthly": 2500,
+    "currency": "JPY"
+  }
+}
+```
+
+#### 【具体例 3】期間別（年度別・契約改定サイクル別）パラメータ設定
+契約年度ごとにディスカウント率や単価、為替レートが改定される企業向けの本格的な設定です。
+`periods` 配列に期間（`startMonth` 〜 `endMonth`）を定義します。**設定期間外の月は、自動的にデフォルト値（GitHubカタログ価格および基本設定）へフォールバックします**：
+```json
+{
+  "currency": { "code": "USD", "symbol": "$", "exchangeRateFromUSD": 1.0, "displayDecimals": 2 },
+  "subCurrency": { "code": "JPY", "symbol": "¥", "exchangeRateFromUSD": 150.0, "displayDecimals": 0 },
+  "discountPercent": 10,
   "periods": [
     {
       "startMonth": "2025-04",
       "endMonth": "2026-03",
       "discountPercent": 20,
-      "customPricePerCredit": 1.25,
-      "customPricePerCreditCurrency": "JPY",
-      "customSeatPricing": {
-        "businessMonthly": 2400,
-        "enterpriseMonthly": 4800,
+      "seatPricing": {
+        "enterprise": 4800,
+        "business": 2400,
         "currency": "JPY"
       },
-      "exchangeRateFromUSD": 155.0
+      "creditPricing": {
+        "pricePerCredit": 1.25,
+        "currency": "JPY"
+      },
+      "exchangeRates": {
+        "JPY": 155.0,
+        "EUR": 0.92
+      }
+    },
+    {
+      "startMonth": "2026-04",
+      "endMonth": "2027-03",
+      "discountPercent": 15,
+      "seatPricing": {
+        "enterprise": 5000,
+        "business": 2500,
+        "currency": "JPY"
+      },
+      "creditPricing": {
+        "pricePerCredit": 1.273,
+        "currency": "JPY"
+      },
+      "exchangeRateFromUSD": 148.0
     }
   ]
 }
 ```
 
-> [!NOTE]
-> - **USDは「GitHubのカタログ価格(USD)」**: ダッシュボードの主たるUSD表示はGitHub公式カタログ価格（Enterprise: \$39/月、Business: \$19/月、Credits: \$0.01/AIC）を表します。サブ通貨として **「EA契約 USD (EA-USD)」** を選択することで、EA契約ディスカウント適用後のUSD金額（例: `$39.00 ($33.15 EA)`）を並列比較できます。
-> - **期間外のフォールバック**: `periods` で指定された期間（`startMonth` 〜 `endMonth`）に該当しない月は、デフォルト設定値へ自動フォールバックします。
-> - **公的オープンデータによる為替レート自動算出**: 設定値が存在しない区間の為替レート（USD/JPY, USD/EUR等）は、欧州中央銀行 (ECB) および日本銀行 (BOJ) 公表の信頼できる公的データから自動算出されます。
+---
 
-### パラメータ仕様 & EA契約ボリュームディスカウント
-| パラメータ | 型 | デフォルト | 説明 |
+### 5.3 パラメータ仕様詳細 & エイリアス正規化
+設定ローダー（`BillingConfigLoader`）は、直感的なキー名の差異を自動的に吸収・正規化します：
+
+| パラメータ | 型 | デフォルト | 許容エイリアス / 説明 |
 |---|---|---|---|
 | `subCurrency` | `object` | `null` | サブ表示通貨設定（`code`: 'JPY', `symbol`: '¥', `exchangeRateFromUSD`: 155.0, `displayDecimals`: 0） |
 | `discountPercent` | `number` | `0` | Enterprise Agreement (EA) ボリュームディスカウント率（0〜100%） |
-| `customPricePerCredit` | `number` | 未設定 | 企業個別の直接契約AI Credits単価（サブ通貨指定時はサブ通貨での単価、例: 1.273 JPY/AIC。指定時はディスカウント計算より優先） |
-| `customSeatPricing` | `object` | 未設定 | 個別契約シート単価（`businessMonthly`, `enterpriseMonthly`） |
-| `seatPricing` | `object` | 19 / 39 USD | 標準シート定価（USD） |
-| `creditsPricing` | `object` | 0.01 USD | 標準クレジット定価（USD/AIC） |
-| `periods` | `array` | `[]` | 期間別パラメータ設定リスト（`startMonth`, `endMonth`, 各プランの月額・単価・ディスカウント率・為替レート） |
+| `seatPricing` | `object` | 19 / 39 USD | シート価格。`{ enterprise, business, currency }`、`{ enterpriseMonthly, businessMonthly }`、`{ enterpriseMonthlyUSD, businessMonthlyUSD }` のいずれの形式でも指定可能。USD以外の通貨を指定した場合は自動的にカスタム契約単価として扱われます。 |
+| `creditPricing` | `object` / `number` | 0.01 USD | AI Credit 単価。`{ pricePerCredit: 1.273, currency: "JPY" }` や `customPricePerCredit: 1.273` で指定可能。 |
+| `exchangeRates` | `object` | 自動算出 | USDから各通貨への変換レートマップ（例: `{ "JPY": 155.0, "EUR": 0.92 }`）。単一指定の `exchangeRateFromUSD` も可。 |
+| `periods` | `array` | `[]` | 期間別パラメータ設定リスト（`startMonth`, `endMonth`, 各プランの月額・単価・ディスカウント率・為替レート）。 |
+
+> [!NOTE]
+> - **USDは「GitHubのカタログ価格(USD)」**: ダッシュボードの主たるUSD表示はGitHub公式カタログ価格（Enterprise: \$39/月、Business: \$19/月、Credits: \$0.01/AIC）を表します。サブ通貨セレクターから **「EA契約 USD (EA-USD)」** を選択することで、EA契約ディスカウント適用後のUSD金額（例: `$39.00 ($33.15 EA)`）を並列比較できます。
+> - **期間外のフォールバック**: `periods` で指定された期間（`startMonth` 〜 `endMonth`）に該当しない月は、自動的にデフォルト設定値へフォールバックします。
+> - **公的オープンデータによる為替レート自動算出**: 設定値が存在しない区間の為替レート（USD/JPY, USD/EUR等）は、欧州中央銀行 (ECB) および日本銀行 (BOJ) 公表の信頼できる公的データから自動算出されます。
 
 ---
 
