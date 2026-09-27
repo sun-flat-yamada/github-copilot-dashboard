@@ -118,6 +118,47 @@ export function getModelBuzz(modelId: string, vendor?: ModelVendor): EngineerBuz
   const m = modelId.toLowerCase();
 
   // 1. OpenAI Models
+  if (m === 'gpt-6-sol' || m.includes('gpt-6-sol')) {
+    return {
+      headline: 'GPT-6世代のPowerful主力。Astra並みの高知能を高速・高コスパ（$2.00/$10.00）で実現',
+      community_sentiments: [
+        'Astra譲りの高い推論力とSWE-bench 78.5%を持ちながら、95 TPSの高速出力でテンポよく開発できる',
+        '複雑な並行処理や型安全なリファクタリングにおいて、手堅い実装を驚くほど迅速に返す',
+        '長文コンテキスト（>272K）でも高い検索性と保持力を維持し、巨大ファイルの改修に耐える',
+      ],
+      caution_rumor: 'キャッシュ書き込みコスト（$2.50/1M）があるため、プロンプトキャッシュを有効活用するセッション設計が推奨という噂。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+      sources: [
+        {
+          title: 'OpenAI: GPT-6 Architecture & Model Specifications',
+          url: 'https://openai.com/index/',
+        },
+      ],
+    };
+  }
+
+  if (m === 'gpt-6-luna' || m.includes('gpt-6-luna')) {
+    return {
+      headline: '100万トークン$0.10/$0.50の衝撃。タイピングに完全同期する光速インライン補完',
+      community_sentiments: [
+        'OpenAI史上最安単価と185 TPSの超高速レスポンスで、IDE補完の快適性が異次元',
+        '定型コードやJSDoc生成、単体テストの雛形作成ならこれで十分すぎるほど正確かつ爆速',
+      ],
+      caution_rumor: '※【注意: 長文コンテキスト性能】OpenAI公式（https://openai.com/ja-JP/index/gpt-5-6/）の「長文コンテキスト」比較データにおいて、Lunaモデルは1M窓対応ながら長文での情報保持・探索性能がSol/Terraと比較して極端に低いことが示されています。大規模リポジトリの一括読み込みや長大なコードベース解析にはSol/Terraの利用が強く推奨されます。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+      sources: [
+        {
+          title: 'OpenAI: GPT-5.6 発表（長文コンテキスト比較データ）',
+          url: 'https://openai.com/ja-JP/index/gpt-5-6/',
+        },
+        {
+          title: 'OpenAI: Developer Platform & Lightweight Models',
+          url: 'https://platform.openai.com/docs/models',
+        },
+      ],
+    };
+  }
+
   if (m.includes('gpt-6') || m.includes('astra')) {
     return {
       headline: '知能指数の天井を突き破った究極兵器。難攻不落のバグが一瞬で解ける衝撃',
@@ -183,9 +224,13 @@ export function getModelBuzz(modelId: string, vendor?: ModelVendor): EngineerBuz
         '100万トークンあたり20セントというタダ同然の価格設定がありがたい',
         '定型コードやテストのパターン埋めならこれで十分すぎるほど正確',
       ],
-      caution_rumor: '少しでも複雑なビジネスロジックを任せると凡ミスが増えるので、設計相談には向かないという噂。',
+      caution_rumor: '設計相談には向かないことに加え、OpenAI公式（https://openai.com/ja-JP/index/gpt-5-6/）の長文コンテキスト比較データが示す通り、Lunaは長文コンテキスト性能がSol/Terraと比較して極端に低いため、大規模コードベースの一括読み込みには非推奨という噂。',
       source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
       sources: [
+        {
+          title: 'OpenAI: GPT-5.6 発表（長文コンテキスト比較データ）',
+          url: 'https://openai.com/ja-JP/index/gpt-5-6/',
+        },
         {
           title: 'OpenAI: Developer Platform & Model Specifications',
           url: 'https://platform.openai.com/docs/models',
@@ -339,6 +384,25 @@ export function getModelBuzz(modelId: string, vendor?: ModelVendor): EngineerBuz
   }
 
   // 2. Anthropic Models
+  if (m.includes('claude-opus-5-5') || m.includes('opus-5-5')) {
+    return {
+      headline: 'Opus 5の不満を解消した最高峰銘機。指示忠実性を極め、単価も$4.00/$20.00へ値下げ',
+      community_sentiments: [
+        'Opus 5で問題視された過剰なお節介や意図しない変更が劇的に抑制され、指示に正確に従ってくれる',
+        'SWE-bench 82.8%という業界最高峰スコアと、長文・深層設計での圧倒的な安定感',
+        'Opus 5から単価が下がり（$4.00/$20.00）、キャッシュ読み取りも$0.20と格段に実用性が高まった',
+      ],
+      caution_rumor: '最高峰モデルのため、日常のシンプルな関数補完ではSonnet 5を使うほうが経済的という噂。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+      sources: [
+        {
+          title: 'Anthropic: Claude Opus 5.5 Architecture & Capabilities',
+          url: 'https://www.anthropic.com/news',
+        },
+      ],
+    };
+  }
+
   if (m.includes('claude-opus-5') || m.includes('claude-5-opus')) {
     return {
       headline: '高性能化の代償？ 最新モデル「Opus 5」に対する現場の戸惑いと「旧モデル回帰」の動き',
@@ -607,6 +671,25 @@ export function getModelBuzz(modelId: string, vendor?: ModelVendor): EngineerBuz
   }
 
   // 6. xAI Models
+  if (m.includes('grok-4-7') || m === 'grok-4-7') {
+    return {
+      headline: '長文コンテキスト（1M対応）と論理推論が飛躍的向上。最新トレンドへの即応力も抜群',
+      community_sentiments: [
+        '100万トークン対応となり、巨大リポジトリのコード探索や複雑なデバッグでも破綻しない',
+        '余計な前置きや過剰な免責事項がなく、求めるコードと結論をストレートに返してくれる',
+        '最新のOSSライブラリの破壊的変更やエッジケースに対する知識が驚くほど新しい',
+      ],
+      caution_rumor: '長文コンテキスト（>200K）利用時は単価が$4.00/$12.00へ上がるため、日常の軽微な質問では通常コンテキストでの利用が推奨という噂。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+      sources: [
+        {
+          title: 'xAI: Grok 4.7 Model Overview & Architecture',
+          url: 'https://x.ai/',
+        },
+      ],
+    };
+  }
+
   if (m.includes('grok')) {
     return {
       headline: '歯切れの良い回答と最新トレンドの即応力。飾らないエンジニアリング対話が好評',

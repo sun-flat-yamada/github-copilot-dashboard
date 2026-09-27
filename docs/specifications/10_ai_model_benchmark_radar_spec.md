@@ -168,24 +168,32 @@ Provides instant, pre-configured 3-to-4 model comparisons. Recommended presets e
 
 ### 4.2 GitHub Copilot Supported Models Roster (September 2026)
 
-#### 1. OpenAI (10 Models)
+Comprehensive roster covering all 43 evaluated frontier models (34 Copilot-supported + 9 classic/external controls) compliant with official GitHub Copilot documentation ([Supported models](https://docs.github.com/en/copilot/reference/ai-models/supported-models) and [Models & pricing](https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing)).
+
+#### 1. OpenAI (12 Models)
 | Model ID | Name | Tier | Status | Context | In / 1M | Out / 1M | Cache Read | Highlights |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `gpt-6-astra` | GPT-6 Astra | Powerful | GA | 272K (1M) | $10.00 | $50.00 | $2.50 | 2026 premier deep-reasoning flagship |
-| `gpt-5-6-sol` | GPT-5.6 Sol | Powerful | GA | 272K | $4.00 | $20.00 | $1.00 | GPT-5.6 workhorse for complex tasks |
-| `gpt-5-6-terra` | GPT-5.6 Terra | Versatile | GA | 128K | $2.00 | $12.00 | $0.50 | High-speed versatile generalist |
-| `gpt-5-6-luna` | GPT-5.6 Luna | Lightweight | GA | 128K | $0.20 | $1.20 | $0.05 | Ultra-fast low-cost inline completions |
-| `gpt-5-5` | GPT-5.5 | Powerful | GA | 200K | $5.00 | $30.00 | $1.25 | Frontier reasoning model |
-| `gpt-5-4` | GPT-5.4 | Versatile | GA | 128K | $2.50 | $15.00 | $0.62 | Balanced engineering model |
-| `gpt-5-4-mini` | GPT-5.4 mini | Versatile | GA | 128K | $0.75 | $4.50 | $0.18 | High speed and value |
+| `gpt-6-sol` | GPT-6 Sol | Powerful | GA | 272K (1M) | $2.00 | $10.00 | $0.20 | New generation Powerful workhorse balancing capability and cost |
+| `gpt-6-luna` | GPT-6 Luna | Lightweight | GA | 272K (1M ※Caution) | $0.10 | $0.50 | $0.01 | Ultra-fast inline completions (※Note poor long-context retention) |
+| `gpt-5-6-sol` | GPT-5.6 Sol | Powerful | GA | 272K (1M) | $4.00 | $20.00 | $1.00 | GPT-5.6 workhorse for complex tasks |
+| `gpt-5-6-terra` | GPT-5.6 Terra | Versatile | GA | 272K (1M) | $2.00 | $12.00 | $0.50 | High-speed versatile generalist |
+| `gpt-5-6-luna` | GPT-5.6 Luna | Lightweight | GA | 200K (1M ※Caution) | $0.20 | $1.20 | $0.05 | Ultra-fast low-cost inline completions (※Note poor long-context retention) |
+| `gpt-5-5` | GPT-5.5 | Powerful | GA | 272K (1M) | $5.00 | $30.00 | $1.25 | Frontier reasoning model |
+| `gpt-5-4` | GPT-5.4 | Versatile | GA | 272K (1M) | $2.50 | $15.00 | $0.62 | Balanced engineering model |
+| `gpt-5-4-mini` | GPT-5.4 mini | Lightweight | GA | 128K | $0.75 | $4.50 | $0.18 | High speed and value |
 | `gpt-5-4-nano` | GPT-5.4 nano | Lightweight | GA | 128K | $0.20 | $1.25 | $0.05 | Ultra-lightweight inline assistant |
-| `gpt-5-3-codex` | GPT-5.3-Codex | Versatile | LTS | 128K | $1.75 | $14.00 | $0.43 | Long-term support code specialist |
+| `gpt-5-3-codex` | GPT-5.3-Codex | Powerful | LTS | 1M | $1.75 | $14.00 | $0.43 | Long-term support code specialist |
 | `gpt-5-mini` | GPT-5 mini | Lightweight | GA | 128K | $0.25 | $2.00 | $0.06 | Established fast completion model |
 
-#### 2. Anthropic (10 Models)
+> [!WARNING] Important Caveat on GPT-family Luna Models (GPT-6 Luna / GPT-5.6 Luna) Regarding Long Context
+> Per official OpenAI comparative data (https://openai.com/ja-JP/index/gpt-5-6/ under "Long Context"), Luna models exhibit drastically inferior performance in search and information retention over long context windows compared to Sol and Terra. Even though 1M context is supported, massive repository ingestion and large cross-file refactoring should strictly use Sol/Terra, reserving Luna for rapid inline suggestions and local routine edits.
+
+#### 2. Anthropic (11 Models)
 | Model ID | Name | Tier | Status | Context | In / 1M | Out / 1M | Cache Read/Write | Highlights |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `claude-sonnet-5` | Claude Sonnet 5 | Powerful | GA | 200K (1M) | $2.00 | $10.00 | $0.20 / $2.50 | The standard flagship enterprise driver |
+| `claude-opus-5-5` | Claude Opus 5.5 | Powerful | GA | 200K (1M) | $4.00 | $20.00 | $0.20 / $5.00 | Next-generation flagship reasoning & enhanced steerability |
 | `claude-opus-5` | Claude Opus 5 | Powerful | GA | 200K (1M) | $5.00 | $25.00 | $0.50 / $6.25 | Deep architectural design & reasoning |
 | `claude-fable-5-1` | Claude Fable 5.1 | Powerful | GA | 200K (1M) | $10.00 | $50.00 | $1.00 / $12.50 | EFS/ZDR enterprise security tier |
 | `claude-fable-5` | Claude Fable 5 | Powerful | GA | 200K (1M) | $10.00 | $50.00 | $1.00 / $12.50 | Enterprise high-assurance reasoning |
@@ -204,11 +212,12 @@ Provides instant, pre-configured 3-to-4 model comparisons. Recommended presets e
 | `gemini-3-6-flash` | Gemini 3.6 Flash | Versatile | GA | 1M Tok | $0.75 | $3.75 | 1M long-context generalist |
 | `gemini-3-5-flash` | Gemini 3.5 Flash | Versatile | GA | 1M Tok | $1.50 | $9.00 | Proven Flash workhorse |
 
-#### 4. Microsoft / xAI / Moonshot AI (5 Models)
+#### 4. Microsoft / xAI / Moonshot AI (6 Models)
 | Model ID | Name | Provider | Tier | Status | Context | In / Out / 1M | Highlights |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `mai-code-1-1-flash` | MAI-Code-1.1-Flash | Microsoft | Lightweight | GA | 128K | $0.20 / $1.20 | Microsoft ultra-fast code specialist |
-| `grok-4-6` | Grok 4.6 | xAI | Versatile | GA | 200K | $2.00 / $6.00 | High-accuracy practical coding |
+| `grok-4-7` | Grok 4.7 | xAI | Versatile | GA | 200K (1M) | $2.00 / $6.00 | Reasoning CoT support, latest flagship Grok |
+| `grok-4-6` | Grok 4.6 | xAI | Versatile | GA | 200K (1M) | $2.00 / $6.00 | High-accuracy practical coding |
 | `grok-4-5` | Grok 4.5 | xAI | Versatile | GA | 200K | $2.00 / $6.00 | Versatile code completion |
 | `kimi-k3` | Kimi K3 | Moonshot AI | Powerful | GA | 1M | $3.00 / $15.00 | 1M long-context reasoning |
 | `kimi-k2-7-code` | Kimi K2.7 Code | Moonshot AI | Versatile | GA | 256K | $0.95 / $4.00 | 256K code specialist, high value |

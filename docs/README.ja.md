@@ -49,7 +49,7 @@ flowchart TD
 - **OpenAI シリーズ**: GPT-6 Astra, GPT-5.6 (Sol/Terra/Luna), GPT-5.5, GPT-5.4, GPT-5.3-Codex, GPT-5 mini
 - **Anthropic シリーズ**: Claude 5 (Opus/Sonnet/Fable), Claude 4.8, Claude 4.7, Claude 4.6, Claude 4.5 Haiku
 - **Google シリーズ**: Gemini 3.8 Flash, Gemini 3.7 Flash, Gemini 3.6 Flash, Gemini 3.5 Flash
-- **著名ベンチマークレーダー評価**: 38モデルの6軸レーダーチャート評価 ([SDD-10](specifications/10_ai_model_benchmark_radar_spec.ja.md))
+- **著名ベンチマークレーダー評価**: 43モデルの6軸レーダーチャート評価 ([SDD-10](specifications/10_ai_model_benchmark_radar_spec.ja.md))
 
 ### 4. [🌿 Fork運用保守 & 2層ブランチ運用](specifications/12_fork_sync_and_customization_ops_spec.ja.md)
 - **100%マージ非競合**: `copilot-data` 独立データブランチ分離により、本家更新とのコンフリクトをゼロ化。
