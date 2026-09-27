@@ -50,6 +50,7 @@ export function getModelShortName(model: { id: string; name: string }): string {
   const id = model.id.toLowerCase();
 
   // 1. Anthropic Claude ファミリ: 派閥（opus/sonnet/fable/haiku）+ バージョン番号
+  if (id === 'claude-opus-5-5') return 'opus-5.5';
   if (id === 'claude-opus-5') return 'opus-5';
   if (id === 'claude-opus-4-8') return 'opus-4.8';
   if (id === 'claude-opus-4-8-fast') return 'opus-4.8 (fast)';
@@ -69,6 +70,8 @@ export function getModelShortName(model: { id: string; name: string }): string {
 
   // 2. OpenAI GPT ファミリ: gpt + バージョン番号 + サブネーム
   if (id === 'gpt-6-astra') return 'gpt-6-astra';
+  if (id === 'gpt-6-sol') return 'gpt-6-sol';
+  if (id === 'gpt-6-luna') return 'gpt-6-luna';
   if (id === 'gpt-5-6-sol') return 'gpt-5.6-sol';
   if (id === 'gpt-5-6-terra') return 'gpt-5.6-terra';
   if (id === 'gpt-5-6-luna') return 'gpt-5.6-luna';
@@ -93,6 +96,7 @@ export function getModelShortName(model: { id: string; name: string }): string {
 
   // 4. その他の派閥: mai, grok, kimi, deepseek
   if (id === 'mai-code-1-1-flash') return 'mai-1.1-flash';
+  if (id === 'grok-4-7') return 'grok-4.7';
   if (id === 'grok-4-6') return 'grok-4.6';
   if (id === 'grok-4-5') return 'grok-4.5';
   if (id === 'kimi-k3') return 'kimi-k3';

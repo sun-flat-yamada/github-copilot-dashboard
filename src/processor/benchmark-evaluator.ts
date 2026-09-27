@@ -193,13 +193,44 @@ export function evaluateModel(
   if (radar.speed_latency < 50) weaknesses.push('推論待機時間（思考チェーン）が長めで、インライン補完としてはテンポを要確認');
   if (radar.coding_swe < 60) weaknesses.push('大規模な自律コード修正タスクでは上位モデルへのエスカレーションが望ましい');
   if (raw.context_window_k < 200) weaknesses.push('コンテキスト長が200K未満のため、巨大リポジトリ全体の一括読み込みには非推奨');
+  if (mId.includes('luna')) weaknesses.push('長文コンテキストにおける探索・情報保持性能がSol/Terraと比較して極端に低く、大規模コードベースの一括読み込みには非推奨（OpenAI公式 https://openai.com/ja-JP/index/gpt-5-6/ 比較データ準拠）');
 
   if (weaknesses.length === 0) {
     weaknesses.push('極端な弱点のないバランス型（タスク難易度に応じた適切なモデル切り替えが推奨）');
   }
 
   // Context-aware recommendations and verdict by model/family
-  if (mId.includes('gpt-6') || mId.includes('astra')) {
+  if (mId === 'gpt-6-sol') {
+    recommended_for.push(
+      'OpenAI GPT-6世代における高速・高精度なPowerful主力タスク',
+      '並行処理・非同期イベント駆動アーキテクチャの厳密な型付け',
+      'CLIやAgentモードでの高速自律エージェント遂行'
+    );
+    summary_verdict =
+      'GPT-6世代のPowerful主力。$2.00/$10.00という費用対効果と高速なレスポンス（95 TPS）で最高峰のコーディング力を提供。';
+    copilot_usage_guidance =
+      '【推奨シーン】VS Code Copilotでの複雑な機能実装、CLIでの自律タスク実行。GPT-6 Astraに匹敵する知能を手頃な単価と高速性で活用できます。';
+  } else if (mId === 'gpt-6-luna') {
+    recommended_for.push(
+      'インラインの超高速コード提案（Next Edit Suggestion）',
+      '定型関数の生成、コメント・JSDoc・型アノテーションの自動補正',
+      'コストを極限まで抑えた大量バッチ処理・軽量要約'
+    );
+    summary_verdict =
+      '100万トークンあたり$0.10/$0.50というOpenAI史上最安単価と185 TPSの超高速レスポンスを誇るGPT-6超軽量モデル。';
+    copilot_usage_guidance =
+      '【推奨シーン】インライン補完や即時サジェスト、バックグラウンド処理。※【注意: 長文コンテキスト性能】OpenAI公式（https://openai.com/ja-JP/index/gpt-5-6/）の長文コンテキスト比較データが示す通り、Lunaモデルは1M対応を謳うものの長文での精度・探索維持率がSol/Terraに比べて極端に低いため、長大なコードベース解析ではなくインライン補完や定型処理に限定して活用するのがベストです。';
+  } else if (mId === 'claude-opus-5-5') {
+    recommended_for.push(
+      '最高峰のソフトウェアエンジニアリング（SWE-bench 82.8%）',
+      '大規模リポジトリの深層アーキテクチャ設計・高難度リファクタリング',
+      '指示への実直な追従と過剰な最適化を抑えた精密なコード生成'
+    );
+    summary_verdict =
+      'Anthropicの最高峰フロンティアモデル。Opus 5から単価を$4.00/$20.00へ引き下げつつ、現場からのフィードバックを反映して指示への忠実性とコーディング精度を極限まで研ぎ澄ました最新銘機。';
+    copilot_usage_guidance =
+      '【推奨シーン】難関プロジェクトのアーキテクチャ設計、極めて高精度が求められる基幹システムの開発。Opus 5よりも制御性が向上し、1Mコンテキストと構成可能推論に完全対応しています。';
+  } else if (mId.includes('gpt-6') || mId.includes('astra')) {
     recommended_for.push(
       '超難関アルゴリズム・未知のアーキテクチャ設計・自動定理証明',
       '全社規模の大規模モノレポ横断リファクタリング',
@@ -268,7 +299,7 @@ export function evaluateModel(
     summary_verdict =
       '$0.20/$1.20という極限の低コストと超高速レスポンスを誇る超軽量モデル。日常的なタイピングを邪魔しません。';
     copilot_usage_guidance =
-      '【推奨シーン】インライン補完や即時サジェスト、バックグラウンド処理。コストを全く気にせず常時稼働させられます。';
+      '【推奨シーン】インライン補完や即時サジェスト、バックグラウンド処理。コストを全く気にせず常時稼働させられます。※【注意: 長文コンテキスト性能】OpenAI公式（https://openai.com/ja-JP/index/gpt-5-6/）の長文コンテキスト比較データが示す通り、Lunaモデルは長文コンテキスト性能がSol/Terraと比較して極端に低いため、大規模コードベースの一括読み込みには非推奨です。';
   } else if (mId.includes('gpt-5-3-codex') || mId.includes('codex')) {
     recommended_for.push(
       'GitHub Copilotの長期サポート（LTS）基準での安定運用',
@@ -459,6 +490,8 @@ export function normalizeModelId(rawName: string): string {
   const s = rawName.toLowerCase().replace(/[^a-z0-9]/g, '');
 
   // 2026 最新 OpenAI
+  if (s.includes('gpt6sol') || (s.includes('gpt6') && s.includes('sol'))) return 'gpt-6-sol';
+  if (s.includes('gpt6luna') || (s.includes('gpt6') && s.includes('luna'))) return 'gpt-6-luna';
   if (s.includes('gpt6') || s.includes('astra')) return 'gpt-6-astra';
   if (s.includes('gpt56sol') || (s.includes('gpt56') && s.includes('sol'))) return 'gpt-5-6-sol';
   if (s.includes('gpt56terra') || (s.includes('gpt56') && s.includes('terra'))) return 'gpt-5-6-terra';
@@ -471,6 +504,7 @@ export function normalizeModelId(rawName: string): string {
   if (s.includes('gpt5mini')) return 'gpt-5-mini';
 
   // 2026 最新 Anthropic
+  if (s.includes('claudeopus55') || s.includes('opus55')) return 'claude-opus-5-5';
   if (s.includes('claudefable51') || s.includes('fable51') || s.includes('claude51fable')) return 'claude-fable-5-1';
   if (s.includes('claudefable5') || s.includes('fable5') || s.includes('claude5fable')) return 'claude-fable-5';
   if (s.includes('claudeopus5') || s.includes('claude5opus') || (s.includes('opus5') && !s.includes('sonnet'))) return 'claude-opus-5';
@@ -491,6 +525,7 @@ export function normalizeModelId(rawName: string): string {
 
   // Microsoft / xAI / Moonshot
   if (s.includes('maicode11') || s.includes('maicode')) return 'mai-code-1-1-flash';
+  if (s.includes('grok47')) return 'grok-4-7';
   if (s.includes('grok46')) return 'grok-4-6';
   if (s.includes('grok45') || s.includes('grok')) return 'grok-4-5';
   if (s.includes('kimik3') || (s.includes('kimi') && s.includes('k3'))) return 'kimi-k3';
