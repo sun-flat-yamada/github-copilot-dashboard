@@ -173,6 +173,44 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
     return { matched: 0, total: 0 };
   })();
 
+  // カテゴリ別バッジ配色定義 (CostCenter: Amber, Org: Blue, Group: Purple, Tag: Rose, User: Cyan)
+  const getBadgeColorClass = (type: string) => {
+    switch (type) {
+      case 'costCenter':
+        return 'bg-amber-950/80 text-amber-300 border-amber-800 hover:bg-amber-900/90 hover:border-amber-600 hover:text-amber-100';
+      case 'organization':
+        return 'bg-blue-950/80 text-blue-300 border-blue-800 hover:bg-blue-900/90 hover:border-blue-600 hover:text-blue-100';
+      case 'group':
+        return 'bg-purple-950/80 text-purple-300 border-purple-800 hover:bg-purple-900/90 hover:border-purple-600 hover:text-purple-100';
+      case 'tag':
+        return 'bg-rose-950/80 text-rose-300 border-rose-800 hover:bg-rose-900/90 hover:border-rose-600 hover:text-rose-100';
+      case 'user':
+        return 'bg-cyan-950/80 text-cyan-300 border-cyan-800 hover:bg-cyan-900/90 hover:border-cyan-600 hover:text-cyan-100';
+      default:
+        return 'bg-purple-950/80 text-purple-300 border-purple-800 hover:bg-purple-900/90 hover:border-purple-600 hover:text-purple-100';
+    }
+  };
+
+  // フィルタバッジの個別解除ハンドラ (モーダル起動を阻止し単一条件をリセット)
+  const handleRemoveBadge = (key: string, e: React.MouseEvent | React.KeyboardEvent) => {
+    e.stopPropagation();
+    if (key === 'costCenter') {
+      onApplyFilterCriteria({ ...filterCriteria, costCenter: 'all' });
+    } else if (key === 'organization') {
+      onApplyFilterCriteria({ ...filterCriteria, organization: 'all' });
+    } else if (key === 'group') {
+      onApplyFilterCriteria({ ...filterCriteria, group: 'all' });
+    } else if (key.startsWith('tag:')) {
+      const targetTag = key.slice('tag:'.length);
+      onApplyFilterCriteria({
+        ...filterCriteria,
+        tags: (filterCriteria.tags || []).filter((t) => t !== targetTag),
+      });
+    } else if (key === 'userPattern') {
+      onApplyFilterCriteria({ ...filterCriteria, userPattern: '' });
+    }
+  };
+
   // フィルター要素の分配 (少なくとも6要素を表示、上段・下段の2行均等配分)
   const MAX_VISIBLE_BADGES = 6;
   const visibleBadges = filterBadges.slice(0, MAX_VISIBLE_BADGES);
@@ -194,7 +232,7 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
     }
 
     const filterList = filterBadges.map((b) => b.label).join(', ');
-    return `${sourceInfo}\n適用フィルター (${filterBadges.length}件 / 該当: ${counts.matched}名 / 全体: ${counts.total}名):\n・${filterList}\nクリックしてデータソースおよびフィルター条件を変更 ${shortcutText}`;
+    return `${sourceInfo}\n適用フィルター (${filterBadges.length}件 / 該当: ${counts.matched}名 / 全体: ${counts.total}名):\n・${filterList}\n※各条件をクリックで個別解除、枠クリックでモーダルを開く ${shortcutText}`;
   };
 
   return (
@@ -253,10 +291,22 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
                 {firstRowBadges.map((b) => (
                   <span
                     key={b.key}
-                    title={b.label}
-                    className="text-[10px] px-1.5 py-0.2 rounded bg-purple-950/80 text-purple-300 border border-purple-800 font-medium truncate max-w-[85px] sm:max-w-[110px]"
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => handleRemoveBadge(b.key, e)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleRemoveBadge(b.key, e);
+                      }
+                    }}
+                    title={`クリックして「${b.label}」フィルタを解除`}
+                    className={`inline-flex items-center text-[10px] px-1.5 py-0.2 rounded border font-medium truncate max-w-[85px] sm:max-w-[110px] transition-colors cursor-pointer group/badge ${getBadgeColorClass(
+                      b.type
+                    )}`}
                   >
-                    {b.label}
+                    <span className="truncate">{b.label}</span>
+                    <X className="w-2.5 h-2.5 shrink-0 opacity-60 group-hover/badge:opacity-100 ml-0.5 transition-opacity" />
                   </span>
                 ))}
                 {secondRowBadges.length === 0 && (
@@ -271,10 +321,22 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
                   {secondRowBadges.map((b) => (
                     <span
                       key={b.key}
-                      title={b.label}
-                      className="text-[10px] px-1.5 py-0.2 rounded bg-purple-950/80 text-purple-300 border border-purple-800 font-medium truncate max-w-[85px] sm:max-w-[110px]"
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => handleRemoveBadge(b.key, e)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleRemoveBadge(b.key, e);
+                        }
+                      }}
+                      title={`クリックして「${b.label}」フィルタを解除`}
+                      className={`inline-flex items-center text-[10px] px-1.5 py-0.2 rounded border font-medium truncate max-w-[85px] sm:max-w-[110px] transition-colors cursor-pointer group/badge ${getBadgeColorClass(
+                        b.type
+                      )}`}
                     >
-                      {b.label}
+                      <span className="truncate">{b.label}</span>
+                      <X className="w-2.5 h-2.5 shrink-0 opacity-60 group-hover/badge:opacity-100 ml-0.5 transition-opacity" />
                     </span>
                   ))}
                   {remainingCount > 0 && (
