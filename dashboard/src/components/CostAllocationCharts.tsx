@@ -76,11 +76,11 @@ export const CostAllocationCharts: React.FC<CostAllocationChartsProps> = ({
 
   return (
     <div className="flex flex-col space-y-6 w-full">
-      {/* 1. コスト配賦 ドーナツチャート */}
+      {/* 1. コスト内訳 ドーナツチャート */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <h3 className="text-sm font-semibold text-slate-200">
-            {groupingLabel} 別 コスト配賦 (USD)
+            {groupingLabel} 別 コスト内訳 (USD)
           </h3>
           <div className="flex flex-wrap items-center gap-3">
             {/* 集計軸切替タブ (インライン) */}
