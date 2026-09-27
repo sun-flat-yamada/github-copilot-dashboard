@@ -18,8 +18,8 @@ export const PRESETS: RadarPreset[] = [
   {
     id: 'practical-high-value',
     name: '💡 実用性能で高コスパ',
-    description: 'Claude Sonnet 5 / Gemini 3.8 Flash / GPT-5.6 Luna / Kimi K2.7 Code (実用コーディング性能と抜群の費用対効果を両立)',
-    modelIds: ['claude-sonnet-5', 'gemini-3-8-flash', 'gpt-5-6-luna', 'kimi-k2-7-code'],
+    description: 'Claude Sonnet 5 / Gemini 3.8 Flash / GPT-6 Luna / GPT-5.6 Luna / Kimi K2.7 Code (実用コーディング性能と抜群の費用対効果を両立)',
+    modelIds: ['claude-sonnet-5', 'gemini-3-8-flash', 'gpt-6-luna', 'gpt-5-6-luna', 'kimi-k2-7-code'],
   },
   {
     id: 'recommended-code-review',
@@ -54,8 +54,8 @@ export const PRESETS: RadarPreset[] = [
   {
     id: 'tier-lightweight',
     name: '🚀 Lightweight (超高速・低コスト)',
-    description: 'GPT-5.6 Luna / Gemini 3.5 Flash / MAI-Code-1.1-Flash / GPT-5.4 mini (日常インライン・超高速補完)',
-    modelIds: ['gpt-5-6-luna', 'gemini-3-5-flash', 'mai-code-1-1-flash', 'gpt-5-4-mini'],
+    description: 'GPT-6 Luna / GPT-5.6 Luna / Gemini 3.5 Flash / MAI-Code-1.1-Flash / GPT-5.4 mini (日常インライン・超高速補完)',
+    modelIds: ['gpt-6-luna', 'gpt-5-6-luna', 'gemini-3-5-flash', 'mai-code-1-1-flash', 'gpt-5-4-mini'],
   },
   {
     id: 'vendor-anthropic',
@@ -66,8 +66,8 @@ export const PRESETS: RadarPreset[] = [
   {
     id: 'vendor-openai',
     name: '🟢 OpenAI 主力',
-    description: 'GPT-6 Astra / GPT-5.5 / GPT-5.4 / GPT-5 mini (OpenAI 主力ラインナップ)',
-    modelIds: ['gpt-6-astra', 'gpt-5-5', 'gpt-5-4', 'gpt-5-mini'],
+    description: 'GPT-6 Astra / GPT-6 Sol / GPT-5.6 Sol (OpenAI 2026主力ラインナップ)',
+    modelIds: ['gpt-6-astra', 'gpt-6-sol', 'gpt-5-6-sol'],
   },
   {
     id: 'vendor-google',
