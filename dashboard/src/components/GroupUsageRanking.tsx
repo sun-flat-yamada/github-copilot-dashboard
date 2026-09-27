@@ -130,7 +130,7 @@ export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
 
   const dimensionLabel =
     grouping === 'department'
-      ? '任意仕訳グループ (部署・PJ)'
+      ? 'ユーザー定義Gr (部署・PJ)'
       : grouping === 'cost_center'
       ? 'GitHub Cost Center'
       : 'GitHub Organization';

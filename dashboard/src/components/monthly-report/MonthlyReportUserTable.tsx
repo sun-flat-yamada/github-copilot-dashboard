@@ -10,7 +10,9 @@ import { useCurrency } from '../../contexts/CurrencyContext';
 export type MonthlyUserSortKey =
   | 'index'
   | 'user'
+  | 'display_name'
   | 'department'
+  | 'tags'
   | 'cost_center'
   | 'organization'
   | 'primary_model'
@@ -129,7 +131,8 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
           u.display_name.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
           u.cost_center.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
           (u.organization && u.organization.toLowerCase().includes(userSearchQuery.toLowerCase())) ||
-          u.department.toLowerCase().includes(userSearchQuery.toLowerCase());
+          u.department.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+          (u.tags && u.tags.some((t) => t.toLowerCase().includes(userSearchQuery.toLowerCase())));
 
         let matchesGroup = true;
         if (activeGroup && activeGroup !== 'all') {
@@ -147,10 +150,16 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
         let cmp = 0;
         switch (sortKey) {
           case 'user':
-            cmp = (a.display_name || a.login).localeCompare(b.display_name || b.login);
+            cmp = a.login.localeCompare(b.login);
+            break;
+          case 'display_name':
+            cmp = (a.display_name || '').localeCompare(b.display_name || '');
             break;
           case 'department':
             cmp = (a.department || '').localeCompare(b.department || '');
+            break;
+          case 'tags':
+            cmp = (a.tags?.join(', ') || '').localeCompare(b.tags?.join(', ') || '');
             break;
           case 'cost_center':
             cmp = (a.cost_center || '').localeCompare(b.cost_center || '');
@@ -194,7 +203,8 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
       '#',
       'GitHub User',
       'Display Name',
-      'Department',
+      'ユーザー定義Gr (部署)',
+      'Tags',
       'Cost Center',
       'Organization',
       'Primary Model',
@@ -209,6 +219,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
       u.login,
       `"${u.display_name.replace(/"/g, '""')}"`,
       `"${u.department.replace(/"/g, '""')}"`,
+      `"${(u.tags || []).join(';').replace(/"/g, '""')}"`,
       `"${u.cost_center.replace(/"/g, '""')}"`,
       u.organization,
       `"${u.primary_model}"`,
@@ -270,7 +281,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                 ? '全 Cost Center'
                 : grouping === 'organization'
                 ? '全 Organization'
-                : '全 部署'}
+                : '全 ユーザー定義Gr'}
             </option>
             {availableGroups.map((g) => (
               <option key={g} value={g}>
@@ -302,32 +313,50 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
         </div>
       </div>
 
-      {/* ユーザー一覧テーブル: ヘッダー固定・データ行垂直スクロール */}
+      {/* ユーザー一覧テーブル: ヘッダー固定・データ行垂直スクロール & 横スクロール対応 */}
       <div className="overflow-auto max-h-[600px] rounded-lg border border-slate-800 relative scrollbar-thin scrollbar-thumb-slate-700">
-        <table className="w-full text-left text-xs border-collapse">
+        <table className="w-full text-left text-xs border-collapse whitespace-nowrap min-w-max">
           <thead className="sticky top-0 z-20 bg-slate-950 text-slate-400 font-semibold shadow-md">
             <tr className="border-b border-slate-800">
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-center w-14 cursor-pointer select-none hover:text-slate-200" onClick={handleIndexSort} title="連番順">#</th>
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2 px-2.5 text-center w-12 cursor-pointer select-none hover:text-slate-200" onClick={handleIndexSort} title="連番順">#</th>
               <th
-                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2 px-2.5 cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('user')}
               >
                 <div className="flex items-center space-x-1">
-                  <span>GitHub ユーザー</span>
+                  <span>ユーザー</span>
                   {renderSortIcon('user')}
                 </div>
               </th>
               <th
-                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2 px-2.5 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('display_name')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>表示名</span>
+                  {renderSortIcon('display_name')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2 px-2.5 cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('department')}
               >
                 <div className="flex items-center space-x-1">
-                  <span>部署 / 仕訳グループ</span>
+                  <span>ユーザー定義Gr</span>
                   {renderSortIcon('department')}
                 </div>
               </th>
               <th
-                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2 px-2.5 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('tags')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>タグ</span>
+                  {renderSortIcon('tags')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2 px-2.5 cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('cost_center')}
               >
                 <div className="flex items-center space-x-1">
@@ -336,7 +365,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                 </div>
               </th>
               <th
-                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2 px-2.5 cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('organization')}
               >
                 <div className="flex items-center space-x-1">
@@ -345,7 +374,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                 </div>
               </th>
               <th
-                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2 px-2.5 cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('primary_model')}
               >
                 <div className="flex items-center space-x-1">
@@ -354,7 +383,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                 </div>
               </th>
               <th
-                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2 px-2.5 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('requests')}
               >
                 <div className="flex items-center justify-end space-x-1">
@@ -363,7 +392,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                 </div>
               </th>
               <th
-                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2 px-2.5 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('spend')}
                 title="利用費用 (GitHubのカタログ価格(USD)基準)"
               >
@@ -373,7 +402,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                 </div>
               </th>
               <th
-                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2 px-2.5 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('excess')}
                 title="超過請求 (GitHubのカタログ価格(USD))"
               >
@@ -383,7 +412,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                 </div>
               </th>
               <th
-                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2 px-2.5 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('last_activity')}
               >
                 <div className="flex items-center justify-end space-x-1">
@@ -391,7 +420,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                   {renderSortIcon('last_activity')}
                 </div>
               </th>
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2.5 px-3 text-center w-24">
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2 px-2.5 text-center w-24">
                 <ActionColumnHeader />
               </th>
             </tr>
@@ -399,7 +428,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
           <tbody className="divide-y divide-slate-800/60">
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan={11} className="text-center py-8 text-slate-500">
+                <td colSpan={13} className="text-center py-8 text-slate-500">
                   該当するユーザーレコードがありません。
                 </td>
               </tr>
@@ -418,40 +447,58 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                           : 'hover:bg-slate-800/40'
                       }`}
                     >
-                      <td className="py-2.5 px-3 text-center text-slate-500 font-mono text-xs">
+                      <td className="py-2 px-2.5 text-center text-slate-500 font-mono text-xs">
                         {index + 1}
                       </td>
-                      <td className="py-2.5 px-3">
+                      <td className="py-2 px-2.5">
+                        <span className="text-slate-200 font-mono text-xs font-medium">@{u.login}</span>
+                      </td>
+                      <td className="py-2 px-2.5">
                         <div className="flex items-center space-x-1.5">
                           <span className="font-semibold text-slate-100">{u.display_name}</span>
                           {isSelected && (
-                            <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-500 text-white">
+                            <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-500 text-white shrink-0">
                               分析中
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-slate-500 font-mono">@{u.login}</div>
                       </td>
-                      <td className="py-2.5 px-3 text-slate-300">
-                        <span className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800">
+                      <td className="py-2 px-2.5 text-slate-300">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-950/80 text-purple-300 border border-purple-800/60">
                           {u.department}
                         </span>
                       </td>
-                      <td className="py-2.5 px-3 text-slate-400 font-mono text-[11px]">{u.cost_center}</td>
-                      <td className="py-2.5 px-3 text-slate-400 font-mono text-[11px]">
+                      <td className="py-2 px-2.5">
+                        {u.tags && u.tags.length > 0 ? (
+                          <div className="flex items-center space-x-1">
+                            {u.tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-300 border border-slate-700"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-slate-500 text-[11px]">-</span>
+                        )}
+                      </td>
+                      <td className="py-2 px-2.5 text-slate-400 font-mono text-[11px]">{u.cost_center}</td>
+                      <td className="py-2 px-2.5 text-slate-400 font-mono text-[11px]">
                         <span className="px-1.5 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-slate-300">
                           {u.organization}
                         </span>
                       </td>
-                      <td className="py-2.5 px-3">
-                        <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-purple-950/60 text-purple-300 border border-purple-800/50">
+                      <td className="py-2 px-2.5">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-950/60 text-purple-300 border border-purple-800/50">
                           {u.primary_model}
                         </span>
                       </td>
-                      <td className="py-2.5 px-3 text-right font-medium text-slate-200">
+                      <td className="py-2 px-2.5 text-right font-medium text-slate-200">
                         {u.total_requests.toLocaleString()}
                       </td>
-                      <td className="py-2.5 px-3 text-right">
+                      <td className="py-2 px-2.5 text-right">
                         {(() => {
                           const gross = u.gross_spend_usd ?? u.total_spend_usd;
                           const grossDual = formatMoney(gross);
@@ -462,7 +509,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                           );
                         })()}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono">
+                      <td className="py-2 px-2.5 text-right font-mono">
                         {(() => {
                           const net = u.net_spend_usd ?? u.total_spend_usd;
                           const netDual = formatMoney(net);
@@ -473,7 +520,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                           );
                         })()}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-[11px]">
+                      <td className="py-2 px-2.5 text-right font-mono text-[11px]">
                         {u.last_activity_date ? (
                           <div className="flex items-center justify-end space-x-1.5 whitespace-nowrap">
                             <span className="text-slate-200">{u.last_activity_date}</span>
@@ -487,7 +534,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                           <span className="text-slate-500">-</span>
                         )}
                       </td>
-                      <td className="py-2.5 px-3 text-center">
+                      <td className="py-2 px-2.5 text-center">
                         <div className="flex items-center justify-center space-x-1.5">
                           <button
                             type="button"
@@ -538,7 +585,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                     </tr>
                     {isSelected && (
                       <tr key={`${u.login}-drilldown`} className="bg-slate-950">
-                        <td colSpan={11} className="p-0 border-b-2 border-indigo-500/60">
+                        <td colSpan={13} className="p-0 border-b-2 border-indigo-500/60 whitespace-normal">
                           <UserDrilldownPanel
                             login={u.login}
                             displayName={u.display_name}
