@@ -36,8 +36,17 @@ export const CostAllocationCharts: React.FC<CostAllocationChartsProps> = ({
   grouping: externalGrouping,
   onGroupingChange,
 }) => {
-  const [internalGrouping, setInternalGrouping] = React.useState<GroupingDimension>('department');
-  const currentGrouping = externalGrouping || internalGrouping;
+  const [internalGrouping, setInternalGrouping] = React.useState<GroupingDimension>(
+    externalGrouping || 'department'
+  );
+
+  React.useEffect(() => {
+    if (externalGrouping) {
+      setInternalGrouping(externalGrouping);
+    }
+  }, [externalGrouping]);
+
+  const currentGrouping = onGroupingChange ? (externalGrouping || internalGrouping) : internalGrouping;
 
   const handleGroupingSelect = (dim: GroupingDimension) => {
     setInternalGrouping(dim);

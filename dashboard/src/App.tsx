@@ -424,7 +424,11 @@ export const App: React.FC = () => {
                   isExpanded={isExpanded('allocation')}
                   onToggle={() => toggle('allocation')}
                 >
-                  <CostAllocationCharts data={currentData} grouping={currentGrouping} />
+                  <CostAllocationCharts
+                    data={currentData}
+                    grouping={currentGrouping}
+                    onGroupingChange={handleGroupingChange}
+                  />
                 </CollapsibleSection>
 
                 <CollapsibleSection
