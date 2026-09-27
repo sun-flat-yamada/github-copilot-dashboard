@@ -40,4 +40,10 @@ All AI coding assistants (Antigravity, Gemini, Claude Code, Cursor, Copilot Work
 - **Permission Boundary**: Direct commits/pushes to `main` are strictly forbidden on upstream (`sun-flat-yamada`). On downstream forks, direct commits are permitted when operationally necessary.
 - **Reference**: See `.agents/rules/development-workflow.md` and `docs/specifications/14_development_workflow_and_git_ops_spec.md`.
 
+---
+
+## 🤖 6. AI Model & Benchmark Synchronization Policy
+- **Dual Synchronization**: When AI models are added, modified, or retired, specification documentation (`supported_models.md`) must be kept 100% synchronized with benchmark definitions (`scripts/update-benchmarks.ts`) and UI catalogs (`dashboard/src/data/models.ts`).
+- **Reference**: See `.agents/rules/model-benchmark-management.md`.
+
 
