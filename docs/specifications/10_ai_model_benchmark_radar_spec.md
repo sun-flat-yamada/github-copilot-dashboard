@@ -110,7 +110,7 @@ Provides instant, pre-configured model comparisons across diverse tiers and scen
 - **🌟 2026 Flagship Selection (`flagship-2026`)**: 2026 premier frontier flagships snapshot (Claude Opus 5.5 / Claude Opus 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3).
 - **💡 Practical High-Value (`practical-high-value`)**: Claude Sonnet 5 / Gemini 3.8 Flash / GPT-6 Luna / GPT-5.6 Luna / Kimi K2.7 Code (*Adds GPT-6 Luna and retains GPT-5.6 Luna as high-value champions*).
 - **⚡ Powerful Reasoning (`tier-powerful`)**: GPT-6 Astra / Claude Opus 5.5 / Claude Opus 5 / GPT-6 Sol / Kimi K3 (*Adds GPT-6 Sol; removes GPT-5.5*).
-- **🛠️ Versatile Engineering (`tier-versatile`)**: Claude Sonnet 5 / GPT-5.4 / Gemini 3.8 Flash / Grok 4.6 (*GPT-5.6 Terra migrated to GPT-5.4*).
+- **🛠️ Versatile Engineering (`tier-versatile`)**: Claude Sonnet 5 / GPT-5.6 Terra / Gemini 3.8 Flash / Grok 4.6 (*Adds GPT-5.6 Terra; removes GPT-5.4*).
 - **🚀 Lightweight & Fast (`tier-lightweight`)**: GPT-6 Luna / GPT-5.6 Luna / Gemini 3.5 Flash / MAI-Code-1.1-Flash / GPT-5.4 mini (*Adds GPT-6 Luna and retains GPT-5.6 Luna as lightweight champions*).
 - **🟠 Anthropic Suite (`vendor-anthropic`)**: Claude Sonnet 5 / Claude Opus 5.5 / Claude Opus 5 / Claude Fable 5.1 / Claude Haiku 4.5 (*Opus 5.5 added, Opus 5 retained*).
 - **🟢 OpenAI Suite (`vendor-openai`)**: GPT-6 Astra / GPT-6 Sol / GPT-5.6 Sol (*Adds GPT-6 Sol and GPT-5.6 Sol, removes legacy GPT-5.5/5.4/mini*).

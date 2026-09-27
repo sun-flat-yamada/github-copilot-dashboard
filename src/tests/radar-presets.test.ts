@@ -73,11 +73,12 @@ test('AI Model Radar Comparison Presets Tests', async (t) => {
     assert.ok(!powerfulPreset.modelIds.includes('gpt-5-5'), 'tier-powerful must NOT include gpt-5-5');
     assert.strictEqual(powerfulPreset.modelIds.length, 5, 'tier-powerful should contain 5 models');
 
-    // tier-versatile: gpt-5-6-terra -> gpt-5-4
+    // tier-versatile: gpt-5-4 -> gpt-5-6-terra
     const versatilePreset = PRESETS.find((p) => p.id === 'tier-versatile');
     assert.ok(versatilePreset);
-    assert.ok(versatilePreset.modelIds.includes('gpt-5-4'), 'tier-versatile must replace gpt-5-6-terra with gpt-5-4');
-    assert.ok(!versatilePreset.modelIds.includes('gpt-5-6-terra'), 'tier-versatile must NOT include gpt-5-6-terra');
+    assert.ok(versatilePreset.modelIds.includes('gpt-5-6-terra'), 'tier-versatile must include gpt-5-6-terra');
+    assert.ok(!versatilePreset.modelIds.includes('gpt-5-4'), 'tier-versatile must NOT include gpt-5-4');
+    assert.strictEqual(versatilePreset.modelIds.length, 4, 'tier-versatile should contain 4 models');
 
     // tier-lightweight: keeps gpt-5-6-luna and includes gpt-6-luna
     const lightweightPreset = PRESETS.find((p) => p.id === 'tier-lightweight');
