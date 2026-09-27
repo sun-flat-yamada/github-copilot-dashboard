@@ -90,10 +90,11 @@ export class PublicExchangeRatesService {
    * @returns Conversion rate: 1 USD = N units of target currency
    */
   public static getExchangeRate(currencyCode: string, targetMonth?: string): number {
-    const code = currencyCode.toUpperCase();
-    if (code === 'USD' || code === 'EA-USD') {
+    const rawInput = currencyCode.toUpperCase();
+    if (rawInput === 'USD' || rawInput === 'EA-USD') {
       return 1.0;
     }
+    const code = rawInput.startsWith('EA-') ? rawInput.slice(3) : rawInput;
 
     if (targetMonth && targetMonth.length >= 7) {
       const ym = targetMonth.slice(0, 7);

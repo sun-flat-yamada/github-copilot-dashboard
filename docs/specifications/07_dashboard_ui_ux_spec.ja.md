@@ -140,11 +140,20 @@
    - 外側クリック検知（`mousedown`）および `Escape` キー押下により自動的にクローズ。
 3. **メニュー構成**:
    - **表示モード切替**: 現在のテーマ（Dark / Light）の確認およびワンクリックでのテーマ反転ボタン（`Sun` / `Moon`）。ユーザーの選択状態はブラウザの `localStorage`（キー: `copilot_dashboard_theme`）に保存され永続化。
-   - **サブ表示通貨切替 & カタログUSD/EA-USD表示仕様**:
+   - **サブ表示通貨切替 & EA契約レート表示仕様 (EA-USD, EA-JPY, EA-EUR)**:
      - **GitHubカタログ価格(USD)の基準表示**: 全画面の基本通貨であるUSD（`$`）は、GitHub公式カタログ価格（定価）を表す。CurrencySelectorのツールチップ、各種KPIカード、テーブルヘッダーにおいて「GitHubのカタログ価格(USD)」であることを明記。
-     - **「EA契約 USD (EA-USD)」サブ通貨表示**: サブ通貨セレクターに「USD + EA-USD ($) [EA契約価格]」を追加し、カタログ定価とEA契約ディスカウント後USD価格（例: `$39.00 ($33.15 EA)`）を並列比較表示可能とする。
-     - **公的データ参照による為替レート自動算出**: 設定値が存在しない区間の為替レート（USD/JPY, USD/EUR等）は、欧州中央銀行 (ECB) および日本銀行 (BOJ) 公表の信頼できる公的データから自動算出・表示。
-     - **永続化**: 選択状態は `localStorage`（キー: `copilot_dashboard_preferred_sub_currency`）に保存され永続化。
+     - **セレクター冒頭のコメント表示**:
+       ```text
+       USD (GitHubのカタログ価格)と併記するサブ表示単位
+       ユーザーが設定したEA契約レートで表示する
+       ```
+     - **表示単位および選択肢（`[]` 説明なしのクリーンな表記）**:
+       - `USD Only ($)`
+       - `USD + EA-USD ($)`
+       - `USD + EA-JPY (¥)`
+       - `USD + EA-EUR (€)`
+     - **EA契約レートによる実効計算**: ユーザーが設定したEA契約為替レートおよびディスカウント率（`discountPercent`）に基づき、各サブ通貨（EA-USD, EA-JPY, EA-EUR）の実効コストを算出してUSDカタログ価格と併記。未設定区間は公的オープンデータ（ECB/BOJ）から自動解決。
+     - **永続化**: 選択状態は `localStorage`（キー: `copilot_dashboard_preferred_sub_currency`）に保存され永続化。旧形式（`JPY`, `EUR`）の保存値もそれぞれ `EA-JPY`, `EA-EUR` へ自動正規化。
 4. **セマンティックトークン設計 (Tailwind CSS v4)**:
    - `html.light` および `[data-theme="light"]` セレクタ下で、Tailwind CSS v4 の `--color-slate-*` 変数群を清潔感の高いライトパレット（背景 `#f8fafc`、カード `#ffffff`、境界線 `#e2e8f0`、文字 `#0f172a`）にセマンティック再マッピング。
    - Recharts の各種グラフ（グリッド線、X/Y軸目盛り、ツールチップ）も CSS 変数と連動し、両モードにおいて高い可読性と洗練されたコントラストを保証。

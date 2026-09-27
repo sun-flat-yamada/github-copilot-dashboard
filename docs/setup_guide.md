@@ -116,7 +116,7 @@ This dashboard adheres to global FinOps best practices by enforcing **permanent 
 ### Permanent USD Primary Display with Optional Sub-Currency
 - **USD ($) is ALWAYS displayed as the primary currency** across all 9 analysis views, KPI summary cards, cost allocation charts, budget cards, and user detail tables.
 - When a sub-currency is configured or selected, the localized secondary amount is appended in parentheses (e.g., `$2,975.00 (¥461,125)` or `$0.010 / AIC (¥1.273 / AIC)`).
-- Viewers can dynamically switch the secondary sub-currency (USD Only / USD + JPY / USD + EUR) using the Currency Selector in the header, with preferences preserved in browser `localStorage`.
+- Viewers can dynamically switch the secondary sub-currency (USD Only / USD + EA-USD / USD + EA-JPY / USD + EA-EUR) using the Currency Selector in the header, with preferences preserved in browser `localStorage`.
 
 ### 5.1 Configuration Placement & Priority
 You can configure billing and currency settings via either environment variable or static configuration file. If both are defined, **GitHub Actions Variable / Secret (`COPILOT_BILLING_CONFIG`) takes precedence**:
@@ -227,7 +227,7 @@ The configuration loader (`BillingConfigLoader`) automatically normalizes and st
 | `periods` | `array` | `[]` | List of period configurations (`startMonth`, `endMonth`, plan pricing, unit rates, discount, exchange rate overrides). |
 
 > [!NOTE]
-> - **USD is "GitHub Catalog Price (USD)"**: The primary USD metrics across the dashboard represent the official GitHub catalog list price (Enterprise: \$39/month, Business: \$19/month, Credits: \$0.01/AIC). Selecting **"EA Contract USD (EA-USD)"** as the secondary currency allows comparing catalog list price with negotiated discounted price (e.g., `$39.00 ($33.15 EA)`).
+> - **USD is "GitHub Catalog Price (USD)"**: The primary USD metrics across the dashboard represent the official GitHub catalog list price (Enterprise: \$39/month, Business: \$19/month, Credits: \$0.01/AIC). Selecting **"EA-USD ($)", "EA-JPY (¥)", or "EA-EUR (€)"** as the secondary currency allows comparing catalog list price with negotiated effective EA contract prices (e.g., `$39.00 ($33.15 EA)`, `$39.00 (¥4,973)`, `$39.00 (€30.50)`).
 > - **Out-of-Period Fallback**: Any month outside the `startMonth` to `endMonth` range of `periods` automatically falls back to default values.
 > - **Public Exchange Rate Auto-Calculation**: For periods or months without explicit exchange rate overrides, rates (USD/JPY, USD/EUR, etc.) are automatically derived from trusted public statistics (European Central Bank / Bank of Japan).
 
