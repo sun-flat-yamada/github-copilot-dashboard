@@ -100,4 +100,32 @@ describe('Control Bar Consolidation & Filter Redundancy Removal (#108)', () => {
       'App.tsx must retain collapseAll control'
     );
   });
+
+  it('should structure accordion controls in a dedicated section header with icon buttons and tooltips (#118)', () => {
+    const appContent = fs.readFileSync(appTsxPath, 'utf-8');
+    assert.ok(
+      appContent.includes('詳細分析セクション'),
+      'App.tsx must contain detailed analysis section title'
+    );
+    assert.ok(
+      appContent.includes('<LayoutGrid'),
+      'App.tsx must render LayoutGrid icon for section header'
+    );
+    assert.ok(
+      appContent.includes('title="すべての個別要素を展開"'),
+      'App.tsx must provide tooltip for expandAll icon button'
+    );
+    assert.ok(
+      appContent.includes('title="すべての個別要素を収納"'),
+      'App.tsx must provide tooltip for collapseAll icon button'
+    );
+    assert.ok(
+      appContent.includes('aria-label="すべての個別要素を展開"'),
+      'App.tsx must provide aria-label for expandAll icon button'
+    );
+    assert.ok(
+      !appContent.includes('-mb-2'),
+      'App.tsx must not contain overlapping -mb-2 negative margin on accordion controls'
+    );
+  });
 });
