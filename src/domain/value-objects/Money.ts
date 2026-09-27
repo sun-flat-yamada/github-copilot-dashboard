@@ -53,7 +53,7 @@ export class Money {
       : currencyConfig.displayDecimals;
 
     const formattedNum = this.amount.toLocaleString(
-      currencyConfig.code === 'JPY' ? 'ja-JP' : 'en-US',
+      currencyConfig.code === 'JPY' || currencyConfig.code === 'EA-JPY' ? 'ja-JP' : 'en-US',
       {
         minimumFractionDigits: decimals,
         maximumFractionDigits: decimals,
@@ -98,7 +98,7 @@ export class Money {
 
     const subAmount = this.amount * subCurrency.exchangeRateFromUSD;
     const subFormattedNum = subAmount.toLocaleString(
-      subCurrency.code === 'JPY' ? 'ja-JP' : 'en-US',
+      subCurrency.code === 'JPY' || subCurrency.code === 'EA-JPY' ? 'ja-JP' : 'en-US',
       {
         minimumFractionDigits: subDecimals,
         maximumFractionDigits: subDecimals,

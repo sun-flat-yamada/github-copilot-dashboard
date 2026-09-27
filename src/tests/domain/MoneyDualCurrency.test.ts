@@ -51,6 +51,22 @@ describe('Money Value Object Dual Currency Tests', () => {
     assert.strictEqual(money.formatWithSubCurrency(jpyConfig), '$1,000.00 (¥155,000)');
   });
 
+  it('formats USD primary with EA-JPY sub-currency in parentheses', () => {
+    const money = new Money(1000, 'USD');
+    const eaJpyConfig: CurrencyConfig = {
+      code: 'EA-JPY',
+      symbol: '¥',
+      exchangeRateFromUSD: 127.5, // 150 * (1 - 0.15)
+      displayDecimals: 0,
+    };
+
+    const dual = money.formatDual(eaJpyConfig);
+    assert.strictEqual(dual.usd, '$1,000.00');
+    assert.strictEqual(dual.sub, '¥127,500');
+    assert.strictEqual(dual.combined, '$1,000.00 (¥127,500)');
+    assert.strictEqual(money.formatWithSubCurrency(eaJpyConfig), '$1,000.00 (¥127,500)');
+  });
+
   it('formats USD primary with EUR sub-currency in parentheses', () => {
     const money = new Money(100, 'USD');
     const eurConfig: CurrencyConfig = {
@@ -64,6 +80,36 @@ describe('Money Value Object Dual Currency Tests', () => {
     assert.strictEqual(dual.usd, '$100.00');
     assert.strictEqual(dual.sub, '€92.00');
     assert.strictEqual(dual.combined, '$100.00 (€92.00)');
+  });
+
+  it('formats USD primary with EA-EUR sub-currency in parentheses', () => {
+    const money = new Money(100, 'USD');
+    const eaEurConfig: CurrencyConfig = {
+      code: 'EA-EUR',
+      symbol: '€',
+      exchangeRateFromUSD: 0.782, // 0.92 * (1 - 0.15)
+      displayDecimals: 2,
+    };
+
+    const dual = money.formatDual(eaEurConfig);
+    assert.strictEqual(dual.usd, '$100.00');
+    assert.strictEqual(dual.sub, '€78.20');
+    assert.strictEqual(dual.combined, '$100.00 (€78.20)');
+  });
+
+  it('formats USD primary with EA-USD sub-currency with EA suffix', () => {
+    const money = new Money(39, 'USD');
+    const eaUsdConfig: CurrencyConfig = {
+      code: 'EA-USD',
+      symbol: '$',
+      exchangeRateFromUSD: 0.85, // 1 - 0.15
+      displayDecimals: 2,
+    };
+
+    const dual = money.formatDual(eaUsdConfig);
+    assert.strictEqual(dual.usd, '$39.00');
+    assert.strictEqual(dual.sub, '$33.15 EA');
+    assert.strictEqual(dual.combined, '$39.00 ($33.15 EA)');
   });
 
   it('respects custom precision options', () => {
