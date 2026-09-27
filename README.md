@@ -191,14 +191,14 @@ Register your configuration under **Settings** > **Secrets and variables** > **A
       { "github_user": "octocat-lead", "display_name": "Taro Tanaka", "department": "Platform Engineering", "cost_center_override": "FinTech-Division" }
     ]
     ```
-  - `COPILOT_BILLING_CONFIG`: *(Optional)* JSON configuration for optional sub-currency (JPY, EUR, etc.), EA volume discount, or custom contractual AI Credits unit pricing:
+  - `COPILOT_BILLING_CONFIG`: *(Optional)* JSON configuration for optional sub-currency (JPY, EUR, etc.), EA volume discount, period-based pricing overrides (`periods`), or custom contractual AI Credits unit pricing. See [`examples/config/billing.example.json`](examples/config/billing.example.json) for concrete templates:
     ```json
     { "subCurrency": { "code": "JPY", "symbol": "¥", "exchangeRateFromUSD": 155.0, "displayDecimals": 0 }, "discountPercent": 15 }
     ```
   - *(Testing / Demo)* `MOCK_MODE`: Set to `true` to immediately spin up the dashboard using 2026 synthetic simulation data.
 
 > [!NOTE]
-> For advanced setup options — including **Currency Display & Enterprise Billing Configuration**, **CSV mapping format**, **GPG encryption for mappings > 48KB**, **graceful credentials degradation**, and **fork synchronization runbooks** — refer to the **[🚀 Complete Setup & Configuration Guide (docs/setup_guide.md)](docs/setup_guide.md)**.
+> For advanced setup options — including **Currency Display & Enterprise Billing Configuration (EA Contracts / AI Credits / Period-based pricing)**, **concrete configuration examples (`examples/config/billing.example.json`)**, **CSV mapping format**, **GPG encryption for mappings > 48KB**, **graceful credentials degradation**, and **fork synchronization runbooks** — refer to the **[🚀 Complete Setup & Configuration Guide (docs/setup_guide.md)](docs/setup_guide.md)**.
 
 ---
 

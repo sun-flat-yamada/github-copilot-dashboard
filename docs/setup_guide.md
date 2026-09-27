@@ -118,9 +118,23 @@ This dashboard adheres to global FinOps best practices by enforcing **permanent 
 - When a sub-currency is configured or selected, the localized secondary amount is appended in parentheses (e.g., `$2,975.00 (¥461,125)` or `$0.010 / AIC (¥1.273 / AIC)`).
 - Viewers can dynamically switch the secondary sub-currency (USD Only / USD + JPY / USD + EUR) using the Currency Selector in the header, with preferences preserved in browser `localStorage`.
 
-### COPILOT_BILLING_CONFIG Setup
-Configure the environment variable under **Settings** > **Secrets and variables** > **Actions** > **Variables** (or Secrets) as `COPILOT_BILLING_CONFIG`, or place a static config file at `data/config/billing.json`:
+### 5.1 Configuration Placement & Priority
+You can configure billing and currency settings via either environment variable or static configuration file. If both are defined, **GitHub Actions Variable / Secret (`COPILOT_BILLING_CONFIG`) takes precedence**:
 
+1. **GitHub Actions Variable / Secret (Recommended for CI/CD)**:
+   - **Settings** > **Secrets and variables** > **Actions** > **Variables** (or Secrets).
+   - Variable Name: `COPILOT_BILLING_CONFIG`
+   - Value: Minified or formatted JSON string.
+2. **Static Configuration File (For local development or dedicated branch)**:
+   - File Path: `data/config/billing.json` (or refer to `examples/config/billing.example.json` template)
+   - When running locally or during pipeline build, the loader automatically searches `data/config/billing.json` if `COPILOT_BILLING_CONFIG` is not set.
+
+---
+
+### 5.2 Concrete Configuration Examples by Use Case
+
+#### [Example 1] Simple Enterprise Agreement (EA) Volume Discount
+Applies an EA discount (e.g. 15% off) to standard catalog prices, while converting to Japanese Yen (JPY) at an agreed fixed exchange rate:
 ```json
 {
   "subCurrency": {
@@ -129,44 +143,93 @@ Configure the environment variable under **Settings** > **Secrets and variables*
     "exchangeRateFromUSD": 155.0,
     "displayDecimals": 0
   },
-  "discountPercent": 15,
+  "discountPercent": 15
+}
+```
+
+#### [Example 2] Fixed Local Currency Contract (Direct JPY Pricing)
+Used when your Microsoft EA contract stipulates fixed JPY prices directly (e.g., Enterprise ¥5,000/mo, Business ¥2,500/mo, AI Credit ¥1.273/AIC):
+```json
+{
+  "subCurrency": {
+    "code": "JPY",
+    "symbol": "¥",
+    "exchangeRateFromUSD": 150.0,
+    "displayDecimals": 0
+  },
   "customPricePerCredit": 1.273,
   "customSeatPricing": {
-    "enterpriseMonthly": 5000
-  },
+    "enterpriseMonthly": 5000,
+    "businessMonthly": 2500,
+    "currency": "JPY"
+  }
+}
+```
+
+#### [Example 3] Period-Based Contract Cycles (Annual Revision / Multi-Period EA)
+Designed for enterprise environments where discount rates, unit pricing, or currency exchange rates are renegotiated annually or across fiscal cycles.
+Define periods (`startMonth` to `endMonth`) in the `periods` array. **Any month outside configured periods automatically falls back to default values (GitHub catalog list prices and base configurations)**:
+```json
+{
+  "currency": { "code": "USD", "symbol": "$", "exchangeRateFromUSD": 1.0, "displayDecimals": 2 },
+  "subCurrency": { "code": "JPY", "symbol": "¥", "exchangeRateFromUSD": 150.0, "displayDecimals": 0 },
+  "discountPercent": 10,
   "periods": [
     {
       "startMonth": "2025-04",
       "endMonth": "2026-03",
       "discountPercent": 20,
-      "customPricePerCredit": 1.25,
-      "customPricePerCreditCurrency": "JPY",
-      "customSeatPricing": {
-        "businessMonthly": 2400,
-        "enterpriseMonthly": 4800,
+      "seatPricing": {
+        "enterprise": 4800,
+        "business": 2400,
         "currency": "JPY"
       },
-      "exchangeRateFromUSD": 155.0
+      "creditPricing": {
+        "pricePerCredit": 1.25,
+        "currency": "JPY"
+      },
+      "exchangeRates": {
+        "JPY": 155.0,
+        "EUR": 0.92
+      }
+    },
+    {
+      "startMonth": "2026-04",
+      "endMonth": "2027-03",
+      "discountPercent": 15,
+      "seatPricing": {
+        "enterprise": 5000,
+        "business": 2500,
+        "currency": "JPY"
+      },
+      "creditPricing": {
+        "pricePerCredit": 1.273,
+        "currency": "JPY"
+      },
+      "exchangeRateFromUSD": 148.0
     }
   ]
 }
 ```
 
+---
+
+### 5.3 Parameter Specifications & Flexible Alias Normalization
+The configuration loader (`BillingConfigLoader`) automatically normalizes and standardizes intuitive property naming conventions:
+
+| Parameter | Type | Default | Allowed Aliases / Description |
+|---|---|---|---|
+| `subCurrency` | `object` | `null` | Secondary sub-currency settings (`code`: 'JPY', `symbol`: '¥', `exchangeRateFromUSD`: 155.0, `displayDecimals`: 0) |
+| `discountPercent` | `number` | `0` | Enterprise Agreement (EA) volume discount percentage (0 to 100%) |
+| `seatPricing` | `object` | 19 / 39 USD | Seat prices. Accepts `{ enterprise, business, currency }`, `{ enterpriseMonthly, businessMonthly }`, or `{ enterpriseMonthlyUSD, businessMonthlyUSD }`. Specifying non-USD currency marks it as custom contractual pricing. |
+| `creditPricing` | `object` / `number` | 0.01 USD | AI Credit unit pricing. Accepts `{ pricePerCredit: 1.273, currency: "JPY" }` or direct `customPricePerCredit: 1.273`. |
+| `exchangeRates` | `object` | Auto-derived | Map of USD to target currencies (e.g. `{ "JPY": 155.0, "EUR": 0.92 }`). Single `exchangeRateFromUSD` is also accepted. |
+| `periods` | `array` | `[]` | List of period configurations (`startMonth`, `endMonth`, plan pricing, unit rates, discount, exchange rate overrides). |
+
 > [!NOTE]
 > - **USD is "GitHub Catalog Price (USD)"**: The primary USD metrics across the dashboard represent the official GitHub catalog list price (Enterprise: \$39/month, Business: \$19/month, Credits: \$0.01/AIC). Selecting **"EA Contract USD (EA-USD)"** as the secondary currency allows comparing catalog list price with negotiated discounted price (e.g., `$39.00 ($33.15 EA)`).
 > - **Out-of-Period Fallback**: Any month outside the `startMonth` to `endMonth` range of `periods` automatically falls back to default values.
-> - **Public Exchange Rate Auto-Calculation**: For periods without explicit exchange rate overrides, rates are automatically derived from trusted public statistics (European Central Bank / Bank of Japan).
-
-### Parameters & EA Contract Pricing Overrides
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `subCurrency` | `object` | `null` | Secondary sub-currency configuration (`code`: 'JPY', `symbol`: '¥', `exchangeRateFromUSD`: 155.0, `displayDecimals`: 0) |
-| `discountPercent` | `number` | `0` | Enterprise Agreement (EA) volume discount percentage (0 to 100%) |
-| `customPricePerCredit` | `number` | undefined | Direct contractual unit price per AI Credit in sub-currency (e.g., 1.273 JPY/AIC). Takes precedence over discount calculation. |
-| `customSeatPricing` | `object` | undefined | Fixed contractual seat price overrides (`businessMonthly`, `enterpriseMonthly`) |
-| `seatPricing` | `object` | 19 / 39 USD | Standard base seat list prices in USD |
-| `creditsPricing` | `object` | 0.01 USD | Standard base AI Credit list price in USD per AIC |
-| `periods` | `array` | `[]` | Period-based parameter configuration list (`startMonth`, `endMonth`, per-plan pricing, discount, exchange rate overrides) |
+> - **Public Exchange Rate Auto-Calculation**: For periods or months without explicit exchange rate overrides, rates (USD/JPY, USD/EUR, etc.) are automatically derived from trusted public statistics (European Central Bank / Bank of Japan).
 
 ---
 

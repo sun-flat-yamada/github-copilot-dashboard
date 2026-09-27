@@ -179,4 +179,81 @@ describe('Period-based EA Billing Configuration & Public Exchange Rates Tests (#
     assert.strictEqual(dual.sub, '$33.15 EA');
     assert.strictEqual(dual.combined, '$39.00 ($33.15 EA)');
   });
+
+  it('normalizes intuitive aliases for seatPricing, creditPricing, and exchangeRates (#115)', () => {
+    const rawJsonWithAliases = JSON.stringify({
+      discountPercent: 10,
+      subCurrency: {
+        code: 'JPY',
+        symbol: '¥',
+        exchangeRateFromUSD: 150.0,
+        displayDecimals: 0,
+      },
+      // Root-level aliases
+      seatPricing: {
+        enterprise: 5000,
+        business: 2500,
+        currency: 'JPY',
+      },
+      creditPricing: {
+        pricePerCredit: 1.273,
+        currency: 'JPY',
+      },
+      periods: [
+        {
+          startMonth: '2025-04',
+          endMonth: '2026-03',
+          discountPercent: 20,
+          seatPricing: {
+            enterprise: 4800,
+            business: 2400,
+            currency: 'JPY',
+          },
+          creditPricing: {
+            pricePerCredit: 1.25,
+            currency: 'JPY',
+          },
+          exchangeRates: {
+            JPY: 155.0,
+            EUR: 0.92,
+          },
+        },
+      ],
+    });
+
+    const config = BillingConfigLoader.load(rawJsonWithAliases);
+
+    // Verify root normalization
+    assert.strictEqual(config.customPricePerCredit, 1.273);
+    assert.strictEqual(config.customPricePerCreditCurrency, 'JPY');
+    assert.strictEqual(config.subCurrency?.exchangeRateFromUSD, 150.0);
+    assert.deepStrictEqual(config.customSeatPricing, {
+      enterpriseMonthly: 5000,
+      businessMonthly: 2500,
+      currency: 'JPY',
+    });
+
+    // Verify period normalization for 2025-06 (within period: uses 155.0)
+    const periodResolved = BillingConfigLoader.loadForMonth('2025-06', rawJsonWithAliases);
+    assert.strictEqual(periodResolved.discountPercent, 20);
+    assert.strictEqual(periodResolved.customPricePerCredit, 1.25);
+    assert.strictEqual(periodResolved.customPricePerCreditCurrency, 'JPY');
+    assert.deepStrictEqual(periodResolved.customSeatPricing, {
+      enterpriseMonthly: 4800,
+      businessMonthly: 2400,
+      currency: 'JPY',
+    });
+    assert.strictEqual(periodResolved.subCurrency?.exchangeRateFromUSD, 155.0);
+
+    // Verify fallback month (2025-02: out-of-period month auto-calculates public rate 154.2)
+    const rootResolved = BillingConfigLoader.loadForMonth('2025-02', rawJsonWithAliases);
+    assert.strictEqual(rootResolved.discountPercent, 10);
+    assert.strictEqual(rootResolved.customPricePerCredit, 1.273);
+    assert.deepStrictEqual(rootResolved.customSeatPricing, {
+      enterpriseMonthly: 5000,
+      businessMonthly: 2500,
+      currency: 'JPY',
+    });
+    assert.strictEqual(rootResolved.subCurrency?.exchangeRateFromUSD, 154.2);
+  });
 });
