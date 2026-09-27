@@ -110,7 +110,7 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ viewModel }) => {
             <span className="text-2xl font-black text-amber-300 font-mono">{totalCreditsUsedFormatted}</span>
           </div>
 
-          <div className="bg-slate-950/80 border border-slate-800/90 p-4 rounded-xl">
+          <div className="bg-slate-950/80 border border-slate-800/90 p-4 rounded-xl" title="AI Credits 換算費用 (GitHubのカタログ価格(USD)基準)">
             <span className="text-xs text-slate-400 block mb-1 flex items-center gap-1.5">
               <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
               <span>AI Credits 換算費用 ({effectiveRateFormatted})</span>
@@ -118,7 +118,7 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ viewModel }) => {
             <span className="text-2xl font-black text-emerald-300 font-mono">{totalCreditsCostFormatted}</span>
           </div>
 
-          <div className="bg-slate-950/80 border border-slate-800/90 p-4 rounded-xl">
+          <div className="bg-slate-950/80 border border-slate-800/90 p-4 rounded-xl" title="総合費用 (GitHubのカタログ価格(USD)基準)">
             <span className="text-xs text-slate-400 block mb-1 flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5 text-indigo-400" />
               <span>総合費用 (シート＋Credits)</span>

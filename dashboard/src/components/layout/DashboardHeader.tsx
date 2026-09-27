@@ -403,7 +403,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                     </span>
                   </div>
                   <div className="text-[10px] text-slate-400 mb-1.5 px-0.5">
-                    USD常時基本表示＋任意サブ通貨
+                    USD (GitHubカタログ価格) 常時表示＋任意サブ通貨
                   </div>
                   <div className="space-y-0.5 max-h-48 overflow-y-auto pr-0.5">
                     {availableSubCurrencies.map((item) => {

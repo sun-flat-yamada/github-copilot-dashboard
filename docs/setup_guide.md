@@ -133,9 +133,29 @@ Configure the environment variable under **Settings** > **Secrets and variables*
   "customPricePerCredit": 1.273,
   "customSeatPricing": {
     "enterpriseMonthly": 5000
-  }
+  },
+  "periods": [
+    {
+      "startMonth": "2025-04",
+      "endMonth": "2026-03",
+      "discountPercent": 20,
+      "customPricePerCredit": 1.25,
+      "customPricePerCreditCurrency": "JPY",
+      "customSeatPricing": {
+        "businessMonthly": 2400,
+        "enterpriseMonthly": 4800,
+        "currency": "JPY"
+      },
+      "exchangeRateFromUSD": 155.0
+    }
+  ]
 }
 ```
+
+> [!NOTE]
+> - **USD is "GitHub Catalog Price (USD)"**: The primary USD metrics across the dashboard represent the official GitHub catalog list price (Enterprise: \$39/month, Business: \$19/month, Credits: \$0.01/AIC). Selecting **"EA Contract USD (EA-USD)"** as the secondary currency allows comparing catalog list price with negotiated discounted price (e.g., `$39.00 ($33.15 EA)`).
+> - **Out-of-Period Fallback**: Any month outside the `startMonth` to `endMonth` range of `periods` automatically falls back to default values.
+> - **Public Exchange Rate Auto-Calculation**: For periods without explicit exchange rate overrides, rates are automatically derived from trusted public statistics (European Central Bank / Bank of Japan).
 
 ### Parameters & EA Contract Pricing Overrides
 | Parameter | Type | Default | Description |
@@ -146,6 +166,7 @@ Configure the environment variable under **Settings** > **Secrets and variables*
 | `customSeatPricing` | `object` | undefined | Fixed contractual seat price overrides (`businessMonthly`, `enterpriseMonthly`) |
 | `seatPricing` | `object` | 19 / 39 USD | Standard base seat list prices in USD |
 | `creditsPricing` | `object` | 0.01 USD | Standard base AI Credit list price in USD per AIC |
+| `periods` | `array` | `[]` | Period-based parameter configuration list (`startMonth`, `endMonth`, per-plan pricing, discount, exchange rate overrides) |
 
 ---
 

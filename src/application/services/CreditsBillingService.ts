@@ -40,18 +40,20 @@ export class CreditsBillingService {
   static calculateCreditsCost(
     creditsConsumed: number,
     ratePerCredit?: number,
-    config: EnterpriseBillingConfig = BillingConfigLoader.load()
+    config?: EnterpriseBillingConfig,
+    targetMonth?: string
   ): Money {
-    if (creditsConsumed <= 0) return Money.zero(config.currency.code);
+    const resolvedConfig = config ?? BillingConfigLoader.loadForMonth(targetMonth);
+    if (creditsConsumed <= 0) return Money.zero(resolvedConfig.currency.code);
     let effectiveRate: number;
     if (typeof ratePerCredit === 'number') {
       effectiveRate = ratePerCredit;
-    } else if (config.customPricePerCredit !== undefined || config.discountPercent > 0 || config.currency.code !== 'USD') {
-      effectiveRate = calculateEffectiveCreditRate(config);
+    } else if (resolvedConfig.customPricePerCredit !== undefined || resolvedConfig.discountPercent > 0 || resolvedConfig.currency.code !== 'USD') {
+      effectiveRate = calculateEffectiveCreditRate(resolvedConfig);
     } else {
       effectiveRate = this.DEFAULT_CREDIT_RATE_USD;
     }
-    return Money.of(creditsConsumed * effectiveRate, config.currency.code);
+    return Money.of(creditsConsumed * effectiveRate, resolvedConfig.currency.code);
   }
 
   /**
