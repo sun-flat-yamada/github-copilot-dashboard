@@ -92,6 +92,22 @@ test('AI Model Radar Selector Sidebar and Abbreviation Tests', async (t) => {
       'grok-4.6'
     );
     assert.strictEqual(
+      getModelShortName({ id: 'grok-4-7', name: 'Grok 4.7' }),
+      'grok-4.7'
+    );
+    assert.strictEqual(
+      getModelShortName({ id: 'gpt-6-sol', name: 'GPT-6 Sol' }),
+      'gpt-6-sol'
+    );
+    assert.strictEqual(
+      getModelShortName({ id: 'gpt-6-luna', name: 'GPT-6 Luna' }),
+      'gpt-6-luna'
+    );
+    assert.strictEqual(
+      getModelShortName({ id: 'claude-opus-5-5', name: 'Claude Opus 5.5' }),
+      'opus-5.5'
+    );
+    assert.strictEqual(
       getModelShortName({ id: 'kimi-k3', name: 'Kimi K3' }),
       'kimi-k3'
     );

@@ -263,12 +263,13 @@ describe('AI Model Benchmark Evaluator Tests', () => {
     );
   });
 
-  it('guarantees zero vendor mismatches across all 39 benchmark dataset models', () => {
+  it('guarantees zero vendor mismatches across all 43 benchmark dataset models', () => {
     const datasetPath = path.resolve(process.cwd(), 'dashboard/public/data/model-benchmarks.json');
     if (!fs.existsSync(datasetPath)) {
       runBenchmarkUpdate();
     }
     const dataset = JSON.parse(fs.readFileSync(datasetPath, 'utf8'));
+    assert.strictEqual(dataset.models.length, 43, 'Must have exactly 43 evaluated models');
 
     dataset.models.forEach((m: any) => {
       const buzz = m.evaluation.buzz;
@@ -397,9 +398,14 @@ describe('AI Model Benchmark Evaluator Tests', () => {
 
   it('correctly normalizes 2026 next-gen models (GPT-6, Sonnet 5, GPT-5.6, Gemini 3.8, Kimi K3, MAI-Code)', () => {
     assert.strictEqual(normalizeModelId('GPT-6 Astra'), 'gpt-6-astra');
+    assert.strictEqual(normalizeModelId('GPT-6 Sol'), 'gpt-6-sol');
+    assert.strictEqual(normalizeModelId('GPT-6 Luna'), 'gpt-6-luna');
+    assert.strictEqual(normalizeModelId('gpt6-luna'), 'gpt-6-luna');
     assert.strictEqual(normalizeModelId('gpt-6'), 'gpt-6-astra');
     assert.strictEqual(normalizeModelId('Claude Sonnet 5'), 'claude-sonnet-5');
     assert.strictEqual(normalizeModelId('claude-5-sonnet'), 'claude-sonnet-5');
+    assert.strictEqual(normalizeModelId('Claude Opus 5.5'), 'claude-opus-5-5');
+    assert.strictEqual(normalizeModelId('claude-opus-5-5'), 'claude-opus-5-5');
     assert.strictEqual(normalizeModelId('Claude Opus 5'), 'claude-opus-5');
     assert.strictEqual(normalizeModelId('Claude Opus 4.6'), 'claude-opus-4-6');
     assert.strictEqual(normalizeModelId('GPT-5.6 Sol'), 'gpt-5-6-sol');
@@ -409,7 +415,110 @@ describe('AI Model Benchmark Evaluator Tests', () => {
     assert.strictEqual(normalizeModelId('Gemini 3.7 Flash'), 'gemini-3-7-flash');
     assert.strictEqual(normalizeModelId('Kimi K3 (Moonshot)'), 'kimi-k3');
     assert.strictEqual(normalizeModelId('MAI-Code-1.1-Flash (Microsoft)'), 'mai-code-1-1-flash');
+    assert.strictEqual(normalizeModelId('Grok 4.7'), 'grok-4-7');
     assert.strictEqual(normalizeModelId('Grok 4.6'), 'grok-4-6');
+  });
+
+  it('correctly evaluates newly added models (GPT-6 Sol, GPT-6 Luna, Claude Opus 5.5, Grok 4.7) and enforces Luna long-context warning', () => {
+    const rawGpt6Luna: BenchmarkRawMetrics = {
+      swe_bench_verified: 66.0,
+      humaneval_plus: 90.0,
+      aime_2024: 76.0,
+      gpqa_diamond: 66.0,
+      arena_coding_elo: 1395,
+      output_speed_tps: 175,
+      input_cost_per_m: 0.1,
+      output_cost_per_m: 0.5,
+      cached_input_cost_per_m: 0.01,
+      cache_write_cost_per_m: 0.125,
+      long_context_input_cost_per_m: 0.2,
+      long_context_output_cost_per_m: 0.75,
+      context_window_k: 272,
+    };
+    const radarLuna = computeRadarScores(rawGpt6Luna);
+    const evalLuna = evaluateModel('gpt-6-luna', rawGpt6Luna, radarLuna);
+
+    // Enforce user requirement: citation of https://openai.com/ja-JP/index/gpt-5-6/ and warning of low long-context performance
+    assert.ok(
+      evalLuna.weaknesses.some(
+        (w) => w.includes('https://openai.com/ja-JP/index/gpt-5-6/') && w.includes('長文コンテキスト')
+      ),
+      'GPT-6 Luna weaknesses must cite OpenAI URL and warn about long context'
+    );
+    assert.ok(
+      evalLuna.copilot_usage_guidance.includes('https://openai.com/ja-JP/index/gpt-5-6/'),
+      'GPT-6 Luna usage guidance must cite OpenAI URL'
+    );
+    assert.ok(
+      evalLuna.buzz?.caution_rumor?.includes('https://openai.com/ja-JP/index/gpt-5-6/'),
+      'GPT-6 Luna buzz caution must cite OpenAI URL'
+    );
+
+    // Check GPT-5.6 Luna also has the citation
+    const evalLuna56 = evaluateModel('gpt-5-6-luna', rawGpt6Luna, radarLuna);
+    assert.ok(
+      evalLuna56.weaknesses.some(
+        (w) => w.includes('https://openai.com/ja-JP/index/gpt-5-6/') && w.includes('長文コンテキスト')
+      ),
+      'GPT-5.6 Luna weaknesses must cite OpenAI URL and warn about long context'
+    );
+
+    // Check GPT-6 Sol
+    const rawGpt6Sol: BenchmarkRawMetrics = {
+      swe_bench_verified: 79.5,
+      humaneval_plus: 94.5,
+      aime_2024: 90.0,
+      gpqa_diamond: 79.5,
+      arena_coding_elo: 1475,
+      output_speed_tps: 82,
+      input_cost_per_m: 2.0,
+      output_cost_per_m: 10.0,
+      cached_input_cost_per_m: 0.2,
+      cache_write_cost_per_m: 2.5,
+      long_context_input_cost_per_m: 4.0,
+      long_context_output_cost_per_m: 15.0,
+      context_window_k: 272,
+    };
+    const evalGpt6Sol = evaluateModel('gpt-6-sol', rawGpt6Sol, computeRadarScores(rawGpt6Sol));
+    assert.strictEqual(evalGpt6Sol.grade, 'S+');
+    assert.ok(evalGpt6Sol.copilot_usage_guidance.includes('GPT-6 Astraに匹敵'));
+
+    // Check Claude Opus 5.5
+    const rawOpus55: BenchmarkRawMetrics = {
+      swe_bench_verified: 81.8,
+      humaneval_plus: 95.8,
+      aime_2024: 92.5,
+      gpqa_diamond: 83.2,
+      arena_coding_elo: 1500,
+      output_speed_tps: 62,
+      input_cost_per_m: 4.0,
+      output_cost_per_m: 20.0,
+      cached_input_cost_per_m: 0.2,
+      cache_write_cost_per_m: 5.0,
+      context_window_k: 200,
+    };
+    const evalOpus55 = evaluateModel('claude-opus-5-5', rawOpus55, computeRadarScores(rawOpus55));
+    assert.strictEqual(evalOpus55.grade, 'S+');
+    assert.ok(evalOpus55.copilot_usage_guidance.includes('難関プロジェクトのアーキテクチャ設計'));
+
+    // Check Grok 4.7
+    const rawGrok47: BenchmarkRawMetrics = {
+      swe_bench_verified: 72.8,
+      humaneval_plus: 92.0,
+      aime_2024: 86.5,
+      gpqa_diamond: 72.5,
+      arena_coding_elo: 1445,
+      output_speed_tps: 92,
+      input_cost_per_m: 2.0,
+      output_cost_per_m: 6.0,
+      cached_input_cost_per_m: 0.5,
+      long_context_input_cost_per_m: 4.0,
+      long_context_output_cost_per_m: 12.0,
+      context_window_k: 200,
+    };
+    const evalGrok47 = evaluateModel('grok-4-7', rawGrok47, computeRadarScores(rawGrok47));
+    assert.strictEqual(evalGrok47.grade, 'S+');
+    assert.ok(evalGrok47.copilot_usage_guidance.includes('要点だけ即座に知りたい場合'));
   });
 
   it('evaluates 2026 flagship models (GPT-6 Astra, Claude Sonnet 5) with extended pricing & context specs', () => {

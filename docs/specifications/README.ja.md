@@ -26,7 +26,7 @@ flowchart TD
 
     subgraph D3["3. 集計エンジン & AIベンチマーク"]
         S06["SDD-06 集計・按分・分析ロジック"]
-        S10["SDD-10 AIモデル特性レーダー (38モデル)"]
+        S10["SDD-10 AIモデル特性レーダー (43モデル)"]
         S11["SDD-11 深い分析専用ビュー & AEDP深度"]
     end
 
@@ -61,7 +61,7 @@ flowchart TD
 | **SDD-07** | ダッシュボード UI/UX 仕様書 | [JA](07_dashboard_ui_ux_spec.ja.md) \| [EN](07_dashboard_ui_ux_spec.md) | レスポンシブ設計、80%×80% 異常検知モーダル、Recharts可視化 | 正式運用 (2026.09) |
 | **SDD-08** | 自動化ワークフロー仕様書 | [JA](08_automation_workflow_spec.ja.md) \| [EN](08_automation_workflow_spec.md) | Actions cron、GitHub Pages完全無料ホスティング、エラー自動処理 | 正式運用 (2026.09) |
 | **SDD-09** | Monthly Usage Report 分析モード仕様書 | [JA](09_monthly_usage_report_mode_spec.ja.md) \| [EN](09_monthly_usage_report_mode_spec.md) | 月次CSVレポート直接解析、月度正規化、過去トレンド保持 | 正式運用 (2026.09) |
-| **SDD-10** | AIモデル特性レーダー & 著名ベンチマーク評価仕様書 | [JA](10_ai_model_benchmark_radar_spec.ja.md) \| [EN](10_ai_model_benchmark_radar_spec.md) | 6軸レーダーチャート、38モデルベンチマーク評価、トークン単価 | 正式運用 (2026.09) |
+| **SDD-10** | AIモデル特性レーダー & 著名ベンチマーク評価仕様書 | [JA](10_ai_model_benchmark_radar_spec.ja.md) \| [EN](10_ai_model_benchmark_radar_spec.md) | 6軸レーダーチャート、43モデルベンチマーク評価、トークン単価 | 正式運用 (2026.09) |
 | **SDD-11** | 深い分析専用ビュー仕様書 | [JA](11_deep_analysis_view_spec.ja.md) \| [EN](11_deep_analysis_view_spec.md) | AI活用非効率パターン診断、AEDP自律駆動深度評価 | 正式運用 (2026.09) |
 | **SDD-12** | Fork先変更反映 & 運用保守仕様書 | [JA](12_fork_sync_and_customization_ops_spec.ja.md) \| [EN](12_fork_sync_and_customization_ops_spec.md) | 本家同期手順 (Web UI/CLI)、2層ブランチ運用、健全性診断 | 正式運用 (2026.09) |
 | **SDD-13** | Fork制限環境向けセットアップ手順書 | [JA](13_fork_restricted_environment_setup_guide.ja.md) \| [EN](13_fork_restricted_environment_setup_guide.md) | EMU・ポリシー制限によりGitHub Forkを使えない組織向けのミラー複製手順 | 正式運用 (2026.09) |

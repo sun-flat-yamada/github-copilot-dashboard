@@ -49,7 +49,7 @@ Official 2026 reference prices and token cost metrics for all supported models:
 - **OpenAI Family**: GPT-6 Astra, GPT-5.6 (Sol/Terra/Luna), GPT-5.5, GPT-5.4, GPT-5.3-Codex, GPT-5 mini.
 - **Anthropic Family**: Claude 5 (Opus/Sonnet/Fable), Claude 4.8, Claude 4.7, Claude 4.6, Claude 4.5 Haiku.
 - **Google Family**: Gemini 3.8 Flash, Gemini 3.7 Flash, Gemini 3.6 Flash, Gemini 3.5 Flash.
-- **Frontier Benchmark Radar**: 6-axis performance ratings across 38 frontier models ([SDD-10](specifications/10_ai_model_benchmark_radar_spec.md)).
+- **Frontier Benchmark Radar**: 6-axis performance ratings across 43 frontier models ([SDD-10](specifications/10_ai_model_benchmark_radar_spec.md)).
 
 ### 4. [🌿 Fork Synchronization & Dual-Branch Operations](specifications/12_fork_sync_and_customization_ops_spec.md)
 - **100% Conflict-Free Sync**: Append-only storage on `copilot-data` guarantees `main` stays pristine.
