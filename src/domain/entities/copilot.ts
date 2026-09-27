@@ -229,7 +229,7 @@ export interface UserUsageProfile {
 export interface UserAttributeMapping {
   github_user: string;
   display_name?: string;
-  department?: string; // 任意仕訳グループ (部署/PJ)
+  department?: string; // ユーザー定義Gr (部署/PJ)
   cost_center_override?: string;
   notes?: string;
   tags?: string[]; // 自由入力の複数ラベル (例: ["契約社員", "リモート"])。CSVでは ";" 区切りの1セルで表現
@@ -243,7 +243,7 @@ export interface EnrichedUserSeat {
   login: string;
   display_name: string;
   avatar_url: string;
-  department: string; // 任意仕訳グループ
+  department: string; // ユーザー定義Gr
   cost_center: string; // Cost Center
   organization: string; // Organization
   plan_type: CopilotPlanType;

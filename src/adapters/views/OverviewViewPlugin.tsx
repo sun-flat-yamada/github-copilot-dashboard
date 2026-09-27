@@ -68,7 +68,7 @@ export const OverviewViewComponent: React.FC<ViewPluginProps<OverviewViewModel>>
           <CollapsibleSection
             id="allocation"
             title="グループ別 コスト内訳 & ライセンス稼働状況"
-            subtitle="選択仕訳軸（部署 / Cost Center / Org）に基づく費用シェアと稼働率"
+            subtitle="選択仕訳軸（ユーザー定義Gr / Cost Center / Org）に基づく費用シェアと稼働率"
             icon={<PieIcon className="w-4 h-4 text-purple-400" />}
             summaryChips={
               <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
