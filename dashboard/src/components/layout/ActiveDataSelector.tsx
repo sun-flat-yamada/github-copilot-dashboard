@@ -222,10 +222,10 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
             {details.icon}
           </div>
           <div className="flex flex-col text-left justify-center shrink-0">
-            <span className="text-xs font-bold text-white tracking-tight leading-none">
+            <span className="text-xs font-bold text-white tracking-tight leading-none whitespace-nowrap">
               {details.title}
             </span>
-            <span className="inline-flex items-center text-[10px] px-1.5 py-0.2 rounded border bg-slate-950/70 border-slate-700/80 text-slate-300 font-mono leading-tight mt-1 self-start">
+            <span className="inline-flex items-center text-[10px] px-1.5 py-0.2 rounded border bg-slate-950/70 border-slate-700/80 text-slate-300 font-mono leading-tight mt-1 self-start whitespace-nowrap">
               {details.subtitle}
             </span>
           </div>
@@ -237,11 +237,11 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
         {/* フィルター要約ピル (タイトル部と同等の高さを活用した2行配置・少なくとも6要素表示) */}
         <div className="flex flex-col justify-center min-w-0 shrink">
           {!isFiltered ? (
-            <div className="flex flex-col text-left justify-center px-0.5">
-              <span className="text-[11px] text-slate-300 font-medium leading-none">
+            <div className="flex flex-col text-left justify-center px-0.5 min-w-0">
+              <span className="text-[11px] text-slate-300 font-medium leading-none truncate whitespace-nowrap">
                 フィルタなし
               </span>
-              <span className="text-[10px] text-slate-500 font-mono leading-tight mt-1">
+              <span className="text-[10px] text-slate-500 font-mono leading-tight mt-1 truncate whitespace-nowrap">
                 全体: {counts.total}名
               </span>
             </div>
