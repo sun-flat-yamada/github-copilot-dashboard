@@ -269,7 +269,7 @@ export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-md">
-          <span className="text-xs text-purple-400 block mb-1">受諾採用数 & 受諾率</span>
+          <span className="text-xs text-purple-400 block mb-1">受諾採用数 & Inline補完受諾率</span>
           <span className="text-2xl font-bold text-purple-300 font-mono">
             {currentProfile.total_acceptances.toLocaleString()}{' '}
             <span className="text-sm font-sans font-medium text-slate-400">
@@ -357,13 +357,13 @@ export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
         </div>
       </div>
 
-      {/* 4. コード補完の提案・受諾・受諾率推移 */}
+      {/* 4. コード補完の提案・受諾・Inline補完受諾率推移 */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h4 className="text-sm font-semibold text-slate-200 flex items-center space-x-2">
               <Code2 className="w-4 h-4 text-purple-400" />
-              <span>日次コード補完提案数・採用数・受諾率の推移</span>
+              <span>日次コード補完提案数・採用数・Inline補完受諾率の推移</span>
             </h4>
             <p className="text-xs text-slate-400 mt-0.5">
               提示されたコードに対する受諾の傾向と開発効率
@@ -401,7 +401,7 @@ export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
                 yAxisId="right"
                 type="monotone"
                 dataKey="acceptanceRate"
-                name="受諾率 (%)"
+                name="Inline補完受諾率 (%)"
                 stroke="#a371f7"
                 strokeWidth={2}
                 dot={false}

@@ -71,10 +71,10 @@ export class DeepAnalysisPresenter {
 
       if (p.total_suggestions > 0 && acceptanceRate < 0.15) {
         rawScore -= 35;
-        detectedIssue = 'コード提案受諾率が低迷しています (Tab Roulette兆候)';
+        detectedIssue = 'Inline補完受諾率が低迷しています (Tab Roulette兆候)';
       } else if (p.total_suggestions > 0 && acceptanceRate < 0.25) {
         rawScore -= 15;
-        detectedIssue = '受諾率が平均水準を下回っています';
+        detectedIssue = 'Inline補完受諾率が平均水準を下回っています';
       }
 
       if (p.total_chats > 50 && acceptanceRate < 0.1) {

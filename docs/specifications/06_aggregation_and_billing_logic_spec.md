@@ -100,8 +100,8 @@ $$\text{Potential Monthly Savings} = \sum_{u \in \text{Idle} \cup \text{NeverUse
 ## 4. Usage Metrics & Analytical Guidelines
 
 ### 4.1 Fundamental Indicators
-1. **Code Completion Acceptance Rate**:
-   $$\text{Acceptance Rate} = \frac{\text{Total Code Acceptances}}{\text{Total Code Suggestions}} \times 100\%$$
+1. **Inline Completion Acceptance Rate**:
+   $$\text{Inline Acceptance Rate} = \frac{\text{Total Code Acceptances}}{\text{Total Code Suggestions}} \times 100\%$$
    - **Scope**: In-editor inline completions (Ghost Text) only.
 2. **Lines Accepted Contribution (Ratio)**:
    Ratio of total lines accepted versus total lines suggested ($\frac{\text{Lines Accepted}}{\text{Lines Suggested}} \times 100\%$).
@@ -118,10 +118,10 @@ $$\text{Potential Monthly Savings} = \sum_{u \in \text{Idle} \cup \text{NeverUse
 > This workflow produces the following telemetry distortion:
 > 1. **Mechanical Expansion of Denominator**: When inspecting agent-generated diffs or making slight edits, cursor navigation and keystrokes trigger ghost-text suggestions in the background, which are discarded upon switching windows (implicit rejections), rapidly inflating `total_code_suggestions`.
 > 2. **Omission of Agent Output from Numerator**: Direct file modifications, tool calls, and shell commands applied by the CLI/Agent are never counted towards IDE `total_code_acceptances`.
-> 3. **Apparent Plunge in Acceptance Rate**: The most proficient autonomous agent users may show completion acceptance rates under 10%–15%, creating an inverted metric ("Acceptance Rate Paradox").
+> 3. **Apparent Plunge in Acceptance Rate**: The most proficient autonomous agent users may show Inline Completion acceptance rates under 10%–15%, creating an inverted metric ("Acceptance Rate Paradox").
 
 ### 4.3 Recommended Analytical Architecture (Surface Separation)
-Organizations must not rely on acceptance rate as a solitary KPI for developer performance. Instead, enforce multi-surface evaluation:
+Organizations must not rely on Inline Completion Acceptance Rate as a solitary KPI for developer performance. Instead, enforce multi-surface evaluation:
 - **Surface Separation**: Segregate evaluation across IDE Code Completions (typing assistance), Chat/CLI (interactive commands), and Autonomous Agents.
 - **Outcome Metric Correlation**: Correlate with PR cycle time, PR summary creation (`total_pr_summaries_created`), and velocity rather than raw keystroke acceptance.
-- **Workflow Segmentation**: Treat acceptance rate as a workflow classification parameter (manual completion-oriented vs. agentic-oriented) rather than a scalar metric of skill or productivity.
+- **Workflow Segmentation**: Treat Inline Completion Acceptance Rate as a workflow classification parameter (manual completion-oriented vs. agentic-oriented) rather than a scalar metric of skill or productivity.

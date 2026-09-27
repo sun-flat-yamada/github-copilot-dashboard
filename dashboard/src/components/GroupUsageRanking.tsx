@@ -253,7 +253,7 @@ export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
                 sortBy === 'acceptance_rate' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              受諾率
+              Inline補完受諾率
             </button>
             <button
               onClick={() => setSortBy('cost')}
@@ -314,7 +314,7 @@ export const GroupUsageRanking: React.FC<GroupUsageRankingProps> = ({
                 onClick={() => handleSort('acceptance_rate')}
               >
                 <div className="flex items-center justify-end space-x-1">
-                  <span>受諾率</span>
+                  <span>Inline補完受諾率</span>
                   {renderSortIcon('acceptance_rate')}
                 </div>
               </th>

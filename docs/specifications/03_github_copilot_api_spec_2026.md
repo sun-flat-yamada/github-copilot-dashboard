@@ -43,14 +43,14 @@ As of April 2026, the legacy metrics endpoint (`/orgs/{org}/copilot/metrics`) wa
   - `GET /orgs/{org}/copilot/metrics/reports/users-1-day`
   - `GET /orgs/{org}/copilot/metrics/reports/users-28-day/latest`
 
-### 2.2 Telemetry Definition of Acceptance Rate & Surface Isolation
+### 2.2 Telemetry Definition of Inline Completion Acceptance Rate & Surface Isolation
 
-#### (1) Acceptance Rate Formulas
-In GitHub Copilot telemetry, acceptance rate is a calculated metric derived from aggregated counters:
-- **Suggestion Acceptance Rate**:
-  $$\text{Acceptance Rate} = \frac{\text{total\_code\_acceptances}}{\text{total\_code\_suggestions}} \times 100\%$$
-- **Lines Acceptance Rate (Volume / Utilization)**:
-  $$\text{Lines Acceptance Rate} = \frac{\text{total\_code\_lines\_accepted}}{\text{total\_code\_lines\_suggested}} \times 100\%$$
+#### (1) Inline Completion Acceptance Rate Formulas
+In GitHub Copilot telemetry, acceptance rate is derived from IDE inline ghost-text counters. To avoid ambiguity with agentic and CLI workflows, this system explicitly denotes and tracks this metric as **Inline Completion Acceptance Rate**:
+- **Inline Suggestion Acceptance Rate**:
+  $$\text{Inline Acceptance Rate} = \frac{\text{total\_code\_acceptances}}{\text{total\_code\_suggestions}} \times 100\%$$
+- **Inline Lines Acceptance Rate (Volume / Utilization)**:
+  $$\text{Inline Lines Acceptance Rate} = \frac{\text{total\_code\_lines\_accepted}}{\text{total\_code\_lines\_suggested}} \times 100\%$$
 
 #### (2) Telemetry Trigger Logic & Implicit Rejections
 - **Suggestions**: Incremented when Copilot displays ghost text (inline gray completion preview) in the editor buffer upon keystrokes or debounce pauses.
