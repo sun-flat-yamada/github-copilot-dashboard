@@ -205,21 +205,34 @@ export function countActiveFilterConditions(criteria: FilterCriteria): number {
   if (criteria.userPattern && criteria.userPattern.trim() !== '') count++;
   return count;
 }
+export type FilterBadgeCategory =
+  | 'costCenter'
+  | 'organization'
+  | 'group'
+  | 'tag'
+  | 'user'
+  | 'org';
+
+export interface FilterSummaryBadge {
+  key: string;
+  label: string;
+  type: FilterBadgeCategory;
+}
 
 /**
  * ヘッダー用の要約ラベル一覧を生成
  */
 export function getFilterSummaryBadges(
   criteria: FilterCriteria
-): { key: string; label: string; type: 'org' | 'group' | 'tag' | 'user' }[] {
-  const badges: { key: string; label: string; type: 'org' | 'group' | 'tag' | 'user' }[] = [];
+): FilterSummaryBadge[] {
+  const badges: FilterSummaryBadge[] = [];
 
   if (criteria.costCenter !== 'all') {
     const text =
       criteria.costCenter === '__unassigned__'
         ? 'CC: 未割当'
         : `CC: ${criteria.costCenter}`;
-    badges.push({ key: 'costCenter', label: text, type: 'org' });
+    badges.push({ key: 'costCenter', label: text, type: 'costCenter' });
   }
 
   if (criteria.organization !== 'all') {
@@ -227,7 +240,7 @@ export function getFilterSummaryBadges(
       criteria.organization === '__unassigned__'
         ? 'Org: 未割当'
         : `Org: ${criteria.organization}`;
-    badges.push({ key: 'organization', label: text, type: 'org' });
+    badges.push({ key: 'organization', label: text, type: 'organization' });
   }
 
   if (criteria.group !== 'all') {
