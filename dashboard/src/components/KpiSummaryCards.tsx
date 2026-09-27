@@ -122,9 +122,15 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data }) => {
       </div>
 
       {/* 4. 受諾率 & コード貢献 (欠損時はエラーアイコン表示) */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg relative overflow-hidden group hover:border-slate-700 transition-all">
+      <div 
+        className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg relative overflow-hidden group hover:border-slate-700 transition-all"
+        title="IDEコード補完（Ghost Text）の受諾率です。Copilot CLIやAutopilot自律モードの作業は含まれません。"
+      >
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-purple-400">AIコード受諾率</span>
+          <div className="flex items-center space-x-1.5">
+            <span className="text-xs font-medium text-purple-400">AIコード受諾率</span>
+            <span className="text-[10px] text-slate-500 font-normal">※IDE補完</span>
+          </div>
           <div className="flex items-center space-x-1">
             {(isChatMissing || isLanguageMissing) && (
               <span

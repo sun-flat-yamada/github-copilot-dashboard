@@ -27,7 +27,9 @@ export function diagnoseTabSpamming(
     suggestions: number,
     acceptances: number,
     rate: number,
-    activeDays: number
+    activeDays: number,
+    agentSessions: number = 0,
+    totalChats: number = 0
   ): InefficiencyPatternResult {
     let prob = 0;
     const factors: ContributingFactor[] = [];
@@ -54,21 +56,42 @@ export function diagnoseTabSpamming(
       prob = 0;
     }
 
+    // 【受諾率パラドックス補正 / CLI & Autopilot 誤診防止ガード】
+    // Agentセッションが活発、または対話型チャットが提案数に対して活発な自律駆動型ワークフローの場合、
+    // エディタ内のインライン補完は副次的なものであり、受諾率の低下は自律実行に伴う正常な現象である。
+    const isAgentOrCliDriven = agentSessions >= 3 || (totalChats >= 15 && totalChats > avgDailySugg * 0.3);
+
+    if (isAgentOrCliDriven && prob > 10) {
+      // 確率を健全（Healthy <= 10%）水準に抑制
+      prob = Math.min(10, Math.round(prob * 0.15));
+    }
+
     prob = Math.max(0, Math.min(98, prob));
     const riskLevel = getRiskLevel(prob);
 
-    factors.push({
-      metricName: 'コード受諾率',
-      currentValueFormatted: `${(rate * 100).toFixed(1)}% (${acceptances}/${suggestions} 件)`,
-      recommendedThresholdFormatted: '≥ 25.0%',
-      description:
-        rate < 0.15
-          ? '受諾率が極端に低く、提示されるコードを吟味せずにスキップ・破棄を繰り返しています。'
-          : rate < 0.22
-          ? '受諾率がやや低めで、AIの提案意図と手元のコード方針のミスマッチが発生しています。'
-          : '受諾率は健全水準を維持しており、適切なコード提案の採択が行われています。',
-      severity: rate < 0.15 ? 'danger' : rate < 0.22 ? 'warning' : 'good',
-    });
+    if (isAgentOrCliDriven && rate < 0.15) {
+      factors.push({
+        metricName: 'コード受諾率',
+        currentValueFormatted: `${(rate * 100).toFixed(1)}% (${acceptances}/${suggestions} 件)`,
+        recommendedThresholdFormatted: '≥ 25.0% (自律Agent駆動時は参考値)',
+        description:
+          '受諾率は低めですが、Copilot CLI/Autopilot等の自律エージェントや対話型開発が主体のため（受諾率パラドックス）、生成ガチャ等の浪費ではありません。',
+        severity: 'good',
+      });
+    } else {
+      factors.push({
+        metricName: 'コード受諾率',
+        currentValueFormatted: `${(rate * 100).toFixed(1)}% (${acceptances}/${suggestions} 件)`,
+        recommendedThresholdFormatted: '≥ 25.0%',
+        description:
+          rate < 0.15
+            ? '受諾率が極端に低く、提示されるコードを吟味せずにスキップ・破棄を繰り返しています。'
+            : rate < 0.22
+            ? '受諾率がやや低めで、AIの提案意図と手元のコード方針のミスマッチが発生しています。'
+            : '受諾率は健全水準を維持しており、適切なコード提案の採択が行われています。',
+        severity: rate < 0.15 ? 'danger' : rate < 0.22 ? 'warning' : 'good',
+      });
+    }
 
     factors.push({
       metricName: '1日平均 提案件数',
@@ -78,10 +101,14 @@ export function diagnoseTabSpamming(
         avgDailySugg > 90
           ? '提案発生数が過密であり、AIの補完生成待ちや連打による集中途切れの懸念があります。'
           : '提案頻度は標準的なペースです。',
-      severity: avgDailySugg > 90 && rate < 0.18 ? 'warning' : 'neutral',
+      severity: avgDailySugg > 90 && rate < 0.18 && !isAgentOrCliDriven ? 'warning' : 'neutral',
     });
 
-    if (prob >= 60) {
+    if (isAgentOrCliDriven) {
+      recommendations.push(
+        '【自律エージェント型ワークフロー適合】CLIやAgentセッションを主体とした開発が行われています。インラインコード受諾率に捉われず、PRサイクルタイムやタスク完了率を指標として活用してください。'
+      );
+    } else if (prob >= 60) {
       recommendations.push(
         '【コメント駆動の徹底】Tabキーを連打する前に、直前の行に関数の目的や引数の仕様を日本語コメント（`// ...`）で1行書くことで、AIの提案精度を劇的に向上させられます。',
         '【コンテキストファイルの事前オープン】関連する型定義ファイルやインターフェースをエディタで開いておくことで、Copilotがプロジェクトの文脈を正確に把握できるようになります。',
@@ -99,9 +126,13 @@ export function diagnoseTabSpamming(
       nameEn: 'Tab-Spamming / Suggestion Roulette',
       probabilityPercent: prob,
       riskLevel,
-      tagline: 'AIの提案を吟味せずTabキーや再生成を連打し時間を浪費している兆候',
+      tagline: isAgentOrCliDriven
+        ? 'CLI/Autopilot自律駆動型のため手動補完受諾率は正常に抑制されています'
+        : 'AIの提案を吟味せずTabキーや再生成を連打し時間を浪費している兆候',
       summary:
-        prob >= 70
+        isAgentOrCliDriven
+          ? '兆候は検出されませんでした（健全）。CLIやAutopilot等の自律エージェント活用によりインライン補完の受諾率は見かけ上低値ですが、健全なエージェント主導型開発スタイルです。'
+          : prob >= 70
           ? '強い兆候を検出しました。大量のコード提案が発生している一方で受諾率が15%未満と極めて低く、AIとの方針不一致や生成待ちに多くの時間を費やしている可能性が高いです。'
           : prob >= 40
           ? '中程度の兆候があります。特定ファイルや難解タスクにおいて受諾率が低下している可能性があります。'
@@ -807,13 +838,15 @@ export function diagnoseAgentAbandonment(
 export function diagnoseModelCostMismatch(
   heavyModelRequests: number,
   totalRequests: number,
-  acceptanceRate: number
+  acceptanceRate: number,
+  agentSessions: number = 0
 ): InefficiencyPatternResult {
   let prob = 0;
   const factors: ContributingFactor[] = [];
   const recommendations: string[] = [];
 
   const heavyRatio = totalRequests > 0 ? heavyModelRequests / totalRequests : 0;
+  const isAgentHeavy = agentSessions >= 3;
 
   if (totalRequests >= 10) {
     if (heavyRatio >= 0.70 && acceptanceRate < 0.20) {
@@ -827,6 +860,11 @@ export function diagnoseModelCostMismatch(
     prob = totalRequests > 0 ? 8 : 0;
   }
 
+  // Agentセッション主体の場合は、最上位モデルが自律推論タスクに投入されているためミスマッチ判定を緩和
+  if (isAgentHeavy && prob > 30) {
+    prob = Math.min(25, Math.round(prob * 0.35));
+  }
+
   prob = Math.max(0, Math.min(95, prob));
   const riskLevel = getRiskLevel(prob);
 
@@ -836,23 +874,31 @@ export function diagnoseModelCostMismatch(
     recommendedThresholdFormatted: '< 50.0%',
     description:
       heavyRatio >= 0.7
-        ? '高コストな最上位モデル（o1 / Claude 3.7 Sonnet等）に極端に偏っており、コスト対効果の不整合が懸念されます。'
+        ? isAgentHeavy
+          ? '高コストな最上位モデル（o1 / Claude 3.7 Sonnet等）が中心ですが、Agent自律タスクの設計・検証に投入されています。'
+          : '高コストな最上位モデル（o1 / Claude 3.7 Sonnet等）に極端に偏っており、コスト対効果の不整合が懸念されます。'
         : 'モデルの利用比率はバランスの取れた範囲内です。',
-    severity: heavyRatio >= 0.7 ? 'danger' : heavyRatio >= 0.5 ? 'warning' : 'good',
+    severity: heavyRatio >= 0.7 && !isAgentHeavy ? 'danger' : heavyRatio >= 0.5 ? 'warning' : 'good',
   });
 
   factors.push({
     metricName: 'コード受諾率',
     currentValueFormatted: `${(acceptanceRate * 100).toFixed(1)}%`,
-    recommendedThresholdFormatted: '≥ 25.0%',
+    recommendedThresholdFormatted: isAgentHeavy ? '≥ 25.0% (自律Agent駆動時は参考値)' : '≥ 25.0%',
     description:
       acceptanceRate < 0.20
-        ? '最上位モデルを投入しているにもかかわらずコード受諾率が低く、タスクとモデルの選定ミスマッチが発生しています。'
+        ? isAgentHeavy
+          ? '受諾率は低めですが、自律Agentや推論タスクへのモデル投入が主体のため（受諾率パラドックス）、重大なミスマッチではありません。'
+          : '最上位モデルを投入しているにもかかわらずコード受諾率が低く、タスクとモデルの選定ミスマッチが発生しています。'
         : 'コード受諾率は良好な水準です。',
-    severity: acceptanceRate < 0.20 ? 'danger' : acceptanceRate < 0.25 ? 'warning' : 'good',
+    severity: acceptanceRate < 0.20 && !isAgentHeavy ? 'danger' : acceptanceRate < 0.25 ? 'warning' : 'good',
   });
 
-  if (prob >= 60) {
+  if (isAgentHeavy) {
+    recommendations.push(
+      '【自律Agent推論の継続最適化】自律エージェントのマルチステップ計画に最上位モデルが投入されています。定型処理への過剰投入がないか定期的にレビューしてください。'
+    );
+  } else if (prob >= 60) {
     recommendations.push(
       '【タスク難度に応じたモデル選定】定型コード生成、ユニットテスト生成、構文チェックには高速・低コストなモデル（Gemini 2.0 Flash / GPT-4o）を第一選択にしてください。',
       '【最上位モデルの投入基準の策定】複雑な並行処理設計や難関アルゴリズム検証など、明確に推論能力が必要なタスクに限定して最上位モデルを活用してください。'

@@ -566,6 +566,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                   <th
                     className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
                     onClick={() => handleSort('acceptance_rate')}
+                    title="IDEコード補完（Ghost Text）の受諾率です。Copilot CLIやAutopilot等の自律エージェント作業は含まれないため、CLI活用度の高いユーザーでは低く表示されることがあります。"
                   >
                     <div className="flex items-center justify-end space-x-1">
                       <span>受諾率</span>

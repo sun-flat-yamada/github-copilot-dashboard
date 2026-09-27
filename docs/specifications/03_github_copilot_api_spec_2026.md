@@ -26,16 +26,42 @@ All API requests must supply the following HTTP headers:
 
 ---
 
-## 2. Copilot Metrics API
+## 2. Copilot Metrics & Reports API
 
-Retrieves daily aggregated usage metrics (code completion, chat, PR summaries, CLI, etc.) across an entire Enterprise or Organization.
+Retrieves usage metrics (IDE code completions, chat, PR summaries, CLI, agents, etc.) across an entire Enterprise or Organization.
 
-### 2.1 Endpoints
-- Enterprise: `GET /enterprises/{enterprise}/copilot/metrics`
-- Organization: `GET /orgs/{org}/copilot/metrics`
-- Query Parameters: `since` (ISO 8601 YYYY-MM-DD), `until` (ISO 8601 YYYY-MM-DD)
+### 2.1 Endpoint Architecture & Reports API (Latest as of September 2026)
+As of April 2026, the legacy metrics endpoint (`/orgs/{org}/copilot/metrics`) was fully deprecated and sunset. The current standard utilizes the **Usage Metrics Reports API**, which returns signed download links pointing to NDJSON data files.
 
-### 2.2 Response Schema (Daily Array)
+- **Enterprise Reports**:
+  - `GET /enterprises/{enterprise}/copilot/metrics/reports/enterprise-1-day` (Daily NDJSON signed link)
+  - `GET /enterprises/{enterprise}/copilot/metrics/reports/enterprise-28-day/latest`
+- **Organization Reports**:
+  - `GET /orgs/{org}/copilot/metrics/reports/organization-1-day`
+  - `GET /orgs/{org}/copilot/metrics/reports/organization-28-day/latest`
+- **User-Level Reports**:
+  - `GET /orgs/{org}/copilot/metrics/reports/users-1-day`
+  - `GET /orgs/{org}/copilot/metrics/reports/users-28-day/latest`
+
+### 2.2 Telemetry Definition of Acceptance Rate & Surface Isolation
+
+#### (1) Acceptance Rate Formulas
+In GitHub Copilot telemetry, acceptance rate is a calculated metric derived from aggregated counters:
+- **Suggestion Acceptance Rate**:
+  $$\text{Acceptance Rate} = \frac{\text{total\_code\_acceptances}}{\text{total\_code\_suggestions}} \times 100\%$$
+- **Lines Acceptance Rate (Volume / Utilization)**:
+  $$\text{Lines Acceptance Rate} = \frac{\text{total\_code\_lines\_accepted}}{\text{total\_code\_lines\_suggested}} \times 100\%$$
+
+#### (2) Telemetry Trigger Logic & Implicit Rejections
+- **Suggestions**: Incremented when Copilot displays ghost text (inline gray completion preview) in the editor buffer upon keystrokes or debounce pauses.
+- **Acceptances**: Incremented when the user commits the ghost text by pressing `Tab` (or the configured accept key).
+- **Implicit Rejections**: If ghost text is displayed and the user types through it without pressing Tab, hits `Esc`, or navigates away via arrow keys, the event is recorded as a rejection—**incrementing the denominator (`total_code_suggestions`) without incrementing acceptances**.
+
+#### (3) Surface Isolation Principle
+- **IDE Code Completions Only**: Acceptance rates exclusively measure inline ghost-text completions (`copilot_ide_code_completions`).
+- **Exclusion of CLI, Chat, and Agent Actions**: Activity in GitHub Copilot CLI (`copilot_in_cli`), Copilot Chat, and autonomous agent/autopilot tool executions (patches, file edits, shell tool calls) is tracked separately and is **never** included in the completion acceptance rate counters.
+
+### 2.3 Response Schema (Daily Array / Report Structure)
 
 ```json
 [

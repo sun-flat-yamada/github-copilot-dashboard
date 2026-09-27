@@ -97,13 +97,31 @@ $$\text{Potential Monthly Savings} = \sum_{u \in \text{Idle} \cup \text{NeverUse
 
 ---
 
-## 4. Usage Metrics & Productivity Indicators
+## 4. Usage Metrics & Analytical Guidelines
 
-1. **Acceptance Rate**:
+### 4.1 Fundamental Indicators
+1. **Code Completion Acceptance Rate**:
    $$\text{Acceptance Rate} = \frac{\text{Total Code Acceptances}}{\text{Total Code Suggestions}} \times 100\%$$
-2. **Lines Accepted Contribution**:
-   Ratio of total lines accepted versus total lines suggested.
-3. **Chat Engagement**:
-   Session volume across IDE Chat, Dotcom Chat, CLI, and model breakdown (Claude 3.7 Sonnet, GPT-4o, o1, Gemini 2.0 Flash).
+   - **Scope**: In-editor inline completions (Ghost Text) only.
+2. **Lines Accepted Contribution (Ratio)**:
+   Ratio of total lines accepted versus total lines suggested ($\frac{\text{Lines Accepted}}{\text{Lines Suggested}} \times 100\%$).
+3. **Chat & Agent Engagement**:
+   Session volume across IDE Chat, Dotcom Chat, CLI, Agent sessions, and model breakdown (Claude 3.7 Sonnet, GPT-4o, o1, Gemini 2.0 Flash).
 4. **Active Seat Ratio**:
    $$\text{Active Ratio} = \frac{\text{Total Active Users in Period}}{\text{Total Assigned Seats}} \times 100\%$$
+
+### 4.2 The "Acceptance Rate Paradox" & Analysis Caveats
+
+> [!WARNING]
+> **Prohibition of Simplistic "Low Acceptance Rate = Low Adoption" Evaluations**
+> Developers heavily leveraging GitHub Copilot CLI, Autopilot (`--allow-all` / `/yolo` mode), and autonomous agent workflows rarely type code manually to accept suggestions line-by-line via `Tab`.
+> This workflow produces the following telemetry distortion:
+> 1. **Mechanical Expansion of Denominator**: When inspecting agent-generated diffs or making slight edits, cursor navigation and keystrokes trigger ghost-text suggestions in the background, which are discarded upon switching windows (implicit rejections), rapidly inflating `total_code_suggestions`.
+> 2. **Omission of Agent Output from Numerator**: Direct file modifications, tool calls, and shell commands applied by the CLI/Agent are never counted towards IDE `total_code_acceptances`.
+> 3. **Apparent Plunge in Acceptance Rate**: The most proficient autonomous agent users may show completion acceptance rates under 10%–15%, creating an inverted metric ("Acceptance Rate Paradox").
+
+### 4.3 Recommended Analytical Architecture (Surface Separation)
+Organizations must not rely on acceptance rate as a solitary KPI for developer performance. Instead, enforce multi-surface evaluation:
+- **Surface Separation**: Segregate evaluation across IDE Code Completions (typing assistance), Chat/CLI (interactive commands), and Autonomous Agents.
+- **Outcome Metric Correlation**: Correlate with PR cycle time, PR summary creation (`total_pr_summaries_created`), and velocity rather than raw keystroke acceptance.
+- **Workflow Segmentation**: Treat acceptance rate as a workflow classification parameter (manual completion-oriented vs. agentic-oriented) rather than a scalar metric of skill or productivity.
