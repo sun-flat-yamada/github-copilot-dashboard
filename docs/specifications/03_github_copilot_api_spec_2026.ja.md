@@ -43,14 +43,14 @@ GitHub REST API はカレンダーベースのバージョン体系を採用し�
   - `GET /orgs/{org}/copilot/metrics/reports/users-1-day`
   - `GET /orgs/{org}/copilot/metrics/reports/users-28-day/latest`
 
-### 2.2 受諾率（Acceptance Rate）のテレメトリ定義とサーフェス分離
+### 2.2 Inline補完受諾率（Inline Completion Acceptance Rate）のテレメトリ定義とサーフェス分離
 
-#### (1) 受諾率の算出式
-GitHub公式データにおける「受諾率」は、APIレスポンスから以下のように算出される計算指標である：
-- **提案受諾率 (Suggestion Acceptance Rate)**:
-  $$\text{Acceptance Rate} = \frac{\text{total\_code\_acceptances}}{\text{total\_code\_suggestions}} \times 100\%$$
-- **行数受諾率 (Lines Acceptance Rate / Lines Utilization)**:
-  $$\text{Lines Acceptance Rate} = \frac{\text{total\_code\_lines\_accepted}}{\text{total\_code\_lines\_suggested}} \times 100\%$$
+#### (1) Inline補完受諾率の算出式
+GitHub公式データにおける「受諾率」は、APIレスポンスのインライン補完カウンターから算出される指標であり、当システムでは誤解を避けるため**Inline補完受諾率**と明示して取り扱う：
+- **Inline補完提案受諾率 (Inline Suggestion Acceptance Rate)**:
+  $$\text{Inline Acceptance Rate} = \frac{\text{total\_code\_acceptances}}{\text{total\_code\_suggestions}} \times 100\%$$
+- **Inline補完行数受諾率 (Inline Lines Acceptance Rate / Lines Utilization)**:
+  $$\text{Inline Lines Acceptance Rate} = \frac{\text{total\_code\_lines\_accepted}}{\text{total\_code\_lines\_suggested}} \times 100\%$$
 
 #### (2) テレメトリ計上ロジックと暗黙的拒否 (Implicit Rejection)
 - **提案 (Suggestions)**: エディタ上で文字入力や一時停止に伴い、Ghost Text（灰色のインライン補完候補）が表示された時点でカウント。

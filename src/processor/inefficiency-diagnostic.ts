@@ -55,7 +55,7 @@ export const ANALYSIS_METHODS_REGISTRY: AnalysisMethodDefinition[] = [
     status: 'active',
     badge: '推奨',
     description:
-      'GitHub Copilotの日常的な利用履歴（コード提案受諾率、チャット利用頻度、モデル選択バランス、稼働日分布）から、時間を浪費したり高コストモデルを過剰利用しているアンチパターン兆候を多角的にスコアリングします。',
+      'GitHub Copilotの日常的な利用履歴（Inline補完受諾率、チャット利用頻度、モデル選択バランス、稼働日分布）から、時間を浪費したり高コストモデルを過剰利用しているアンチパターン兆候を多角的にスコアリングします。',
   },
   {
     id: 'model_cost_efficiency',
@@ -322,7 +322,7 @@ export class InefficiencyDiagnosticEngine {
       }),
       peerBenchmarks: [
         {
-          metricName: 'コード受諾率 (%)',
+          metricName: 'Inline補完受諾率 (%)',
           userValue: acceptanceRatePercent,
           userFormatted: `${acceptanceRatePercent}%`,
           peerAverageValue: peerMetrics.avgAcceptanceRate,
