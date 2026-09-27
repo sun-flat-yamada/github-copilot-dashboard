@@ -74,7 +74,7 @@ To analyze or evaluate this dashboard with a personal Free account:
    - Follow section "2.1.1 A" above: create a Fine-grained PAT with the **Resource owner set to the Organization**, register it under Secrets as `COPILOT_READ_TOKEN`, and configure Variables with `COPILOT_ORGS=<org-name>`.
 2. **Use Mock Mode (Zero-Cost Simulation / No Tokens Needed)**:
    - Without any token, simply set `MOCK_MODE=true` (as a repository/organization Actions Variable, or via the `workflow_dispatch` `mock_mode` checkbox).
-   - All dashboard features (Claude 3.7 Sonnet, GPT-4o, Gemini 2.0 Flash trends, 38-model radar benchmark, FinOps cost allocation) will function immediately using simulated data written to the dedicated `copilot-data-mock` branch — fully isolated from real data on `copilot-data` (see [SDD-05 Section 1.3](05_data_storage_and_fork_isolation_spec.md#13-mockreal-data-branch-separation)).
+   - All dashboard features (Claude 3.7 Sonnet, GPT-4o, Gemini 2.0 Flash trends, 43-model radar benchmark, FinOps cost allocation) will function immediately using simulated data written to the dedicated `copilot-data-mock` branch — fully isolated from real data on `copilot-data` (see [SDD-05 Section 1.3](05_data_storage_and_fork_isolation_spec.md#13-mockreal-data-branch-separation)).
    - **Mock runs no longer build or deploy to GitHub Pages.** This keeps the live, production-facing dashboard 100% free of simulated data at all times; mock mode is purely for generating/inspecting a simulated dataset (e.g., for local preview via `git checkout copilot-data-mock`), not for publishing it.
 
 ### 2.3 Graceful Operation Without Copilot Metrics/Seats Credentials

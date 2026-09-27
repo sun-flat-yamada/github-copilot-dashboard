@@ -74,7 +74,7 @@ GitHubの最新仕様に基づき、**Fine-grained Personal Access Token (推奨
    - 上記「2.1.1 A」の手順に従い、**Resource owner に作成したOrganizationを指定**して Fine-grained PAT を発行し、Secrets に `COPILOT_READ_TOKEN`、Variables に `COPILOT_ORGS=<作成したOrg名>` を設定します。
 2. **モックモードによる全機能検証（完全無料・トークン不要）**:
    - トークンなしで、GitHub Actions Variables に `MOCK_MODE=true` を設定する（または `workflow_dispatch` の `mock_mode` チェックボックスを有効にする）。
-   - 2026年仕様（Claude 3.7 Sonnet、GPT-4o、Gemini 2.0 Flash、38モデルレーダーチャート、FinOps按分など）の全機能が即座に動作し、専用の `copilot-data-mock` ブランチにシミュレーションデータが保存される。実データの `copilot-data` ブランチとは完全に分離されている（[SDD-05 1.3節](05_data_storage_and_fork_isolation_spec.ja.md#13-モック実データブランチ分離)を参照）。
+   - 2026年仕様（Claude 3.7 Sonnet、GPT-4o、Gemini 2.0 Flash、43モデルレーダーチャート、FinOps按分など）の全機能が即座に動作し、専用の `copilot-data-mock` ブランチにシミュレーションデータが保存される。実データの `copilot-data` ブランチとは完全に分離されている（[SDD-05 1.3節](05_data_storage_and_fork_isolation_spec.ja.md#13-モック実データブランチ分離)を参照）。
    - **モック実行はGitHub Pagesへのビルド・デプロイを一切行わない。** これにより本番公開中のダッシュボードが常にシミュレーションデータで汚染されないことを保証する。モックモードはあくまでシミュレーションデータの生成・検証用途（例: `git checkout copilot-data-mock` によるローカルプレビュー）であり、本番公開を目的としない。
 
 ### 2.3 Copilot Metrics/Seats の認証情報が無い場合の動作
