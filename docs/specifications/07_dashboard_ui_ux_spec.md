@@ -15,7 +15,7 @@
 
 The dashboard is designed as a responsive Single Page Application (SPA) optimized for execution on GitHub Pages, adhering to an **Anti-Multi-Column Single-Stack** structure and **Progressive Disclosure** via accordions.
 
-> **What "Data-Centric" means here**: This term is not merely a layout philosophy (consolidating data selection at the top of the screen). It also encodes an implementation requirement (SDD-01 FR-9): **every View's displayed content must always behave as a pure function of the header's Active Selected Data (source / scope / tags)**. Because the global controls (header `ActiveDataSelector`, plus main control bar `GroupingSelector` / `TagFilterBar`, with analysis scope selection unified inside `ActiveDataSelector` / `DataSelectionModal`) are rendered as sibling elements outside each View, filter changes never remount the View. Views must therefore never rely on a one-time, mount-time computation, and must instead track every change to the Active Selected Data. See [SDD-15: Data-Centric Reactivity Design Specification](15_data_centric_reactivity_design_spec.md) for the detailed design policy, implementation conventions, and checklist.
+> **What "Data-Centric" means here**: This term is not merely a layout philosophy (consolidating data selection at the top of the screen). It also encodes an implementation requirement (SDD-01 FR-9): **every View's displayed content must always behave as a pure function of the header's Active Selected Data (source / scope / tags / filters)**. Because the global controls (unified within header `ActiveDataSelector` / `DataSelectionModal`) are rendered as elements outside each View, filter changes never remount the View. Views must therefore never rely on a one-time, mount-time computation, and must instead track every change to the Active Selected Data. See [SDD-15: Data-Centric Reactivity Design Specification](15_data_centric_reactivity_design_spec.md) for the detailed design policy, implementation conventions, and checklist.
 
 ```
 +------------------------------------------------------------------------------------------------------+
@@ -24,16 +24,13 @@ The dashboard is designed as a responsive Single Page Application (SPA) optimize
 | [Navigation: 6 Analysis Views]                                                                 |
 |  [Overview] [Users (Rankings Consolidated)] [Trends] [Budget] [Deep Analytics] [Model Radar] |
 +-----------------------------------------------------------------------------------------------+
-| [Multi-Tag AND Filter Bar]                                                                    |
-|  Filter by tags: [正社員] [リモート] [AI推進] ... (AND logic: All selected must match) [Reset] |
-+-----------------------------------------------------------------------------------------------+
-| [Block Controls]                                                    [Expand All] [Collapse All] |
-+-----------------------------------------------------------------------------------------------+
 | [Block 0: Executive KPI Summary (Always Expanded)]                                            |
 |  +--------------+  +--------------+  +--------------+  +--------------+                       |
 |  | Total Spend  |  | Total Seats  |  | Active Rate  |  | Acceptance % |                       |
 |  |  $6,240.00   |  |  160 seats   |  |  86.2% (138) |  |  32.8%        |                       |
 |  +--------------+  +--------------+  +--------------+  +--------------+                       |
+|                                                                    [Expand All] [Collapse All] |
++-----------------------------------------------------------------------------------------------+
 +-----------------------------------------------------------------------------------------------+
 | [Block 1: Collapsible Section (Default: Collapsed with Summary Chip Badges)]                 |
 |  [▼ Cost Optimization Advisor (Idle Seat Alert)] [Potential Savings: $858.00/mo]             |
@@ -69,10 +66,10 @@ The center of the header prominently displays the currently active dataset, allo
 - **Responsive Ellipsis Truncation**: When screen real estate is limited, each badge truncates overflowing text with `truncate` (max-width constrained) to prevent header layout breakage.
 - **Comprehensive Tooltip & Keyboard Shortcut Tips**: The hover tooltip (`title` attribute) displays full information: active source, period, all applied filters without truncation, matching count, and total count. Keyboard shortcut tips (`/` or `Ctrl+K`) are preserved. Individual badges also provide full-text tooltips on hover.
 
-### 2.2 Multi-Tag AND Filtering (`TagFilterBar`)
-- Dynamically extracts unique tags from user group mapping `tags` attribute (e.g., `["Full-time", "Remote", "AI-Champion"]`).
+### 2.2 Multi-Tag AND Filtering (`DataSelectionModal` Consolidation)
+- Dynamically extracts unique tags from user group mapping `tags` attribute (e.g., `["Full-time", "Remote", "AI-Champion"]`) and allows multi-tag selection within the header's Data Selection & Filter Modal (`DataSelectionModal`).
 - Supports multi-tag selection evaluated with **AND logic (must match all selected tags)**.
-- Displays matching user counts ("Matched N / M users") and a "Clear" button. Re-aggregates KPI cards, group allocations, rankings, detail tables, and deep analytics dynamically in real time.
+- Displays matching filters in header summary badges and tooltips with a one-click clear button. Re-aggregates KPI cards, group allocations, rankings, detail tables, and deep analytics dynamically in real time.
 
 ### 2.3 Anti-Multi-Column Single-Stack & Fluid Responsive Width Rule
 - Page layouts follow a strict **single-column vertical stack (`flex flex-col space-y-6 w-full`)**.
@@ -83,7 +80,7 @@ The center of the header prominently displays the currently active dataset, allo
 ### 2.4 Progressive Disclosure via Accordions
 - **Block 0 (Summary Block)**: Always expanded at the top, presenting executive KPI summaries.
 - **Block 1..N (Feature Blocks)**: Collapsed by default, displaying title, icon, and summary chips (e.g., `12 Departments`, `$6,240.00`).
-- **Batch Controls**: Global `[Expand All]` and `[Collapse All]` buttons in the control bar for instant toggling.
+- **Batch Controls**: `[Expand All]` and `[Collapse All]` buttons positioned slimly beneath the Overview summary block for instant toggling.
 
 ### 2.5 Anomaly Detection & Error Handling (Error & Warning Detection)
 Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint disruptions):
