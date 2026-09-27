@@ -290,22 +290,22 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           />
 
           {/* 生成元 GitHub リポジトリリンク & Star (Forkセーフ・動的解決) */}
-          <div className="flex items-center h-9 bg-slate-900 border border-slate-800 rounded-xl shadow-sm flex-shrink-0">
+          <div className="flex items-center h-11 bg-slate-900 border border-slate-800 rounded-xl shadow-sm flex-shrink-0">
             <a
               href={repoInfo.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="h-full flex items-center justify-center text-slate-400 hover:text-slate-100 hover:bg-slate-800 px-2.5 rounded-l-xl transition-all group cursor-pointer"
+              className="h-full flex items-center justify-center text-slate-400 hover:text-slate-100 hover:bg-slate-800 px-3 rounded-l-xl transition-all group cursor-pointer"
               title={`GitHubリポジトリを開く: ${repoInfo.owner}/${repoInfo.name}\nURL: ${repoInfo.url}`}
             >
               <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-slate-400 group-hover:text-indigo-400 transition-colors">
                 <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
               </svg>
             </a>
-            <div className="w-px h-4 bg-slate-700" />
+            <div className="w-px h-5 bg-slate-700" />
             <button
               onClick={onToggleStar}
-              className={`h-full flex items-center justify-center px-2.5 rounded-r-xl transition-all group cursor-pointer ${
+              className={`h-full flex items-center justify-center px-3 rounded-r-xl transition-all group cursor-pointer ${
                 isStarred
                   ? 'text-amber-400 bg-slate-800'
                   : 'text-slate-400 hover:text-amber-400 hover:bg-slate-800'
@@ -325,7 +325,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               data-testid="header-settings-menu-button"
               aria-expanded={isSettingsMenuOpen}
               aria-haspopup="menu"
-              className={`h-9 w-9 flex items-center justify-center rounded-xl border transition-all cursor-pointer shadow-sm ${
+              className={`h-11 w-11 flex items-center justify-center rounded-xl border transition-all cursor-pointer shadow-sm ${
                 isSettingsMenuOpen
                   ? 'bg-slate-800 border-indigo-500/50 text-indigo-300 ring-2 ring-indigo-500/20'
                   : 'bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-100 hover:bg-slate-800'
@@ -447,7 +447,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   ? `エラー検知 (${allIssuesCount}件): クリックして詳細を表示`
                   : `警告あり (${allIssuesCount}件): クリックして詳細を表示`
               }
-              className={`relative h-9 px-2.5 rounded-xl border transition-all flex items-center space-x-1.5 cursor-pointer shadow-md flex-shrink-0 focus:outline-none focus:ring-2 ${
+              className={`relative h-11 px-3 rounded-xl border transition-all flex items-center space-x-2 cursor-pointer shadow-md flex-shrink-0 focus:outline-none focus:ring-2 ${
                 hasErrors
                   ? 'bg-rose-950/70 border-rose-800 text-rose-400 hover:bg-rose-900/80 hover:border-rose-600 focus:ring-rose-500/40 animate-pulse'
                   : 'bg-amber-950/70 border-amber-800 text-amber-400 hover:bg-amber-900/80 hover:border-amber-600 focus:ring-amber-500/40'
@@ -459,7 +459,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 <AlertTriangle className="w-4 h-4 shrink-0" />
               )}
               <span
-                className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-extrabold leading-none ${
+                className={`inline-flex items-center justify-center min-w-[20px] h-[20px] px-1.5 rounded-full text-[10px] font-extrabold leading-none ${
                   hasErrors ? 'bg-rose-600 text-white' : 'bg-amber-500 text-slate-950'
                 }`}
               >

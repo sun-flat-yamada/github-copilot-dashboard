@@ -72,28 +72,37 @@ describe('Header Error Indicator & Action Icon Height Tests (#102)', () => {
     );
   });
 
-  it('verifies header action elements share unified h-9 (36px) container height', () => {
+  it('verifies header action elements share unified h-11 (44px) container height matching ActiveDataSelector', () => {
     const content = fs.readFileSync(headerPath, 'utf-8');
+    const selectorPath = path.resolve(projectRoot, 'dashboard/src/components/layout/ActiveDataSelector.tsx');
+    const selectorContent = fs.readFileSync(selectorPath, 'utf-8');
 
-    // 1. GitHub + Star container
+    // 1. ActiveDataSelector trigger button
     assert.match(
-      content,
-      /className="flex items-center h-9 bg-slate-900 border border-slate-800 rounded-xl shadow-sm flex-shrink-0"/,
-      'GitHub + Star container must have h-9'
+      selectorContent,
+      /className="flex items-center space-x-2\.5 h-11 px-3 py-1 sm:py-1\.5 rounded-xl bg-slate-900 border border-slate-700\/80/,
+      'ActiveDataSelector button must explicitly declare h-11'
     );
 
-    // 2. Settings button
+    // 2. GitHub + Star container
     assert.match(
       content,
-      /className={`h-9 w-9 flex items-center justify-center rounded-xl border/,
-      'Settings menu button must have h-9 w-9'
+      /className="flex items-center h-11 bg-slate-900 border border-slate-800 rounded-xl shadow-sm flex-shrink-0"/,
+      'GitHub + Star container must have h-11'
     );
 
-    // 3. Error modal button
+    // 3. Settings button
     assert.match(
       content,
-      /className={`relative h-9 px-2\.5 rounded-xl border/,
-      'Error modal trigger button must have h-9 px-2.5'
+      /className={`h-11 w-11 flex items-center justify-center rounded-xl border/,
+      'Settings menu button must have h-11 w-11'
+    );
+
+    // 4. Error modal button
+    assert.match(
+      content,
+      /className={`relative h-11 px-3 rounded-xl border/,
+      'Error modal trigger button must have h-11 px-3'
     );
   });
 
@@ -109,8 +118,8 @@ describe('Header Error Indicator & Action Icon Height Tests (#102)', () => {
 
     assert.match(
       content,
-      /min-w-\[18px\] h-\[18px\] px-1 rounded-full text-\[10px\] font-extrabold leading-none/,
-      'Count badge must use centered pill dimensions min-w-[18px] h-[18px] with leading-none'
+      /min-w-\[20px\] h-\[20px\] px-1\.5 rounded-full text-\[10px\] font-extrabold leading-none/,
+      'Count badge must use centered pill dimensions min-w-[20px] h-[20px] with leading-none'
     );
   });
 });
