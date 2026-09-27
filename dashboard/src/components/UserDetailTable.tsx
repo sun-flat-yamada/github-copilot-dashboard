@@ -276,7 +276,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
       '非アクティブ日数',
       '月額費用 (USD)',
       '日割り費用 (USD)',
-      ...(hasUsageMetrics ? ['提案数', '受諾採用数', '受諾率(%)', 'AIチャット数'] : []),
+      ...(hasUsageMetrics ? ['提案数', '受諾採用数', 'Inline補完受諾率(%)', 'AIチャット数'] : []),
       '備考',
     ];
 
@@ -424,7 +424,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
               <option value="default" className="bg-slate-900">標準 (シート順)</option>
               <option value="acceptances" className="bg-slate-900">受諾数 降順</option>
               <option value="suggestions" className="bg-slate-900">提案数 降順</option>
-              <option value="acceptance_rate" className="bg-slate-900">受諾率 降順</option>
+              <option value="acceptance_rate" className="bg-slate-900">Inline補完受諾率 降順</option>
               <option value="chats" className="bg-slate-900">AIチャット数 降順</option>
               <option value="cost" className="bg-slate-900">費用 降順</option>
               <option value="days_inactive" className="bg-slate-900">非アクティブ日数 降順</option>
@@ -569,7 +569,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                     title="IDEコード補完（Ghost Text）の受諾率です。Copilot CLIやAutopilot等の自律エージェント作業は含まれないため、CLI活用度の高いユーザーでは低く表示されることがあります。"
                   >
                     <div className="flex items-center justify-end space-x-1">
-                      <span>受諾率</span>
+                      <span>Inline補完受諾率</span>
                       {renderSortIcon('acceptance_rate')}
                     </div>
                   </th>

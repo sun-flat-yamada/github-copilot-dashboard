@@ -103,12 +103,12 @@ export const OverviewViewComponent: React.FC<ViewPluginProps<OverviewViewModel>>
 
           <CollapsibleSection
             id="usage"
-            title="日次アクティビティ & 言語別受諾率推移"
-            subtitle="日次アクティブ推移、コード受諾率、主要プログラミング言語シェア"
+            title="日次アクティビティ & 言語別Inline補完受諾率推移"
+            subtitle="日次アクティブ推移、Inline補完受諾率、主要プログラミング言語シェア"
             icon={<BarChart3 className="w-4 h-4 text-cyan-400" />}
             summaryChips={
               <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-                受諾率 {Math.round((currentData.overview?.overall_acceptance_rate || 0) * 100)}%
+                Inline補完受諾率 {Math.round((currentData.overview?.overall_acceptance_rate || 0) * 100)}%
               </span>
             }
             isExpanded={isExpanded('usage')}

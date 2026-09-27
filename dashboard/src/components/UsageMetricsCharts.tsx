@@ -37,11 +37,11 @@ export const UsageMetricsCharts: React.FC<UsageMetricsChartsProps> = ({ data }) 
 
   return (
     <div className="flex flex-col space-y-6 w-full">
-      {/* 1. トレンド推移 (アクティブ数 & 受諾率) */}
+      {/* 1. トレンド推移 (アクティブ数 & Inline補完受諾率) */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-slate-200">
-            日次アクティブユーザー & 受諾率推移
+            日次アクティブユーザー & Inline補完受諾率推移
           </h3>
           <span className="text-xs text-slate-400">期間トレンド</span>
         </div>
@@ -83,7 +83,7 @@ export const UsageMetricsCharts: React.FC<UsageMetricsChartsProps> = ({ data }) 
                 yAxisId="right"
                 type="monotone"
                 dataKey="acceptanceRate"
-                name="受諾率 (%)"
+                name="Inline補完受諾率 (%)"
                 stroke="#a371f7"
                 strokeWidth={2}
                 dot={false}

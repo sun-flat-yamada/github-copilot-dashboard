@@ -64,7 +64,7 @@ test('Acceptance Rate & Autopilot/CLI Refinement: Agent/CLI-driven user suppress
   );
 
   const acceptanceFactor = tabSpamPattern.contributingFactors.find(
-    (f) => f.metricName === 'コード受諾率'
+    (f) => f.metricName === 'Inline補完受諾率'
   );
   assert.ok(acceptanceFactor);
   assert.strictEqual(acceptanceFactor.severity, 'good');

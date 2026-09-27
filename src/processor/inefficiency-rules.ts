@@ -71,24 +71,24 @@ export function diagnoseTabSpamming(
 
     if (isAgentOrCliDriven && rate < 0.15) {
       factors.push({
-        metricName: 'コード受諾率',
+        metricName: 'Inline補完受諾率',
         currentValueFormatted: `${(rate * 100).toFixed(1)}% (${acceptances}/${suggestions} 件)`,
         recommendedThresholdFormatted: '≥ 25.0% (自律Agent駆動時は参考値)',
         description:
-          '受諾率は低めですが、Copilot CLI/Autopilot等の自律エージェントや対話型開発が主体のため（受諾率パラドックス）、生成ガチャ等の浪費ではありません。',
+          'Inline補完受諾率は低めですが、Copilot CLI/Autopilot等の自律エージェントや対話型開発が主体のため（受諾率パラドックス）、生成ガチャ等の浪費ではありません。',
         severity: 'good',
       });
     } else {
       factors.push({
-        metricName: 'コード受諾率',
+        metricName: 'Inline補完受諾率',
         currentValueFormatted: `${(rate * 100).toFixed(1)}% (${acceptances}/${suggestions} 件)`,
         recommendedThresholdFormatted: '≥ 25.0%',
         description:
           rate < 0.15
-            ? '受諾率が極端に低く、提示されるコードを吟味せずにスキップ・破棄を繰り返しています。'
+            ? 'Inline補完受諾率が極端に低く、提示されるコードを吟味せずにスキップ・破棄を繰り返しています。'
             : rate < 0.22
-            ? '受諾率がやや低めで、AIの提案意図と手元のコード方針のミスマッチが発生しています。'
-            : '受諾率は健全水準を維持しており、適切なコード提案の採択が行われています。',
+            ? 'Inline補完受諾率がやや低めで、AIの提案意図と手元のコード方針のミスマッチが発生しています。'
+            : 'Inline補完受諾率は健全水準を維持しており、適切なコード提案の採択が行われています。',
         severity: rate < 0.15 ? 'danger' : rate < 0.22 ? 'warning' : 'good',
       });
     }
@@ -106,7 +106,7 @@ export function diagnoseTabSpamming(
 
     if (isAgentOrCliDriven) {
       recommendations.push(
-        '【自律エージェント型ワークフロー適合】CLIやAgentセッションを主体とした開発が行われています。インラインコード受諾率に捉われず、PRサイクルタイムやタスク完了率を指標として活用してください。'
+        '【自律エージェント型ワークフロー適合】CLIやAgentセッションを主体とした開発が行われています。Inline補完受諾率に捉われず、PRサイクルタイムやタスク完了率を指標として活用してください。'
       );
     } else if (prob >= 60) {
       recommendations.push(
@@ -127,15 +127,15 @@ export function diagnoseTabSpamming(
       probabilityPercent: prob,
       riskLevel,
       tagline: isAgentOrCliDriven
-        ? 'CLI/Autopilot自律駆動型のため手動補完受諾率は正常に抑制されています'
+        ? 'CLI/Autopilot自律駆動型のためInline補完受諾率は正常に抑制されています'
         : 'AIの提案を吟味せずTabキーや再生成を連打し時間を浪費している兆候',
       summary:
         isAgentOrCliDriven
-          ? '兆候は検出されませんでした（健全）。CLIやAutopilot等の自律エージェント活用によりインライン補完の受諾率は見かけ上低値ですが、健全なエージェント主導型開発スタイルです。'
+          ? '兆候は検出されませんでした（健全）。CLIやAutopilot等の自律エージェント活用によりInline補完受諾率は見かけ上低値ですが、健全なエージェント主導型開発スタイルです。'
           : prob >= 70
-          ? '強い兆候を検出しました。大量のコード提案が発生している一方で受諾率が15%未満と極めて低く、AIとの方針不一致や生成待ちに多くの時間を費やしている可能性が高いです。'
+          ? '強い兆候を検出しました。大量のコード提案が発生している一方でInline補完受諾率が15%未満と極めて低く、AIとの方針不一致や生成待ちに多くの時間を費やしている可能性が高いです。'
           : prob >= 40
-          ? '中程度の兆候があります。特定ファイルや難解タスクにおいて受諾率が低下している可能性があります。'
+          ? '中程度の兆候があります。特定ファイルや難解タスクにおいてInline補完受諾率が低下している可能性があります。'
           : '兆候は検出されませんでした。適切な吟味と誘導のもとでコード受諾が行われています。',
       contributingFactors: factors,
       recommendations,
@@ -882,15 +882,15 @@ export function diagnoseModelCostMismatch(
   });
 
   factors.push({
-    metricName: 'コード受諾率',
+    metricName: 'Inline補完受諾率',
     currentValueFormatted: `${(acceptanceRate * 100).toFixed(1)}%`,
     recommendedThresholdFormatted: isAgentHeavy ? '≥ 25.0% (自律Agent駆動時は参考値)' : '≥ 25.0%',
     description:
       acceptanceRate < 0.20
         ? isAgentHeavy
-          ? '受諾率は低めですが、自律Agentや推論タスクへのモデル投入が主体のため（受諾率パラドックス）、重大なミスマッチではありません。'
-          : '最上位モデルを投入しているにもかかわらずコード受諾率が低く、タスクとモデルの選定ミスマッチが発生しています。'
-        : 'コード受諾率は良好な水準です。',
+          ? 'Inline補完受諾率は低めですが、自律Agentや推論タスクへのモデル投入が主体のため（受諾率パラドックス）、重大なミスマッチではありません。'
+          : '最上位モデルを投入しているにもかかわらずInline補完受諾率が低く、タスクとモデルの選定ミスマッチが発生しています。'
+        : 'Inline補完受諾率は良好な水準です。',
     severity: acceptanceRate < 0.20 && !isAgentHeavy ? 'danger' : acceptanceRate < 0.25 ? 'warning' : 'good',
   });
 
@@ -916,7 +916,7 @@ export function diagnoseModelCostMismatch(
     tagline: '軽量・定型タスクに対して最上位推論モデルを過剰投入しコスト不整合が発生している兆候',
     summary:
       prob >= 70
-        ? '強い兆候を検出しました。高コストモデルを多用している一方で受諾率が低く、費用対効果の大きな不整合が生じています。'
+        ? '強い兆候を検出しました。高コストモデルを多用している一方でInline補完受諾率が低く、費用対効果の大きな不整合が生じています。'
         : prob >= 40
         ? '中程度の傾向があります。用途に応じたモデルの使い分けルールを設けることでコストを削減できます。'
         : '兆候は検出されませんでした。モデルコストと成果のバランスが保たれています。',

@@ -25,10 +25,10 @@ The dashboard is designed as a responsive Single Page Application (SPA) optimize
 |  [Overview] [Users (Rankings Consolidated)] [Trends] [Budget] [Deep Analytics] [Model Radar] |
 +-----------------------------------------------------------------------------------------------+
 | [Block 0: Executive KPI Summary (Always Expanded)]                                            |
-|  +--------------+  +--------------+  +--------------+  +--------------+                       |
-|  | Total Spend  |  | Total Seats  |  | Active Rate  |  | Acceptance % |                       |
-|  |  $6,240.00   |  |  160 seats   |  |  86.2% (138) |  |  32.8%        |                       |
-|  +--------------+  +--------------+  +--------------+  +--------------+                       |
+|  +--------------+  +--------------+  +--------------+  +--------------------+                 |
+|  | Total Spend  |  | Total Seats  |  | Active Rate  |  | Inline Acc. Rate   |                 |
+|  |  $6,240.00   |  |  160 seats   |  |  86.2% (138) |  |  32.8%              |                 |
+|  +--------------+  +--------------+  +--------------+  +--------------------+                 |
 +-----------------------------------------------------------------------------------------------+
 | [Detailed Analysis Sections] (5 Sections)                                          [⤓] [⤒]     |
 +-----------------------------------------------------------------------------------------------+
@@ -107,14 +107,14 @@ Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint 
 - **Stacked Bar & Trend Line by AI Model**:
    - Daily interaction counts for 2026 frontier models (`Claude 3.7 Sonnet`, `GPT-4o`, `o1`, `Gemini 2.0 Flash`).
    - Total chat turns overlaid as a line graph.
-- **Productivity Indicators**: Daily suggestions, acceptances, and acceptance rate (%) trends.
+- **Productivity Indicators**: Daily suggestions, acceptances, and Inline Completion Acceptance Rate (%) trends.
 
 ### 2.7 User Details & Utilization Breakdown (`UserDetailTable` / `MonthlyReportUserTable`)
 - **Neutral Record List & Ranking Phasing-out**: In alignment with FinOps principles where raw volume does not inherently signify contribution, rankings and podium badges have been phased out in favor of neutral record IDs (`#`).
 - **Separated User and Display Name Columns with Tag Column Addition**: GitHub account handle (`User`) and employee real name (`Display Name`) are isolated into distinct sortable columns. Furthermore, a dedicated `Tags` column is positioned directly before the `Cost Center` column to surface organizational/employment attributes.
 - **Compact Style Padding & Non-Wrapping Horizontal Scroll**: Cell padding across headers and rows is refined to a compact design (`py-2 px-2.5`), preventing automatic line breaks (`whitespace-nowrap min-w-max`) when viewing on narrow viewports. Horizontal overflow scrolling (`overflow-x-auto`) preserves table geometry across any resolution.
 - **3-Axis & Group Integration**: Seamlessly sorts members across Cost Centers, Organizations, and User Defined Groups (`ユーザー定義Gr`).
-- **Metric Sorting**: One-click interactive sorting by user handle, display name, department/group, tags, cost center, organization, acceptances, suggestions, chat turns, acceptance rate, incurred cost, excess billing, or inactive days.
+- **Metric Sorting**: One-click interactive sorting by user handle, display name, department/group, tags, cost center, organization, acceptances, suggestions, chat turns, Inline Completion Acceptance Rate, incurred cost, excess billing, or inactive days.
 - **User Selection & Inline Drill-down Analysis (`UserDrilldownPanel`)**: Clicking any user row or clicking the "Drilldown" button expands a comprehensive diagnostic panel directly beneath the row without navigating away. Allows instant 360-degree micro-analysis of FinOps costs (monthly/daily/excess billing), productivity KPIs, daily trends with AI model breakdown charts, overall AI health score (0-100), and 5 anti-pattern diagnostic evaluations with actionable prescriptions while preserving table context. Fully compatible with Live Metrics, Monthly Usage Report, and User Upload (CSV) data sources.
 - **Direct Navigation**: Direct transitions to individual model trends (`trend`) and deep diagnostics (`deep_analysis`) from row actions or within the drilldown panel.
 
