@@ -152,9 +152,9 @@ Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint 
    - **Accessibility & UX**: All sortable headers include `cursor-pointer select-none` and hover highlight feedback for intuitive data inspection.
 
 ### 2.12 Header Action Controls Height & Icon Size Standardization
-1. **Unified Button Container Height (`h-9` / 36px)**:
-   - All right-side action button containers (source repository link & Star pill, three-dots display settings menu, anomaly error/warning trigger) strictly adhere to `h-9` (36px).
-   - Eliminates subtle height mismatches (previously 34px vs. 38px) and aligns all elements precisely across the horizontal baseline.
+1. **Unified Button Container Height (`h-11` / 44px)**:
+   - All right-side action button containers (`ActiveDataSelector` analysis target selector, source repository link & Star pill, three-dots display settings menu, anomaly error/warning trigger) strictly adhere to `h-11` (44px).
+   - Eliminates height mismatches by standardizing to the largest control's height (`ActiveDataSelector`), achieving complete horizontal baseline alignment and balanced visual weight.
 2. **Standardized Action Icon Sizing (`w-4 h-4` / 16px)**:
    - All icons within the action buttons (GitHub SVG, Star, MoreVertical, AlertCircle, AlertTriangle) are standardized to `w-4 h-4` (16px).
    - Discontinues arbitrary viewport expansion (`sm:w-5 sm:h-5`) for the error indicator, preserving geometric harmony and balanced visual weight.
