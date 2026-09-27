@@ -89,37 +89,39 @@ flowchart TD
   - モデルが1件も選択されていない場合（`selectedModels.length === 0` または `!focusedModel`）、6軸多次元特性マップと同様に詳細カード領域全体をプレースホルダー空状態（パルスアイコン・ガイダンス案内・「Copilot公式モデルを選択」ボタン）へ切り替え、未選択モデルの誤表示を防止する。
 
 ### 2.5 比較プリセット仕様 (`PRESETS`)
-多様なモデルの中から目的や関心に応じて素早く抽出・比較できるよう、標準プリセットを提供する。特に用途別推奨プリセット（コードレビュー、コードベース分析、設計）は、**「用途における最高水準のレベル（品質ゲート）は譲らず、コストパフォーマンスのバリエーションとして上位3つを選定する」** 方式で厳選されている。
+多様なモデルの中から目的や関心に応じて素早く抽出・比較できるよう、標準プリセットを提供する。用途別推奨プリセット（コードレビュー、コードベース分析、設計）は最高水準の品質ゲートとコストバリエーションを両立し、新世代の `Claude Opus 5.5` も加えた強力な比較構成となっている。また、GPT系モデルについては標準比較用として安定したGPT-5系同等モデル（GPT-5.5 / GPT-5.4 / GPT-5 mini）を採用しつつ、卓越した低コスト性能を誇る `GPT-5.6 Luna` は高コスパ・低コストプリセットにて継続維持する。
 
-#### 用途別推奨プリセット (最高水準×コストバリエーション上位3選)
+#### 用途別推奨プリセット
 - **🔍 コードレビュー利用に推奨 (`recommended-code-review`)**:
-  - **選定根拠**: PR差分における潜在バグ・エッジケースの見落としを防ぐため、`swe_bench_verified >= 70.0%` かつ `reasoning_logic >= 95` の最高水準を品質ゲートとして厳格適用。その中でコスト帯の異なる3モデルを選定。
-  - **構成モデル (3選)**:
-    1. **High-End (最上位深層レビュー)**: `Claude Opus 5` (In: $5.0, Out: $25.0 / SWE 81.0, Logic 99)
-    2. **Balanced (実務標準・高精度バランス)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / SWE 78.5, Logic 99)
-    3. **High-Value (高コスパ即時レビュー)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / SWE 71.0, Logic 95)
+  - **選定根拠**: PR差分における潜在バグ・エッジケースの見落としを防ぐため、最高水準の推論・SWE性能モデルを選定。最上位推論として `Claude Opus 5.5` を追加し、既存の `Claude Opus 5` も継続維持。
+  - **構成モデル (4選)**:
+    1. **Next-Gen Frontier (最新最高峰レビュー)**: `Claude Opus 5.5` (In: $4.0, Out: $20.0 / SWE 81.8, Logic 99)
+    2. **High-End (最上位深層レビュー)**: `Claude Opus 5` (In: $5.0, Out: $25.0 / SWE 81.0, Logic 99)
+    3. **Balanced (実務標準・高精度バランス)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / SWE 78.5, Logic 99)
+    4. **High-Value (高コスパ即時レビュー)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / SWE 71.0, Logic 95)
 - **📂 コードベース分析に推奨 (`recommended-codebase-analysis`)**:
-  - **選定根拠**: リポジトリ全体・複数ディレクトリの依存関係と設計を丸ごと把握するため、`context_window_k >= 1000` (100万トークン対応) かつ `architecture_design >= 92` かつ `swe_bench_verified >= 70.0%` を品質ゲートとして適用。
-  - **構成モデル (3選)**:
-    1. **High-End (1M超長文・最高峰解析)**: `Claude Opus 5` (In: $5.0, Out: $25.0 / 1M窓, Arch 99, SWE 81.0)
-    2. **Balanced (1M超長文・設計リファクタ標準)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / 1M窓, Arch 99, SWE 78.5)
-    3. **High-Value (1M超長文・大量コード低コスト一括解析)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / 1M窓, Arch 93, SWE 71.0)
+  - **選定根拠**: リポジトリ全体・複数ディレクトリの依存関係と設計を丸ごと把握するため、100万トークン対応かつ高SWE性能モデルを選定。最高峰の `Claude Opus 5.5` を追加（`Claude Opus 5` も維持）。
+  - **構成モデル (4選)**:
+    1. **Next-Gen Frontier (最新1M超長文・最高峰解析)**: `Claude Opus 5.5` (In: $4.0, Out: $20.0 / 1M窓, Arch 99, SWE 81.8)
+    2. **High-End (1M超長文・最高峰解析)**: `Claude Opus 5` (In: $5.0, Out: $25.0 / 1M窓, Arch 99, SWE 81.0)
+    3. **Balanced (1M超長文・設計リファクタ標準)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / 1M窓, Arch 99, SWE 78.5)
+    4. **High-Value (1M超長文・大量コード低コスト一括解析)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / 1M窓, Arch 93, SWE 71.0)
 - **🏛️ 設計に推奨 (`recommended-architecture`)**:
-  - **選定根拠**: 高度なシステム設計、アーキテクチャ選定、データモデル策定、トレードオフ分析のため、`reasoning_logic >= 95` かつ `architecture_design >= 90` かつ `swe_bench_verified >= 70.0%` を品質ゲートとして適用。
-  - **構成モデル (3選)**:
-    1. **High-End (最上位極限推論・高難度アーキテクチャ)**: `GPT-6 Astra` (In: $10.0, Out: $50.0 / Logic 99, Arch 96, SWE 82.4)
-    2. **Balanced (実務アーキテクチャ・モジュール構造化)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / Logic 99, Arch 99, SWE 78.5)
-    3. **High-Value (高コスパ・高速設計壁打ち＆比較)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / Logic 95, Arch 93, SWE 71.0)
+  - **選定根拠**: 高度なシステム設計、アーキテクチャ選定、データモデル策定、トレードオフ分析のため、極限論理推論と設計性能を持つモデル群。新世代フラッグシップ `Claude Opus 5.5` を追加。
+  - **構成モデル (4選)**:
+    1. **Premier Flagship (最上位極限推論・高難度アーキテクチャ)**: `GPT-6 Astra` (In: $10.0, Out: $50.0 / Logic 99, Arch 96, SWE 82.4)
+    2. **Next-Gen Frontier (最新最高峰推論・制御性向上)**: `Claude Opus 5.5` (In: $4.0, Out: $20.0 / Logic 99, Arch 99, SWE 81.8)
+    3. **Balanced (実務アーキテクチャ・モジュール構造化)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / Logic 99, Arch 99, SWE 78.5)
+    4. **High-Value (高コスパ・高速設計壁打ち＆比較)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / Logic 95, Arch 93, SWE 71.0)
 
 #### カテゴリ・メーカー別標準プリセット
-- **🌟 2026上 旗艦4選 (`flagship-2026`)**: 2026年上期各社最前線フラッグシップスナップショット（Claude Opus 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3）。
-  - ※ 世代比較の再現性を担保するため、本プリセットは当時のスナップショットとして固定保持する。今後のベンチマークデータ更新時は、上期・下期完了時点の各タイミングで新しい期間の旗艦4選（例: `2026下 旗艦4選` 等）を追記・追加していく運用とする。
-- **💡 実用性能で高コスパ (`practical-high-value`)**: 実用コーディング性能と抜群の費用対効果を両立（Claude Sonnet 5 / Gemini 3.8 Flash / GPT-5.6 Luna / Kimi K2.7 Code）
-- **⚡ Powerful (最上位推論) (`tier-powerful`)**: 最高峰コーディング・推論群（GPT-6 Astra / Claude Opus 5 / GPT-5.6 Sol / Kimi K3）
-- **🛠️ Versatile (実務バランス) (`tier-versatile`)**: 標準実務・俊敏性重視（Claude Sonnet 5 / GPT-5.6 Terra / Gemini 3.8 Flash / Grok 4.6）
-- **🚀 Lightweight (超高速・低コスト) (`tier-lightweight`)**: 日常インライン・超高速補完（GPT-5.6 Luna / Gemini 3.5 Flash / MAI-Code-1.1-Flash / GPT-5.4 mini）
-- **🟠 Anthropic 主力 (`vendor-anthropic`)**: Anthropic 2026最新（Claude Sonnet 5 / Claude Opus 5 / Claude Fable 5.1 / Claude Haiku 4.5）
-- **🟢 OpenAI 主力 (`vendor-openai`)**: OpenAI 2026最新ファミリ（GPT-6 Astra / GPT-5.6 Sol / GPT-5.6 Terra / GPT-5.6 Luna）
+- **🌟 2026 旗艦選 (`flagship-2026`)**: 2026年各社最前線フラッグシップスナップショット（Claude Opus 5.5 / Claude Opus 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3）。
+- **💡 実用性能で高コスパ (`practical-high-value`)**: 実用コーディング性能と抜群の費用対効果を両立（Claude Sonnet 5 / Gemini 3.8 Flash / GPT-5.6 Luna / Kimi K2.7 Code） ※高コスパ代表として GPT-5.6 Luna を維持。
+- **⚡ Powerful (最上位推論) (`tier-powerful`)**: 最高峰コーディング・推論群（GPT-6 Astra / Claude Opus 5.5 / Claude Opus 5 / GPT-5.5 / Kimi K3） ※GPT-5.6 Sol は GPT-5.5 へ移行、Opus 5.5 を追加。
+- **🛠️ Versatile (実務バランス) (`tier-versatile`)**: 標準実務・俊敏性重視（Claude Sonnet 5 / GPT-5.4 / Gemini 3.8 Flash / Grok 4.6） ※GPT-5.6 Terra は GPT-5.4 へ移行。
+- **🚀 Lightweight (超高速・低コスト) (`tier-lightweight`)**: 日常インライン・超高速補完（GPT-5.6 Luna / Gemini 3.5 Flash / MAI-Code-1.1-Flash / GPT-5.4 mini） ※低コスト代表として GPT-5.6 Luna を維持。
+- **🟠 Anthropic 主力 (`vendor-anthropic`)**: Anthropic 2026最新（Claude Sonnet 5 / Claude Opus 5.5 / Claude Opus 5 / Claude Fable 5.1 / Claude Haiku 4.5） ※Opus 5.5 を追加。
+- **🟢 OpenAI 主力 (`vendor-openai`)**: OpenAI 主力ラインナップ（GPT-6 Astra / GPT-5.5 / GPT-5.4 / GPT-5 mini） ※GPT-5系同等モデルへ移行。
 - **🔵 Google Gemini 3.x (`vendor-google`)**: Google 最新1Mコンテキスト（Gemini 3.8 Flash / Gemini 3.7 Flash / Gemini 3.6 Flash / Gemini 3.5 Flash）
 
 ### 2.6 6軸多次元特性マップの線種・アクティブ強調視認性仕様
