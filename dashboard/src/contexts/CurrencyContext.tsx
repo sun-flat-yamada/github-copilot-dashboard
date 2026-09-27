@@ -69,59 +69,75 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children, in
 
   const availableSubCurrencies = useMemo(() => {
     const list: Array<{ code: string; label: string; config: CurrencyConfig | null }> = [
-      { code: 'none', label: 'USD Only ($) [GitHubカタログ価格]', config: null },
+      { code: 'none', label: 'USD Only ($)', config: null },
     ];
 
-    // EA-USD: Enterprise Agreement discounted USD display option
     const discountPercent = effectiveConfig.discountPercent ?? 0;
-    const eaRate = Math.max(0, 1 - discountPercent / 100);
-    const eaConfig: CurrencyConfig = {
+    const eaDiscountRate = Math.max(0, 1 - discountPercent / 100);
+
+    // 1. EA-USD ($)
+    const eaUsdConfig: CurrencyConfig = {
       code: 'EA-USD',
       symbol: '$',
-      exchangeRateFromUSD: eaRate,
+      exchangeRateFromUSD: eaDiscountRate,
       displayDecimals: 2,
     };
     list.push({
       code: 'EA-USD',
-      label: `USD + EA-USD ($) [EA契約価格${discountPercent > 0 ? ` -${discountPercent}%` : ''}]`,
-      config: eaConfig,
+      label: 'USD + EA-USD ($)',
+      config: eaUsdConfig,
     });
 
-    // If custom subCurrency was defined in billingConfig with non-standard code or rate
-    if (configuredSub && configuredSub.code !== 'USD' && configuredSub.code !== 'EA-USD') {
-      list.push({
-        code: configuredSub.code,
-        label: `USD + ${configuredSub.code} (${configuredSub.symbol}) [設定済]`,
-        config: configuredSub,
-      });
-    }
+    // Resolve user-configured rates (or public fallback)
+    const jpyBaseRate =
+      configuredSub && (configuredSub.code === 'JPY' || configuredSub.code === 'EA-JPY') && configuredSub.exchangeRateFromUSD > 0
+        ? configuredSub.exchangeRateFromUSD
+        : PublicExchangeRatesService.getExchangeRate('JPY', targetMonth);
 
-    // Dynamic public exchange rate for current context/month from reliable public data (ECB/BOJ)
-    const jpyPublicRate = PublicExchangeRatesService.getExchangeRate('JPY', targetMonth);
-    const eurPublicRate = PublicExchangeRatesService.getExchangeRate('EUR', targetMonth);
+    const eurBaseRate =
+      configuredSub && (configuredSub.code === 'EUR' || configuredSub.code === 'EA-EUR') && configuredSub.exchangeRateFromUSD > 0
+        ? configuredSub.exchangeRateFromUSD
+        : PublicExchangeRatesService.getExchangeRate('EUR', targetMonth);
 
-    if (!list.some((c) => c.code === 'JPY')) {
+    // 2. EA-JPY (¥)
+    const eaJpyConfig: CurrencyConfig = {
+      code: 'EA-JPY',
+      symbol: '¥',
+      exchangeRateFromUSD: Math.round(jpyBaseRate * eaDiscountRate * 10000) / 10000,
+      displayDecimals: 0,
+    };
+    list.push({
+      code: 'EA-JPY',
+      label: 'USD + EA-JPY (¥)',
+      config: eaJpyConfig,
+    });
+
+    // 3. EA-EUR (€)
+    const eaEurConfig: CurrencyConfig = {
+      code: 'EA-EUR',
+      symbol: '€',
+      exchangeRateFromUSD: Math.round(eurBaseRate * eaDiscountRate * 10000) / 10000,
+      displayDecimals: 2,
+    };
+    list.push({
+      code: 'EA-EUR',
+      label: 'USD + EA-EUR (€)',
+      config: eaEurConfig,
+    });
+
+    // If custom non-standard subCurrency was defined in billingConfig
+    if (
+      configuredSub &&
+      !['USD', 'EA-USD', 'JPY', 'EA-JPY', 'EUR', 'EA-EUR'].includes(configuredSub.code)
+    ) {
+      const code = configuredSub.code.startsWith('EA-') ? configuredSub.code : `EA-${configuredSub.code}`;
       list.push({
-        code: 'JPY',
-        label: `USD + JPY (¥) [公的参照: 1$=${jpyPublicRate}円]`,
+        code,
+        label: `USD + ${code} (${configuredSub.symbol})`,
         config: {
-          code: 'JPY',
-          symbol: '¥',
-          exchangeRateFromUSD: jpyPublicRate,
-          displayDecimals: 0,
-        },
-      });
-    }
-
-    if (!list.some((c) => c.code === 'EUR')) {
-      list.push({
-        code: 'EUR',
-        label: `USD + EUR (€) [公的参照: 1$=${eurPublicRate}€]`,
-        config: {
-          code: 'EUR',
-          symbol: '€',
-          exchangeRateFromUSD: eurPublicRate,
-          displayDecimals: 2,
+          ...configuredSub,
+          code,
+          exchangeRateFromUSD: Math.round(configuredSub.exchangeRateFromUSD * eaDiscountRate * 10000) / 10000,
         },
       });
     }
@@ -129,15 +145,22 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children, in
     return list;
   }, [configuredSub, effectiveConfig, targetMonth]);
 
-  // Determine initial code from localStorage or configured subCurrency
+  // Determine initial code from localStorage or configured subCurrency (normalizing JPY/EUR to EA-JPY/EA-EUR)
   const [subCurrencyCode, setSubCurrencyCodeState] = useState<string>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return stored;
+      if (stored) {
+        if (stored === 'JPY') return 'EA-JPY';
+        if (stored === 'EUR') return 'EA-EUR';
+        return stored;
+      }
     } catch {
       // ignore
     }
-    return configuredSub?.code ?? 'none';
+    const defaultSub = configuredSub?.code;
+    if (defaultSub === 'JPY') return 'EA-JPY';
+    if (defaultSub === 'EUR') return 'EA-EUR';
+    return defaultSub ?? 'none';
   });
 
   // Keep in sync if configuredSub changes and user has not set a preference
@@ -145,7 +168,8 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children, in
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (!stored && configuredSub?.code) {
-        setSubCurrencyCodeState(configuredSub.code);
+        const mapped = configuredSub.code === 'JPY' ? 'EA-JPY' : configuredSub.code === 'EUR' ? 'EA-EUR' : configuredSub.code;
+        setSubCurrencyCodeState(mapped);
       }
     } catch {
       // ignore
@@ -153,9 +177,10 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children, in
   }, [configuredSub]);
 
   const setSubCurrencyCode = (code: string) => {
-    setSubCurrencyCodeState(code);
+    const normalized = code === 'JPY' ? 'EA-JPY' : code === 'EUR' ? 'EA-EUR' : code;
+    setSubCurrencyCodeState(normalized);
     try {
-      localStorage.setItem(STORAGE_KEY, code);
+      localStorage.setItem(STORAGE_KEY, normalized);
     } catch {
       // ignore
     }
@@ -163,7 +188,8 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children, in
 
   const activeSubConfig = useMemo<CurrencyConfig | null>(() => {
     if (subCurrencyCode === 'none' || subCurrencyCode === 'USD') return null;
-    const found = availableSubCurrencies.find((c) => c.code === subCurrencyCode);
+    const normalized = subCurrencyCode === 'JPY' ? 'EA-JPY' : subCurrencyCode === 'EUR' ? 'EA-EUR' : subCurrencyCode;
+    const found = availableSubCurrencies.find((c) => c.code === normalized || c.code === subCurrencyCode);
     return found?.config ?? null;
   }, [subCurrencyCode, availableSubCurrencies]);
 

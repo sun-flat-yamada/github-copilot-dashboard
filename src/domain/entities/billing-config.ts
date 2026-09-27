@@ -83,6 +83,20 @@ export const DEFAULT_CURRENCY_EA_USD: CurrencyConfig = {
   displayDecimals: 2,
 };
 
+export const DEFAULT_CURRENCY_EA_JPY: CurrencyConfig = {
+  code: 'EA-JPY',
+  symbol: '¥',
+  exchangeRateFromUSD: 150.0,
+  displayDecimals: 0,
+};
+
+export const DEFAULT_CURRENCY_EA_EUR: CurrencyConfig = {
+  code: 'EA-EUR',
+  symbol: '€',
+  exchangeRateFromUSD: 0.92,
+  displayDecimals: 2,
+};
+
 export const DEFAULT_CURRENCY_JPY: CurrencyConfig = {
   code: 'JPY',
   symbol: '¥',
@@ -186,8 +200,15 @@ export function resolveBillingConfigForMonth(
     if (matchingPeriod) {
       if (typeof matchingPeriod.exchangeRateFromUSD === 'number' && matchingPeriod.exchangeRateFromUSD > 0) {
         rateOverride = matchingPeriod.exchangeRateFromUSD;
-      } else if (matchingPeriod.exchangeRates && typeof matchingPeriod.exchangeRates[subCode] === 'number') {
-        rateOverride = matchingPeriod.exchangeRates[subCode];
+      } else if (matchingPeriod.exchangeRates) {
+        if (typeof matchingPeriod.exchangeRates[subCode] === 'number') {
+          rateOverride = matchingPeriod.exchangeRates[subCode];
+        } else {
+          const rawCode = subCode.startsWith('EA-') ? subCode.slice(3) : subCode;
+          if (typeof matchingPeriod.exchangeRates[rawCode] === 'number') {
+            rateOverride = matchingPeriod.exchangeRates[rawCode];
+          }
+        }
       }
     }
 

@@ -402,8 +402,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                       {activeCurrency.code === 'none' ? 'USD' : `USD+${activeCurrency.code}`}
                     </span>
                   </div>
-                  <div className="text-[10px] text-slate-400 mb-1.5 px-0.5">
-                    USD (GitHubカタログ価格) 常時表示＋任意サブ通貨
+                  <div className="text-[10px] text-slate-400 mb-1.5 px-0.5 leading-snug">
+                    <div className="text-slate-300">USD (GitHubのカタログ価格)と併記するサブ表示単位</div>
+                    <div className="text-slate-400">ユーザーが設定したEA契約レートで表示する</div>
                   </div>
                   <div className="space-y-0.5 max-h-48 overflow-y-auto pr-0.5">
                     {availableSubCurrencies.map((item) => {

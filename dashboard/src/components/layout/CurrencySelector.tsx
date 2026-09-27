@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useCurrency } from '../../contexts/CurrencyContext';
-import { Coins, ChevronDown, Check, HelpCircle } from 'lucide-react';
+import { Coins, ChevronDown, Check } from 'lucide-react';
 
 export const CurrencySelector: React.FC = () => {
   const { subCurrencyCode, setSubCurrencyCode, availableSubCurrencies } = useCurrency();
@@ -38,34 +38,32 @@ export const CurrencySelector: React.FC = () => {
 
       {isOpen && (
         <div className="absolute right-0 mt-1.5 w-64 rounded-xl bg-slate-900 border border-slate-700 shadow-2xl py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
-          <div className="px-3 py-1.5 border-b border-slate-800 text-[10px] uppercase font-bold text-slate-400 flex items-center justify-between">
-            <span>サブ表示通貨切替</span>
-            <span className="text-[9px] text-amber-400/90 font-mono">USD=カタログ定価</span>
+          <div className="px-3 py-2 border-b border-slate-800 text-[11px] leading-snug">
+            <div className="font-medium text-slate-200">USD (GitHubのカタログ価格)と併記するサブ表示単位</div>
+            <div className="text-[10px] text-slate-400 mt-0.5">ユーザーが設定したEA契約レートで表示する</div>
           </div>
-          {availableSubCurrencies.map((item) => {
-            const isSelected = item.code === subCurrencyCode;
-            return (
-              <button
-                key={item.code}
-                type="button"
-                onClick={() => {
-                  setSubCurrencyCode(item.code);
-                  setIsOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-3 py-2 text-xs transition cursor-pointer text-left ${
-                  isSelected
-                    ? 'bg-indigo-950/60 text-indigo-300 font-bold'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
-              >
-                <span>{item.label}</span>
-                {isSelected && <Check className="w-3.5 h-3.5 text-indigo-400 shrink-0 ml-1.5" />}
-              </button>
-            );
-          })}
-          <div className="px-3 py-1.5 mt-1 border-t border-slate-800 text-[10px] text-slate-400 bg-slate-950/40 flex items-start gap-1">
-            <HelpCircle className="w-3 h-3 text-slate-500 shrink-0 mt-0.5" />
-            <span>USDは「GitHubのカタログ価格(USD)」です。EA契約の割引後USDは「EA-USD」で確認できます。</span>
+          <div className="py-1">
+            {availableSubCurrencies.map((item) => {
+              const isSelected = item.code === subCurrencyCode;
+              return (
+                <button
+                  key={item.code}
+                  type="button"
+                  onClick={() => {
+                    setSubCurrencyCode(item.code);
+                    setIsOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 text-xs transition cursor-pointer text-left ${
+                    isSelected
+                      ? 'bg-indigo-950/60 text-indigo-300 font-bold'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <span>{item.label}</span>
+                  {isSelected && <Check className="w-3.5 h-3.5 text-indigo-400 shrink-0 ml-1.5" />}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
