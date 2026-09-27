@@ -59,7 +59,7 @@ describe('Table Sorting & Separate Cost/Overage Columns Contract Tests', () => {
       assert.match(content, /'excess'/);
       assert.match(content, /handleSort\('cost'\)/);
       assert.match(content, /handleSort\('excess'\)/);
-      assert.match(content, /colSpan=\{hasUsageMetrics \? 14 : 10\}/);
+      assert.match(content, /colSpan=\{hasUsageMetrics \? 16 : 12\}/);
     });
   });
 

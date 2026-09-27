@@ -64,7 +64,7 @@ export const CostAllocationCharts: React.FC<CostAllocationChartsProps> = ({
 
   const groupingLabel =
     currentGrouping === 'department'
-      ? '仕訳グループ (部署・PJ)'
+      ? 'ユーザー定義Gr (部署・PJ)'
       : currentGrouping === 'cost_center'
       ? 'GitHub Cost Center'
       : 'GitHub Organization';

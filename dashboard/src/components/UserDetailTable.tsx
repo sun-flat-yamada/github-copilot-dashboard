@@ -24,7 +24,9 @@ import { useCurrency } from '../contexts/CurrencyContext';
 export type UserSortMetric =
   | 'default'
   | 'user'
+  | 'display_name'
   | 'department'
+  | 'tags'
   | 'cost_center'
   | 'organization'
   | 'plan'
@@ -129,7 +131,8 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
         u.login.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.display_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.cost_center.toLowerCase().includes(searchTerm.toLowerCase());
+        u.cost_center.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (u.tags && u.tags.some((t) => t.toLowerCase().includes(searchTerm.toLowerCase())));
 
       // ステータス一致
       const matchesStatus = statusFilter === 'all' || u.status === statusFilter;
@@ -151,10 +154,16 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
       let cmp = 0;
       switch (sortBy) {
         case 'user':
-          cmp = (a.display_name || a.login).localeCompare(b.display_name || b.login);
+          cmp = a.login.localeCompare(b.login);
+          break;
+        case 'display_name':
+          cmp = (a.display_name || '').localeCompare(b.display_name || '');
           break;
         case 'department':
           cmp = (a.department || '').localeCompare(b.department || '');
+          break;
+        case 'tags':
+          cmp = (a.tags?.join(', ') || '').localeCompare(b.tags?.join(', ') || '');
           break;
         case 'cost_center':
           cmp = (a.cost_center || '').localeCompare(b.cost_center || '');
@@ -203,7 +212,8 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
       '#',
       'GitHub User',
       '表示名',
-      '仕訳グループ (部署)',
+      'ユーザー定義Gr (部署)',
+      'タグ',
       'Cost Center',
       'Organization',
       'プラン',
@@ -224,6 +234,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
         u.login,
         `"${u.display_name.replace(/"/g, '""')}"`,
         `"${u.department.replace(/"/g, '""')}"`,
+        `"${(u.tags || []).join(';').replace(/"/g, '""')}"`,
         `"${u.cost_center.replace(/"/g, '""')}"`,
         u.organization,
         u.plan_type,
@@ -340,7 +351,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
             onChange={(e) => setSelectedDept(e.target.value)}
             className="bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-300 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 max-w-xs"
           >
-            <option value="all">すべての仕訳グループ</option>
+            <option value="all">すべてのユーザー定義Gr</option>
             {departments.map((d) => (
               <option key={d} value={d}>
                 {d}
@@ -378,32 +389,50 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
         </div>
       </div>
 
-      {/* テーブル本体: ヘッダー固定・データ行垂直スクロール */}
+      {/* テーブル本体: ヘッダー固定・データ行垂直スクロール & 横スクロール対応 */}
       <div className="overflow-auto max-h-[600px] rounded-lg border border-slate-800 relative scrollbar-thin scrollbar-thumb-slate-700">
-        <table className="w-full text-left text-xs text-slate-300 border-collapse">
+        <table className="w-full text-left text-xs text-slate-300 border-collapse whitespace-nowrap min-w-max">
           <thead className="sticky top-0 z-20 bg-slate-950 text-slate-400 uppercase tracking-wider font-semibold shadow-md">
             <tr className="border-b border-slate-800">
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-center w-14 cursor-pointer select-none hover:text-slate-200" onClick={handleDefaultSort} title="標準順">#</th>
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-center w-12 cursor-pointer select-none hover:text-slate-200" onClick={handleDefaultSort} title="標準順">#</th>
               <th
-                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('user')}
               >
                 <div className="flex items-center space-x-1">
-                  <span>ユーザー / 表示名</span>
+                  <span>ユーザー</span>
                   {renderSortIcon('user')}
                 </div>
               </th>
               <th
-                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('display_name')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>表示名</span>
+                  {renderSortIcon('display_name')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('department')}
               >
                 <div className="flex items-center space-x-1">
-                  <span>任意仕訳グループ</span>
+                  <span>ユーザー定義Gr</span>
                   {renderSortIcon('department')}
                 </div>
               </th>
               <th
-                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('tags')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>タグ</span>
+                  {renderSortIcon('tags')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('cost_center')}
               >
                 <div className="flex items-center space-x-1">
@@ -412,7 +441,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                 </div>
               </th>
               <th
-                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('organization')}
               >
                 <div className="flex items-center space-x-1">
@@ -421,7 +450,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                 </div>
               </th>
               <th
-                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('plan')}
               >
                 <div className="flex items-center space-x-1">
@@ -430,7 +459,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                 </div>
               </th>
               <th
-                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('status')}
               >
                 <div className="flex items-center space-x-1">
@@ -441,7 +470,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
               {hasUsageMetrics && (
                 <>
                   <th
-                    className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                    className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
                     onClick={() => handleSort('suggestions')}
                   >
                     <div className="flex items-center justify-end space-x-1">
@@ -450,7 +479,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                     </div>
                   </th>
                   <th
-                    className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                    className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
                     onClick={() => handleSort('acceptances')}
                   >
                     <div className="flex items-center justify-end space-x-1">
@@ -459,7 +488,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                     </div>
                   </th>
                   <th
-                    className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                    className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
                     onClick={() => handleSort('acceptance_rate')}
                   >
                     <div className="flex items-center justify-end space-x-1">
@@ -468,7 +497,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                     </div>
                   </th>
                   <th
-                    className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                    className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
                     onClick={() => handleSort('chats')}
                   >
                     <div className="flex items-center justify-end space-x-1">
@@ -479,7 +508,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                 </>
               )}
               <th
-                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('cost')}
                 title="利用費用 (GitHubのカタログ価格(USD)基準)"
               >
@@ -489,7 +518,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                 </div>
               </th>
               <th
-                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('excess')}
                 title="超過請求 (GitHubのカタログ価格(USD))"
               >
@@ -498,7 +527,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                   {renderSortIcon('excess')}
                 </div>
               </th>
-              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-4 py-3 text-center w-24">
+              <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-center w-24">
                 <ActionColumnHeader />
               </th>
             </tr>
@@ -506,7 +535,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
           <tbody className="divide-y divide-slate-800/60 bg-slate-900/40">
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan={hasUsageMetrics ? 14 : 10} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={hasUsageMetrics ? 16 : 12} className="px-4 py-8 text-center text-slate-500">
                   一致するユーザーが見つかりませんでした。
                 </td>
               </tr>
@@ -525,38 +554,56 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                           : 'hover:bg-slate-800/40'
                       }`}
                     >
-                      <td className="px-4 py-3 text-center text-slate-500 font-mono text-xs">
+                      <td className="px-2.5 py-2 text-center text-slate-500 font-mono text-xs">
                         {index + 1}
                       </td>
 
-                      <td className="px-4 py-3">
-                        <div className="flex items-center space-x-2.5">
+                      <td className="px-2.5 py-2">
+                        <div className="flex items-center space-x-2">
                           <img
                             src={u.avatar_url || 'https://github.com/ghost.png'}
                             alt={u.login}
-                            className="w-6 h-6 rounded-full border border-slate-700 bg-slate-800"
+                            className="w-5 h-5 rounded-full border border-slate-700 bg-slate-800 shrink-0"
                           />
-                          <div className="flex flex-col">
-                            <div className="flex items-center space-x-1.5">
-                              <span className="font-semibold text-slate-200">{u.display_name}</span>
-                              {isSelected && (
-                                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-500 text-white">
-                                  分析中
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-[11px] text-slate-400 font-mono">@{u.login}</span>
-                          </div>
+                          <span className="text-slate-200 font-mono text-xs font-medium">@{u.login}</span>
                         </div>
                       </td>
 
-                      <td className="px-4 py-3">
-                        <span className="inline-block px-2 py-0.5 rounded-md text-[11px] font-medium bg-purple-950/80 text-purple-300 border border-purple-800/60">
+                      <td className="px-2.5 py-2">
+                        <div className="flex items-center space-x-1.5">
+                          <span className="font-semibold text-slate-200">{u.display_name}</span>
+                          {isSelected && (
+                            <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-500 text-white shrink-0">
+                              分析中
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      <td className="px-2.5 py-2">
+                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-950/80 text-purple-300 border border-purple-800/60">
                           {u.department}
                         </span>
                       </td>
 
-                      <td className="px-4 py-3">
+                      <td className="px-2.5 py-2">
+                        {u.tags && u.tags.length > 0 ? (
+                          <div className="flex items-center space-x-1">
+                            {u.tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-300 border border-slate-700"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-slate-500 text-[11px]">-</span>
+                        )}
+                      </td>
+
+                      <td className="px-2.5 py-2">
                         {u.cost_center_error ? (
                           <span
                             className="inline-flex items-center space-x-1 text-rose-400 bg-rose-950/70 border border-rose-800/60 px-2 py-0.5 rounded text-[11px] font-semibold"
@@ -570,7 +617,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                         )}
                       </td>
 
-                      <td className="px-4 py-3">
+                      <td className="px-2.5 py-2">
                         {u.is_data_unavailable ? (
                           <span
                             className="inline-flex items-center space-x-1 text-rose-400 bg-rose-950/70 border border-rose-800/60 px-2 py-0.5 rounded text-[11px] font-mono font-semibold"
@@ -584,7 +631,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                         )}
                       </td>
 
-                      <td className="px-4 py-3">
+                      <td className="px-2.5 py-2">
                         <span
                           className={`text-[11px] font-bold uppercase ${
                             u.plan_type === 'enterprise' ? 'text-indigo-400' : 'text-slate-400'
@@ -594,26 +641,26 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                         </span>
                       </td>
 
-                      <td className="px-4 py-3">{getStatusBadge(u.status, u.days_inactive)}</td>
+                      <td className="px-2.5 py-2">{getStatusBadge(u.status, u.days_inactive)}</td>
 
                       {hasUsageMetrics && (
                         <>
-                          <td className="px-4 py-3 text-right font-mono text-slate-300">
+                          <td className="px-2.5 py-2 text-right font-mono text-slate-300">
                             {prof ? prof.total_suggestions.toLocaleString() : '-'}
                           </td>
-                          <td className="px-4 py-3 text-right font-mono font-bold text-emerald-400">
+                          <td className="px-2.5 py-2 text-right font-mono font-bold text-emerald-400">
                             {prof ? prof.total_acceptances.toLocaleString() : '-'}
                           </td>
-                          <td className="px-4 py-3 text-right font-mono font-semibold text-purple-300">
+                          <td className="px-2.5 py-2 text-right font-mono font-semibold text-purple-300">
                             {prof ? `${(prof.acceptance_rate * 100).toFixed(1)}%` : '-'}
                           </td>
-                          <td className="px-4 py-3 text-right font-mono text-indigo-300">
+                          <td className="px-2.5 py-2 text-right font-mono text-indigo-300">
                             {prof ? prof.total_chats.toLocaleString() : '-'}
                           </td>
                         </>
                       )}
 
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-2.5 py-2 text-right">
                         {(() => {
                           const cost = scope_type === 'daily' ? u.prorated_daily_cost_usd : u.monthly_cost_usd;
                           const costDual = formatMoney(cost);
@@ -624,7 +671,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                           );
                         })()}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono">
+                      <td className="px-2.5 py-2 text-right font-mono">
                         {(() => {
                           const cost = scope_type === 'daily' ? u.prorated_daily_cost_usd : u.monthly_cost_usd;
                           const costDual = formatMoney(cost);
@@ -636,7 +683,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                         })()}
                       </td>
 
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-2.5 py-2 text-center">
                         <div className="flex items-center justify-center space-x-1.5">
                           <button
                             type="button"
@@ -687,7 +734,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                     </tr>
                     {isSelected && (
                       <tr key={`${u.login}-drilldown`} className="bg-slate-950">
-                        <td colSpan={hasUsageMetrics ? 14 : 10} className="p-0 border-b-2 border-indigo-500/60">
+                        <td colSpan={hasUsageMetrics ? 16 : 12} className="p-0 border-b-2 border-indigo-500/60 whitespace-normal">
                           <UserDrilldownPanel
                             login={u.login}
                             displayName={u.display_name}
