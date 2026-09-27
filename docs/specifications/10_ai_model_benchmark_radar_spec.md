@@ -80,36 +80,39 @@ flowchart TD
 - **Dropdown Jump**: Clicking the model title reveals a full-width dropdown menu with theme colors, tiers, grades, and an active index counter.
 
 ### 2.5 Standard Comparison Presets (`PRESETS`)
-Provides instant, pre-configured 3-to-4 model comparisons. Recommended presets enforce an uncompromising quality standard while selecting the top 3 models across the cost-performance spectrum:
+Provides instant, pre-configured model comparisons across diverse tiers and scenarios. Recommended presets combine uncompromising quality standards with cost-performance variations, incorporating the new frontier `Claude Opus 5.5` alongside established models. For OpenAI models, standard comparisons feature stable GPT-5 family equivalents (GPT-5.5 / GPT-5.4 / GPT-5 mini), while the high-velocity, ultra-low-cost `GPT-5.6 Luna` is retained in high-value and lightweight presets.
 
-#### Use-Case Recommended Presets (Top-Tier Standard with 3-Tier Cost Variation)
+#### Use-Case Recommended Presets
 - **🔍 Recommended for Code Review (`recommended-code-review`)**:
-  - **Rationale**: Strict quality gate (`swe_bench_verified >= 70.0%` and `reasoning_logic >= 95`) to prevent missing subtle PR diff regressions.
-  - **Top 3 Models**:
-    1. **High-End (Deep Review)**: `Claude Opus 5` (In: $5.0, Out: $25.0 / SWE 81.0, Logic 99)
-    2. **Balanced (Production Standard)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / SWE 78.5, Logic 99)
-    3. **High-Value (Cost-Effective Review)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / SWE 71.0, Logic 95)
+  - **Rationale**: Strict quality gate for PR diff analysis and bug prevention, adding `Claude Opus 5.5` while retaining `Claude Opus 5`.
+  - **Selected Models (4 Models)**:
+    1. **Next-Gen Frontier (Latest Deep Review)**: `Claude Opus 5.5` (In: $4.0, Out: $20.0 / SWE 81.8, Logic 99)
+    2. **High-End (Deep Review Standard)**: `Claude Opus 5` (In: $5.0, Out: $25.0 / SWE 81.0, Logic 99)
+    3. **Balanced (Production Standard)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / SWE 78.5, Logic 99)
+    4. **High-Value (Cost-Effective Review)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / SWE 71.0, Logic 95)
 - **📂 Recommended for Codebase Analysis (`recommended-codebase-analysis`)**:
-  - **Rationale**: Strict quality gate (`context_window_k >= 1000` 1M tokens, `architecture_design >= 92`, `swe_bench_verified >= 70.0%`) for holistic multi-file understanding.
-  - **Top 3 Models**:
-    1. **High-End (1M Full-Repo Ingestion)**: `Claude Opus 5` (In: $5.0, Out: $25.0 / 1M ctx, Arch 99, SWE 81.0)
-    2. **Balanced (1M Standard Refactor)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / 1M ctx, Arch 99, SWE 78.5)
-    3. **High-Value (1M High-Volume Low-Cost)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / 1M ctx, Arch 93, SWE 71.0)
+  - **Rationale**: Strict quality gate for 1M context repository-wide understanding, adding `Claude Opus 5.5` while retaining `Claude Opus 5`.
+  - **Selected Models (4 Models)**:
+    1. **Next-Gen Frontier (1M Full-Repo Ingestion)**: `Claude Opus 5.5` (In: $4.0, Out: $20.0 / 1M ctx, Arch 99, SWE 81.8)
+    2. **High-End (1M Deep Ingestion)**: `Claude Opus 5` (In: $5.0, Out: $25.0 / 1M ctx, Arch 99, SWE 81.0)
+    3. **Balanced (1M Standard Refactor)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / 1M ctx, Arch 99, SWE 78.5)
+    4. **High-Value (1M High-Volume Low-Cost)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / 1M ctx, Arch 93, SWE 71.0)
 - **🏛️ Recommended for Architecture & Design (`recommended-architecture`)**:
-  - **Rationale**: Strict quality gate (`reasoning_logic >= 95`, `architecture_design >= 90`, `swe_bench_verified >= 70.0%`) for complex trade-off analysis and domain modeling.
-  - **Top 3 Models**:
-    1. **High-End (Extreme Frontier Reasoning)**: `GPT-6 Astra` (In: $10.0, Out: $50.0 / Logic 99, Arch 96, SWE 82.4)
-    2. **Balanced (Modular Architecture)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / Logic 99, Arch 99, SWE 78.5)
-    3. **High-Value (Fast Brainstorming & Trade-offs)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / Logic 95, Arch 93, SWE 71.0)
+  - **Rationale**: Extreme reasoning and architecture design capabilities, enhanced with `Claude Opus 5.5`.
+  - **Selected Models (4 Models)**:
+    1. **Premier Flagship (Extreme Frontier Reasoning)**: `GPT-6 Astra` (In: $10.0, Out: $50.0 / Logic 99, Arch 96, SWE 82.4)
+    2. **Next-Gen Frontier (Steerability & Deep Design)**: `Claude Opus 5.5` (In: $4.0, Out: $20.0 / Logic 99, Arch 99, SWE 81.8)
+    3. **Balanced (Modular Architecture)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / Logic 99, Arch 99, SWE 78.5)
+    4. **High-Value (Fast Brainstorming & Trade-offs)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / Logic 95, Arch 93, SWE 71.0)
 
 #### Category & Vendor Presets
-- **🌟 2026-H1 Flagship 4 (`flagship-2026`)**: 2026 First-Half Premier Frontier Flagships snapshot (Claude Opus 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3). Preserved as an immutable snapshot for historical comparability; subsequent semiannual flagship presets (e.g. H2, 2027-H1) will be appended upon benchmark completions.
-- **💡 Practical High-Value (`practical-high-value`)**: Claude Sonnet 5 / Gemini 3.8 Flash / GPT-5.6 Luna / Kimi K2.7 Code
-- **⚡ Powerful Reasoning (`tier-powerful`)**: GPT-6 Astra / Claude Opus 5 / GPT-5.6 Sol / Kimi K3
-- **🛠️ Versatile Engineering (`tier-versatile`)**: Claude Sonnet 5 / GPT-5.6 Terra / Gemini 3.8 Flash / Grok 4.6
-- **🚀 Lightweight & Fast (`tier-lightweight`)**: GPT-5.6 Luna / Gemini 3.5 Flash / MAI-Code-1.1-Flash / GPT-5.4 mini
-- **🟠 Anthropic Suite (`vendor-anthropic`)**: Claude Sonnet 5 / Claude Opus 5 / Claude Fable 5.1 / Claude Haiku 4.5
-- **🟢 OpenAI Suite (`vendor-openai`)**: GPT-6 Astra / GPT-5.6 Sol / GPT-5.6 Terra / GPT-5.6 Luna
+- **🌟 2026 Flagship Selection (`flagship-2026`)**: 2026 premier frontier flagships snapshot (Claude Opus 5.5 / Claude Opus 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3).
+- **💡 Practical High-Value (`practical-high-value`)**: Claude Sonnet 5 / Gemini 3.8 Flash / GPT-5.6 Luna / Kimi K2.7 Code (*Retains GPT-5.6 Luna as high-value champion*).
+- **⚡ Powerful Reasoning (`tier-powerful`)**: GPT-6 Astra / Claude Opus 5.5 / Claude Opus 5 / GPT-5.5 / Kimi K3 (*GPT-5.6 Sol migrated to GPT-5.5; Opus 5.5 added*).
+- **🛠️ Versatile Engineering (`tier-versatile`)**: Claude Sonnet 5 / GPT-5.4 / Gemini 3.8 Flash / Grok 4.6 (*GPT-5.6 Terra migrated to GPT-5.4*).
+- **🚀 Lightweight & Fast (`tier-lightweight`)**: GPT-5.6 Luna / Gemini 3.5 Flash / MAI-Code-1.1-Flash / GPT-5.4 mini (*Retains GPT-5.6 Luna as low-cost champion*).
+- **🟠 Anthropic Suite (`vendor-anthropic`)**: Claude Sonnet 5 / Claude Opus 5.5 / Claude Opus 5 / Claude Fable 5.1 / Claude Haiku 4.5 (*Opus 5.5 added, Opus 5 retained*).
+- **🟢 OpenAI Suite (`vendor-openai`)**: GPT-6 Astra / GPT-5.5 / GPT-5.4 / GPT-5 mini (*Migrated to stable GPT-5 equivalent roster*).
 - **🔵 Google Gemini 3.x (`vendor-google`)**: Gemini 3.8 Flash / Gemini 3.7 Flash / Gemini 3.6 Flash / Gemini 3.5 Flash
 
 ### 2.6 Radar Chart Line Representation & Active Model Visual Hierarchy
