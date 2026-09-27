@@ -191,14 +191,14 @@ github-copilot-dashboard/
       { "github_user": "octocat-lead", "display_name": "田中 太郎", "department": "プラットフォーム基盤部", "cost_center_override": "FinTech-Division" }
     ]
     ```
-  - `COPILOT_BILLING_CONFIG`: *(任意)* サブ表示通貨（円・ユーロなど）やEA契約ディスカウント率、個別AI Credits単価の設定：
+  - `COPILOT_BILLING_CONFIG`: *(任意)* サブ表示通貨（円・ユーロなど）やEA契約ディスカウント率、期間別価格設定（`periods`）、個別AI Credits単価の設定。設定具体例テンプレートは [`examples/config/billing.example.json`](examples/config/billing.example.json) を参照してください：
     ```json
     { "subCurrency": { "code": "JPY", "symbol": "¥", "exchangeRateFromUSD": 155.0, "displayDecimals": 0 }, "discountPercent": 15 }
     ```
   - *(テスト運用時)* `MOCK_MODE`: `true` を指定すると、実際のトークンがなくても2026年仕様のシミュレーションデータで即座にダッシュボードが立ち上がります。
 
 > [!NOTE]
-> **通貨表示 & 契約課金（EA契約 / AI Credits）設定**、**CSV形式でのマッピング登録**、**48KB超過時のGPG暗号化運用手順**、**認証トークン欠損時のフォールバック機能**、および **本家（Upstream）との定期同期手順** など、詳細な運用設定は **[🚀 完全セットアップ & 環境構築ガイド (docs/setup_guide.ja.md)](docs/setup_guide.ja.md)** を参照してください。
+> **通貨表示 & 契約課金（EA契約 / AI Credits / 期間別設定）設定**、**設定ファイル具体例（`examples/config/billing.example.json`）**、**CSV形式でのマッピング登録**、**48KB超過時のGPG暗号化運用手順**、**認証トークン欠損時のフォールバック機能**、および **本家（Upstream）との定期同期手順** など、詳細な運用設定は **[🚀 完全セットアップ & 環境構築ガイド (docs/setup_guide.ja.md)](docs/setup_guide.ja.md)** を参照してください。
 
 ---
 

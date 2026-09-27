@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import {
   CurrencyConfig,
+  resolveBillingConfigForMonth,
+  EnterpriseBillingConfig,
+  DEFAULT_BILLING_CONFIG,
 } from '../../../src/domain/entities/billing-config.js';
 import { PublicExchangeRatesService } from '../../../src/domain/services/PublicExchangeRatesService.js';
 import { Money } from '../../../src/domain/value-objects/Money.js';
@@ -38,11 +41,31 @@ const CurrencyContext = createContext<CurrencyContextType>({
 export interface CurrencyProviderProps {
   children: ReactNode;
   indexMeta?: IndexMetadata | null;
+  activeMonth?: string;
 }
 
-export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children, indexMeta }) => {
-  // Built-in presets or configured subCurrency from indexMeta
-  const configuredSub = indexMeta?.billing?.subCurrency;
+export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children, indexMeta, activeMonth }) => {
+  const targetMonth = activeMonth || indexMeta?.default_scopes?.latest_month;
+
+  // Try refreshing live rates in the background (non-blocking)
+  useEffect(() => {
+    PublicExchangeRatesService.refreshLiveRates(targetMonth).catch(() => {});
+  }, [targetMonth]);
+
+  // Resolve effective billing config for the currently active target month
+  const effectiveConfig = useMemo<EnterpriseBillingConfig>(() => {
+    const rawBilling = indexMeta?.billing;
+    const base: EnterpriseBillingConfig = {
+      ...DEFAULT_BILLING_CONFIG,
+      currency: rawBilling?.currency || DEFAULT_BILLING_CONFIG.currency,
+      subCurrency: rawBilling?.subCurrency ?? null,
+      discountPercent: rawBilling?.discountPercent ?? 0,
+      periods: rawBilling?.periods,
+    };
+    return resolveBillingConfigForMonth(base, targetMonth);
+  }, [indexMeta, targetMonth]);
+
+  const configuredSub = effectiveConfig.subCurrency;
 
   const availableSubCurrencies = useMemo(() => {
     const list: Array<{ code: string; label: string; config: CurrencyConfig | null }> = [
@@ -50,7 +73,7 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children, in
     ];
 
     // EA-USD: Enterprise Agreement discounted USD display option
-    const discountPercent = indexMeta?.billing?.discountPercent ?? 0;
+    const discountPercent = effectiveConfig.discountPercent ?? 0;
     const eaRate = Math.max(0, 1 - discountPercent / 100);
     const eaConfig: CurrencyConfig = {
       code: 'EA-USD',
@@ -74,7 +97,6 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children, in
     }
 
     // Dynamic public exchange rate for current context/month from reliable public data (ECB/BOJ)
-    const targetMonth = indexMeta?.default_scopes?.latest_month;
     const jpyPublicRate = PublicExchangeRatesService.getExchangeRate('JPY', targetMonth);
     const eurPublicRate = PublicExchangeRatesService.getExchangeRate('EUR', targetMonth);
 
@@ -105,7 +127,7 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children, in
     }
 
     return list;
-  }, [configuredSub, indexMeta]);
+  }, [configuredSub, effectiveConfig, targetMonth]);
 
   // Determine initial code from localStorage or configured subCurrency
   const [subCurrencyCode, setSubCurrencyCodeState] = useState<string>(() => {

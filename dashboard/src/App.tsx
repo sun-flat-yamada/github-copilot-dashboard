@@ -243,8 +243,10 @@ export const App: React.FC = () => {
     return result.sort((a, b) => b.current_spend_usd - a.current_spend_usd);
   }, [currentReportData, rawCurrentData]);
 
+  const currentActiveMonth = selectedReportMonth || (selectedKey && selectedKey.length >= 7 ? selectedKey.slice(0, 7) : indexMeta?.default_scopes?.latest_month);
+
   return (
-    <CurrencyProvider indexMeta={indexMeta}>
+    <CurrencyProvider indexMeta={indexMeta} activeMonth={currentActiveMonth}>
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-indigo-500 selection:text-white transition-colors duration-200">
         {/* 1. トップナビゲーションバー (ヘッダー部にアクティブデータ選択を統合 ★要件1) */}
       <DashboardHeader
