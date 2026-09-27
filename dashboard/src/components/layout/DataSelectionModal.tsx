@@ -753,21 +753,19 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
               </div>
             </div>
 
-            {/* カテゴリ B: プロジェクト・属性軸 */}
+            {/* カテゴリ B: プロジェクト・部署軸 */}
             <div className="p-3.5 rounded-xl bg-slate-950/40 border border-slate-800 space-y-3">
               <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-300">
                 <Briefcase className="w-3.5 h-3.5 text-purple-400" />
-                <span>カテゴリ B: プロジェクト・属性軸 (</span>
+                <span>カテゴリ B: プロジェクト・部署軸 (</span>
                 <span className="text-purple-400">ユーザー定義Gr</span>
-                <span className="text-slate-500">/</span>
-                <span className="text-rose-400">Tag</span>
                 <span>)</span>
               </div>
 
               <div>
                 <label className="text-[11px] font-semibold text-purple-300 flex items-center space-x-1 mb-1">
                   <Briefcase className="w-3 h-3 text-purple-400" />
-                  <span>ユーザー定義グループ (部署・PJ)</span>
+                  <span>ユーザー定義Gr (部署・PJ)</span>
                 </label>
                 <select
                   value={localCriteria.group}
@@ -778,12 +776,22 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
                       : 'border-slate-700 hover:border-purple-600/60 focus:ring-1 focus:ring-purple-500 focus:border-purple-500'
                   }`}
                 >
-                  <option value="all">すべてのグループ (All)</option>
+                  <option value="all">すべてのユーザー定義Gr (All)</option>
                   <option value="__unassigned__">未割当のみ (Unassigned)</option>
                   {availableGroups.map((g) => (
                     <option key={g} value={g}>{g}</option>
                   ))}
                 </select>
+              </div>
+            </div>
+
+            {/* カテゴリ C: タグ・属性軸 */}
+            <div className="p-3.5 rounded-xl bg-slate-950/40 border border-slate-800 space-y-3">
+              <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-300">
+                <Tag className="w-3.5 h-3.5 text-rose-400" />
+                <span>カテゴリ C: タグ・属性軸 (</span>
+                <span className="text-rose-400">Tag</span>
+                <span>)</span>
               </div>
 
               <div>
@@ -830,12 +838,12 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
               </div>
             </div>
 
-            {/* カテゴリ C: アカウント・個別軸 */}
+            {/* カテゴリ D: アカウント・個別軸 */}
             <div className="p-3.5 rounded-xl bg-slate-950/40 border border-slate-800 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-300">
                   <User className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>カテゴリ C: アカウント・個別軸 (ユーザー名 / ID パターン指定)</span>
+                  <span>カテゴリ D: アカウント・個別軸 (ユーザー名 / ID パターン指定)</span>
                 </div>
                 <label className="flex items-center space-x-1.5 text-xs cursor-pointer select-none text-slate-300">
                   <input

@@ -138,7 +138,7 @@ export function matchUserWithCriteria(
     }
   }
 
-  // 3. ユーザー定義グループ / Department (プロジェクト・属性軸)
+  // 3. ユーザー定義Gr / Department (プロジェクト・部署軸)
   if (criteria.group !== 'all') {
     const userGroup = (user.department || '').trim();
     if (criteria.group === '__unassigned__') {
@@ -152,7 +152,7 @@ export function matchUserWithCriteria(
     }
   }
 
-  // 4. Tag (プロジェクト・属性軸 - AND一致)
+  // 4. Tag (タグ・属性軸 - AND一致)
   if (criteria.tags && criteria.tags.length > 0) {
     const userTags = user.tags || [];
     const allTagsPresent = criteria.tags.every((t) => userTags.includes(t));
