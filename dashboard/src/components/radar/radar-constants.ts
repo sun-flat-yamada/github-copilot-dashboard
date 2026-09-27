@@ -24,14 +24,14 @@ export const PRESETS: RadarPreset[] = [
   {
     id: 'recommended-code-review',
     name: '🔍 コードレビュー利用に推奨',
-    description: 'Claude Opus 5.5 / Claude Opus 5 / Claude Sonnet 5 / Gemini 3.8 Flash (最高水準の推論・SWE性能を維持したコスト別上位選)',
-    modelIds: ['claude-opus-5-5', 'claude-opus-5', 'claude-sonnet-5', 'gemini-3-8-flash'],
+    description: 'Claude Opus 5.5 / Claude Opus 5 / GPT-6 Sol / Claude Sonnet 5 / GPT-5.6 Terra / Gemini 3.8 Flash (最高水準の推論・SWE性能を維持したコスト別上位選)',
+    modelIds: ['claude-opus-5-5', 'claude-opus-5', 'gpt-6-sol', 'claude-sonnet-5', 'gpt-5-6-terra', 'gemini-3-8-flash'],
   },
   {
     id: 'recommended-codebase-analysis',
     name: '📂 コードベース分析に推奨',
-    description: 'Claude Opus 5.5 / Claude Opus 5 / Claude Sonnet 5 / Gemini 3.8 Flash (1Mコンテキスト・大域的設計把握のコスト別上位選)',
-    modelIds: ['claude-opus-5-5', 'claude-opus-5', 'claude-sonnet-5', 'gemini-3-8-flash'],
+    description: 'GPT-6 Astra / Claude Opus 5.5 / Claude Opus 5 / Claude Sonnet 5 / Gemini 3.8 Flash (1Mコンテキスト・大域的設計把握のコスト別上位選)',
+    modelIds: ['gpt-6-astra', 'claude-opus-5-5', 'claude-opus-5', 'claude-sonnet-5', 'gemini-3-8-flash'],
   },
   {
     id: 'recommended-architecture',

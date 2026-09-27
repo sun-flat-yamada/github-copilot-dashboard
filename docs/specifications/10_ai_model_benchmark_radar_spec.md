@@ -84,19 +84,22 @@ Provides instant, pre-configured model comparisons across diverse tiers and scen
 
 #### Use-Case Recommended Presets
 - **🔍 Recommended for Code Review (`recommended-code-review`)**:
-  - **Rationale**: Strict quality gate for PR diff analysis and bug prevention, adding `Claude Opus 5.5` while retaining `Claude Opus 5`.
-  - **Selected Models (4 Models)**:
+  - **Rationale**: Strict quality gate for PR diff analysis and bug prevention, maintaining `Claude Opus 5.5` / `Claude Opus 5` while adding high-precision code models `GPT-6 Sol` and `GPT-5.6 Terra`.
+  - **Selected Models (6 Models)**:
     1. **Next-Gen Frontier (Latest Deep Review)**: `Claude Opus 5.5` (In: $4.0, Out: $20.0 / SWE 81.8, Logic 99)
     2. **High-End (Deep Review Standard)**: `Claude Opus 5` (In: $5.0, Out: $25.0 / SWE 81.0, Logic 99)
-    3. **Balanced (Production Standard)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / SWE 78.5, Logic 99)
-    4. **High-Value (Cost-Effective Review)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / SWE 71.0, Logic 95)
+    3. **Powerful Sol (High Reasoning Rapid Review)**: `GPT-6 Sol` (In: $2.0, Out: $10.0 / SWE 80.5, Logic 98)
+    4. **Balanced (Production Standard)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / SWE 78.5, Logic 99)
+    5. **Versatile Terra (Robust Diff Analysis)**: `GPT-5.6 Terra` (In: $2.0, Out: $12.0 / SWE 77.2, Logic 96)
+    6. **High-Value (Cost-Effective Review)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / SWE 71.0, Logic 95)
 - **📂 Recommended for Codebase Analysis (`recommended-codebase-analysis`)**:
-  - **Rationale**: Strict quality gate for 1M context repository-wide understanding, adding `Claude Opus 5.5` while retaining `Claude Opus 5`.
-  - **Selected Models (4 Models)**:
-    1. **Next-Gen Frontier (1M Full-Repo Ingestion)**: `Claude Opus 5.5` (In: $4.0, Out: $20.0 / 1M ctx, Arch 99, SWE 81.8)
-    2. **High-End (1M Deep Ingestion)**: `Claude Opus 5` (In: $5.0, Out: $25.0 / 1M ctx, Arch 99, SWE 81.0)
-    3. **Balanced (1M Standard Refactor)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / 1M ctx, Arch 99, SWE 78.5)
-    4. **High-Value (1M High-Volume Low-Cost)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / 1M ctx, Arch 93, SWE 71.0)
+  - **Rationale**: Strict quality gate for 1M context repository-wide understanding, adding premier 1M flagship `GPT-6 Astra` alongside `Claude Opus 5.5` and `Claude Opus 5`.
+  - **Selected Models (5 Models)**:
+    1. **Premier Flagship (1M Full-Repo Ingestion)**: `GPT-6 Astra` (In: $10.0, Out: $50.0 / 1M ctx, Arch 96, SWE 82.4)
+    2. **Next-Gen Frontier (1M Full-Repo Ingestion)**: `Claude Opus 5.5` (In: $4.0, Out: $20.0 / 1M ctx, Arch 99, SWE 81.8)
+    3. **High-End (1M Deep Ingestion)**: `Claude Opus 5` (In: $5.0, Out: $25.0 / 1M ctx, Arch 99, SWE 81.0)
+    4. **Balanced (1M Standard Refactor)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / 1M ctx, Arch 99, SWE 78.5)
+    5. **High-Value (1M High-Volume Low-Cost)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / 1M ctx, Arch 93, SWE 71.0)
 - **🏛️ Recommended for Architecture & Design (`recommended-architecture`)**:
   - **Rationale**: Extreme reasoning and architecture design capabilities, featuring both `Claude Opus 5.5` and `Claude Opus 5`.
   - **Selected Models (5 Models)**:

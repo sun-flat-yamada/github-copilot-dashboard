@@ -41,19 +41,19 @@ test('AI Model Radar Comparison Presets Tests', async (t) => {
   });
 
   await t.test('includes recommended presets (code review, codebase analysis, architecture) with Opus 5.5 additions and Opus 5 retention', () => {
-    // 1. コードレビュー利用に推奨 (Opus 5.5 追加、Opus 5 維持)
+    // 1. コードレビュー利用に推奨 (Opus 5.5, Opus 5, GPT-6 Sol, Sonnet 5, GPT-5.6 Terra, Gemini 3.8 Flash)
     const reviewPreset = PRESETS.find((p) => p.id === 'recommended-code-review');
     assert.ok(reviewPreset, 'recommended-code-review preset must exist');
     assert.match(reviewPreset.name, /コードレビュー利用に推奨/);
-    assert.strictEqual(reviewPreset.modelIds.length, 4, 'Must contain 4 models');
-    assert.deepStrictEqual(reviewPreset.modelIds, ['claude-opus-5-5', 'claude-opus-5', 'claude-sonnet-5', 'gemini-3-8-flash']);
+    assert.strictEqual(reviewPreset.modelIds.length, 6, 'Must contain 6 models');
+    assert.deepStrictEqual(reviewPreset.modelIds, ['claude-opus-5-5', 'claude-opus-5', 'gpt-6-sol', 'claude-sonnet-5', 'gpt-5-6-terra', 'gemini-3-8-flash']);
 
-    // 2. コードベース分析に推奨 (Opus 5.5 追加、Opus 5 維持)
+    // 2. コードベース分析に推奨 (GPT-6 Astra, Opus 5.5, Opus 5, Sonnet 5, Gemini 3.8 Flash)
     const analysisPreset = PRESETS.find((p) => p.id === 'recommended-codebase-analysis');
     assert.ok(analysisPreset, 'recommended-codebase-analysis preset must exist');
     assert.match(analysisPreset.name, /コードベース分析に推奨/);
-    assert.strictEqual(analysisPreset.modelIds.length, 4, 'Must contain 4 models');
-    assert.deepStrictEqual(analysisPreset.modelIds, ['claude-opus-5-5', 'claude-opus-5', 'claude-sonnet-5', 'gemini-3-8-flash']);
+    assert.strictEqual(analysisPreset.modelIds.length, 5, 'Must contain 5 models');
+    assert.deepStrictEqual(analysisPreset.modelIds, ['gpt-6-astra', 'claude-opus-5-5', 'claude-opus-5', 'claude-sonnet-5', 'gemini-3-8-flash']);
 
     // 3. 設計に推奨 (Opus 5.5 および Opus 5 を含む)
     const archPreset = PRESETS.find((p) => p.id === 'recommended-architecture');
@@ -113,7 +113,7 @@ test('AI Model Radar Comparison Presets Tests', async (t) => {
     PRESETS.forEach((p) => {
       assert.ok(p.name.length > 0, `Preset ${p.id} must have a name`);
       assert.ok(p.description.length > 0, `Preset ${p.id} must have a description`);
-      assert.ok(p.modelIds.length > 0 && p.modelIds.length <= 5, `Preset ${p.id} must have 1-5 models`);
+      assert.ok(p.modelIds.length > 0 && p.modelIds.length <= 6, `Preset ${p.id} must have 1-6 models`);
     });
   });
 

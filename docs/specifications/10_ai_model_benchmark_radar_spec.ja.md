@@ -93,19 +93,22 @@ flowchart TD
 
 #### 用途別推奨プリセット
 - **🔍 コードレビュー利用に推奨 (`recommended-code-review`)**:
-  - **選定根拠**: PR差分における潜在バグ・エッジケースの見落としを防ぐため、最高水準の推論・SWE性能モデルを選定。最上位推論として `Claude Opus 5.5` を追加し、既存の `Claude Opus 5` も継続維持。
-  - **構成モデル (4選)**:
+  - **選定根拠**: PR差分における潜在バグ・エッジケースの見落としを防ぐため、最高水準の推論・SWE性能モデルを選定。最上位推論として `Claude Opus 5.5` / `Claude Opus 5` を維持し、高いコード解析力を持つ `GPT-6 Sol` および `GPT-5.6 Terra` を追加。
+  - **構成モデル (6選)**:
     1. **Next-Gen Frontier (最新最高峰レビュー)**: `Claude Opus 5.5` (In: $4.0, Out: $20.0 / SWE 81.8, Logic 99)
     2. **High-End (最上位深層レビュー)**: `Claude Opus 5` (In: $5.0, Out: $25.0 / SWE 81.0, Logic 99)
-    3. **Balanced (実務標準・高精度バランス)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / SWE 78.5, Logic 99)
-    4. **High-Value (高コスパ即時レビュー)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / SWE 71.0, Logic 95)
+    3. **Powerful Sol (高推論・高速精密レビュー)**: `GPT-6 Sol` (In: $2.0, Out: $10.0 / SWE 80.5, Logic 98)
+    4. **Balanced (実務標準・高精度バランス)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / SWE 78.5, Logic 99)
+    5. **Versatile Terra (実務バランス・堅牢差分解析)**: `GPT-5.6 Terra` (In: $2.0, Out: $12.0 / SWE 77.2, Logic 96)
+    6. **High-Value (高コスパ即時レビュー)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / SWE 71.0, Logic 95)
 - **📂 コードベース分析に推奨 (`recommended-codebase-analysis`)**:
-  - **選定根拠**: リポジトリ全体・複数ディレクトリの依存関係と設計を丸ごと把握するため、100万トークン対応かつ高SWE性能モデルを選定。最高峰の `Claude Opus 5.5` を追加（`Claude Opus 5` も維持）。
-  - **構成モデル (4選)**:
-    1. **Next-Gen Frontier (最新1M超長文・最高峰解析)**: `Claude Opus 5.5` (In: $4.0, Out: $20.0 / 1M窓, Arch 99, SWE 81.8)
-    2. **High-End (1M超長文・最高峰解析)**: `Claude Opus 5` (In: $5.0, Out: $25.0 / 1M窓, Arch 99, SWE 81.0)
-    3. **Balanced (1M超長文・設計リファクタ標準)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / 1M窓, Arch 99, SWE 78.5)
-    4. **High-Value (1M超長文・大量コード低コスト一括解析)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / 1M窓, Arch 93, SWE 71.0)
+  - **選定根拠**: リポジトリ全体・複数ディレクトリの依存関係と設計を丸ごと把握するため、100万トークン対応かつ高SWE性能モデルを選定。最高峰の `Claude Opus 5.5` / `Claude Opus 5` に加え、長文100万トークン対応フラッグシップ `GPT-6 Astra` を追加。
+  - **構成モデル (5選)**:
+    1. **Premier Flagship (最上位極限推論・1M長文全体解析)**: `GPT-6 Astra` (In: $10.0, Out: $50.0 / 1M窓, Arch 96, SWE 82.4)
+    2. **Next-Gen Frontier (最新1M超長文・最高峰解析)**: `Claude Opus 5.5` (In: $4.0, Out: $20.0 / 1M窓, Arch 99, SWE 81.8)
+    3. **High-End (1M超長文・最高峰解析)**: `Claude Opus 5` (In: $5.0, Out: $25.0 / 1M窓, Arch 99, SWE 81.0)
+    4. **Balanced (1M超長文・設計リファクタ標準)**: `Claude Sonnet 5` (In: $2.0, Out: $10.0 / 1M窓, Arch 99, SWE 78.5)
+    5. **High-Value (1M超長文・大量コード低コスト一括解析)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / 1M窓, Arch 93, SWE 71.0)
 - **🏛️ 設計に推奨 (`recommended-architecture`)**:
   - **選定根拠**: 高度なシステム設計、アーキテクチャ選定、データモデル策定、トレードオフ分析のため、極限論理推論と設計性能を持つモデル群。新世代フラッグシップ `Claude Opus 5.5` および確立された実績を持つ `Claude Opus 5` を追加・維持。
   - **構成モデル (5選)**:
