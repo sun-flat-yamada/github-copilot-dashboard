@@ -12,8 +12,6 @@ import { useDeepAnalysisData } from './hooks/useDeepAnalysisData';
 import { useTheme } from './hooks/useTheme';
 import { DashboardHeader } from './components/layout/DashboardHeader';
 import { ViewNavigation } from './components/layout/ViewNavigation';
-import { GroupingSelector } from './components/GroupingSelector';
-import { TagFilterBar } from './components/TagFilterBar';
 import { CollapsibleSection } from './components/common/CollapsibleSection';
 import { KpiSummaryCards } from './components/KpiSummaryCards';
 import { IdleSeatAdvisor } from './components/IdleSeatAdvisor';
@@ -78,7 +76,6 @@ export const App: React.FC = () => {
     selectedReportMonth,
     setSelectedReportMonth,
     currentReportData,
-    rawCurrentReportData,
     reportLoading,
     reportError,
     uploadedData,
@@ -90,8 +87,6 @@ export const App: React.FC = () => {
     hasErrors,
     availableTags,
     selectedTags,
-    handleToggleTag,
-    handleClearTags,
     isDemoMode,
     toggleDemoMode,
     activeDataIsDemoSourced,
@@ -161,36 +156,6 @@ export const App: React.FC = () => {
     setSelectedGroup('all');
   };
 
-  // 利用可能グループ一覧
-  const availableGroups = useMemo(() => {
-    const set = new Set<string>();
-    if (activeSource === 'live_metrics' && currentData) {
-      for (const p of currentData.user_profiles || []) {
-        if (currentGrouping === 'department' && p.department) set.add(p.department);
-        else if (currentGrouping === 'cost_center' && p.cost_center) set.add(p.cost_center);
-        else if (currentGrouping === 'organization' && p.organization) set.add(p.organization);
-      }
-      if (set.size === 0) {
-        const summaries =
-          currentGrouping === 'department'
-            ? currentData.by_department
-            : currentGrouping === 'cost_center'
-            ? currentData.by_cost_center
-            : currentData.by_organization;
-        for (const key of Object.keys(summaries || {})) {
-          if (key) set.add(key);
-        }
-      }
-    } else if (currentReportData) {
-      for (const u of currentReportData.user_details || []) {
-        if (currentGrouping === 'department' && u.department) set.add(u.department);
-        else if (currentGrouping === 'cost_center' && u.cost_center) set.add(u.cost_center);
-        else if (currentGrouping === 'organization' && u.organization) set.add(u.organization);
-      }
-    }
-    return Array.from(set).sort();
-  }, [activeSource, currentData, currentReportData, currentGrouping]);
-
   const handleFilterIdle = () => {
     setUserTableFilterStatus('idle');
     setActiveView('users');
@@ -222,17 +187,6 @@ export const App: React.FC = () => {
     if (login) setFocusedUserLogin(login);
     setActiveView('deep_analysis');
   };
-
-  // タグ絞り込み件数の算出
-  const totalUserCount = useMemo(() => {
-    if (activeSource === 'live_metrics') return rawCurrentData?.users.length ?? 0;
-    return rawCurrentReportData?.user_details.length ?? 0;
-  }, [activeSource, rawCurrentData, rawCurrentReportData]);
-
-  const filteredUserCount = useMemo(() => {
-    if (activeSource === 'live_metrics') return currentData?.users.length ?? 0;
-    return currentReportData?.user_details.length ?? 0;
-  }, [activeSource, currentData, currentReportData]);
 
   const isReportSource = activeSource === 'monthly_report' || activeSource === 'user_upload';
 
@@ -338,52 +292,6 @@ export const App: React.FC = () => {
 
       {/* 3. メインコンテンツエリア (フルレスポンシブ & 1カラム垂直スタック ★要件5 & 構造的リアクティビティキーイング SDD-15) */}
       <main className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col space-y-6" key={datasetVersionKey}>
-        {/* コントロールバー: 3軸グループセレクタ & タグANDフィルター ★要件7 */}
-        <div className="flex flex-col space-y-3 bg-slate-950/60 p-4 rounded-2xl border border-slate-800/80 shadow-sm">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <GroupingSelector
-              currentGrouping={currentGrouping}
-              onGroupingChange={handleGroupingChange}
-              selectedGroup={selectedGroup}
-              onGroupChange={setSelectedGroup}
-              availableGroups={availableGroups}
-            />
-
-            {/* アコーディオン全開閉ボタン (要件6) */}
-            <div className="flex items-center space-x-2 shrink-0 self-end md:self-auto">
-              <button
-                type="button"
-                onClick={() => expandAll()}
-                className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 transition cursor-pointer"
-                title="すべての個別要素を展開"
-              >
-                <ChevronsDown className="w-3.5 h-3.5" />
-                <span>すべて展開</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={collapseAll}
-                className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 transition cursor-pointer"
-                title="すべての個別要素を収納"
-              >
-                <ChevronsUp className="w-3.5 h-3.5" />
-                <span>すべて折りたたむ</span>
-              </button>
-            </div>
-          </div>
-
-          {/* タグANDフィルターバー (要件7) */}
-          <TagFilterBar
-            availableTags={availableTags}
-            selectedTags={selectedTags}
-            onToggleTag={handleToggleTag}
-            onClearTags={handleClearTags}
-            filteredCount={filteredUserCount}
-            totalCount={totalUserCount}
-          />
-        </div>
-
         {/* ローディング表示 */}
         {((activeSource === 'live_metrics' && loading) ||
           (isReportSource && reportLoading && !currentReportData)) && (
@@ -440,6 +348,29 @@ export const App: React.FC = () => {
             {isReportSource && currentReportData && (
               <MonthlyReportKpis reportData={currentReportData} />
             )}
+
+            {/* アコーディオン全開閉ボタン (要件6) */}
+            <div className="flex items-center justify-end space-x-2 -mb-2">
+              <button
+                type="button"
+                onClick={() => expandAll()}
+                className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 transition cursor-pointer"
+                title="すべての個別要素を展開"
+              >
+                <ChevronsDown className="w-3.5 h-3.5" />
+                <span>すべて展開</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={collapseAll}
+                className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 transition cursor-pointer"
+                title="すべての個別要素を収納"
+              >
+                <ChevronsUp className="w-3.5 h-3.5" />
+                <span>すべて折りたたむ</span>
+              </button>
+            </div>
 
             {/* 個別要素ブロック (初期折りたたみ ★要件6, 1カラム垂直スタック ★要件5) */}
             {activeSource === 'live_metrics' && currentData && (
