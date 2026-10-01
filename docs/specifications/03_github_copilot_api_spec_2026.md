@@ -21,8 +21,12 @@ All API requests must supply the following HTTP headers:
 
 - `Authorization: Bearer <GITHUB_TOKEN>`
 - `Accept: application/vnd.github+json`
-- `X-GitHub-Api-Version: 2026-03-10` (latest version, configurable via `GITHUB_API_VERSION` environment variable or client config)
+- `X-GitHub-Api-Version: 2026-03-10` (latest version, configurable via `GITHUB_API_VERSION` environment variable or client config; an empty value falls back to the default)
 - `User-Agent: GitHub-Copilot-Analytics-Platform/2026.09`
+
+**Token resolution order**: explicit client config → `COPILOT_READ_TOKEN` (the secret the workflow provides) → `GITHUB_TOKEN` → `GH_TOKEN`. When no token is resolved, the client raises an authorization error **before sending any request** (no unauthenticated calls); the collector reports it as an `api_auth` issue naming `COPILOT_READ_TOKEN`, and the affected sources are recorded as `failed` (see SDD-05 §3).
+
+**Failure vs. empty**: every `fetch*` of the data source returns an array and never throws; failures are expressed by the per-source status (`ok` / `partial` / `failed` / `skipped`, SDD-05 §3) plus `DataFetchIssue`s. Callers must not infer "failure" or "no data" from an empty array.
 
 ---
 
@@ -130,7 +134,9 @@ Retrieves all users assigned a Copilot seat, assignment timestamps, and last act
 ### 3.1 Endpoints
 - Enterprise: `GET /enterprises/{enterprise}/copilot/billing/seats`
 - Organization: `GET /orgs/{org}/copilot/billing/seats`
-- Pagination: `per_page=100`, `page=1, 2, ...`
+- Pagination: `per_page=100` and follow the `Link: <...>; rel="next"` response header until the last page. The next URL is followed **only when it has the same origin** as the API base URL (the `Authorization` header is never sent to another origin). A safety limit of 1,000 pages applies; reaching it raises a `data_integrity` warning ("the seat list may be incomplete").
+- Integrity check: the sum of `total_seats` (first page of each target) is compared with the number of retrieved records; a mismatch raises a `data_integrity` warning and the source status becomes `partial`.
+- Failure semantics: if **any** target (enterprise / one of the orgs) fails, the whole `seats` source is `failed` and an empty list is returned, so a partial headcount is never published as the current value (the pipeline keeps the last-known-good artifacts, SDD-05 §3).
 
 ### 3.2 Response Schema
 
@@ -166,6 +172,15 @@ Retrieves all users assigned a Copilot seat, assignment timestamps, and last act
 }
 ```
 
+#### Field handling rules (record-level validation)
+
+- Records are validated **one by one**. A record that fails validation is quarantined (excluded from aggregation) and reported as a `data_integrity` warning that lists the record position and the schema path only — never the record values. One malformed record no longer discards the whole batch.
+- `plan_type`: `business` / `enterprise`. A missing or unrecognized value (including `unknown`) is preserved as `unknown` and raises a warning; the seat cost is treated as **unconfirmed** (not estimated as Enterprise, SDD-06 §1.1).
+- `organization`: may be `null` (seats assigned directly at the enterprise level). It is preserved and the seat is grouped as unassigned, with a warning.
+- `updated_at`: deprecated and may be absent; `created_at` is used as the fallback.
+- `seat_status`: an unknown future value does not invalidate the record.
+- Schema validation errors (Zod) are classified as `data_integrity`; HTTP 401/403 → `api_auth`; 404 → `not_found` (warning); 429 → `rate_limit`; others → `server_error`.
+
 ---
 
 ## 4. GitHub Enterprise Cost Centers API
@@ -178,9 +193,13 @@ Retrieves Cost Centers defined in GitHub Enterprise Billing and their mapped res
 
 ### 4.2 Response Schema
 
+The documented response key is `costCenters`; the legacy key `cost_centers` and a bare array are also accepted. Each record needs `id` and `name`; `cost_center_code` and `state` are optional (the public API does not return `cost_center_code`). Cost Centers whose `state` is `deleted` are excluded from allocation. `resources[].type` aliases are normalized to the domain kinds (`Organization` → `Org`, `Repo` → `Repository`, `User`); unknown kinds are kept as-is.
+
+Cost Centers are an Enterprise Billing feature: for organization-only operation the source is recorded as `skipped` (not a failure).
+
 ```json
 {
-  "cost_centers": [
+  "costCenters": [
     {
       "id": "cc-eng-001",
       "name": "Platform-Engineering",
@@ -210,4 +229,19 @@ Retrieves Cost Centers defined in GitHub Enterprise Billing and their mapped res
 |---|---|---|---|
 | **Copilot Business** | \$19.00 / seat | \$19.00 / calendar days (e.g., \$0.633 in a 30-day month) | Standard IDE completion & Chat |
 | **Copilot Enterprise** | \$39.00 / seat | \$39.00 / calendar days (e.g., \$1.300 in a 30-day month) | Internal knowledge base, PR summaries, CLI, etc. |
-| **Idle Seat** | Full plan price | Same as above | Contract fees incurred even when inactive for 14/30+ days |
+| **Idle Seat** | Full plan price | Same as above | Contract fees incurred even when idle (see SDD-06 §3 for the exact criteria) |
+| **AI Credit** | \$0.01 / credit | — | Usage-based billing since 2026-06-01 (single unit price on every calculation path) |
+
+### 5.1 Pricing Catalog (single source of prices)
+
+All prices are defined in one module, `src/domain/pricing/pricing-catalog.ts`; no other module may embed a price. Enterprise-specific contract prices and discounts (`COPILOT_BILLING_CONFIG`, SDD-06 §1.3) override the catalog defaults.
+
+| Item | Baseline | Transition promotion (2026-06 to 2026-08) |
+|---|---|---|
+| Seat price (Business / Enterprise) | \$19 / \$39 per seat per month | same |
+| AI Credit unit price | \$0.01 | same |
+| Included credits per seat per month (Business / Enterprise) | 1,900 / 3,900 | 3,000 / 7,000 |
+
+- Included credits are **plan-specific and period-specific** and form a pool **per billing entity** (sum over all seats). A seat whose plan is `unknown` contributes nothing to the pool and is counted as "plan unconfirmed".
+- The catalog values are **provisional**: they were established from publicly available summaries because the primary sources could not be fetched; they are re-verified against GitHub's documentation when the catalog is versioned in Phase 1 (`PRICING_CATALOG_VERSION` identifies the revision).
+- The previous per-service defaults (a separate \$0.05 per credit in `CreditsBillingService`, a fixed 3,900 included credits for all plans) were removed: the same consumption produced amounts that differed by 5x depending on the path.

@@ -31,6 +31,14 @@ fi
 ```
 Failure to stage `data/demo/processed/*` directly into the public root will break live demo viewing on GitHub Pages.
 
+**Real data is staged with the allow-list script, not with `cp -r`**:
+```bash
+npm run pages:stage    # before `npm run build`: copies index.json, error-log.json, ALL processed/* months, and the daily files named in index.json
+npm run pages:verify   # after `npm run build`: every staged file must be in dist/data/, and nothing private may be
+```
+- `scripts/pages-staging.ts` is an **allow-list**. Never add `data/raw/`, original CSVs (`reports/monthly/**`), or `data/config/` (encrypted mapping) to it, and never replace it with a recursive copy of `data/`.
+- Staging only the current run's output makes past months 404 on the deployed site. `pages:verify` fails the workflow if a staged month is missing from `dist/data/`.
+
 ---
 
 ## 3. Client-Side Multi-Tier Fallback Protocol (`pathResolver.ts`)
@@ -40,10 +48,12 @@ Any client-side fetch logic that retrieves data files from `./data` or `./data/d
    - Never use raw string concatenation like `./data/foo.json` without normalization.
    - `resolveDataPath` automatically adapts to `window.location.pathname` so accessing without trailing slash (e.g. `https://<owner>.github.io/<repo>`) will not drop the repository prefix.
 2. **Use Multi-Tier Candidate Generation (`getCandidateDataUrls`)**:
-   - Must attempt candidates in order:
-     1. Direct root path: `data/demo/{subDir}/{file}`
-     2. Processed storage path: `data/demo/processed/{subDir}/{file}`
-     3. Alternate mode path: `data/{subDir}/{file}`
-     4. Alternate mode processed path: `data/processed/{subDir}/{file}`
+   - Attempts the candidates **of the selected mode only**, in order:
+     1. Direct root path: `data/{subDir}/{file}` (or `data/demo/{subDir}/{file}` in DEMO mode)
+     2. Processed storage path: `data/processed/{subDir}/{file}` (or `data/demo/processed/...`)
+   - The alternate mode's paths (LIVE <=> DEMO) are added only with the explicit opt-in `includeAlternateMode: true`. **Never** use it to paper over a missing live file: a 404 for real data must surface as an error / "no live data" state, not as demo data presented as real.
 3. **Use `fetchDataWithFallback`**:
    - Sequentially tests candidates until a 200 OK is received before propagating errors.
+4. **Demo data is explicit-only**:
+   - Treat data as demo only when the user selected it (`?demo=true`, the DEMO toggle, the "デモデータを表示" button), it lives under `/demo/`, or its `index.json` has `is_mock_mode: true` (`isMockModeData`). Never infer demo from the owner name, a zero seat count or an empty history.
+   - `is_mock_mode` is produced only by `MOCK_MODE`; a failed or unconfigured live source must not set it (SDD-05 §3.0).
