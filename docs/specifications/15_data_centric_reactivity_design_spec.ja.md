@@ -7,7 +7,7 @@
 - **文書番号**: SPEC-COPILOT-015
 - **ステータス**: Approved / Active
 - **対象バージョン**: 2026.09-LTS
-- **作成日**: 2026-09-22
+- **作成日**: 2026-09-22 (2026-10-01 改訂: ケーススタディ C / D、§3.6、§6 を追加)
 - **関連要件**: [SDD-01 FR-9 (ビュー横断データセントリック・リアクティビティ)](01_requirements_specification.ja.md)
 
 ---
@@ -40,7 +40,19 @@
 - **教訓**: **1つの集計データ型に複数の派生フィールドが存在する場合、フィルター再計算メモは「一部のフィールドだけ」を更新し、残りを素通しさせる「部分的再集計漏れ」を起こしやすい。** 新しいフィールドをデータ型に追加するたびに、そのデータ型を再集計している全てのメモ関数を横断的に点検する必要がある。
 - **修正方針**: `model_breakdown` の再集計ロジックをフック内のインライン処理から独立した純粋関数 `buildFilteredModelBreakdown`（`dashboard/src/utils/reportModelBreakdown.ts`）として抽出し、`filteredActiveReportData` から呼び出すよう変更。純粋関数化したことで、実データ入出力による回帰テストが可能になった。
 
-両ケースに共通する構造的教訓は 第2節・第3節 に一般化して整理する。
+#### ケーススタディ C: Cost Center / Organization / 部署 / ユーザー条件だけを変えても月次レポートの KPI が変わらない (P0-6)
+- **症状**: 月次レポート (CSV) またはアップロードファイルを表示中に、Cost Center・Organization・部署・ユーザーの条件を変えても KPI が変化せず、タグを変えたときだけ変化した。「未割当」フィルターは 0 件になり、日次・期間スコープでフィルターを適用すると費用が黙って*月額*に変わった。
+- **根本原因 1 (依存配列)**: `filteredActiveReportData` を生成する `useMemo` の依存配列が `[activeReportData, selectedTags]` で、他のフィルター条件の変更で再計算されなかった。処理は条件を*使って*いるのに、依存配列がそれを宣言していなかった。
+- **根本原因 2 (同じ概念の複数定義)**: パイプラインは経路ごとに異なる「未割当」ラベル (`Default-CostCenter`・`Unassigned-CC`・`未分類 (Unassigned)`・`Default-Org`) を出力する一方、フィルターは `''`・`'Unassigned'`・`'未設定'` しか認識しておらず、「未割当」フィルターが常に 0 件になっていた。費用はスコープに関わらず月額単価で再計算され、予算使用率は 3 か所で異なる規則で計算されていた。
+- **根本原因 3 (部分的再集計漏れ — ケース B と同型)**: 利用状況メトリクス・`daily_trends`・言語別・SKU 内訳はユーザー別に再集計できないにもかかわらず、絞り込み後のシート数の隣に、同じ母集団の値のように表示されていた。
+- **修正方針**: すべての条件の影響を依存配列で網羅し ESLint で強制 (§6)。センチネル (`UNASSIGNED_FILTER_SENTINEL`) と判定関数 (`isUnassignedValue`) を `src/domain/constants/unassigned.ts` の 1 か所に集約。スコープ種別ごとの費用は `seatCostForScope`、予算は `BudgetUtilizationRule.evaluateUsd` を使う。再集計できないセクションは `src/domain/constants/filter-scope.ts` に列挙し、`filter_notice` 経由で「全社値 (フィルター非対応)」と明示 (§3.6)。
+
+#### ケーススタディ D: 早期 `return` の後ろでの Hook 呼び出し (P0-6、新設の lint が検出)
+- **症状 (潜在)**: `CreditsView`・`AgentActivityView`・`AdoptionMaturityView`・`UserTrendViewer`・`CostCenterBudgetCards` が、`if (!data) return …` の*後ろで* `useState` / `useMemo` を呼んでいた。2 回の描画の間にデータが到着 (または消失) すると Hook の数が変わり、React が描画を中断して (「Rendered more hooks than during the previous render」/「Rendered fewer hooks than expected」) 画面全体が真っ白になる。
+- **根本原因**: 検出する仕組みが無かった。テストの多くは挙動ではなくソース文字列を検査しており、lint ルールも未導入だった。
+- **修正方針**: Hook をすべての早期 return より上へ移動し、`react-hooks/rules-of-hooks` と `react-hooks/exhaustive-deps` を error として強制する (§6)。
+
+これらに共通する構造的教訓は 第2節・第3節・第6節 に一般化して整理する。
 
 ---
 
@@ -83,6 +95,13 @@
   2. フィルターで対象がゼロ件になった場合でも例外（ゼロ除算等）を起こさないこと。
   3. フィルター未適用時は、元の（パース時点の）厳密な値が維持されること（回帰防止）。
 
+### 3.6 フィルターエンジンの単一化と、概念ごとの単一定義 (P0-5 / P0-6)
+複数のモジュールが必要とする振る舞いは 1 か所に定義して import する。複製は必ずずれる (ケーススタディ C)。
+- **フィルターエンジン**: フィルター適用と全派生フィールドの再計算は `dashboard/src/utils/filterEngine.ts` (`applyFilterCriteriaToLiveScope`、レポート版、`isFilterCriteriaActive`) に置く。コンポーネントやフックでフィルターを再実装しない。
+- **未割当**: `UNASSIGNED_FILTER_SENTINEL` と `isUnassignedValue` (`src/domain/constants/unassigned.ts`) が、「Cost Center / Organization / グループ未設定」の唯一の定義。
+- **金額**: スコープ別のシート費用は `seatCostForScope` (日次=日割り、月次=月額、期間=日割り×日数)、予算使用率は `BudgetUtilizationRule.evaluateUsd`、価格は `src/domain/pricing/pricing-catalog.ts` (SDD-03 の価格表、SDD-06 §1.1 / §1.5 / §1.6)。母集団を変えるフィルターは、費用を**アクティブスコープの単位で**再計算しなければならない。
+- **フィルターに追従できないセクション**: ユーザー別の実測を持たないセクションは再計算せず、フィルター済みとして黙って表示することもしない。`LIVE_UNFILTERABLE_SECTIONS` / `REPORT_UNFILTERABLE_SECTIONS` (`src/domain/constants/filter-scope.ts`) に列挙し、全社値のまま、結果に `filter_notice.unfiltered_sections` を付けて View に「全社値 (フィルター非対応)」バッジを表示させる (SDD-07 §2.13)。集計データ型に新しいセクションを追加するときは、再計算するか、このリストへ追加する。§4 のチェックリストが対象とする。
+
 ---
 
 ## 4. レビューチェックリスト
@@ -94,6 +113,10 @@ Tagフィルター・スコープ・データソース切り替えに関わる�
 - [ ] 「一度きりの初期化フラグ」で将来の正当な再計算をブロックしていないか（`isManualSelectionRef` 等の意図分離ができているか）。
 - [ ] フォールバック経路が存在する場合、その経路も同じフィルター条件を反映しているか。
 - [ ] フィルター適用前後で値が変化することを検証する回帰テストが追加されているか。
+- [ ] メモ / effect が*読んでいる*フィルター条件はすべて依存配列に入っているか (`npm run lint` がクリーン。理由を書かない `eslint-disable` が無いこと)。
+- [ ] すべての Hook が、コンポーネント内の早期 `return` / 条件分岐より前に呼ばれているか。
+- [ ] 変更が §3.6 の単一定義 (センチネル・`seatCostForScope`・`BudgetUtilizationRule`・価格カタログ) を再利用し、複製を増やしていないか。
+- [ ] フィルター下で再集計できないセクションは、再計算されているか、`filter-scope.ts` に列挙して明示されているか。
 
 ---
 
@@ -102,3 +125,14 @@ Tagフィルター・スコープ・データソース切り替えに関わる�
 - [SDD-01 §3 FR-9: ビュー横断データセントリック・リアクティビティ](01_requirements_specification.ja.md) — 本設計方針が実現すべき要求仕様の本文。
 - [SDD-07 §1: UI全体レイアウト (データセントリック & 1カラム垂直スタック)](07_dashboard_ui_ux_spec.ja.md) — グローバルコントロールバーとViewの配置構造。
 - [SDD-10 §2.3: タグ/スコープ絞り込みとの連動](10_ai_model_benchmark_radar_spec.ja.md) — 本原則の具体適用例（AIモデル特性レーダー）。
+
+---
+
+## 6. 静的な強制: ESLint (React Hooks)
+
+ケーススタディ C・D はレビューのチェックリストでは検出できなかった。機械で検出する。
+
+- **ルール** (`eslint.config.js`、flat config、`dashboard/src/**/*.{ts,tsx}` に適用): `react-hooks/rules-of-hooks: error` と `react-hooks/exhaustive-deps: error`。
+- **実行箇所**: ローカルの `npm run lint`、`.github/workflows/test-and-preview.yml` の専用ステップ「Run ESLint (React Hooks rules)」、および `npm test` 内の `src/tests/lint-react-hooks.test.ts`。したがって、文書化済みの 5 段階の品質ゲート (`fork:verify → typecheck → test → secret-scan → build`) が 6 段目を足さずにこれを強制する。
+- **抑止**: 意図的な省略は `// eslint-disable-next-line react-hooks/exhaustive-deps` に**理由を書いたコメントを添えて**記す (例: `useDashboardData` のレポート取得 effect は、選択レポート月が変わったときだけ実行する必要があり、`currentReportData` を依存に加えると無限ループになる)。理由の無い抑止はレビューの指摘事項とする。
+- **パーサー**: TypeScript は Babel (`@babel/eslint-parser` + `@babel/preset-typescript`) で構文解析する。本リポジトリは TypeScript 7 (ネイティブ版) を使っており、`typescript-eslint` が必要とする JavaScript API が提供されない。型情報を使うルール (例: `no-floating-promises`) の導入にはパーサーの選定が先に必要で、改善計画 (`.devs/changes/2026-10-01_DashboardReviewAndImprovementPlan`、P2-6) の Phase 2 の判断に委ねる。

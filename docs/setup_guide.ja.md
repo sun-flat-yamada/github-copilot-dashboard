@@ -46,6 +46,13 @@
 2. **Build and deployment** > **Source** で **「GitHub Actions」** を選択します。
 3. 外部のホスティングサーバーやクラウド費用は一切不要です（`.github/workflows/copilot-analysis-cron.yml` により自動配信されます）。
 
+### 公開されたデータを誰が読めるか (公開リポジトリ / Pages の公開範囲)
+実データの収集を有効にする前に、結果を誰が読めてよいかを決めてください:
+- **公開 (public) リポジトリ**は **`copilot-data` ブランチ** (Raw の API レスポンス・ユーザー別の数値・解決済みの氏名と部署) も公開します。
+- **GitHub Pages サイトは、リポジトリが非公開でも既定で公開**されます (アクセス制御付き Pages には GitHub Enterprise Cloud が必要です)。
+- そのため、次の**いずれか**を選んでください: (1) リポジトリ**と** Pages の両方を非公開にする、(2) 仮名化したデータだけを公開する: Variable `ANONYMIZE_USERS=true` と Secret `ANONYMIZE_SECRET` (ランダムな16文字以上。例: `openssl rand -hex 32`) を設定します。`ANONYMIZE_USERS=true` で有効な鍵が無い場合、実行は何も公開せずに停止します。
+- 定期ワークフローは収集前に `npm run fork:verify` を実行し、実在の・仮名化されていないユーザー単位のデータが公開されている (または公開される) 場合は**失敗**します。カスタムドメインで配信している場合は `COPILOT_PAGES_URL` を設定し、公開デプロイを承知のうえで受け入れる場合に限って `COPILOT_ALLOW_PUBLIC_DATA=true` を設定してください。詳細は [SECURITY.md](../SECURITY.md) と [SDD-04 第5章](specifications/04_user_attribute_mapping_spec.ja.md) を参照してください。
+
 ---
 
 ## 3. GitHub Actions 権限の付与
@@ -249,7 +256,8 @@ Enterprise Agreementにおいて、USD換算ではなく日本円建てでの固
   npm run demo:setup -- --push
   ```
 - **モックシミュレーション**: Variable に `MOCK_MODE=true` を指定すると、実際のPATがなくても2026年仕様の全機能シミュレーションデータで即座にダッシュボードを起動・検証できます。
-- **グレースフル・デグラデーション**: 万一 Metrics API のトークン権限が未付与または一時停止された場合でも、パイプラインは停止せず、Seat情報や月次CSVレポート（Monthly Usage Report）を用いて集計を自動継続します。
+- **グレースフル・デグラデーション**: 万一 Metrics API のトークン権限が未付与または一時停止された場合でも、パイプラインは停止せず、Seat情報や月次CSVレポート（Monthly Usage Report）を用いて集計を自動継続します。各ソース (利用状況メトリクス / シート / Cost Center) は独立に収集され、その状態 (`ok` / `partial` / `failed` / `skipped`) はダッシュボードのデータ状態バナーに表示されます。失敗したソースが過去の正常なデータを「ゼロ」で置き換えることはなく、直近の成功値を引き継いで明示し、デモデータで代替することもありません。
+- **パイプラインの任意設定** (特記なければ Variables): `ANONYMIZE_USERS` (+ Secret `ANONYMIZE_SECRET`)、`GITHUB_API_VERSION` (既定 `2026-03-10`)、`COPILOT_BILLING_CONFIG` (第5章)、`COPILOT_COST_CENTER_BUDGETS`、`COPILOT_ALLOW_PUBLIC_DATA`、`COPILOT_PAGES_URL`。
 
 ---
 
@@ -281,5 +289,9 @@ git push origin main
 ## 8. トラブルシューティング
 
 - **API 403 / レート制限 / 権限エラー**: ヘッダー右上の異常検知アイコン（80%×80%モーダル）を開くか、`error-log.json` をダウンロードして発生エンドポイントを確認してください。
+- **`fork:verify` が公開範囲のエラーで失敗する**: リポジトリまたは Pages サイトが公開されている状態で、実在の・仮名化されていないユーザーデータが公開されている (または公開される) 状態です。リポジトリと Pages を非公開にするか、仮名化 (`ANONYMIZE_USERS=true` + `ANONYMIZE_SECRET`) を有効にしてください。GitHub に到達できない場合は警告のみになります。
+- **「ANONYMIZE_USERS is enabled but ANONYMIZE_SECRET is not set / too short」で実行が停止する**: ランダムな16文字以上の値を Actions Secret `ANONYMIZE_SECRET` として登録してください (fail closed は仕様です)。
+- **ダッシュボードに赤/黄のバナーや、数値のかわりに「—」が表示される**: ソースの取得失敗・一部取得 (バナー)、または実測できていない値 (理由付きの「—」) です。原因は異常検知モーダル / `error-log.json` で確認できます。「前回値」バッジは、そのソースの直近の収集が失敗し、前回成功時の値を表示していることを示します。
+- **ダッシュボードに琥珀色の「デモ」バナーが表示される**: デモ (架空) データを、明示的に選択した、またはデータ自身が `is_mock_mode` を宣言しているために表示しています。「実データを表示」を押すか、`?demo=true` なしで開いてください。
 - **シークレットスキャン検知**: コミット前に `npm run secret-scan` を実行し、誤ってトークンや内部パスが含まれていないか特定してください。
 - **本家へのPR作成時データ監査**: `npm run upstream:audit` を実行することで、社内実データや個人情報を含むCSV・ログファイルが混入していないことを事前に保証できます。

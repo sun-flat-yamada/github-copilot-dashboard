@@ -129,8 +129,10 @@ copilot-data (Orphan Data Branch)
 ```
 
 #### DEMO Mode Referencing Behavior
-- **Dashboard Dynamic Resolution**: The dashboard detects DEMO mode via (a) URL parameter `?demo=true` or `?mock=true`, (b) `VITE_MOCK_MODE=true`, or (c) `index.json` declaring `is_mock_mode: true`. When activated, the data resolver dynamically prefixes all fetch requests with `./data/demo/` instead of `./data/`.
-- **Interactive Switching**: The header DEMO/LIVE badge allows users to toggle between live data and DEMO simulation data interactively.
+- **Dashboard Dynamic Resolution**: The directory that is read is chosen **explicitly**: (a) URL parameter `?demo=true` / `?mock=true` / `?mode=demo` / `?data=demo`, (b) `VITE_MOCK_MODE=true`, or (c) the header DEMO/LIVE badge, or the "Show demo data" button shown when live data cannot be loaded. When DEMO is selected, the data resolver prefixes all fetch requests with `./data/demo/` instead of `./data/`.
+- **No implicit demo fallback (C-06)**: a missing live file (a past month that was not deployed, a failed index request, an empty collection) must **never** be answered with demo data. The SPA shows the error / "no live data" state instead, with an explicit button to look at the demo.
+- **What counts as DEMO**: the data is treated as DEMO only when it was loaded from the `data/demo/` path **or** its `index.json` declares `is_mock_mode: true` (data generated with `MOCK_MODE`). Repository owner names, zero seats or zero days of data never imply DEMO; a failed or unconfigured live collection is not demo data. While DEMO data is shown, a banner at the top of the screen says so.
+- **Interactive Switching**: The header DEMO/LIVE badge toggles to the other mode explicitly (clicking the DEMO badge returns to live data; clicking LIVE selects the demo data).
 - **Pipeline & Tooling**:
   - `npm run demo:generate`: Generates/updates the complete 2026 LTS Live Metrics DEMO bundle under `data/demo/` and `dashboard/public/data/demo/`.
   - `npm run demo:sync [-- --push]`: Safely commits and syncs `data/demo/` to the `copilot-data` branch in an isolated temporary worktree.
@@ -155,12 +157,20 @@ if [ -d "data/demo/processed" ]; then
 fi
 ```
 
-#### 3. Client-Side Multi-Tier Defense-in-Depth Fallback (`pathResolver.ts`)
-The client SPA (`useDashboardData.ts`) must never rely on a single fragile URL. It iterates through candidate URLs (`getCandidateDataUrls`) in order:
-1. **Public distribution root path** (e.g. `/github-copilot-dashboard/data/demo/monthly/2026-09.json`)
-2. **Persistent storage processed path** (e.g. `/github-copilot-dashboard/data/demo/processed/monthly/2026-09.json`)
-3. **Alternate mode root path** (LIVE <=> DEMO bidirectional fallback)
-4. **Alternate mode processed path**
+#### 2a. Real-Data Staging & Artifact Verification (`scripts/pages-staging.ts`)
+The workflow stages the **real** `data/` in addition to the DEMO partition. Previously only `data/demo` was staged, so past months (`processed/monthly`, `reports`, `deep-analysis`) never reached Pages and the SPA fell back to demo data (C-06).
+
+- `npm run pages:stage` copies an **allow-list** from `data/` into `dashboard/public/data/` (flattening `processed/*` per the convention above): `index.json`, `error-log.json`, `processed/{monthly,reports,deep-analysis,trends,custom}/*.json`, and `processed/daily/<date>.json` only for the dates listed in `index.json` `available_days` (what the UI can reach).
+- **Never published**: `raw/` (unprocessed API responses), `reports/` (original imported CSVs), `config/` (encrypted user mapping), anything else.
+- `npm run pages:verify` runs **after** the build and fails the job when (1) a staged file is missing from `dist/data/` (it would 404 on Pages), or (2) `dist/data/` contains `raw/`, `config/`, `reports/monthly/`, or any `.csv` (outside the fictional `demo/`).
+- The DEMO staging step is kept as before (`cp -r data/demo/* ...` and the `processed/*` flattening) so the demo stays deployable under `/data/demo/`.
+
+#### 3. Client-Side Candidate Resolution (`pathResolver.ts`)
+The client SPA (`useDashboardData.ts`) does not rely on a single URL for the **selected** mode. `getCandidateDataUrls` returns:
+1. **Public distribution root path** (e.g. `/github-copilot-dashboard/data/monthly/2026-09.json`, or `.../data/demo/...` in DEMO mode)
+2. **Persistent storage processed path** (e.g. `/github-copilot-dashboard/data/processed/monthly/2026-09.json`; backward compatibility with `copilot-data` layouts)
+
+The alternate mode's paths (LIVE <=> DEMO) are **not** candidates by default. They can be added only by explicit opt-in (`includeAlternateMode: true`), which the SPA does not use.
 
 #### 4. Subdirectory & Trailing-Slash Agnostic Resolution
 All data fetches resolve through `resolveDataPath`, dynamically extracting the base path from `window.location.pathname` to prevent RFC 3986 relative path drops when accessed without a trailing slash.
@@ -179,8 +189,19 @@ The entry metadata file loaded first by the dashboard SPA to provide available d
     "name": "github-copilot-dashboard",
     "is_fork": false
   },
-  "last_updated_at": "2026-09-10T00:30:00Z",
+  "generated_at": "2026-09-10T00:30:00Z",
   "data_retention_days": 365,
+  "is_mock_mode": false,
+  "source_status": [
+    { "source": "metrics", "status": "failed", "records": 0,
+      "last_attempt_at": "2026-09-10T00:30:00Z", "last_success_at": "2026-09-09T00:30:00Z",
+      "error": "HTTP 503 from /enterprises/…/copilot/metrics" },
+    { "source": "seats", "status": "ok", "records": 160,
+      "last_attempt_at": "2026-09-10T00:30:00Z", "last_success_at": "2026-09-10T00:30:00Z" },
+    { "source": "cost_centers", "status": "skipped", "records": 0,
+      "last_attempt_at": "2026-09-10T00:30:00Z", "last_success_at": null }
+  ],
+  "privacy": { "anonymized": false, "contains_user_level_data": true },
   "available_months": ["2026-09", "2026-08", "2026-07"],
   "all_recorded_months": ["2026-09", "2026-08", "2026-07", "2025-12", "2025-11"],
   "available_days": [
@@ -209,6 +230,28 @@ The entry metadata file loaded first by the dashboard SPA to provide available d
   }
 }
 ```
+
+### 3.0 Per-Source Status, Last-Known-Good and the Meaning of `is_mock_mode`
+
+The pipeline collects three independent sources: `metrics` (usage), `seats` (seat assignments) and `cost_centers`. Each run records a status per source in `source_status`:
+
+| `status` | Meaning |
+|---|---|
+| `ok` | Fetched successfully |
+| `partial` | Fetched, but some records were quarantined (failed validation) or counts disagreed |
+| `failed` | The fetch failed (API error, missing token, an org of several failed, …) |
+| `skipped` | Not configured / not applicable (e.g. no credentials, org-only operation for cost centers). **Not a failure** |
+
+`last_success_at` is the last time the source succeeded; for a `failed` / `skipped` source it is **carried over from the previous `index.json`** (null if it never succeeded). The SPA shows the failure and this timestamp in the status banner.
+
+**Last-known-good rules** — a failure is never turned into "empty":
+- `seats` failed → the previous monthly scope and the previous `summary` are kept; nothing is overwritten with an empty seat list.
+- `metrics` failed → seat / cost analysis still runs (it does not depend on usage metrics). The current month's scope is written from the fresh seats and the usage sections (acceptance rate, chats, daily trend, languages, agent summary) are **carried over from the previous successful scope** with `usage_metrics: { availability: "carried_over", as_of }`. Without a previous value they are `null` with `usage_metrics.availability: "unavailable"` (the UI shows "—（取得不可）", never 0%). Daily / custom scopes are not regenerated without metrics; previous files are kept.
+- All sources failed → every previous artifact is kept and `source_status` records each failure.
+
+**`is_mock_mode`** is `true` **only** when the pipeline itself ran in `MOCK_MODE` (`--mock` / `--demo`). A failed collection, an unconfigured deployment, or zero seats never flips it.
+
+**`privacy`** (`anonymized`, `contains_user_level_data`) feeds the public-exposure check of `npm run fork:verify` (SDD-04 §5.3). `contains_user_level_data` is `true` for real data that contains seats, per-user usage or imported reports (and stays `true` when a later run fails, because previous artifacts are retained); it is `false` for demo data.
 
 ### 3.1 Empty-State Representation (No Live Credentials Configured)
 
@@ -240,7 +283,8 @@ When `COPILOT_ENTERPRISE`/`COPILOT_ORGS` are unset, or the configured credential
 
 - `default_scopes.latest_day`/`latest_month`/`latest_range` are simply omitted (not fabricated with a placeholder date) when no live metrics exist.
 - `available_reports` reflects any independently-imported Monthly Usage Report CSVs (`npm run import:report`) even when `available_months`/`available_days` are empty — CSV-based reporting has no dependency on Copilot Metrics/Seats credentials.
-- The dashboard SPA (`dashboard/src/App.tsx`) detects this state (`noLiveData`) and renders an informational banner explaining that credential-independent features (CSV reports, AI Model Benchmarks) remain available, instead of silently defaulting to a hardcoded fallback month or crashing.
+- The dashboard SPA (`dashboard/src/App.tsx`) detects this state (`noLiveData`) and renders an informational banner explaining that credential-independent features (CSV reports, AI Model Benchmarks) remain available, instead of silently defaulting to a hardcoded fallback month or crashing. The banner offers an explicit **"Show demo data"** button; the SPA never switches to demo data on its own.
+- Each source then has `source_status` `skipped` (not configured) or `failed` (e.g. the token is missing) — both are distinguishable from "collected, and there is simply nothing".
 
 ---
 

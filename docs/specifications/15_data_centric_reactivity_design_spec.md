@@ -7,7 +7,7 @@
 - **Document ID**: SPEC-COPILOT-015
 - **Status**: Approved / Active
 - **Target Version**: 2026.09-LTS
-- **Date**: 2026-09-22
+- **Date**: 2026-09-22 (revised 2026-10-01: Case Studies C / D, §3.6 and §6 added)
 - **Related Requirement**: [SDD-01 FR-9 (Cross-View Data-Centric Reactivity)](01_requirements_specification.md)
 
 ---
@@ -40,7 +40,19 @@ The following representative bugs actually occurred — and were fixed — becau
 - **Lesson**: **When a single aggregated data type has multiple derived fields, a filter-recomputation memo is prone to a "partial recomputation gap" — updating only some fields while silently passing others through unfiltered.** Whenever a new field is added to such a data type, every memo function that recomputes that type must be cross-checked and updated in lockstep.
 - **Fix**: Extracted the `model_breakdown` recomputation logic out of the inline hook body into an independent pure function, `buildFilteredModelBreakdown` (`dashboard/src/utils/reportModelBreakdown.ts`), called from `filteredActiveReportData`. Being a pure function, it became directly unit-testable with real input/output assertions.
 
-The structural lessons common to both cases are generalized in Sections 2 and 3 below.
+#### Case Study C: Changing only the Cost Center / Organization / Department / User condition did not change the monthly report KPIs (P0-6)
+- **Symptom**: With a Monthly Usage Report (CSV) or an uploaded file active, changing the Cost Center, Organization, Department or User condition left the KPIs unchanged; only changing a tag did anything. Filtering for "Unassigned" matched nothing, and with a filter on a daily or custom-period scope the cost silently turned into the *monthly* amount.
+- **Root Cause 1 (dependencies)**: the `useMemo` that produces `filteredActiveReportData` listed `[activeReportData, selectedTags]` as its dependencies, so a change to any other filter criterion did not recompute it. The code path *used* the criteria but the dependency array did not say so.
+- **Root Cause 2 (several definitions of one thing)**: the pipeline emits a different "unassigned" label per path (`Default-CostCenter`, `Unassigned-CC`, `未分類 (Unassigned)`, `Default-Org`) while the filter only recognised `''`, `'Unassigned'` and `'未設定'`, so the "Unassigned" filter always matched zero records. Cost was recomputed with the monthly price whatever the scope. Budget utilisation was computed in three places with different rules.
+- **Root Cause 3 (partial recomputation gap again — the same type as Case B)**: usage metrics, `daily_trends`, language shares and the SKU breakdown cannot be re-aggregated per user, yet they were shown next to the filtered seat count as if they belonged to the same population.
+- **Fix**: the effect of every criterion is covered by the dependency array and enforced by ESLint (§6); one sentinel (`UNASSIGNED_FILTER_SENTINEL`) and one predicate (`isUnassignedValue`) in `src/domain/constants/unassigned.ts`; cost per scope type through `seatCostForScope`; budgets through `BudgetUtilizationRule.evaluateUsd`; sections that cannot be re-aggregated are listed in `src/domain/constants/filter-scope.ts` and labelled "全社値 (フィルター非対応)" via `filter_notice` (§3.6).
+
+#### Case Study D: Hooks after an early `return` (P0-6, found by the new lint)
+- **Symptom (latent)**: `CreditsView`, `AgentActivityView`, `AdoptionMaturityView`, `UserTrendViewer` and `CostCenterBudgetCards` called `useState` / `useMemo` *after* an `if (!data) return …` branch. When the data arrived (or went away) between two renders the number of hooks changed, and React aborts the render ("Rendered more hooks than during the previous render" / "Rendered fewer hooks than expected") — the whole screen goes blank.
+- **Root Cause**: nothing detected it. Many tests inspect source text rather than behaviour, and no lint rule was installed.
+- **Fix**: hooks moved above every early return; `react-hooks/rules-of-hooks` and `react-hooks/exhaustive-deps` are enforced as errors (§6).
+
+The structural lessons common to these cases are generalized in Sections 2, 3 and 6 below.
 
 ---
 
@@ -83,6 +95,13 @@ The structural lessons common to both cases are generalized in Sections 2 and 3 
   2. No exceptions occur (e.g., division by zero) when the filter narrows the target set to zero records.
   3. When no filter is applied, the original value computed at parse time is preserved unchanged (regression guard).
 
+### 3.6 One Filter Engine, One Definition per Concept (P0-5 / P0-6)
+Behaviour that several modules need must be defined once and imported; copies drift (Case Study C).
+- **Filter engine**: filtering and the recomputation of every derived field live in `dashboard/src/utils/filterEngine.ts` (`applyFilterCriteriaToLiveScope`, the report counterpart, `isFilterCriteriaActive`). Components and hooks never re-implement a filter.
+- **Unassigned**: `UNASSIGNED_FILTER_SENTINEL` and `isUnassignedValue` (`src/domain/constants/unassigned.ts`) are the only definition of "no cost center / organization / group".
+- **Money**: seat cost for a scope is `seatCostForScope` (daily = pro-rated, monthly = full month, custom = pro-rated × days); budget utilisation is `BudgetUtilizationRule.evaluateUsd`; prices come from `src/domain/pricing/pricing-catalog.ts` (SDD-03 pricing table, SDD-06 §1.1 / §1.4 / §1.5). A filter that changes the population must recompute cost **in the unit of the active scope**.
+- **Sections that cannot follow a filter**: a section without per-user measurements is not recomputed and not silently shown as filtered. It is listed in `LIVE_UNFILTERABLE_SECTIONS` / `REPORT_UNFILTERABLE_SECTIONS` (`src/domain/constants/filter-scope.ts`), keeps its organisation-wide value, and the result carries `filter_notice.unfiltered_sections` so the View renders the "全社値 (フィルター非対応)" badge (SDD-07 §2.14). When a new section is added to the aggregated type, it is either recomputed or added to that list — the checklist in §4 covers this.
+
 ---
 
 ## 4. Review Checklist
@@ -94,6 +113,10 @@ When reviewing or implementing code changes touching Tag filters, scope, or data
 - [ ] Is any "one-time initialization flag" blocking legitimate future recomputation (i.e., is intent properly separated, e.g. via `isManualSelectionRef`)?
 - [ ] If a fallback path exists, does it also honor the same filter conditions?
 - [ ] Has a regression test been added verifying the value actually changes before vs. after applying the filter?
+- [ ] Is every filter criterion that the memo/effect *reads* also in its dependency array (`npm run lint` is clean — no `eslint-disable` without a written reason)?
+- [ ] Are all hooks called before any early `return` / conditional in the component?
+- [ ] Does the change reuse the single definitions of §3.6 (sentinel, `seatCostForScope`, `BudgetUtilizationRule`, pricing catalog) instead of adding a copy?
+- [ ] A section that cannot be re-aggregated under a filter: is it recomputed, or listed in `filter-scope.ts` and labelled?
 
 ---
 
@@ -102,3 +125,14 @@ When reviewing or implementing code changes touching Tag filters, scope, or data
 - [SDD-01 §3 FR-9: Cross-View Data-Centric Reactivity](01_requirements_specification.md) — The requirement text this design policy fulfills.
 - [SDD-07 §1: Overall UI Layout (Data-Centric & Single-Column Vertical Stack)](07_dashboard_ui_ux_spec.md) — The layout structure of the global control bar and Views.
 - [SDD-10 §2.3: Tag/Scope Filter Reactivity](10_ai_model_benchmark_radar_spec.md) — A concrete applied example of this principle (AI Model Characteristics Radar).
+
+---
+
+## 6. Static Enforcement: ESLint (React Hooks)
+
+Review checklists did not catch Case Studies C and D; a machine does.
+
+- **Rules** (`eslint.config.js`, flat config, applied to `dashboard/src/**/*.{ts,tsx}`): `react-hooks/rules-of-hooks: error` and `react-hooks/exhaustive-deps: error`.
+- **Where it runs**: `npm run lint` locally, the dedicated step "Run ESLint (React Hooks rules)" in `.github/workflows/test-and-preview.yml`, and `src/tests/lint-react-hooks.test.ts` inside `npm test` (so the documented 5-stage quality gate `fork:verify → typecheck → test → secret-scan → build` already enforces it without a sixth stage).
+- **Suppressions**: an intentional omission is written as `// eslint-disable-next-line react-hooks/exhaustive-deps` **with a comment stating why** (for example the report-loading effect in `useDashboardData`, which must run only when the selected report month changes — adding `currentReportData` to its dependencies would loop). A suppression without a reason is a review finding.
+- **Parser**: TypeScript is parsed by Babel (`@babel/eslint-parser` + `@babel/preset-typescript`). The repository uses TypeScript 7 (native) whose JavaScript API `typescript-eslint` needs is not provided. Introducing type-aware rules (e.g. `no-floating-promises`) requires choosing a parser first and is deferred to the Phase 2 decision recorded in the improvement plan (`.devs/changes/2026-10-01_DashboardReviewAndImprovementPlan`, P2-6).

@@ -32,6 +32,10 @@ All AI agents operating in this workspace **MUST** adhere to the following non-n
    - All mapping between GitHub logins and internal identities must be supplied dynamically via environment variables (`COPILOT_USER_MAPPING`) stored in GitHub Actions Secrets/Variables.
 2. **Commit Sanitization**:
    - Before executing any `git commit`, `git add`, or editing files intended for version control, ensure that no local `user_mapping.json`, `.env`, or real user data is tracked or included in diffs.
+3. **Public Exposure (the `copilot-data` branch and Pages are published too)**:
+   - In a public repository the `copilot-data` branch is public, and GitHub Pages sites are public by default even for private repositories. The zero-leakage guarantee for `main` does not cover them.
+   - Real, non-anonymized user-level data (logins, names, departments, per-user usage) must only be published when the repository and Pages are private, or when `ANONYMIZE_USERS=true` with a strong `ANONYMIZE_SECRET` (keyed HMAC-SHA256; never reversible without the key).
+   - `npm run fork:verify` performs this exposure check. **Never weaken, bypass or silence it** (including `COPILOT_ALLOW_PUBLIC_DATA`) unless the user explicitly asks for it. Never print, log or commit `ANONYMIZE_SECRET`, and never publish avatar URLs, numeric user IDs, raw seat data or original CSVs in pseudonymized mode.
 
 ---
 

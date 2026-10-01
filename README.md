@@ -44,7 +44,7 @@ Performs multidimensional aggregation and cost allocation across 3 primary axes 
 - Detects API rate limits, permission shortages, and data retrieval gaps, immediately surfacing warning/error indicators in the header.
 - **80%×80% Modal Window**: Smart 3-line truncation per incident with one-click full expansion.
 - **ErrorLog JSON Export**: One-click download of diagnostic logs for troubleshooting.
-- Displays `Unavailable` badges for missing data points, ensuring graceful fallbacks without crashing the dashboard.
+- **A failure never looks like "zero" or "demo"**: a data-status banner at the top shows sources that failed or were only partly retrieved, and demo data is shown only when you explicitly choose it. Missing values appear as "—" with the reason, and values carried over from the previous successful run are labelled as such.
 
 ### 6. Defense-in-Depth Secret & PII Leak Prevention
 - **OWASP / GitGuardian Compliant `.gitignore`**: Rigorously excludes private keys (`*.pem`, `id_rsa`), certificates, cloud credentials, and `.env*`.
@@ -52,6 +52,7 @@ Performs multidimensional aggregation and cost allocation across 3 primary axes 
 - **Agent Audit Skill (`skills/secret-guard/`) & Local Scanner (`npm run secret-scan`)**: Autonomous pre-commit self-checks.
 - **CI/CD Automated Inspection (`.github/workflows/secret-scan.yml`)**: Dual-layer interception gate on PR/Push via Gitleaks and custom scanner.
 - **Zero PII Leakage**: User and department mapping tables are isolated exclusively in **GitHub Actions Variables / Secrets (`COPILOT_USER_MAPPING`)**. Zero personally identifiable information (PII) or internal org charts ever enter Git commit history.
+- **Public-exposure guard**: the `copilot-data` branch of a public repository is public too, and GitHub Pages are public by default. `npm run fork:verify` (also run before every scheduled collection) fails when real, non-anonymized user data would be publicly readable, and `ANONYMIZE_USERS=true` + `ANONYMIZE_SECRET` publishes keyed (HMAC-SHA256) pseudonyms instead of real logins and names. See [SECURITY.md](SECURITY.md).
 
 ### 7. Fork-Safe Storage Architecture & Maintenance Platform
 - Zero data files committed to `main`; employs a dedicated **isolated orphan data branch (`copilot-data`)**.
@@ -60,7 +61,7 @@ Performs multidimensional aggregation and cost allocation across 3 primary axes 
 - Equipped with **Fork Health Verification Tool (`npm run fork:verify`)**, automated synchronization skill (`skills/fork-sync-ops/`), and full operational guide ([SDD-12](docs/specifications/12_fork_sync_and_customization_ops_spec.md)).
 
 ### 8. Idle Seat Optimization Advisor
-- Automatically flags seats unused for 30+ days, calculating wasted license expenses and potential savings.
+- Automatically flags idle seats (the criteria are shown on screen; a newly assigned, still unused seat is counted as *onboarding*, not idle), calculating wasted license expenses and potential monthly savings.
 - Supports one-click CSV export of candidate users for license reclamation or reassignment.
 
 ### 9. Permanent USD Primary with Optional Secondary Sub-Currency (Dual Currency FinOps)
@@ -175,6 +176,9 @@ Deploy your auto-updating dashboard to GitHub Pages in 4 steps:
 1. Go to **Settings** > **Pages** in your repository.
 2. Under **Build and deployment** > **Source**, select **"GitHub Actions"**.
 
+> [!WARNING]
+> **Check who can read your data before enabling real-data collection.** In a **public** repository the `copilot-data` branch (raw data, per-user figures, resolved names and departments) is publicly readable, and a GitHub Pages site is **public by default even when the repository is private** (private Pages need GitHub Enterprise Cloud). Either keep the repository *and* Pages private, or publish pseudonymized data only (`ANONYMIZE_USERS=true` with `ANONYMIZE_SECRET`, see Step 4). The scheduled workflow runs `npm run fork:verify` first and stops when it detects real, non-anonymized data that is publicly exposed. Details: [SECURITY.md](SECURITY.md).
+
 ### Step 3: Enable Actions Permissions
 1. Navigate to **Settings** > **Actions** > **General**.
 2. Under **Workflow permissions**, select **"Read and write permissions"** and check **"Allow GitHub Actions to create and approve pull requests"**.
@@ -183,6 +187,7 @@ Deploy your auto-updating dashboard to GitHub Pages in 4 steps:
 Register your configuration under **Settings** > **Secrets and variables** > **Actions**:
 - **Secrets**:
   - `COPILOT_READ_TOKEN`: Personal Access Token with `manage_billing:copilot` (or Copilot read permissions) and `read:org`.
+  - `ANONYMIZE_SECRET`: *(Required when `ANONYMIZE_USERS=true`)* a random key of at least 16 characters (e.g. `openssl rand -hex 32`) for the keyed pseudonyms. Without it the run stops instead of publishing reversible pseudonyms.
 - **Variables**:
   - `COPILOT_ENTERPRISE`: Enterprise slug (e.g., `my-enterprise`), or `COPILOT_ORGS`: Comma-separated org list.
   - `COPILOT_USER_MAPPING`: JSON array mapping GitHub logins to internal departments:
@@ -195,6 +200,8 @@ Register your configuration under **Settings** > **Secrets and variables** > **A
     ```json
     { "subCurrency": { "code": "JPY", "symbol": "¥", "exchangeRateFromUSD": 155.0, "displayDecimals": 0 }, "discountPercent": 15 }
     ```
+  - `ANONYMIZE_USERS`: *(Recommended for public repositories / public Pages)* `true` publishes pseudonyms (`dev_<hex>`, `User-<hex>`) instead of real logins, names and departments. Requires the `ANONYMIZE_SECRET` secret.
+  - `GITHUB_API_VERSION`: *(Optional)* `X-GitHub-Api-Version` header value (default `2026-03-10`).
   - *(Testing / Demo)* `MOCK_MODE`: Set to `true` to immediately spin up the dashboard using 2026 synthetic simulation data.
 
 > [!NOTE]
@@ -213,8 +220,9 @@ npm install
 # 2. Pre-flight fork health & sync audit
 npm run fork:verify
 
-# 3. TypeScript typecheck
+# 3. TypeScript typecheck & ESLint (React Hooks rules)
 npm run typecheck
+npm run lint
 
 # 4. Run unit & pipeline tests
 npm test

@@ -7,7 +7,7 @@
 - **Document ID**: SPEC-COPILOT-008
 - **Status**: Approved / Active
 - **Target Version**: 2026.09-LTS
-- **Date**: 2026-09-10
+- **Date**: 2026-09-10 (revised 2026-10-01: exposure pre-flight, staging/verification steps, new secrets/variables, per-source degradation)
 
 ---
 
@@ -15,8 +15,8 @@
 
 | Workflow Name | Trigger | Core Responsibilities |
 |---|---|---|
-| `copilot-analysis-cron.yml` | Scheduled (Daily UTC 00:00) / Manual (`workflow_dispatch`) | 1. Fetch latest API data (or continue gracefully with zero live data if credentials are absent/insufficiently privileged)<br>2. Inject mapping via Attribute Resolver<br>3. Multidimensional aggregation & billing calculation<br>4. Append commit to `copilot-data` (real data) or force-reset `copilot-data-mock` (simulated data) branch, depending on `MOCK_MODE`<br>5. Build SPA and deploy to GitHub Pages (real-data runs only; mock runs stop after step 4) |
-| `test-and-preview.yml` | Pull Request / Push to `main` | TypeScript typecheck, unit tests, and build verification using mock datasets |
+| `copilot-analysis-cron.yml` | Scheduled (Daily UTC 00:00) / Manual (`workflow_dispatch`) | 1. **Exposure pre-flight** (`npm run fork:verify`, real-data runs only): fail before collecting anything when a public repository or public Pages would expose real, non-anonymized user-level data<br>2. Fetch latest API data per source (or continue gracefully with zero live data if credentials are absent/insufficiently privileged, recording each source's status)<br>3. Inject mapping via Attribute Resolver (pseudonymize when `ANONYMIZE_USERS=true`)<br>4. Multidimensional aggregation & billing calculation<br>5. Append commit to `copilot-data` (real data) or force-reset `copilot-data-mock` (simulated data) branch, depending on `MOCK_MODE`<br>6. Stage the allow-listed processed data (`pages:stage`), build the SPA, **verify the built artifact** (`pages:verify`) and deploy to GitHub Pages (real-data runs only; mock runs stop after step 5) |
+| `test-and-preview.yml` | Pull Request / Push to `main` | TypeScript typecheck, ESLint (React Hooks rules, SDD-15 §6), unit tests, and build verification using mock datasets |
 
 ---
 
@@ -25,7 +25,9 @@
 ### 2.1 Secrets
 - `COPILOT_READ_TOKEN`:
   - Personal Access Token (PAT) or GitHub App with administrative read permissions for GitHub Enterprise or target Organizations.
-  - *Note*: Optional when running in mock mode (`MOCK_MODE=true`). Also optional for real-data mode: if `COPILOT_READ_TOKEN`/`COPILOT_ENTERPRISE`/`COPILOT_ORGS` are unset, or if the credential lacks Enterprise Owner/Org Admin permission, the pipeline no longer aborts — see [Section 2.3](#23-graceful-operation-without-copilot-metricsseats-credentials) below.
+  - *Note*: Optional when running in mock mode (`MOCK_MODE=true`). Also optional for real-data mode: if `COPILOT_ENTERPRISE`/`COPILOT_ORGS` are unset the live sources are `skipped`, and if the token is missing or the credential lacks Enterprise Owner/Org Admin permission they are recorded as `failed`; the pipeline no longer aborts in either case — see [Section 2.3](#23-graceful-operation-without-copilot-metricsseats-credentials) below.
+- `ANONYMIZE_SECRET` (**required when `ANONYMIZE_USERS=true`**):
+  - Secret key (random, at least 16 characters, e.g. `openssl rand -hex 32`) for the keyed HMAC-SHA256 pseudonymization. With `ANONYMIZE_USERS=true` and no (or too short a) secret the pipeline stops without publishing anything (fail closed). Changing the key changes every pseudonym. See [SDD-04 Section 5](04_user_attribute_mapping_spec.md#5-public-exposure--pseudonymization-e-05).
 - `COPILOT_USER_MAPPING_PASSPHRASE` (Optional):
   - Passphrase for the GPG encryption workaround used when a large user mapping exceeds `COPILOT_USER_MAPPING`'s 48KB size limit.
   - Used only to decrypt `data/config/copilot-user-mapping.json.gpg` from the `copilot-data` branch. If unset, or if that file does not exist, this decryption step is simply skipped and the pipeline falls back to `COPILOT_USER_MAPPING`/`COPILOT_USER_MAPPING_BASE64` as usual.
@@ -80,10 +82,10 @@ To analyze or evaluate this dashboard with a personal Free account:
 ### 2.3 Graceful Operation Without Copilot Metrics/Seats Credentials
 
 When running in real-data mode (`MOCK_MODE` unset or `false`) without `COPILOT_ENTERPRISE`/`COPILOT_ORGS` configured — or when the configured credential lacks Enterprise Owner/Org Admin permission — the pipeline **no longer aborts**. Instead:
-- `fetchMetrics()`/`fetchSeats()` record an explanatory `warning`-level issue (surfaced in `index.json`'s `issues[]`) instead of silently failing or falling back to mock data.
+- Each live source (`metrics`, `seats`, `cost_centers`) records its own `SourceStatus` in `index.json` (`source_status[]`): `skipped` plus a `warning` issue when `COPILOT_ENTERPRISE`/`COPILOT_ORGS` are unset; `failed` plus an `error` issue naming the cause when the token is missing (`COPILOT_READ_TOKEN`) or the API call fails. Nothing silently fails or falls back to mock data, and a failed source keeps the previous successful values (SDD-02 §2.6). Issues are surfaced in `index.json`'s `issues[]` and `error-log.json`.
 - `index.json` is still generated, with `available_months`, `available_days`, and `available_reports` reflecting only genuinely-available data (each is `[]` if no live metrics/reports exist — never fabricated placeholder values).
 - Features that do **not** depend on live Copilot Metrics/Seats API access — the Monthly Usage Report CSV importer (`npm run import:report`), the AI Model Benchmark radar, and all Cost Center budget declarations — continue to work normally and are unaffected by missing Enterprise/Org credentials or insufficient permissions.
-- The dashboard SPA detects the no-live-data condition and shows an informational banner (distinct from a genuine fetch-error banner) rather than a hardcoded fallback month/blank crash.
+- The dashboard SPA detects the no-live-data condition and shows an informational banner (distinct from a genuine fetch-error banner) rather than a hardcoded fallback month/blank crash; failed sources appear in the data-status banner (SDD-07 §2.13). Neither case switches to demo data.
 
 ### 2.2 Variables
 - `COPILOT_USER_MAPPING`:
@@ -93,6 +95,11 @@ When running in real-data mode (`MOCK_MODE` unset or `false`) without `COPILOT_E
 - `COPILOT_ENTERPRISE`: Enterprise slug (for enterprise-wide aggregation).
 - `COPILOT_ORGS`: Comma-separated list of organization slugs (for multi-org setups).
 - `COPILOT_COST_CENTER_BUDGETS`: JSON array of `{ cost_center_id?, cost_center_name?, spending_limit_usd, free_tier_budget_usd }`. The GitHub API exposes no budget/spending-limit endpoint, so this must be declared manually to populate Cost Center budgets in real-data mode. Can be set as either a Variable or a Secret.
+- `ANONYMIZE_USERS`: Set to `true` to publish pseudonymized logins / names / departments instead of real ones (requires the `ANONYMIZE_SECRET` secret above).
+- `COPILOT_BILLING_CONFIG`: JSON for enterprise contract pricing, exchange rates and discounts (`EnterpriseBillingConfig`, SDD-02 §4.3). Variable or Secret. Unset → the pricing catalog defaults; invalid JSON is recorded as an issue (visible in the header warning count) instead of being ignored.
+- `GITHUB_API_VERSION`: Value of the `X-GitHub-Api-Version` header (default `2026-03-10`, SDD-03 §1.1).
+- `COPILOT_ALLOW_PUBLIC_DATA` (Optional): `true` downgrades the exposure pre-flight failure to a warning. Use only when publishing the data publicly is an explicit, accepted decision.
+- `COPILOT_PAGES_URL` (Optional): The public URL of the dashboard when it is served from a custom domain, so the exposure check probes the right address (default `https://<owner>.github.io/<repo>/`).
 - `MOCK_MODE`: Set to `true` (or pass `mock_mode: true` to `workflow_dispatch`) to run the pipeline using simulation data without live API tokens. Simulated data is written only to the isolated `copilot-data-mock` branch (never `copilot-data`), and the workflow skips the SPA build and GitHub Pages deployment steps entirely — see [Section 2.1.2](#212-important-notes-for-personal-free-accounts) and [SDD-05 Section 1.3](05_data_storage_and_fork_isolation_spec.md#13-mockreal-data-branch-separation).
 
 ---
@@ -116,10 +123,13 @@ permissions:
 2. Setup Node.js 22 & install dependencies (`npm ci`).
 3. Restore prior data from the target branch (`copilot-data` for real runs; skipped for mock runs, since simulated data is fully regenerated each time).
 4. *(Optional)* Decrypt a large user mapping via the GPG encryption workaround: runs only if both `data/config/copilot-user-mapping.json.gpg` and the `COPILOT_USER_MAPPING_PASSPHRASE` Secret are present, decrypting into `$RUNNER_TEMP` and setting `COPILOT_USER_MAPPING_FILE` automatically (see [SDD-04 Section 6](04_user_attribute_mapping_spec.md#6-gpg-encryption-workaround-for-mappings-exceeding-48kb-optional)).
-5. Execute data pipeline runner (`npm run pipeline:run`) — completes successfully even with zero Copilot Metrics/Seats credentials (see Section 2.3).
-6. Push newly generated data to the target branch: incremental commit to `copilot-data` for real runs, or a force-pushed orphan reset of `copilot-data-mock` for mock runs (no historical accumulation of simulated data).
-7. *(Real-data runs only)* Build SPA dashboard (`npm run build`).
-8. *(Real-data runs only)* Upload static deployment artifact via `actions/upload-pages-artifact@v5`.
-9. *(Real-data runs only)* Publish to GitHub Pages via `actions/deploy-pages@v5`.
+5. *(Real-data runs only)* **Exposure pre-flight** (`npm run fork:verify`): anonymously probes the repository API, the raw `copilot-data` branch index and the Pages index; fails when real, non-anonymized user-level data is (or is about to be) publicly readable (SDD-04 §5.3). Offline / rate-limited probes only warn.
+6. Execute data pipeline runner (`npm run pipeline:run`) — completes successfully even with zero Copilot Metrics/Seats credentials (see Section 2.3).
+7. Push newly generated data to the target branch: incremental commit to `copilot-data` for real runs, or a force-pushed orphan reset of `copilot-data-mock` for mock runs (no historical accumulation of simulated data).
+8. *(Real-data runs only)* Update the AI model benchmark dataset, then **stage the processed data** (`npm run pages:stage`): the allow-listed `index.json`, `error-log.json`, all `processed/*` months and the indexed daily files are copied to `dashboard/public/data/`; raw data, original CSVs and the encrypted mapping are never copied. The DEMO partition is staged separately under `data/demo/`.
+9. *(Real-data runs only)* Build SPA dashboard (`npm run build`).
+10. *(Real-data runs only)* **Verify the Pages artifact** (`npm run pages:verify`): every staged file (including past months) must be in `dist/data/` and nothing private (raw, config, original CSVs) may be in it (SDD-05 §2.2a).
+11. *(Real-data runs only)* Upload static deployment artifact via `actions/upload-pages-artifact@v5`.
+12. *(Real-data runs only)* Publish to GitHub Pages via `actions/deploy-pages@v5`.
 
-> Mock runs (`MOCK_MODE=true`) intentionally stop after step 6: they never build or deploy the dashboard, so the production GitHub Pages site is never overwritten with simulated data.
+> Mock runs (`MOCK_MODE=true`) intentionally stop after step 7: they never build or deploy the dashboard, so the production GitHub Pages site is never overwritten with simulated data.

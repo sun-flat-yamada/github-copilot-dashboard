@@ -47,6 +47,13 @@ If your enterprise uses Enterprise Managed Users (EMU) or organization policies 
 2. Under **Build and deployment** > **Source**, choose **"GitHub Actions"**.
 3. No static hosting server or Cloud infrastructure is needed; deployment is managed completely via `.github/workflows/copilot-analysis-cron.yml`.
 
+### Who can read the published data? (Public repository / Pages exposure)
+Before enabling real-data collection, decide who may read the result:
+- A **public repository** also publishes its **`copilot-data` branch** (raw API responses, per-user figures, resolved names and departments).
+- A **GitHub Pages site is public by default, even for a private repository** (access-controlled Pages need GitHub Enterprise Cloud).
+- So use **one** of: (1) keep the repository **and** Pages private; (2) publish pseudonymized data only: set the variable `ANONYMIZE_USERS=true` and the secret `ANONYMIZE_SECRET` (a random key of at least 16 characters, e.g. `openssl rand -hex 32`). With `ANONYMIZE_USERS=true` and no valid key the run stops without publishing anything.
+- The scheduled workflow runs `npm run fork:verify` before collecting; it **fails** when real, non-anonymized user-level data is (or would be) publicly readable. Set `COPILOT_PAGES_URL` if the site is served from a custom domain, and `COPILOT_ALLOW_PUBLIC_DATA=true` only if you knowingly accept a public deployment. See [SECURITY.md](../SECURITY.md) and [SDD-04 §5](specifications/04_user_attribute_mapping_spec.md).
+
 ---
 
 ## 3. Workflow Permissions
@@ -255,7 +262,8 @@ Configure either variable under **Settings** > **Secrets and variables** > **Act
   npm run demo:setup -- --push
   ```
 - **Mock Simulation Mode**: Set variable `MOCK_MODE=true` to instantly test and demonstrate dashboard capabilities using 2026 synthetic simulation data.
-- **Graceful Degradation**: If Copilot Metrics credentials are temporarily unavailable or permissions are restricted, the pipeline automatically proceeds with seat data or monthly CSV reports without failing the workflow.
+- **Graceful Degradation**: If Copilot Metrics credentials are temporarily unavailable or permissions are restricted, the pipeline automatically proceeds with seat data or monthly CSV reports without failing the workflow. Each source (usage metrics / seats / Cost Centers) is collected independently and its status (`ok` / `partial` / `failed` / `skipped`) is shown in the dashboard's data-status banner. A failed source never replaces earlier good data with "zero": the last successful values are carried over and labelled, and demo data is never substituted.
+- **Optional pipeline settings** (Variables unless noted): `ANONYMIZE_USERS` (+ secret `ANONYMIZE_SECRET`), `GITHUB_API_VERSION` (default `2026-03-10`), `COPILOT_BILLING_CONFIG` (see §5), `COPILOT_COST_CENTER_BUDGETS`, `COPILOT_ALLOW_PUBLIC_DATA`, `COPILOT_PAGES_URL`.
 
 ---
 
@@ -287,5 +295,9 @@ git push origin main
 ## 8. Operational Troubleshooting
 
 - **403 Rate Limit or Permission Denied**: Check the 80%×80% anomaly modal in the dashboard header or export `error-log.json` to inspect the failing API endpoint.
+- **`fork:verify` fails with a public-exposure error**: the repository or the Pages site is publicly readable while real, non-anonymized user data is (or would be) published. Make the repository and Pages private, or enable pseudonymization (`ANONYMIZE_USERS=true` + `ANONYMIZE_SECRET`). The check only warns when GitHub cannot be reached.
+- **The run stops with "ANONYMIZE_USERS is enabled but ANONYMIZE_SECRET is not set / too short"**: register a random secret of at least 16 characters as the `ANONYMIZE_SECRET` Actions secret. (Fail-closed by design.)
+- **The dashboard shows a red/yellow banner or "—" instead of numbers**: a source failed or was only partly retrieved (banner), or the value is genuinely unmeasured ("—" with the reason). Open the anomaly modal / `error-log.json` for the cause. "Previous value" badges mean the latest collection of that source failed and the last successful values are shown.
+- **The dashboard shows an amber "demo" banner**: demo (fictional) data is displayed because it was selected explicitly, or the data declares `is_mock_mode`. Use "実データを表示" or open the dashboard without `?demo=true`.
 - **Secret Scan Failure**: Run `npm run secret-scan` locally to locate high-entropy strings or hardcoded tokens before committing.
 - **Upstream Contribution Leak Check**: Run `npm run upstream:audit` before opening a pull request to upstream to guarantee that no local usage CSV or customer data is included.

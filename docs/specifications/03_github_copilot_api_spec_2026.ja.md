@@ -21,8 +21,12 @@ GitHub REST API はカレンダーベースのバージョン体系を採用し�
 
 - `Authorization: Bearer <GITHUB_TOKEN>`
 - `Accept: application/vnd.github+json`
-- `X-GitHub-Api-Version: 2026-03-10`（最新バージョン、環境変数 `GITHUB_API_VERSION` またはクライアント設定で変更可能）
+- `X-GitHub-Api-Version: 2026-03-10`（最新バージョン、環境変数 `GITHUB_API_VERSION` またはクライアント設定で変更可能。空の場合は既定値）
 - `User-Agent: GitHub-Copilot-Analytics-Platform/2026.09`
+
+**トークンの解決順**: クライアント設定の明示指定 → `COPILOT_READ_TOKEN`（ワークフローが渡すシークレット）→ `GITHUB_TOKEN` → `GH_TOKEN`。トークンが解決できない場合、クライアントは **リクエストを送る前に** 認可エラーを返す（無認証の呼び出しは行わない）。収集側は `COPILOT_READ_TOKEN` を明示した `api_auth` の issue として報告し、該当ソースを `failed` として記録する（SDD-05 §3）。
+
+**失敗と「データなし」の区別**: データソースの各 `fetch*` は配列を返し、例外を投げない。失敗はソース別ステータス（`ok` / `partial` / `failed` / `skipped`、SDD-05 §3）と `DataFetchIssue` で表現する。呼び出し側は、空配列だけから「失敗」「データなし」を推測してはならない。
 
 ---
 
@@ -130,7 +134,9 @@ GitHub公式データにおける「受諾率」は、APIレスポンスのイ�
 ### 3.1 エンドポイント
 - Enterprise: `GET /enterprises/{enterprise}/copilot/billing/seats`
 - Organization: `GET /orgs/{org}/copilot/billing/seats`
-- ページネーション: `per_page=100`, `page=1, 2, ...`
+- ページネーション: `per_page=100` を指定し、`Link: <...>; rel="next"` ヘッダーを最終ページまで追従する。次ページ URL は API ベース URL と **同一オリジンの場合のみ** 追従する（`Authorization` ヘッダーを別オリジンへ送らない）。安全弁として 1,000 ページで打ち切り、到達した場合は `data_integrity` の警告（「シート一覧が不完全な可能性」）を出す。
+- 整合性チェック: 各対象の先頭ページの `total_seats` の合計と、取得したレコード数を照合する。不一致なら `data_integrity` の警告を出し、ソース状態は `partial` になる。
+- 失敗時の扱い: 対象（Enterprise / いずれかの Org）の **どれか 1 つでも** 失敗した場合は、`seats` ソース全体を `failed` として空配列を返す。不完全な席数を現在値として公開しないためで、パイプラインは前回成功時の成果物を維持する（SDD-05 §3）。
 
 ### 3.2 レスポンススキーマ
 
@@ -166,6 +172,15 @@ GitHub公式データにおける「受諾率」は、APIレスポンスのイ�
 }
 ```
 
+#### フィールドの扱い（レコード単位の検証）
+
+- レコードは **1 件ずつ** 検証する。検証に失敗したレコードは隔離（集計から除外）し、レコードの位置とスキーマ上のパスだけを列挙した `data_integrity` の警告として報告する（レコードの値は含めない）。1 件の想定外値でバッチ全体が失われることはない。
+- `plan_type`: `business` / `enterprise`。欠損・未知の値（`unknown` を含む）は `unknown` として保持して警告する。シート費用は **未確定** として扱い、Enterprise と推測しない（SDD-06 §1.1）。
+- `organization`: `null` の場合がある（Enterprise 直下に付与されたシート）。そのまま保持し、「未割当」としてグルーピングして警告する。
+- `updated_at`: 非推奨で返らないことがある。欠損時は `created_at` で補う。
+- `seat_status`: 将来追加される未知の値でレコード全体を無効にしない。
+- スキーマ検証エラー（Zod）は `data_integrity`、HTTP 401/403 は `api_auth`、404 は `not_found`（警告）、429 は `rate_limit`、その他は `server_error` に分類する。
+
 ---
 
 ## 4. GitHub Enterprise Cost Centers API
@@ -178,9 +193,13 @@ GitHub EnterpriseのBilling機能である「Cost Center」一覧とリソース
 
 ### 4.2 レスポンススキーマ
 
+公開ドキュメント上のレスポンスキーは `costCenters`。旧キー `cost_centers` と素の配列も受け付ける。各レコードは `id` と `name` が必須で、`cost_center_code` と `state` は任意（公開 API は `cost_center_code` を返さない）。`state` が `deleted` の Cost Center は配賦の対象から外す。`resources[].type` の表記ゆれはドメインの種別へ正規化する（`Organization` → `Org`、`Repo` → `Repository`、`User`）。未知の種別はそのまま保持する。
+
+Cost Center は Enterprise Billing の機能。Org 単体運用では、該当ソースを `skipped`（障害ではない）として記録する。
+
 ```json
 {
-  "cost_centers": [
+  "costCenters": [
     {
       "id": "cc-eng-001",
       "name": "Platform-Engineering",
@@ -210,4 +229,19 @@ GitHub EnterpriseのBilling機能である「Cost Center」一覧とリソース
 |---|---|---|---|
 | **Copilot Business** | \$19.00 / seat | \$19.00 / 暦日数 (例: 30日の月は \$0.633) | 基本IDE補完・チャット |
 | **Copilot Enterprise** | \$39.00 / seat | \$39.00 / 暦日数 (例: 30日の月は \$1.300) | 社内ナレッジ連携、PRサマリー、CLI等 |
-| **遊休シート (Idle Seat)** | 各プランの満額 | 同上 | 過去14日/30日以上未利用でも契約費用が発生 |
+| **遊休シート (Idle Seat)** | 各プランの満額 | 同上 | 遊休でも契約費用が発生（判定基準の詳細は SDD-06 §3） |
+| **AI クレジット** | \$0.01 / credit | — | 2026-06-01 から使用量ベース課金（全計算経路で単価は 1 つ） |
+
+### 5.1 価格カタログ（価格の単一ソース）
+
+価格はすべて 1 つのモジュール `src/domain/pricing/pricing-catalog.ts` に定義し、他のモジュールは価格を直接持たない。Enterprise 固有の契約価格・割引（`COPILOT_BILLING_CONFIG`、SDD-06 §1.4）がカタログの既定値を上書きする。
+
+| 項目 | 通常時 | 移行プロモーション (2026-06 〜 2026-08) |
+|---|---|---|
+| シート単価 (Business / Enterprise) | 月 \$19 / \$39 | 同左 |
+| AI クレジット単価 | \$0.01 | 同左 |
+| シートあたり月間包含クレジット (Business / Enterprise) | 1,900 / 3,900 | 3,000 / 7,000 |
+
+- 包含クレジットは **プラン別・期間別** で、**請求エンティティ単位** のプール（全シートの合計）を成す。`plan_type` が `unknown` のシートはプールに算入せず、「プラン未確定」として数える。
+- カタログの値は **暫定** である。一次情報を直接取得できなかったため、公開されている情報の要約に基づいて定めた。Phase 1 でカタログを版管理する際に GitHub の公式ドキュメントと照合して確定する（`PRICING_CATALOG_VERSION` が版を示す）。
+- 従来のサービス別の既定値（`CreditsBillingService` だけが持っていた別の \$0.05 / credit、全プラン共通の包含 3,900 クレジット固定）は撤去した。同じ消費量でも経路によって金額が 5 倍ずれていたためである。

@@ -7,7 +7,7 @@
 - **文書番号**: SPEC-COPILOT-001
 - **ステータス**: Approved / Active
 - **対象バージョン**: 2026.09-LTS
-- **作成日**: 2026-09-10
+- **作成日**: 2026-09-10 (2026-10-01 改訂: FR-4・NFR-2 の改訂と NFR-7 の新設)
 
 ---
 
@@ -77,7 +77,7 @@ GitHub Copilot（Copilot Business / Copilot Enterprise）の企業導入が進�
    - **指定期間スコープ (Custom Date Range)**: 直近30日間、または1年間の推移トレンド。
 
 ### FR-4: コスト最適化・遊休シート検出 (Idle Seat Detection)
-- 過去N日間（デフォルト: 14日/30日）アクティビティがないシートを「遊休シート（Idle Seat）」として検出し、無駄になっている月額コストおよび年間換算コストを可視化すること。
+- 過去N日間（デフォルト: 14日/30日）アクティビティがないシートを「遊休シート（Idle Seat）」として検出し、無駄になっている月額コストおよび年間換算コストを可視化すること。判定基準は SDD-06 §3 に従い、遊休に触れる全箇所に基準を表示すること。付与から間もない未使用シートは遊休ではなく *導入期間 (Onboarding)* に分類する (既定: 付与から 7 日未満)。
 - シートの解約や再割り当ての推奨リストをエクスポートできること。
 
 ### FR-5: 自動更新 GitHub Pages ダッシュボード
@@ -144,7 +144,8 @@ GitHub Copilot（Copilot Business / Copilot Enterprise）の企業導入が進�
 
 ### NFR-2: セキュリティ & 最小権限
 - GitHub APIアクセスには GitHub Personal Access Token (Fine-grained PAT) または GitHub App を使用し、必要最小限の権限（`copilot:read`, `enterprise_billing:read`, `org:read`）のみを要求すること。
-- 個人名や社内組織情報がパブリックなGitHub PagesやGitログに流出しないよう、環境変数で表示名のマスキング/ハッシュ化オプションを提供すること。
+- 個人名や社内組織情報がパブリックなGitHub PagesやGitログに流出しないよう、環境変数で表示名のマスキング/ハッシュ化オプションを提供すること。このオプション (`ANONYMIZE_USERS=true`) は**秘密鍵付きの復元不能な仮名化** (`ANONYMIZE_SECRET` (16 文字以上) による HMAC-SHA256) を用い、秘密鍵が無い場合は**失敗 (fail closed)** すること。このモードでは、アバター URL・数値のユーザー ID・元 CSV を公開しないこと (SDD-04 §5)。
+- 公開リポジトリや公開 GitHub Pages が、実在の・仮名化されていないユーザー単位のデータを公開してしまう状態を、収集・公開の前に検出すること (`npm run fork:verify`、SDD-04 §5.3)。公開リポジトリでは `copilot-data` ブランチも公開される。本要件は、Zero-Leakage の保証が `main` ブランチに限られることへの対策である。
 - 48KB を超える大規模ユーザーマッピングには GPG (AES-256) 対称暗号化を適用し、暗号化ブロブを `copilot-data` に隔離し、実行時 `$RUNNER_TEMP` にのみ平文復号すること（詳細は [GPG鍵管理・運用標準ガイド](../security/01_gpg_key_management_and_user_mapping_guide.ja.md) を参照）。
 
 ### NFR-3: オフライン・モック対応
@@ -163,3 +164,9 @@ GitHub Copilot（Copilot Business / Copilot Enterprise）の企業導入が進�
 - フロントエンド SPA で使用するリポジトリ（`HttpJsonMetricsRepository`）はブラウザ標準の `fetch` API のみで実装し、Node.js 固有の `fs` や `path` モジュールへの参照を一切含まないこと。
 - Vite ビルド時に `Module "fs" has been externalized for browser compatibility` 等の互換性警告が 0 件であることを保証すること。
 
+### NFR-7: データの完全性と透明性 (Data Integrity & Transparency)
+- **失敗は「空」とも「デモ」とも区別できること**: 各データソース (利用状況メトリクス・シート・Cost Center) は独立して収集し、その結果 (`ok` / `partial` / `failed` / `skipped`) を記録して表示する。失敗したソースが、過去の正常なデータを空の結果で上書きしてはならない (直近の成功値を引き継いで明示する)。`is_mock_mode` は、明示的に生成したシミュレーションデータのときだけ true とする (SDD-02 §2.6、SDD-05 §3.0)。
+- **欠損は欠損として扱い、作り出さないこと**: 実測できていない値は `null` とし、理由を添えた「—」で表示する。固定の定数・合成した個人別プロファイル・代理値で置き換えない。評価できない診断パターンは、評価できないと表示する (SDD-06 §4.4、SDD-11 §6)。
+- **デモデータは、ユーザーが明示的に選んだ場合、またはデータ自身が宣言した場合にのみ表示**し、失敗のフォールバックとしては決して表示しない (SDD-07 §2.12)。
+- **概念ごとに定義は 1 つ**: 価格 (価格カタログ)・予算使用率・シート分類・「未割当」フィルター値・フィルターエンジンは、それぞれ 1 か所で定義して import する (SDD-06、SDD-15 §3.6)。
+- **配信は許可リスト方式**: SPA が必要とするファイルだけを Pages へステージし、ビルド成果物はアップロード前に検証する (SDD-05 §2.2a)。

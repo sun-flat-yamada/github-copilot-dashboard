@@ -7,7 +7,7 @@
 - **Document ID**: SPEC-COPILOT-009
 - **Status**: Approved / Active
 - **Target Version**: 2026.09-LTS
-- **Date**: 2026-09-11
+- **Date**: 2026-09-11 (revised 2026-10-01: multi-file merge, unit families, undated rows, no synthesized profiles)
 
 ---
 
@@ -56,6 +56,9 @@ In strict compliance with `RULE[GEMINI.md]` and `SDD-05`:
 - **Filename Convention**: `copilot_monthly_usage_YYYY-MM.csv` (or `YYYY-MM.csv`)
 - **Immutable Operations**: Historical reports are append-only; past files are never overwritten.
 - **Fork Safety**: With `main` remaining 100% free of data files, downstream forks encounter 0% merge conflicts when syncing upstream.
+- **Several files for the same month (P0-10)**: GitHub exports are often split (by organization, by date range) or re-downloaded. The pipeline reads **every** CSV under `data/reports/monthly/YYYY-MM/`, merges the records and aggregates the month **once** (`ReportParser.mergeRecordSets` → `aggregate`); previously only one file was used and the others were silently ignored.
+  - **Duplicate detection**: rows identical in every identifying field (date, user — case-insensitive —, product, SKU, model, quantity, unit, unit price, gross/discount/net, organization, cost center, last activity, surface, credits, tokens) that appear in *different* files are counted once (for each distinct row, the maximum number of occurrences in any one file is kept). Identical rows inside one file may be legitimate separate line items and are all kept.
+  - **Traceability**: the result carries `import_summary` — `source_files`, `records_total`, `duplicates_skipped` and, when present, `undated_records` — and the pipeline log reports the same numbers.
 
 ### 2.3 Local Ingestion CLI (`scripts/import-report.ts`)
 Provides administrators with an automated command to store CSV reports into `copilot-data`:
@@ -80,8 +83,8 @@ The parser automatically detects and normalizes major GitHub report formats:
 - `product`: Product name (`copilot`)
 - `sku`: Billing SKU (`copilot_business`, `copilot_enterprise`, `copilot_premium_request`, `copilot_ai_credit`)
 - `model`: Model name (`Claude 3.7 Sonnet`, `GPT-4o`, `o1`, `Gemini 2.0 Flash`, etc.)
-- `quantity`: Consumed volume (requests, tokens)
-- `unit_type`: Unit (`requests`, `ai_credits`)
+- `quantity`: Consumed volume in the unit given by `unit_type`. (`tokens` is a header alias of `token_count` only; it is never also mapped to `quantity`.)
+- `unit_type`: Unit (`requests`, `ai_credits`, seat / licence units, …). **Quantities are never added across different unit families** — see §3.4.
 - `applied_cost_per_quantity`: Unit cost (USD)
 - `gross_amount`: Gross total before discounts (USD)
 - `discount_amount`: Discount total (USD)
@@ -101,6 +104,22 @@ The parser automatically detects and normalizes major GitHub report formats:
 - Rows missing critical keys (username, date, quantity/amount) trigger diagnostic warnings while salvaging valid records.
 - **Date normalization**: date values are normalized to zero-padded `YYYY-MM-DD` before being used as a sort key. This prevents inconsistent source formatting (e.g. an un-padded `2026-9-5` from a spreadsheet-edited export) from breaking the chronological ordering of `daily_trends` via plain string comparison. Values that cannot be parsed as a date fall back to the raw leading 10 characters (never fabricated) and log a warning.
 - **Report-month scoping**: `aggregate()` discards any record whose `date` does not fall within the target `reportMonth` (e.g. a CSV export spanning a rolling date range that crosses a month boundary). This keeps a given month's `daily_trends`/`overview`/`user_details` limited to that calendar month; skipped records are counted and logged as a warning, never silently included.
+- **Missing values are not invented**: a row without a `quantity` is *not* counted as one request; it contributes nothing to quantities while its amounts still count. A row without a date is **not** assigned to "today" — it stays undated, is included in the totals, is left out of `daily_trends`, and is counted in `import_summary.undated_records`.
+- **Metrics a report cannot contain**: a billing CSV has no suggestions, acceptances, chats or PR summaries. The per-group metrics derived from it are `null` (SDD-06 §4.4), not a fixed rate such as 35%.
+
+
+### 3.4 Unit Families (`unit_type`)
+A report mixes requests, AI credits and seat (user-month) rows. Adding their `quantity` produced a meaningless "request count", so `ReportParser.classifyUnit` assigns every row to a family and each aggregate uses only the family it means:
+
+| Family | Matches `unit_type` containing | Used for |
+|:--|:--|:--|
+| `requests` | `request`, `prompt`, `interaction`, `completion`, `message`, `chat`; **also a missing `unit_type`** (legacy CSVs, kept for compatibility) | `overview.total_requests`, per-user / per-model / per-day request counts |
+| `credits` | `credit` | `quantity_by_unit` (credit consumption) |
+| `seats` | `seat`, `licen[sc]e`, `user`, `member`, `month` | `quantity_by_unit` (licence rows are not requests) |
+| `tokens` | `token` | `quantity_by_unit` |
+| `other` | anything else | `quantity_by_unit` |
+
+`overview.quantity_by_unit` keeps the per-unit totals (e.g. `{ "requests": 120, "ai-credits": 3400, "seats": 85 }`) so nothing is lost, and `sku_breakdown` has one row per SKU **and unit** (quantities of different units are never summed into one row).
 
 ---
 
@@ -112,11 +131,18 @@ export interface MonthlyReportAggregatedData {
   source_type: 'persisted' | 'local_drop';
   file_name: string;
   parsed_at: string;
+  import_summary?: {                // present for merged monthly reports (§2.2)
+    source_files: string[];
+    records_total: number;          // records used after de-duplication
+    duplicates_skipped: number;     // rows collapsed because another file had the same row
+    undated_records?: number;       // rows without a date: in totals, not in daily_trends
+  };
   overview: {
     total_net_spend_usd: number;
     total_gross_spend_usd: number;
     total_discount_usd: number;
-    total_requests: number;
+    total_requests: number;         // requests-family rows only (§3.4)
+    quantity_by_unit?: Record<string, number>; // totals per unit, e.g. { requests: 120, 'ai-credits': 3400 }
     total_active_users: number;
     top_model: string;
     top_sku: string;
@@ -152,8 +178,9 @@ export interface MonthlyReportAggregatedData {
     total_spend_usd: number;
     primary_model: string;
     last_activity_date?: string;
-    surface?: string;
+    surface?: string;               // absent when the CSV has no surface column (no default such as "VS Code")
   }[];
+  filter_notice?: { unfiltered_sections: string[] }; // while a filter is active: sections shown company-wide (SDD-15 §3.6)
 }
 ```
 
@@ -182,7 +209,8 @@ export interface MonthlyReportAggregatedData {
    - 6. **Cost Center Budget Tracking (View 5: Budget & Cost Center)**:
      - Automatically computes budget cards (`CostCenterBudgetCards`) from `by_cost_center` in monthly report mode.
    - 7. **Per-User Model Trend Viewer (View 3: Trend & Model Usage)**:
-     - Fully supported across Monthly Usage Reports and User Uploads using pre-computed monthly archives or daily-trend-synthesized profiles.
-     - Dynamically detects all active AI models for stacked bar charts and displays an explicit data source badge in the header.
-     - Seamlessly connects with the "トレンド" button in `MonthlyReportUserTable`.
+     - Uses the stored monthly archive (`deep-analysis/{YYYY-MM}.json`, measured telemetry) when one exists. A monthly CSV or an uploaded CSV is an aggregate without per-user daily telemetry, so **no per-user profile is synthesized from it**: the viewer shows the data source badge "月次集計のみ・日次診断不可" and the reason instead of an estimated trend (SDD-11 §6.4).
+     - When profiles exist, all active AI models are detected dynamically for the stacked bar charts and an explicit data source badge is shown in the header.
+     - Connects with the "トレンド" button in `MonthlyReportUserTable`.
+   - 8. **Filters**: `daily_trends` and `sku_breakdown` cannot be re-aggregated per user and are labelled "全社値 (フィルター非対応)" while a filter is active (SDD-07 §2.14).
 

@@ -7,7 +7,7 @@
 - **文書番号**: SPEC-COPILOT-002
 - **ステータス**: Approved / Active
 - **対象バージョン**: 2026.09-LTS
-- **作成日**: 2026-09-10
+- **作成日**: 2026-09-10 (2026-10-01 改訂: 収集の耐障害性、ソース別縮退、実際の結線、配信ステージング)
 
 ---
 
@@ -81,31 +81,64 @@ flowchart TB
 
 ### 2.1 データ収集エンジン (Collector Engine)
 - **役割**: GitHub REST API（EnterpriseまたはOrganizationスコープ）から、メトリクス・シート情報・Cost Center情報を取得する。
-- **耐障害性**: レートリミット（429/403）時の指数バックオフと再試行、ページネーションの自動追従。
-- **モックモード**: 環境変数 `MOCK_MODE=true` 時は、実APIを呼び出さずに2026年仕様準拠の擬似データを生成（ローカル開発・テスト・デモ環境用）。
+- **認証**: トークンは 明示指定 → `COPILOT_READ_TOKEN` → `GITHUB_TOKEN` → `GH_TOKEN` の順に解決する。トークンが無い場合は、無認証でリクエストせず、明示的な理由を付けてソースを失敗として記録する (§2.6)。
+- **耐障害性**: レートリミット（429/403）時の指数バックオフと再試行、ページネーションの自動追従（`per_page=100` と `Link` ヘッダー。先頭ページ以降のシートが欠落しない）。
+- **レコード単位の検証 (ACL)**: レスポンスはレコード単位で検証する (`src/adapters/github-api/schemas/` の Zod スキーマ)。未知の列挙値や不正なレコードはレスポンス全体を失敗させず**隔離** (除外して件数を記録) する。未知の `plan_type` は `unknown` として保持する。Cost Center は 2026-03-10 のレスポンス形状 (`costCenters` キー) 用の専用ノーマライザーで処理する。API バージョンは `GITHUB_API_VERSION` で指定する (SDD-03 §1.1)。
+- **モックモード**: 環境変数 `MOCK_MODE=true` 時は、実APIを呼び出さずに2026年仕様準拠の擬似データを生成（ローカル開発・テスト・デモ環境用）。出力は `is_mock_mode: true` とし、`is_mock_mode` が true になるのは**この場合だけ**である。
 
 ### 2.2 属性解決エンジン (Attribute Resolver)
 - **役割**: GitHub Actions Variable `COPILOT_USER_MAPPING` からJSON/CSVを安全に読み込み、ユーザーのGitHubログインIDを元に `display_name`, `department (仕訳グループ)`, `cost_center_override` などを動的解決する。
 - **情報漏洩防止**: マッピングデータはGitリポジトリの履歴（コミット）に絶対に書き出さず、集計処理中のメモリ内でのみ結合（Join）する。
+- **仮名化**: `ANONYMIZE_USERS=true` のとき、ログイン名・表示名・部署・チーム・プロジェクトを、秘密鍵付きの HMAC-SHA256 仮名に置き換える (`Pseudonymizer`、`src/collector/pseudonymizer.ts`、秘密鍵 `ANONYMIZE_SECRET` は 16 文字以上。未設定・短い場合は実行を**失敗** (fail closed) とする)。Raw 層も同様にマスクし、このモードでは元 CSV を保存しない (SDD-04 §5)。`AttributeResolver` はブラウザ (CSV 取り込み) にもバンドルされるため、`Pseudonymizer` は `node:crypto` を遅延ロードする。`process` への直接参照や Node モジュールの静的 import をしてはならない。
 
 ### 2.3 多次元集計・費用配賦エンジン (Aggregator & Billing Engine)
 - **役割**:
   1. シート割当情報とメトリクス情報を突合し、各ユーザーの利用ステータス（Active / Inactive）を判定。
   2. 3軸（Organization, Cost Center, 任意仕訳グループ）での多次元集計を実行。
-  3. 日次・月次・任意期間における按分費用（Business: \$19/月、Enterprise: \$39/月）を計算。
-  4. 14日/30日以上未利用の「遊休シート」を検出し、削減可能コストを算出。
+  3. 日次・月次・任意期間における按分費用を、単一の価格カタログ (`src/domain/pricing/pricing-catalog.ts`: Business \$19/月、Enterprise \$39/月、SDD-03 §5.1) から計算。プランが不明なシートの費用は*未確定*とし、合計から除外する。
+  4. `SeatClassificationRule` でシートを分類 (Active / Low Active / Idle / Never Used / **Onboarding**、SDD-06 §3) し、遊休シートに限って削減可能コストを算出。
 
 ### 2.4 Fork非競合ストレージエンジン (Fork-Safe Storage Engine)
 - **役割**:
   - `main` ブランチを汚染せず、独立した orphan ブランチ（`copilot-data`）にのみ集計成果物を保存。
   - 日付単位（`YYYY/MM/DD`）のイミュータブル・パーティショニングによる追記型永続化。
   - リポジトリ識別メタデータ（`repository_id`, `schema_version`）を付与。
+  - Pages への配信は **許可リスト方式** (`scripts/pages-staging.ts`: `npm run pages:stage` / `pages:verify`)。`index.json`・`error-log.json`・`processed/*` (当回に限らず全月)・index に載っている日次ファイルだけをコピーし、Raw データ・元 CSV・暗号化マッピングは決してコピーしない。ビルド成果物はアップロード前に検証する (SDD-05 §2.2a)。
 
 ### 2.5 GitHub Pages ダッシュボード (SPA)
 - **役割**:
   - ブラウザ上で完全動作する高速SPA。
   - 集計済みJSON（日次・月次・期間インデックス）をFetchしてレンダリング。
   - 期間スコープセレクタ（日 / 月 / 指定期間）、グループセレクタ（Org / Cost Center / 任意仕訳グループ）、フィルター、CSVダウンロード機能を提供。
+  - 実測・前回値・欠損・デモを画面上で区別する: データ状態バナー、欠損値の「—」表示、明示時のみのデモ方針 (SDD-07 §2.12 / §2.13)。
+
+### 2.6 ソース別縮退と Last-Known-Good (P0-3)
+
+実行は、「空」を実測であるかのように公開してはならない。パイプライン (`PipelineOrchestrator`、`src/application/pipeline/source-status.ts`) は 3 つのソースを独立に取得し、それぞれの結果を記録する:
+
+| ソース (`DataSourceId`) | 内容 |
+|:--|:--|
+| `metrics` | 利用状況メトリクス (受諾・チャット・PR・日次推移) |
+| `seats` | シート割り当て (ライセンス母集団と費用) |
+| `cost_centers` | Cost Center のメタデータと予算 |
+
+- **`SourceStatus`** (`index.json` の `source_status[]`): `ok` / `partial` (一部レコードを隔離) / `failed` (`error` と `last_success_at` 付き) / `skipped` (未設定。障害ではない)。
+- **失敗したソースが、正常なデータを空で上書きしない**。利用状況セクションは直近に成功した実行から引き継ぎ (`carryOverUsageSections`)、`usage_metrics.availability: carried_over` と `as_of` を付ける。過去に成功実績が無ければ `unavailable` とし「—」で表示する。1 つのソースの失敗は他のソースを止めない。
+- **`is_mock_mode` が true になるのは `MOCK_MODE` のときだけ**。「認証情報なし」「データなし」「ソース失敗」では true にしない。認証情報の無い実行はデモデータではなく空のライブ状態を公開する (SDD-05 §3.1)。
+- SPA は `source_status` をデータ状態バナーに表示し (SDD-07 §2.12)、問題は `error-log.json` にも書き出す。
+
+### 2.7 実際の結線と目標構成 (2026-10-01 時点)
+
+§3〜§4 は目標とする 4 層アーキテクチャを記述している。現在本番で動いているコードはそれより狭く、目標を稼働中の構成として設計に使わないよう、本書に差分を記録する:
+
+| 要素 | 目標 (§3〜§4) | 現在の本番経路 |
+|:--|:--|:--|
+| SPA の状態管理 | `DataStore` + `DerivedDataGraph` | `dashboard/src/main.tsx` は常に `App.tsx` を描画し、状態とフィルターは `useDashboardData` + `dashboard/src/utils/filterEngine.ts` が担う。`AppV2.tsx` はマウントされない (`VITE_USE_NEW_STORE` でも `App` は変わらない)。 |
+| ビュー | Registry が調停する 9 種の `ViewPlugin` | Registry はナビゲーションのメタ情報のみ提供し、描画は `App.tsx` の条件分岐が行う。 |
+| Presenter | 全ビュー | `App.tsx` が使うのは Credits / Agent / Adoption の 3 つのみ。 |
+| パイプライン | `createPipelineApp` → `PipelineOrchestrator` | 記述どおり (これが本番経路)。 |
+
+フロントエンドの単一アーキテクチャへの収束 (および Dataset Loader / Query 層) は**改善計画の Phase 2** であり、未決の判断 (ADR) に依存する。決定されるまで、本番経路には SDD-15 の規約 (フィルターエンジンの単一化、概念ごとの単一定義、lint で強制する Hook 規約) を適用する。
 
 ---
 
@@ -196,27 +229,33 @@ flowchart TD
 ```
 .
 ├── .github/
-│   └── workflows/                      # GitHub Actions ワークフロー
+│   └── workflows/                      # GitHub Actions ワークフロー (copilot-analysis-cron.yml, test-and-preview.yml)
 ├── docs/
 │   ├── security/                       # セキュリティ運用標準ガイド (GPG鍵管理等)
 │   └── specifications/                 # SDD仕様書群 (01〜15)
+├── scripts/                            # 運用スクリプト (pages-staging.ts, verify-fork-health.ts, import-report.ts 等)
+├── eslint.config.js                    # ESLint flat config (react-hooks ルール、SDD-15 §6)
 ├── src/
 │   ├── domain/                         # Layer 1: Domain
 │   │   ├── entities/                   # エンティティ (copilot, views, billing-config 等)
 │   │   ├── value-objects/              # 値オブジェクト (Money, HealthScore, DateRange 等)
+│   │   ├── pricing/                    # 価格カタログ (価格の唯一の定義元)
+│   │   ├── constants/                  # unassigned.ts (フィルター用センチネル), filter-scope.ts (フィルター非対応セクション)
 │   │   ├── rules/                      # ビジネスルール (SeatClassification, AdoptionPhase 等)
 │   │   └── ports/                      # ポート (ICopilotDataSource, IStorageWriter 等)
 │   ├── application/                    # Layer 2: Application
 │   │   ├── store/                      # DataStore, Reducer, State, DerivedDataGraph
 │   │   ├── services/                   # ScopeManager, FilterService, CreditsBillingService 等
 │   │   ├── views/                      # ViewPluginRegistry, ViewOrchestrator
-│   │   └── pipeline/                   # PipelineOrchestrator
+│   │   └── pipeline/                   # PipelineOrchestrator, source-status.ts (ソース別縮退)
 │   ├── adapters/                       # Layer 3: Adapters
 │   │   ├── github-api/                 # ACL, RawApiFetcher, Normalizers, Zod Schemas
 │   │   ├── storage/                    # HttpJsonMetricsRepository, FsJsonMetricsRepository, BillingConfigLoader
 │   │   ├── presenters/                 # Overview, Users, Trend, Budget, DeepAnalysis, ModelRadar, Credits, Agent, Adoption
 │   │   ├── views/                      # ViewPlugin 定義 & レジストリ登録 (全9種、lazy分割対応)
 │   │   └── composition-root.ts         # バックエンド Composition Root (createPipelineApp)
+│   ├── collector/                      # 収集補助: attribute-resolver.ts, pseudonymizer.ts (ブラウザ互換: Node の静的 import なし)
+│   ├── processor/                      # 集計: metrics-aggregator, billing-calculator, report-parser, rolling-trend, scope-merge, inefficiency-*
 │   ├── frameworks/                     # Layer 4: Frameworks
 │   │   ├── react/                      # DashboardProvider, useStoreSelector, useViewPlugin
 │   │   ├── composition-root.ts         # フロントエンド Composition Root (HttpJsonMetricsRepository注入)

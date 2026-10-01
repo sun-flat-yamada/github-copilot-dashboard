@@ -130,8 +130,10 @@ copilot-data (独立データ永続化ブランチ)
 ```
 
 #### DEMO動作時の参照切り替え仕様
-- **SPAフロントエンド動的解決**: URLクエリパラメータ（`?demo=true` や `?mock=true`）、環境変数 `VITE_MOCK_MODE=true`、またはインデックスの `is_mock_mode: true` を検知した場合、データ参照ベースパスを `./data/` から `./data/demo/` へ自動的に切り替える。
-- **ヘッダーバッジ対話切替**: ヘッダー上の `DEMO (Mock)` / `LIVE` バッジをクリックすることで、実データとDEMOデータをシームレスに切り替え可能。
+- **SPAフロントエンド動的解決**: 読み込むディレクトリは **明示的に** 選ぶ: (a) URLクエリパラメータ（`?demo=true` / `?mock=true` / `?mode=demo` / `?data=demo`）、(b) 環境変数 `VITE_MOCK_MODE=true`、(c) ヘッダーのバッジ、または実データを読み込めないときに表示される「デモデータを表示」ボタン。DEMO を選んだ場合、データ参照ベースパスを `./data/` から `./data/demo/` へ切り替える。
+- **暗黙のデモフォールバックの禁止 (C-06)**: 実データの該当ファイルが無い（デプロイされなかった過去月、index.json の取得失敗、収集結果が空）場合に、黙ってデモデータへ切り替えては **ならない**。SPA はエラー / 「ライブ利用データなし」の状態を表示し、デモを見るための明示的なボタンを添える。
+- **DEMO とみなす条件**: データが `data/demo/` のパスから読み込まれた、**または** その `index.json` が `is_mock_mode: true`（`MOCK_MODE` で生成されたデータ）を宣言している場合に限る。リポジトリの所有者名、シート数 0、データ日数 0 などからは DEMO と推測しない。取得に失敗した・未設定の実運用データはデモデータではない。DEMO データの表示中は、画面最上部のバナーでその旨を示す。
+- **ヘッダーバッジ対話切替**: ヘッダー上のバッジは、反対のモードへ明示的に切り替える（`DEMO (Mock)` をクリックすると実データへ、`LIVE` をクリックするとデモデータへ）。
 - **データ生成・同期コマンド**:
   - `npm run demo:generate`: 2026年最新仕様の完全なLive Metrics DEMOデータセットを `data/demo/` および `dashboard/public/data/demo/` に生成。
   - `npm run demo:sync [-- --push]`: 隔離された一時ワークツリーを経由して `data/demo/` を `copilot-data` ブランチへ安全にコミット・反映（`main` ブランチは一切無変更）。
@@ -156,12 +158,20 @@ if [ -d "data/demo/processed" ]; then
 fi
 ```
 
-#### 3. フロントエンド多層防護フォールバック規約 (`pathResolver.ts`)
-フロントエンドは単一のURLフェッチに依存せず、以下の多重フォールバック候補 (`getCandidateDataUrls`) を順次試行して、過渡的な配置差異や環境差分を自動吸収する：
-1. **公開ルート直下パス** (例: `/github-copilot-dashboard/data/demo/monthly/2026-09.json`)
-2. **永続ストレージ互換パス** (例: `/github-copilot-dashboard/data/demo/processed/monthly/2026-09.json`)
-3. **代替モード公開ルート直下パス** (LIVE <=> DEMO 双方向フォールバック)
-4. **代替モード永続ストレージ互換パス**
+#### 2a. 実データのステージングと配信物の検証 (`scripts/pages-staging.ts`)
+ワークフローは DEMO パーティションに加えて、**実データ** の `data/` もステージする。以前は `data/demo` しかステージされず、過去月（`processed/monthly`・`reports`・`deep-analysis`）が Pages に配信されず、SPA がデモデータへフォールバックしていた（C-06）。
+
+- `npm run pages:stage`: `data/` から **許可リスト** のものだけを `dashboard/public/data/` へコピーする（`processed/*` は上記の規約どおりフラットに展開）。対象は `index.json`、`error-log.json`、`processed/{monthly,reports,deep-analysis,trends,custom}/*.json`、および `processed/daily/<日付>.json`（`index.json` の `available_days` に載っている日だけ。UI から到達できる範囲）。
+- **公開しないもの**: `raw/`（未加工の API 応答）、`reports/`（取り込んだ CSV の原本）、`config/`（暗号化済みユーザーマッピング）、その他すべて。
+- `npm run pages:verify`: ビルドの **後** に実行し、(1) ステージ対象のファイルが `dist/data/` に無い（Pages で 404 になる）、または (2) `dist/data/` に `raw/`・`config/`・`reports/monthly/`・`.csv`（架空データの `demo/` を除く）が含まれる場合にジョブを失敗させる。
+- DEMO のステージング工程は従来どおり維持する（`cp -r data/demo/* ...` と `processed/*` のフラット展開）。デモは `/data/demo/` 配下で配信できる。
+
+#### 3. フロントエンドの候補パス解決 (`pathResolver.ts`)
+フロントエンドは、**選択中のモード** について単一のURLに依存しない。`getCandidateDataUrls` は以下を返す：
+1. **公開ルート直下パス** (例: `/github-copilot-dashboard/data/monthly/2026-09.json`。DEMO モードでは `.../data/demo/...`)
+2. **永続ストレージ互換パス** (例: `/github-copilot-dashboard/data/processed/monthly/2026-09.json`。`copilot-data` の配置との後方互換)
+
+反対のモード (LIVE <=> DEMO) のパスは、既定では候補に **含めない**。明示的なオプトイン (`includeAlternateMode: true`) でのみ追加でき、SPA はこれを使わない。
 
 #### 4. サブディレクトリホスティング & 末尾スラッシュ非依存のURL解決
 GitHub Pages 等のサブディレクトリ環境において、末尾スラッシュの有無（例: `/repo` vs `/repo/`）に関わらず、ブラウザがドメインルートへ誤解決しないよう、`window.location.pathname` からベースパスを算出して解決する。
@@ -180,8 +190,19 @@ GitHub Pages 等のサブディレクトリ環境において、末尾スラッ�
     "name": "github-copilot-dashboard",
     "is_fork": false
   },
-  "last_updated_at": "2026-09-10T00:30:00Z",
+  "generated_at": "2026-09-10T00:30:00Z",
   "data_retention_days": 365,
+  "is_mock_mode": false,
+  "source_status": [
+    { "source": "metrics", "status": "failed", "records": 0,
+      "last_attempt_at": "2026-09-10T00:30:00Z", "last_success_at": "2026-09-09T00:30:00Z",
+      "error": "HTTP 503 from /enterprises/…/copilot/metrics" },
+    { "source": "seats", "status": "ok", "records": 160,
+      "last_attempt_at": "2026-09-10T00:30:00Z", "last_success_at": "2026-09-10T00:30:00Z" },
+    { "source": "cost_centers", "status": "skipped", "records": 0,
+      "last_attempt_at": "2026-09-10T00:30:00Z", "last_success_at": null }
+  ],
+  "privacy": { "anonymized": false, "contains_user_level_data": true },
   "available_months": ["2026-09", "2026-08", "2026-07"],
   "all_recorded_months": ["2026-09", "2026-08", "2026-07", "2025-12", "2025-11"],
   "available_days": [
@@ -210,6 +231,28 @@ GitHub Pages 等のサブディレクトリ環境において、末尾スラッ�
   }
 }
 ```
+
+### 3.0 ソース別ステータス・Last-known-good・`is_mock_mode` の意味
+
+パイプラインは独立した 3 つのソースを収集する: `metrics`（利用状況）、`seats`（シート割り当て）、`cost_centers`。実行ごとに、ソース別の状態を `source_status` に記録する。
+
+| `status` | 意味 |
+|---|---|
+| `ok` | 取得成功 |
+| `partial` | 取得できたが、一部のレコードを隔離（検証失敗）した、または件数が一致しなかった |
+| `failed` | 取得に失敗した（API エラー、トークン未設定、複数 Org のうち一部が失敗 など） |
+| `skipped` | 設定が無い・対象外（認証情報なし、Org 単体運用での Cost Center など）。**障害ではない** |
+
+`last_success_at` はそのソースが最後に成功した時刻。`failed` / `skipped` のソースでは、**前回の `index.json` から引き継ぐ**（一度も成功していなければ null）。SPA はステータスバナーで、失敗とこの時刻を表示する。
+
+**Last-known-good の規則** — 失敗を「空」に変えない：
+- `seats` が失敗 → 前回の月次スコープと前回の `summary` を維持する。空のシート一覧で上書きしない。
+- `metrics` が失敗 → シート・費用の分析は利用状況メトリクスに依存しないため、そのまま実行する。当月スコープは最新のシートから作り、利用状況のセクション（受諾率・チャット・日次推移・言語別・エージェント集計）は **前回成功時のスコープから引き継ぎ**、`usage_metrics: { availability: "carried_over", as_of }` を付ける。前回値が無い場合は `null` と `usage_metrics.availability: "unavailable"`（UI は 0% ではなく「—（取得不可）」と表示）。日次・期間スコープはメトリクスが無い回は再生成せず、前回のファイルを維持する。
+- すべてのソースが失敗 → 前回の成果物をすべて維持し、`source_status` に各失敗を記録する。
+
+**`is_mock_mode`** が `true` になるのは、パイプライン自身が `MOCK_MODE`（`--mock` / `--demo`）で実行されたときに **限る**。取得失敗、未設定のデプロイ、シート数 0 では反転しない。
+
+**`privacy`**（`anonymized`, `contains_user_level_data`）は、`npm run fork:verify` の公開範囲の検査（SDD-04 §5.3）が参照する。`contains_user_level_data` は、シート・個人別利用・取り込んだレポートを含む実データで `true`（前回までの成果物は維持されるため、後の実行が失敗しても `true` のまま）。デモデータでは `false`。
 
 ### 3.1 空データ状態の表現（ライブ認証情報が未設定の場合）
 
@@ -241,7 +284,8 @@ GitHub Pages 等のサブディレクトリ環境において、末尾スラッ�
 
 - `default_scopes.latest_day`/`latest_month`/`latest_range` は、ライブメトリクスが存在しない場合は捏造したプレースホルダ日付ではなく単純に省略される。
 - `available_months`/`available_days` が空であっても、独立してインポートされた月次利用レポートCSV (`npm run import:report`) があれば `available_reports` に反映される — CSVベースのレポート機能は Copilot Metrics/Seats の認証情報に一切依存しないため。
-- ダッシュボードSPA (`dashboard/src/App.tsx`) はこの状態 (`noLiveData`) を検知し、固定のフォールバック月表示やクラッシュではなく、認証情報に依存しない機能（CSVレポート、AIモデルベンチマーク）が引き続き利用可能であることを説明する案内バナーを表示する。
+- ダッシュボードSPA (`dashboard/src/App.tsx`) はこの状態 (`noLiveData`) を検知し、固定のフォールバック月表示やクラッシュではなく、認証情報に依存しない機能（CSVレポート、AIモデルベンチマーク）が引き続き利用可能であることを説明する案内バナーを表示する。バナーには明示的な **「デモデータを表示」** ボタンを添える。SPA が自動でデモデータへ切り替えることはない。
+- このとき各ソースの `source_status` は `skipped`（未設定）または `failed`（トークン未設定など）になり、「収集できたが該当データが無い」状態と区別できる。
 
 ---
 

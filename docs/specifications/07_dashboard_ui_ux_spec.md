@@ -7,7 +7,7 @@
 - **Document ID**: SPEC-COPILOT-007
 - **Status**: Approved / Active
 - **Target Version**: 2026.09-LTS
-- **Date**: 2026-09-10
+- **Date**: 2026-09-10 (revised 2026-10-01: data status, missing-value and demo policy added as §2.13 / §2.14)
 
 ---
 
@@ -35,7 +35,7 @@ The dashboard is designed as a responsive Single Page Application (SPA) optimize
 +-----------------------------------------------------------------------------------------------+
 | [Block 1: Collapsible Section (Default: Collapsed with Summary Chip Badges)]                 |
 |  [▼ Cost Optimization Advisor (Idle Seat Alert)] [Potential Savings: $858.00/mo]             |
-|  (Expanded: 30+ day idle seat list & CSV export)                                              |
+|  (Expanded: idle seat list with the shown criteria & CSV export)                              |
 +-----------------------------------------------------------------------------------------------+
 | [Block 2: Collapsible Section (Default: Collapsed)]                                           |
 |  [▶ Group Cost Allocation & License Utilization] [12 Depts]                                  |
@@ -178,3 +178,37 @@ Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint 
 2. **Standardized Action Icon Sizing (`w-4 h-4` / 16px)**:
    - All icons within the action buttons (GitHub SVG, Star, MoreVertical, AlertCircle, AlertTriangle) are standardized to `w-4 h-4` (16px).
    - Discontinues arbitrary viewport expansion (`sm:w-5 sm:h-5`) for the error indicator, preserving geometric harmony and balanced visual weight.
+
+### 2.13 Data Status Banner and Explicit Demo Policy (P0-3 / P0-7)
+
+The first thing a viewer must be able to tell is **whether the numbers are real, stale, missing or fictional**. A failure that is rendered as "0" or as demo data is the worst failure mode of an analytics dashboard, so the status is surfaced at the top of `<main>` (`DataStatusBanner`, `data-testid="data-status-banner"`) before any chart.
+
+1. **Banner items** (built by `buildDataStatusItems`, ordered error → warning → demo):
+   | Level | Trigger | Wording (excerpt) |
+   |:--|:--|:--|
+   | `error` (red, `AlertCircle`, `role="alert"`) | `index.json` `source_status[]` has `status: failed` for a source of the active Live Metrics data | "{source}の取得に失敗しました" + "前回成功 (YYYY-MM-DD HH:MM UTC) のデータを表示しています。最新の値ではありません。" or, if it never succeeded, "該当する値は「—（未取得）」と表示されます" (+ cause) |
+   | `warning` (yellow, `AlertTriangle`) | `status: partial` | "{source}の一部を取得できませんでした" + number of quarantined records excluded from the aggregation |
+   | `demo` (amber, `FlaskConical`) | The active data is demo data (see 3 below) | "デモ（架空）データを表示しています" |
+   - `ok` and `skipped` (not configured, not a fault) sources show nothing.
+   - The level is conveyed by **icon + bracketed label (`[エラー]` / `[警告]` / `[デモ]`) + colour**, never by colour alone.
+2. **A failure never becomes empty or demo.** When `index.json` cannot be fetched, the dashboard shows the error card (`データの読み込みに失敗しました`, with the attempted URL in the error log) and stops the loading spinner; it does **not** switch to demo data. The card carries an explicit **「デモデータを表示」** button (`data-testid="show-demo-data-button"`); the same button is offered in the "ライブ利用データはまだありません" empty state.
+3. **Demo is explicit-only.** The data is treated as demo only when (a) the user chose it (header DEMO badge, the button above, `?demo=true`), (b) the data lives under the `/demo/` path, or (c) its `index.json` declares `is_mock_mode: true` (`pipeline:mock`). It is **never inferred** from the repository owner name, a seat count of 0 or the number of data days. Candidate data URLs for the current mode do not include the other mode's directory (`includeAlternateMode` is an explicit opt-in), so a missing live file can no longer be filled by demo JSON.
+   - The header mode badge is a real toggle: `DEMO` → returns to live data, `LIVE` → shows demo data (always with an explicit boolean target, never an event object).
+   - The banner shows **「実データを表示」** only when demo was chosen by the user; when the data itself declares `is_mock_mode`, there is nothing to switch back to, so the button is not offered.
+   - User uploads (`user_upload`) are always treated as real data.
+
+### 2.14 Missing Values, Estimates and Scope Notices (P0-4 / P0-5 / P0-6 / P0-9)
+
+Missing data is **`null`, shown as "—" with its reason — never `0`, never a plausible-looking constant** (SDD-06 §4.4).
+
+| Situation | Display |
+|:--|:--|
+| Usage metrics (acceptance rate, chats, PRs, daily trend, languages) were not retrieved (`usage_metrics.availability: unavailable`, `overall_acceptance_rate: null`) | KPI shows "—"; the chart area shows "— 利用状況メトリクスを取得できていません" (`data-testid="usage-metrics-unavailable"`) with where to look (status banner / error details). No zero-filled chart is drawn. |
+| The latest collection failed but an earlier success exists (`availability: carried_over`) | The previous values are shown with a **「前回値」** badge and the acquisition time (`as_of`). |
+| A seat's `plan_type` is `unknown` (cost cannot be determined) | The per-seat cost cell shows "—" / "未確定" instead of $0, the drill-down shows "料金プランが未確定のため算定できません", the KPI card notes "料金プラン未確定 N 席は費用に含まれません", and the seat is excluded from totals and from "potential savings" (`IdleSeatAdvisor` notes this too). |
+| A seat was assigned fewer than `SEAT_ONBOARDING_DAYS` (7) days ago and has not been used | Classified **導入期間 (onboarding)**, not idle: the KPI card shows "導入期間 N 席 (遊休に含まない)", the user table has an `onboarding` status filter, and the group chart has a dedicated "導入期間" series. |
+| Idle criteria | Every place that mentions idle seats (KPI card, advisor header, section subtitle) renders the single constant `SEAT_IDLE_CRITERIA_TEXT` (SDD-06 §3) instead of a hard-coded "30 days". |
+| A filter is active and a section cannot be re-aggregated per user (`usage_metrics`, `daily_trends`, `top_languages`, `agent_summary`, `code_generation_summary`, `outcome_indicators`; for reports `daily_trends`, `sku_breakdown`) | The section keeps its organisation-wide value and carries the badge **「全社値 (フィルター非対応)」** (`filter_notice.unfiltered_sections`), so it is not read as the same population as the filtered seat count. |
+| A diagnostic pattern cannot be evaluated from the data source | See SDD-11 §6: shown as "判定不可" and excluded from the score, never "healthy". |
+
+Hooks in these components obey the SDD-15 §6 rules (no hook after an early return); this is enforced by ESLint (`npm run lint`, also part of `npm test`).
