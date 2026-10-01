@@ -101,6 +101,10 @@ const IGNORED_EXTENSIONS = new Set([
   '.woff2',
 ]);
 
+// ドットディレクトリ (.git, .agents, .github など) は走査しないが、以下のリポジトリルート相対パスは例外として走査する。
+// change-dev の成果物 (.devs/changes/) は PR で共有されるため対象とし、.devs/ のそれ以外は対象外のままとする。
+const SCANNED_DOT_PATHS = ['.devs/changes'];
+
 // プレースホルダー／モックとして安全とみなす単語
 const SAFE_PLACEHOLDERS = [
   'mock',
@@ -167,7 +171,14 @@ function scanFile(filePath: string): Finding[] {
   return findings;
 }
 
-function walkDir(dir: string, baseDir: string): string[] {
+// ルート相対パスを OS によらず '/' 区切りで返す (SCANNED_DOT_PATHS との照合用)
+function toRepoPath(rootDir: string, fullPath: string): string {
+  return path.relative(rootDir, fullPath).split(path.sep).join('/');
+}
+
+// passThrough: SCANNED_DOT_PATHS へ至る途中のドットディレクトリ (.devs/ など) の中であることを示す。
+// その中では対象パスへ向かうディレクトリだけを辿り、ファイルは収集しない。
+function walkDir(dir: string, baseDir: string, passThrough = false): string[] {
   const files: string[] = [];
   const entries = fs.readdirSync(dir, { withFileTypes: true });
 
@@ -175,11 +186,19 @@ function walkDir(dir: string, baseDir: string): string[] {
     const fullPath = path.join(dir, entry.name);
 
     if (entry.isDirectory()) {
-      if (IGNORED_DIRS.has(entry.name) || entry.name.startsWith('.')) {
+      if (IGNORED_DIRS.has(entry.name)) continue;
+      if (passThrough || entry.name.startsWith('.')) {
+        const repoPath = toRepoPath(baseDir, fullPath);
+        if (SCANNED_DOT_PATHS.includes(repoPath)) {
+          files.push(...walkDir(fullPath, baseDir));
+        } else if (SCANNED_DOT_PATHS.some((dotPath) => dotPath.startsWith(`${repoPath}/`))) {
+          files.push(...walkDir(fullPath, baseDir, true));
+        }
         continue;
       }
       files.push(...walkDir(fullPath, baseDir));
     } else if (entry.isFile()) {
+      if (passThrough) continue;
       if (IGNORED_FILES.has(entry.name)) continue;
       const ext = path.extname(entry.name).toLowerCase();
       if (IGNORED_EXTENSIONS.has(ext)) continue;
@@ -190,10 +209,18 @@ function walkDir(dir: string, baseDir: string): string[] {
   return files;
 }
 
-export function runSecretScan(): boolean {
+export function collectScanTargets(rootDir: string): string[] {
+  return walkDir(rootDir, rootDir);
+}
+
+export function runSecretScan(rootDir: string = process.cwd()): boolean {
   console.log('🛡️  Running Enterprise Secret & Privacy Audit Scanner...');
-  const rootDir = process.cwd();
-  const allFiles = walkDir(rootDir, rootDir);
+  const allFiles = collectScanTargets(rootDir);
+  const dotPathCoverage = SCANNED_DOT_PATHS.map((dotPath) => {
+    const count = allFiles.filter((file) => toRepoPath(rootDir, file).startsWith(`${dotPath}/`)).length;
+    return `${dotPath}/ (${count} files)`;
+  });
+  console.log(`📂 Dot-paths scanned: ${dotPathCoverage.join(', ')}. Other dot-directories are skipped.`);
 
   const allFindings: Finding[] = [];
   for (const file of allFiles) {
