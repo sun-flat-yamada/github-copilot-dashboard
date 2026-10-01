@@ -52,7 +52,7 @@
 - **エージェント監査スキル (`skills/secret-guard/`) & ローカルスキャナー (`npm run secret-scan`)**: コミット前の自律セルフチェック。
 - **CI/CD 自動検査 (`.github/workflows/secret-scan.yml`)**: Gitleaks と独自スキャナーによる PR/Push 時の二重遮断ゲート。
 - **完全秘匿化**: 氏名や部署情報の対応テーブルは **GitHub Actions Variables / Secrets (`COPILOT_USER_MAPPING`)** に完全隔離。公開コミット履歴に個人情報（PII）や社内組織図が一切混入しません。
-- **公開範囲ガード**: 公開リポジトリでは `copilot-data` ブランチも公開され、GitHub Pages は既定で公開されます。`npm run fork:verify` (定期収集の前にも実行) は、実在の・仮名化されていないユーザーデータが誰でも読める状態なら失敗します。`ANONYMIZE_USERS=true` と `ANONYMIZE_SECRET` を設定すると、実名のかわりに秘密鍵付き (HMAC-SHA256) の仮名を公開します。詳細は [SECURITY.md](SECURITY.md) を参照してください。
+- **社内限定の前提と公開範囲ガード**: 企業の GitHub Enterprise 環境 (private / internal リポジトリ、アクセス制御付き Pages、社員のみ。個人が識別できる表示も可) での運用を前提とします。公開リポジトリでは `copilot-data` ブランチも公開され、GitHub Pages は既定で公開されるため、`npm run fork:verify` (定期収集の前にも実行) は、実在の・仮名化されていないユーザーデータが誰でも読める状態なら失敗します。`ANONYMIZE_USERS=true` と `ANONYMIZE_SECRET` (秘密鍵付き HMAC-SHA256 の仮名) は任意の追加措置です。詳細は [SECURITY.md](SECURITY.md) を参照してください。
 
 ### 7. Fork非競合ストレージアーキテクチャ & 運用保守基盤 (Fork-Safe Storage & Ops)
 - メインブランチ（`main`）にデータファイルをコミットせず、**独立データブランチ（`copilot-data`）分離モデル** を採用。
@@ -177,7 +177,7 @@ github-copilot-dashboard/
 2. **Build and deployment** > **Source** を **「GitHub Actions」** に選択します。
 
 > [!WARNING]
-> **実データの収集を有効にする前に、誰がデータを読めるかを確認してください。** **公開 (public)** リポジトリでは `copilot-data` ブランチ (Raw データ・ユーザー別の数値・解決済みの氏名と部署) が誰でも読め、GitHub Pages は **リポジトリが非公開でも既定で公開** されます (非公開 Pages には GitHub Enterprise Cloud が必要です)。リポジトリ *と* Pages の両方を非公開にするか、仮名化したデータだけを公開してください (`ANONYMIZE_USERS=true` と `ANONYMIZE_SECRET`、ステップ 4 参照)。定期ワークフローは最初に `npm run fork:verify` を実行し、実在の・仮名化されていないデータが公開されていると検出した場合は停止します。詳細は [SECURITY.md](SECURITY.md) を参照してください。
+> **前提: 社内限定。** 本ダッシュボードは、企業の GitHub Enterprise 環境で、自社の社員だけが参照する前提です。**private または internal** のリポジトリを使い、Pages は **アクセス制御付き** (GitHub Enterprise Cloud) にしてください。GitHub Pages は **リポジトリが非公開でも既定で公開** されます。**公開 (public)** リポジトリでは `copilot-data` ブランチ (Raw データ・ユーザー別の数値・解決済みの氏名と部署) も誰でも読めます。実データの公開デプロイはサポートしません (任意の追加措置: `ANONYMIZE_USERS=true` と `ANONYMIZE_SECRET`、ステップ 4 参照)。定期ワークフローは最初に `npm run fork:verify` を実行し、実在の・仮名化されていないデータが公開されていると検出した場合は停止します。詳細は [SECURITY.md](SECURITY.md) を参照してください。
 
 ### ステップ 3: Actions 権限の付与
 1. **Settings** > **Actions** > **General** に移動します。
@@ -200,7 +200,7 @@ github-copilot-dashboard/
     ```json
     { "subCurrency": { "code": "JPY", "symbol": "¥", "exchangeRateFromUSD": 155.0, "displayDecimals": 0 }, "discountPercent": 15 }
     ```
-  - `ANONYMIZE_USERS`: *(公開リポジトリ / 公開 Pages では推奨)* `true` にすると、実際のログイン名・氏名・部署のかわりに仮名 (`dev_<hex>`、`User-<hex>`) を公開します。`ANONYMIZE_SECRET` Secret が必要です。
+  - `ANONYMIZE_USERS`: *(任意。private / internal での運用の代わりにはなりません)* `true` にすると、実際のログイン名・氏名・部署のかわりに仮名 (`dev_<hex>`、`User-<hex>`) を公開します。`ANONYMIZE_SECRET` Secret が必要です。
   - `GITHUB_API_VERSION`: *(任意)* `X-GitHub-Api-Version` ヘッダーの値 (既定 `2026-03-10`)。
   - *(テスト運用時)* `MOCK_MODE`: `true` を指定すると、実際のトークンがなくても2026年仕様のシミュレーションデータで即座にダッシュボードが立ち上がります。
 

@@ -104,7 +104,9 @@ to avoid colliding with the comma used as the column delimiter (e.g., `Contracto
 
 ---
 
-## 5. Public Exposure & Pseudonymization (E-05)
+## 5. Deployment Premise, Exposure Guard & Pseudonymization (E-05)
+
+> **Premise (SDD-01 §1.1)**: the dashboard runs in a company's GitHub Enterprise environment, in a **private or internal** repository with **access-controlled Pages**, and only the company's employees view it. Identified data (names, departments, per-user usage) may therefore be shown. **Public deployment of real data is unsupported.** The mechanisms below are (a) a guard that detects a deployment that breaks the premise and (b) an optional pseudonymization measure.
 
 ### 5.1 What is exposed where
 
@@ -114,11 +116,11 @@ to avoid colliding with the comma used as the column delimiter (e.g., `Contracto
 | `copilot-data` branch (same repository) | `processed/*` (resolved display names, departments, tags, per-user usage and diagnostics), `raw/*` (seat assignments with GitHub login, numeric user ID, avatar URL), imported report CSVs | **Same as the repository.** A public repository publishes this branch. |
 | GitHub Pages artifact | `index.json`, `processed/*` flattened into the site root | **Public by default even when the repository is private**, unless access-controlled Pages (GitHub Enterprise Cloud) is used |
 
-Treat the repository **and** the Pages site as the publication boundary of the data.
+Treat the repository **and** the Pages site as the publication boundary of the data: under the premise both are restricted to enterprise members (internal / private repository; access-controlled Pages).
 
 ### 5.2 Pseudonymization mode (`ANONYMIZE_USERS=true`)
 
-Enable it when the dashboard data may be readable beyond the intended audience:
+Optional under the premise. Enable it to reduce what even an internal audience sees, or if you knowingly accept a wider audience than the premise describes:
 
 - Variable `ANONYMIZE_USERS=true` and secret **`ANONYMIZE_SECRET`** (a random value of at least 16 characters, e.g. `openssl rand -hex 32`). **Without a sufficiently long secret the pipeline stops before writing anything** (fail closed): an anonymization without a secret key is reversible and must not be published.
 - Algorithm: **HMAC-SHA256** keyed with `ANONYMIZE_SECRET` over `<kind>\0<lower-cased, trimmed value>` (`kind` = `login` / `name` / `department` / `team` / `project`, which separates the domains). The previous implementation was a 32-bit unkeyed hash that anyone could invert with a dictionary of GitHub logins.
@@ -138,7 +140,7 @@ Enable it when the dashboard data may be readable beyond the intended audience:
 
 ### 5.3 Exposure check (`npm run fork:verify`)
 
-`fork:verify` asks, anonymously (no `Authorization` header), whether real user-level data is readable by anyone:
+`fork:verify` is the guard for the premise. It asks, anonymously (no `Authorization` header), whether real user-level data is readable by anyone, which would mean the repository or Pages is not restricted to the enterprise:
 
 1. `GET https://api.github.com/repos/{owner}/{repo}` → `200`: the repository is public.
 2. `GET https://raw.githubusercontent.com/{owner}/{repo}/copilot-data/data/index.json` → `200`: the data branch is readable.

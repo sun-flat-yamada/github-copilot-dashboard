@@ -46,11 +46,12 @@
 2. **Build and deployment** > **Source** で **「GitHub Actions」** を選択します。
 3. 外部のホスティングサーバーやクラウド費用は一切不要です（`.github/workflows/copilot-analysis-cron.yml` により自動配信されます）。
 
-### 公開されたデータを誰が読めるか (公開リポジトリ / Pages の公開範囲)
-実データの収集を有効にする前に、結果を誰が読めてよいかを決めてください:
+### 運用の前提: 社内限定 (リポジトリ / Pages の公開範囲)
+本ダッシュボードは、企業の **GitHub Enterprise 環境**で、**自社の社員だけ**が参照する前提です (氏名・部署・ユーザー別の利用状況を個人が識別できる形で表示してよい)。実データの収集を有効にする前に、Enterprise のメンバーだけが結果を読めることを確認してください:
+- **private または internal** のリポジトリを使い、Pages は **アクセス制御付き** (GitHub Enterprise Cloud) にします。**Enterprise と配下の Organization を併用**して収集します (`COPILOT_ENTERPRISE` と `COPILOT_ORGS`)。
 - **公開 (public) リポジトリ**は **`copilot-data` ブランチ** (Raw の API レスポンス・ユーザー別の数値・解決済みの氏名と部署) も公開します。
 - **GitHub Pages サイトは、リポジトリが非公開でも既定で公開**されます (アクセス制御付き Pages には GitHub Enterprise Cloud が必要です)。
-- そのため、次の**いずれか**を選んでください: (1) リポジトリ**と** Pages の両方を非公開にする、(2) 仮名化したデータだけを公開する: Variable `ANONYMIZE_USERS=true` と Secret `ANONYMIZE_SECRET` (ランダムな16文字以上。例: `openssl rand -hex 32`) を設定します。`ANONYMIZE_USERS=true` で有効な鍵が無い場合、実行は何も公開せずに停止します。
+- 実データの公開デプロイは**サポートしません**。任意の追加措置として、仮名化したデータを公開できます: Variable `ANONYMIZE_USERS=true` と Secret `ANONYMIZE_SECRET` (ランダムな16文字以上。例: `openssl rand -hex 32`) を設定します。`ANONYMIZE_USERS=true` で有効な鍵が無い場合、実行は何も公開せずに停止します。
 - 定期ワークフローは収集前に `npm run fork:verify` を実行し、実在の・仮名化されていないユーザー単位のデータが公開されている (または公開される) 場合は**失敗**します。カスタムドメインで配信している場合は `COPILOT_PAGES_URL` を設定し、公開デプロイを承知のうえで受け入れる場合に限って `COPILOT_ALLOW_PUBLIC_DATA=true` を設定してください。詳細は [SECURITY.md](../SECURITY.md) と [SDD-04 第5章](specifications/04_user_attribute_mapping_spec.ja.md) を参照してください。
 
 ---

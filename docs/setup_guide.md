@@ -47,11 +47,12 @@ If your enterprise uses Enterprise Managed Users (EMU) or organization policies 
 2. Under **Build and deployment** > **Source**, choose **"GitHub Actions"**.
 3. No static hosting server or Cloud infrastructure is needed; deployment is managed completely via `.github/workflows/copilot-analysis-cron.yml`.
 
-### Who can read the published data? (Public repository / Pages exposure)
-Before enabling real-data collection, decide who may read the result:
+### Deployment premise: internal use only (repository / Pages visibility)
+This dashboard is for a company's **GitHub Enterprise environment** and is viewed **only by its employees** (identified display of names, departments and per-user usage is allowed). Before enabling real-data collection, make sure only enterprise members can read the result:
+- Use a **private or internal** repository, and set the Pages site to **access-controlled** (GitHub Enterprise Cloud). Collect the **Enterprise and its Organizations together** (`COPILOT_ENTERPRISE` and `COPILOT_ORGS`).
 - A **public repository** also publishes its **`copilot-data` branch** (raw API responses, per-user figures, resolved names and departments).
 - A **GitHub Pages site is public by default, even for a private repository** (access-controlled Pages need GitHub Enterprise Cloud).
-- So use **one** of: (1) keep the repository **and** Pages private; (2) publish pseudonymized data only: set the variable `ANONYMIZE_USERS=true` and the secret `ANONYMIZE_SECRET` (a random key of at least 16 characters, e.g. `openssl rand -hex 32`). With `ANONYMIZE_USERS=true` and no valid key the run stops without publishing anything.
+- Public deployment of real data is **unsupported**. As an optional extra measure you can publish pseudonymized data: set the variable `ANONYMIZE_USERS=true` and the secret `ANONYMIZE_SECRET` (a random key of at least 16 characters, e.g. `openssl rand -hex 32`); with `ANONYMIZE_USERS=true` and no valid key the run stops without publishing anything.
 - The scheduled workflow runs `npm run fork:verify` before collecting; it **fails** when real, non-anonymized user-level data is (or would be) publicly readable. Set `COPILOT_PAGES_URL` if the site is served from a custom domain, and `COPILOT_ALLOW_PUBLIC_DATA=true` only if you knowingly accept a public deployment. See [SECURITY.md](../SECURITY.md) and [SDD-04 §5](specifications/04_user_attribute_mapping_spec.md).
 
 ---
