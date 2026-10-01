@@ -34,18 +34,39 @@ GitHub REST API はカレンダーベースのバージョン体系を採用し�
 
 組織またはEnterprise全体の利用メトリクス（IDEコード補完、チャット、PRサマリー、CLI、エージェント等）を取得する。
 
-### 2.1 エンドポイント体系 & Reports API (2026年9月最新)
-2026年4月をもって旧メトリクスエンドポイント（`/orgs/{org}/copilot/metrics`）は完全廃止（Sunset）となり、最新仕様では署名付きダウンロードURL（NDJSON形式）を返す **Usage Metrics Reports API** が標準採用されている。
+### 2.1 エンドポイント体系 & Reports API (REST API description で確認済み)
+旧メトリクスエンドポイント (`/enterprises/{enterprise}/copilot/metrics`、`/orgs/{org}/copilot/metrics`) は 2026 年 4 月に廃止 (Sunset) されており、**呼び出さない**。標準は **Usage Metrics Reports API** で、リクエストは `{ report_day, download_links[] }` (1 日レポート) または `{ report_start_day, report_end_day, download_links[] }` (28 日レポート) を返し、各リンクは **有効期限の短い署名付き URL で、NDJSON ファイル** (1 行 1 JSON) を指す。
 
-- **Enterprise Reports**:
-  - `GET /enterprises/{enterprise}/copilot/metrics/reports/enterprise-1-day` (日次NDJSONリンク取得)
-  - `GET /enterprises/{enterprise}/copilot/metrics/reports/enterprise-28-day/latest`
-- **Organization Reports**:
-  - `GET /orgs/{org}/copilot/metrics/reports/organization-1-day`
-  - `GET /orgs/{org}/copilot/metrics/reports/organization-28-day/latest`
-- **User-Level Reports**:
-  - `GET /orgs/{org}/copilot/metrics/reports/users-1-day`
-  - `GET /orgs/{org}/copilot/metrics/reports/users-28-day/latest`
+*出典: GitHub の REST API description (`api.github.com` / `ghec`、版 `2026-03-10`、`github/rest-api-description`)。2026-10-01 に確認。*
+
+| レポート | Enterprise のパス | Organization のパス |
+|:--|:--|:--|
+| 集計・1 日 (`?day=YYYY-MM-DD`) | `/enterprises/{enterprise}/copilot/metrics/reports/enterprise-1-day` | `/orgs/{org}/copilot/metrics/reports/organization-1-day` |
+| 集計・直近 28 日 | `.../enterprise-28-day/latest` | `.../organization-28-day/latest` |
+| **ユーザー別・1 日** (`?day=`) — **使用** | `.../users-1-day` | `.../users-1-day` |
+| ユーザー別・直近 28 日 | `.../users-28-day/latest` | `.../users-28-day/latest` |
+| リポジトリ別 / ユーザー・チーム別・1 日 | `.../repos-1-day`、`.../user-teams-1-day` | 同左 |
+
+- **提供範囲**: レポートは 2025-10-10 以降に存在し、1 日レポートは最大 1 年前まで取得できる。対象の日は集計が完了している必要がある (最新の日は未生成で `404` になることがある。Organization は `204` を返すことがある)。
+- **認証** (PAT。2026-10-01 の決定): Enterprise レポートは `manage_billing:copilot` または `read:enterprise` の PAT (classic。呼び出し側が Enterprise owner / billing manager、または fine-grained の「View Enterprise Copilot Metrics」権限を持つこと)、Organization レポートは `read:org` の PAT (classic。Organization owner、または「View Organization Copilot Metrics」)。
+- **署名付きのダウンロードリンクは `Authorization` ヘッダーなしで取得する** (リンクは `api.github.com` ではなくオブジェクトストレージを指す。そこへ PAT を送ると漏えいする)。アダプタは `https` のリンクだけを受け付け、ファイルサイズにも上限を設ける。
+- **収集**: パイプラインは、Enterprise **と** 設定された全 Organization について、昨日 (UTC) までの 30 日 (当月の月初のほうが早ければ月初まで遡る) の各日の `users-1-day` を、3 並列で取得する。同じ日に複数のスコープへ現れるユーザーは **1 件** として数える (`user_id` で照合し、Enterprise の行を採る)。集計レポートは使わず、全体の値は重複排除したユーザー行から導出する。
+- **状態**: 全日取得 → `ok`、一部の日が失敗または行を隔離 → `partial` (+ issue)、1 件も読めない → `failed` (+ 必要なトークンのスコープを示す issue)。最新の日だけが無いことは障害としない。
+
+#### フィールド対応 (users-1-day の行 → 内部のメトリクス)
+行のフィールド (公式名): `day`、`user_id`、`user_login`、`enterprise_id`、`organization_id`、`ai_credits_used`、`user_initiated_interaction_count`、`code_generation_activity_count`、`code_acceptance_activity_count`、`loc_suggested_to_add_sum`、`loc_suggested_to_delete_sum`、`loc_added_sum`、`loc_deleted_sum`、`used_agent` / `used_chat` / `used_cli` / `used_copilot_app` / `used_copilot_cloud_agent` (boolean)、配列 `totals_by_ide`・`totals_by_feature`・`totals_by_language_feature`・`totals_by_language_model`・`totals_by_model_feature`。`feature` の値には `code_completion`、`chat_inline`、`chat_panel_{ask,edit,agent,plan,custom,unknown}_mode`、`agent_edit`、`copilot_cli`、`copilot_app`、`others` があり、未知の値は捨てずに保持する。
+
+| 内部の値 | 出所 |
+|:--|:--|
+| Inline の提案数・受諾数・行数 | `totals_by_feature[feature = code_completion]` の `code_generation_activity_count`・`code_acceptance_activity_count`・`loc_suggested_to_add_sum`・`loc_added_sum` (言語別は `totals_by_language_feature`)。チャット・CLI・エージェントの活動は**決して混ぜない** (§2.2 サーフェス分離)。 |
+| チャット数 | `chat_*` の feature の `user_initiated_interaction_count` の合計。モデル別は `totals_by_model_feature` (チャット系の feature のみ) |
+| CLI | `copilot_cli` のやり取り数 |
+| AI クレジット | `ai_credits_used` (ユーザー・日ごと) |
+| 追加・削除行数 | 行全体の `loc_added_sum` / `loc_deleted_sum`。モード別は `totals_by_feature` |
+| アクティブユーザー数 | その日の重複排除後の行数 |
+| **提供されない** | PR 概要の作成数 (`null` で保持し「—」と表示)、チャットのコピー / 挿入イベント数、エージェントのセッション数 (エージェントのブロックは作り出さず省略) |
+
+ユーザー別プロファイル (日次履歴・合計・モデル利用・28 日のクレジット) も同じ行から作る。表示名・部署・Cost Center・組織・プランは、シートと属性マッピングから補う (`enrichUserProfiles`)。
 
 ### 2.2 Inline補完受諾率（Inline Completion Acceptance Rate）のテレメトリ定義とサーフェス分離
 
@@ -65,7 +86,7 @@ GitHub公式データにおける「受諾率」は、APIレスポンスのイ�
 - **IDEコード補完限定**: 上記受諾率は、エディタ内のインラインコード補完（`copilot_ide_code_completions`）のみを対象とする。
 - **CLI / Chat / Agent の非計上**: GitHub Copilot CLI（`copilot_in_cli`）、Copilot Chat、および Autopilot/Agent モードの自律実行成果（ファイル編集・パッチ適用・Tool Call）は、受諾率の分子・分母には一切含まれない。
 
-### 2.3 レスポンススキーマ (日次配列 / レポート構造)
+### 2.3 旧レスポンススキーマ (廃止されたエンドポイント。参考)
 
 ```json
 [

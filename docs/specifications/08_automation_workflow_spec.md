@@ -35,7 +35,9 @@
 
 #### 2.1.1 Token Types and Permissions
 
-> **Decision (2026-10-01): authentication stays PAT-only; a GitHub App is not adopted.** An App installation token can read enterprise billing data (GitHub changelog 2026-08-26), but the enterprise Copilot seat-assignment endpoint does not support GitHub App tokens or fine-grained PATs (a classic PAT with `manage_billing:copilot` or `read:enterprise` is required), so an App alone cannot complete collection. Based on search summaries of GitHub's documentation; re-verify against the primary source if the decision is revisited.
+> **Decision (2026-10-01, by the project owner): authentication stays PAT-only; a GitHub App is not adopted.**
+>
+> **Correction (2026-10-01)**: the first rationale recorded here — that the enterprise Copilot seat-assignment endpoint does not support App tokens — came from search summaries and is **contradicted by GitHub's own REST API description** (`ghec`, `2026-03-10`), which flags the enterprise seats, enterprise billing / cost-center and the metrics report endpoints as `enabledForGitHubApps: true` (the endpoint text itself documents only PAT scopes). Whether an App installation token really works end to end for each endpoint is **unverified** (it needs a call against a real enterprise). The decision stands as an owner's decision; revisit it with a real test call if PAT management becomes a burden.
 
 Based on current GitHub specifications, you can use either a **Fine-grained Personal Access Token (recommended)** or a **Personal Access Token (classic)**.
 
@@ -53,6 +55,7 @@ Enforces least privilege and is the most secure method.
    | **Organization administration** | **Read-only** | Organization metadata and status inspection (optional) |
 
 ##### B. Personal Access Token (classic)
+> Scopes by endpoint (from the REST API description): Enterprise metrics reports and Enterprise seats — `manage_billing:copilot` or `read:enterprise`; Organization metrics reports — `read:org`; Organization seats — `manage_billing:copilot` or `read:org`; Enterprise Cost Centers / billing — an enterprise owner or billing manager.
 1. **Navigation**: `Settings` > `Developer settings` > `Personal access tokens` > `Tokens (classic)` > **Generate new token (classic)**
 2. **Select scopes**:
    | Scope | Purpose |
