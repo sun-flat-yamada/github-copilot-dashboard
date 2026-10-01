@@ -24,6 +24,15 @@ As enterprise adoption of GitHub Copilot (Copilot Business / Copilot Enterprise)
 4. **Privacy & Compliance (Risk of Sensitive Information Leaks)**:
    If mapping tables containing employee names, staff IDs, and internal team assignments are committed to public Git logs, privacy violations and security incidents occur.
 
+### 1.1 Deployment Premise (Internal Use Only)
+
+This dashboard is **operated inside a company's GitHub Enterprise environment and is viewed only by that company's own employees**.
+
+- The repository is **private or internal**, and the GitHub Pages site is **access-controlled** to enterprise members (access-controlled Pages require GitHub Enterprise Cloud). Neither is ever public.
+- Because the audience is authorized employees, the dashboard **may show real names, departments and per-user usage and diagnostics** (identified display). It is not designed for, and must not be used for, publishing identified data to the public.
+- **Public deployment of real data is out of scope and unsupported.** The upstream repository is public but holds only demo data. `npm run fork:verify` is the guard that detects a deployment violating this premise (SDD-04 §5). Pseudonymization (`ANONYMIZE_USERS`) remains available as an optional, additional measure (e.g. to limit what a broad internal audience sees), not as the basis for public release.
+- Collection covers the Enterprise **and** its Organizations together.
+
 This platform resolves these challenges by adhering strictly to the September 2026 GitHub Copilot API and GitHub Enterprise specifications, providing **3-axis group allocation (Org, Cost Center, Arbitrary User Attributes)**, **fork-safe data persistence**, and an **auto-updating GitHub Pages dashboard**.
 
 ---
@@ -144,7 +153,7 @@ The aggregation engine and dashboard must support rapid switching between data s
 ### NFR-2: Security & Principle of Least Privilege
 - Restrict GitHub API credentials (Fine-grained PAT or GitHub App) to minimum required scopes (`copilot:read`, `enterprise_billing:read`, `org:read`).
 - Provide anonymization/masking options via environment variables to protect personal identities on public deployments. The option (`ANONYMIZE_USERS=true`) must use **keyed, non-reversible pseudonymization** (HMAC-SHA256 with `ANONYMIZE_SECRET`, at least 16 characters) and **fail closed** when the secret is missing; avatar URLs, numeric user IDs and the original CSV must not be published in that mode (SDD-04 §5).
-- Detect, before anything is collected or published, when a public repository or a public GitHub Pages site would expose real, non-anonymized user-level data (`npm run fork:verify`, SDD-04 §5.3). Public repositories publish the `copilot-data` branch as well; this requirement protects against the zero-leakage guarantee being limited to `main`.
+- Under the deployment premise (SDD-01 §1.1: internal / private repository, access-controlled Pages, employees only), detect before anything is collected or published when the repository or the Pages site is publicly readable while real, non-anonymized user-level data is involved (`npm run fork:verify`, SDD-04 §5.3). Public repositories publish the `copilot-data` branch as well; this requirement protects against the zero-leakage guarantee being limited to `main`.
 - Apply AES-256 symmetric GPG encryption for enterprise user mappings exceeding GitHub's 48KB secret limit, isolating encrypted blobs to `copilot-data` and decrypting strictly into ephemeral `$RUNNER_TEMP` (see [GPG Key Management & Operational Guide](../security/01_gpg_key_management_and_user_mapping_guide.md)).
 
 ### NFR-3: Offline & Mock Support

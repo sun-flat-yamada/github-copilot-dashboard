@@ -24,6 +24,15 @@ GitHub Copilot（Copilot Business / Copilot Enterprise）の企業導入が進�
 4. **プライバシーとコンプライアンス（機密情報の漏洩リスク）**:
    従業員の氏名、社員番号、人事上の所属グループなどの対応表（マッピングテーブル）が公開リポジトリのコミットログに残ると、情報漏洩事故につながる。
 
+### 1.1 運用の前提 (社内限定)
+
+本ダッシュボードは、**企業の GitHub Enterprise 環境の内部で運用し、自社の社員だけが参照する**ことを前提とする。
+
+- リポジトリは **private または internal** とし、GitHub Pages は Enterprise のメンバーに**アクセス制御**する (アクセス制御付き Pages には GitHub Enterprise Cloud が必要)。どちらも公開 (public) にしない。
+- 閲覧者が権限のある社員であるため、**実名・部署・ユーザー別の利用状況と診断を表示してよい** (個人が識別できる表示)。個人が識別できるデータを社外へ公開する用途は想定せず、使用してはならない。
+- **実データの公開デプロイは対象外で、サポートしない。** 本家リポジトリは公開だが、デモデータしか含まない。`npm run fork:verify` が、この前提に反する構成を検出するガードである (SDD-04 第5章)。仮名化 (`ANONYMIZE_USERS`) は、社内の広い閲覧者に見せる範囲を絞るなどの補助的な追加措置としてのみ使え、公開の根拠にはしない。
+- 収集の対象は、Enterprise **と** その配下の Organization を併用する。
+
 本システムは、これらの課題を抜本的に解決するため、2026年9月時点の最新GitHub Copilot APIおよびGitHub Enterprise仕様に完全準拠し、**3軸のグループ仕訳（Org, Cost Center, 任意ユーザー属性）**、**Fork耐性を持つデータ永続化**、および**GitHub Pagesでの自動更新ダッシュボード**を提供する。
 
 ---
@@ -145,7 +154,7 @@ GitHub Copilot（Copilot Business / Copilot Enterprise）の企業導入が進�
 ### NFR-2: セキュリティ & 最小権限
 - GitHub APIアクセスには GitHub Personal Access Token (Fine-grained PAT) または GitHub App を使用し、必要最小限の権限（`copilot:read`, `enterprise_billing:read`, `org:read`）のみを要求すること。
 - 個人名や社内組織情報がパブリックなGitHub PagesやGitログに流出しないよう、環境変数で表示名のマスキング/ハッシュ化オプションを提供すること。このオプション (`ANONYMIZE_USERS=true`) は**秘密鍵付きの復元不能な仮名化** (`ANONYMIZE_SECRET` (16 文字以上) による HMAC-SHA256) を用い、秘密鍵が無い場合は**失敗 (fail closed)** すること。このモードでは、アバター URL・数値のユーザー ID・元 CSV を公開しないこと (SDD-04 §5)。
-- 公開リポジトリや公開 GitHub Pages が、実在の・仮名化されていないユーザー単位のデータを公開してしまう状態を、収集・公開の前に検出すること (`npm run fork:verify`、SDD-04 §5.3)。公開リポジトリでは `copilot-data` ブランチも公開される。本要件は、Zero-Leakage の保証が `main` ブランチに限られることへの対策である。
+- 運用の前提 (SDD-01 §1.1: internal / private リポジトリ、アクセス制御付き Pages、社員のみ) のもとで、リポジトリや Pages が公開されている状態で、実在の・仮名化されていないユーザー単位のデータを扱おうとしていることを、収集・公開の前に検出すること (`npm run fork:verify`、SDD-04 §5.3)。公開リポジトリでは `copilot-data` ブランチも公開される。本要件は、Zero-Leakage の保証が `main` ブランチに限られることへの対策である。
 - 48KB を超える大規模ユーザーマッピングには GPG (AES-256) 対称暗号化を適用し、暗号化ブロブを `copilot-data` に隔離し、実行時 `$RUNNER_TEMP` にのみ平文復号すること（詳細は [GPG鍵管理・運用標準ガイド](../security/01_gpg_key_management_and_user_mapping_guide.ja.md) を参照）。
 
 ### NFR-3: オフライン・モック対応

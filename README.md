@@ -52,7 +52,7 @@ Performs multidimensional aggregation and cost allocation across 3 primary axes 
 - **Agent Audit Skill (`skills/secret-guard/`) & Local Scanner (`npm run secret-scan`)**: Autonomous pre-commit self-checks.
 - **CI/CD Automated Inspection (`.github/workflows/secret-scan.yml`)**: Dual-layer interception gate on PR/Push via Gitleaks and custom scanner.
 - **Zero PII Leakage**: User and department mapping tables are isolated exclusively in **GitHub Actions Variables / Secrets (`COPILOT_USER_MAPPING`)**. Zero personally identifiable information (PII) or internal org charts ever enter Git commit history.
-- **Public-exposure guard**: the `copilot-data` branch of a public repository is public too, and GitHub Pages are public by default. `npm run fork:verify` (also run before every scheduled collection) fails when real, non-anonymized user data would be publicly readable, and `ANONYMIZE_USERS=true` + `ANONYMIZE_SECRET` publishes keyed (HMAC-SHA256) pseudonyms instead of real logins and names. See [SECURITY.md](SECURITY.md).
+- **Internal-use premise & exposure guard**: designed for a company's GitHub Enterprise environment (private / internal repository, access-controlled Pages, employees only; identified display is allowed). Because the `copilot-data` branch of a public repository is public and Pages are public by default, `npm run fork:verify` (also run before every scheduled collection) fails when real, non-anonymized user data would be publicly readable. `ANONYMIZE_USERS=true` + `ANONYMIZE_SECRET` is an optional measure (keyed HMAC-SHA256 pseudonyms). See [SECURITY.md](SECURITY.md).
 
 ### 7. Fork-Safe Storage Architecture & Maintenance Platform
 - Zero data files committed to `main`; employs a dedicated **isolated orphan data branch (`copilot-data`)**.
@@ -177,7 +177,7 @@ Deploy your auto-updating dashboard to GitHub Pages in 4 steps:
 2. Under **Build and deployment** > **Source**, select **"GitHub Actions"**.
 
 > [!WARNING]
-> **Check who can read your data before enabling real-data collection.** In a **public** repository the `copilot-data` branch (raw data, per-user figures, resolved names and departments) is publicly readable, and a GitHub Pages site is **public by default even when the repository is private** (private Pages need GitHub Enterprise Cloud). Either keep the repository *and* Pages private, or publish pseudonymized data only (`ANONYMIZE_USERS=true` with `ANONYMIZE_SECRET`, see Step 4). The scheduled workflow runs `npm run fork:verify` first and stops when it detects real, non-anonymized data that is publicly exposed. Details: [SECURITY.md](SECURITY.md).
+> **Premise: internal use only.** This dashboard is for a company's GitHub Enterprise environment, viewed only by its employees. Use a **private or internal** repository and set the Pages site to **access-controlled** (GitHub Enterprise Cloud); a GitHub Pages site is **public by default even when the repository is private**. In a **public** repository the `copilot-data` branch (raw data, per-user figures, resolved names and departments) is publicly readable too. Public deployment of real data is unsupported (optional extra measure: `ANONYMIZE_USERS=true` with `ANONYMIZE_SECRET`, see Step 4). The scheduled workflow runs `npm run fork:verify` first and stops when it detects real, non-anonymized data that is publicly exposed. Details: [SECURITY.md](SECURITY.md).
 
 ### Step 3: Enable Actions Permissions
 1. Navigate to **Settings** > **Actions** > **General**.
@@ -200,7 +200,7 @@ Register your configuration under **Settings** > **Secrets and variables** > **A
     ```json
     { "subCurrency": { "code": "JPY", "symbol": "¥", "exchangeRateFromUSD": 155.0, "displayDecimals": 0 }, "discountPercent": 15 }
     ```
-  - `ANONYMIZE_USERS`: *(Recommended for public repositories / public Pages)* `true` publishes pseudonyms (`dev_<hex>`, `User-<hex>`) instead of real logins, names and departments. Requires the `ANONYMIZE_SECRET` secret.
+  - `ANONYMIZE_USERS`: *(Optional; not a substitute for private / internal hosting)* `true` publishes pseudonyms (`dev_<hex>`, `User-<hex>`) instead of real logins, names and departments. Requires the `ANONYMIZE_SECRET` secret.
   - `GITHUB_API_VERSION`: *(Optional)* `X-GitHub-Api-Version` header value (default `2026-03-10`).
   - *(Testing / Demo)* `MOCK_MODE`: Set to `true` to immediately spin up the dashboard using 2026 synthetic simulation data.
 
