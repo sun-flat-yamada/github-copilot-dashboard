@@ -1,6 +1,8 @@
 import React from 'react';
 import { ScopeAggregatedData } from '../../../src/types/copilot';
 import { ShieldAlert, ArrowRight, TrendingDown } from 'lucide-react';
+import { SEAT_IDLE_CRITERIA_TEXT, isIdleSeatStatus } from '../../../src/domain/rules/SeatClassificationRule';
+import { monthlyIdleSavingsUsd } from '../../../src/domain/rules/ScopeCostRule';
 
 interface IdleSeatAdvisorProps {
   data: ScopeAggregatedData;
@@ -14,7 +16,13 @@ export const IdleSeatAdvisor: React.FC<IdleSeatAdvisorProps> = ({ data, onFilter
     return null;
   }
 
-  const annualSavings = overview.idle_waste_usd * 12;
+  // 削減可能額は「遊休シートの月額費用の合計」。overview.idle_waste_usd はスコープ内の費用
+  // (日次スコープでは日割り) のため、「月間」「年間推計」の表示には使わない。
+  const monthlySavings = monthlyIdleSavingsUsd(data.users);
+  const annualSavings = monthlySavings * 12;
+  const hasUnconfirmedIdleSeat = data.users.some(
+    (u) => isIdleSeatStatus(u.status) && u.plan_type === 'unknown'
+  );
 
   return (
     <div className="bg-gradient-to-r from-amber-950/40 via-amber-900/20 to-slate-900 border border-amber-800/60 rounded-xl p-5 shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -30,9 +38,14 @@ export const IdleSeatAdvisor: React.FC<IdleSeatAdvisorProps> = ({ data, onFilter
             </span>
           </h4>
           <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
-            30日以上アクティビティが記録されていないシートが検出されました。これらのシートを回収・再割り当てすることで、
-            月間 <strong className="text-amber-300 font-semibold">${overview.idle_waste_usd.toLocaleString()}</strong>（年間推計: <strong className="text-amber-300 font-semibold">${annualSavings.toLocaleString()}</strong>）のライセンス費用の削減が可能です。
+            遊休 ({SEAT_IDLE_CRITERIA_TEXT}) と判定されたシートが検出されました。これらのシートを回収・再割り当てすることで、
+            月間 <strong className="text-amber-300 font-semibold">${monthlySavings.toLocaleString()}</strong>（年間推計: <strong className="text-amber-300 font-semibold">${annualSavings.toLocaleString()}</strong>）のライセンス費用の削減が可能です。
           </p>
+          {hasUnconfirmedIdleSeat && (
+            <p className="text-[11px] text-amber-400 mt-1" data-testid="idle-unconfirmed-note">
+              料金プランが未確定のシートは、削減可能額に含めていません。
+            </p>
+          )}
         </div>
       </div>
 

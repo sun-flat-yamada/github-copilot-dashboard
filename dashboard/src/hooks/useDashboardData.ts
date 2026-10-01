@@ -8,23 +8,21 @@ import {
   ScopeAggregatedData,
   FilterCriteria,
   DEFAULT_FILTER_CRITERIA,
-  GroupSummary,
 } from '../../../src/types/copilot';
 import {
   resolveDataPath,
   getCandidateDataUrls,
   fetchDataWithFallback,
 } from '../utils/pathResolver';
-import { buildFilteredModelBreakdown } from '../utils/reportModelBreakdown';
 import {
   applyFilterCriteriaToLiveScope,
+  applyFilterCriteriaToMonthlyReport,
   generateDatasetVersionKey,
   isFilterCriteriaActive,
   countActiveFilterConditions,
   getFilterSummaryBadges,
-  matchUserWithCriteria,
-  FilterableUser,
 } from '../utils/filterEngine';
+import { isUnassignedValue } from '../../../src/domain/constants/unassigned';
 
 export interface RepoInfo {
   owner: string;
@@ -52,6 +50,10 @@ export function sliceScopeDataByDateRange(
   const totalChats = filteredTrends.reduce((sum, d) => sum + (d.chats || 0), 0);
   const totalPrSummaries = filteredTrends.reduce((sum, d) => sum + (d.pr_summaries || 0), 0);
   const acceptanceRate = totalSuggestions > 0 ? totalAcceptances / totalSuggestions : 0;
+
+  // 期間内に日次の利用実績が 1 日も無い (利用状況メトリクスが取得できていない) 場合、
+  // 利用指標を 0 で埋めず欠損 (null) のままにする
+  const hasDailyUsage = filteredTrends.length > 0;
 
   const filteredUserProfiles = (baseData.user_profiles || []).map((p) => {
     const history = (p.daily_history || []).filter(
@@ -91,11 +93,11 @@ export function sliceScopeDataByDateRange(
     overview: {
       ...baseData.overview,
       total_spend_usd: Math.round(totalSpend * 100) / 100,
-      total_suggestions: totalSuggestions,
-      total_acceptances: totalAcceptances,
-      overall_acceptance_rate: Math.round(acceptanceRate * 10000) / 10000,
-      total_chats: totalChats,
-      total_pr_summaries: totalPrSummaries,
+      total_suggestions: hasDailyUsage ? totalSuggestions : null,
+      total_acceptances: hasDailyUsage ? totalAcceptances : null,
+      overall_acceptance_rate: hasDailyUsage ? Math.round(acceptanceRate * 10000) / 10000 : null,
+      total_chats: hasDailyUsage ? totalChats : null,
+      total_pr_summaries: hasDailyUsage ? totalPrSummaries : null,
       active_users: activeUsersCount,
     },
   };
@@ -104,6 +106,9 @@ export function sliceScopeDataByDateRange(
 export function useDashboardData(initialSource: DataSourceType = 'live_metrics') {
   const [activeSource, setActiveSource] = useState<DataSourceType>(initialSource);
   const [indexMeta, setIndexMeta] = useState<IndexMetadata | null>(null);
+  // 取得エフェクト (依存配列に indexMeta を含めない) から最新の index.json の宣言を参照するための ref
+  const indexMetaRef = useRef<IndexMetadata | null>(null);
+  indexMetaRef.current = indexMeta;
 
   // DEMOモード状態 (URLパラメータ・環境変数・手動切替)
   const [isDemoMode, setIsDemoMode] = useState<boolean>(checkIsDemoMode);
@@ -115,7 +120,8 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
 
   // Live Metrics スコープ
   const [scopeType, setScopeType] = useState<AnalysisScopeType>('monthly');
-  const [selectedKey, setSelectedKey] = useState<string>('2026-09');
+  // 初期値は空。index.json の default_scopes (実際に存在する期間) から決定する (固定の日付を持たない)
+  const [selectedKey, setSelectedKey] = useState<string>('');
   const [currentData, setCurrentData] = useState<ScopeAggregatedData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -129,7 +135,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
   const scopeDataCacheRef = useRef<Map<string, { data: ScopeAggregatedData; isDemoSourced: boolean }>>(new Map());
 
   // Monthly Usage Report スコープ
-  const [selectedReportMonth, setSelectedReportMonth] = useState<string>('2026-08');
+  const [selectedReportMonth, setSelectedReportMonth] = useState<string>('');
   const [currentReportData, setCurrentReportData] = useState<MonthlyReportAggregatedData | null>(null);
   const [reportLoading, setReportLoading] = useState<boolean>(false);
   const [reportError, setReportError] = useState<string | null>(null);
@@ -167,17 +173,19 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
         isFork: false,
       };
     }
+    // リポジトリを特定できない場合 (index.json 未取得かつ github.io 以外) は、デモ用の組織名を使わず
+    // 公開リポジトリ (upstream) を指す
     return {
-      owner: 'proud-corp',
+      owner: 'sun-flat-yamada',
       name: 'github-copilot-dashboard',
-      url: 'https://github.com/proud-corp/github-copilot-dashboard',
+      url: 'https://github.com/sun-flat-yamada/github-copilot-dashboard',
       isFork: false,
     };
   }, [indexMeta]);
 
   // 利用可能なレポート月一覧
   const availableReports = useMemo(() => {
-    return indexMeta?.available_reports || ['2026-09', '2026-08'];
+    return indexMeta?.available_reports || [];
   }, [indexMeta]);
 
   // クライアント側ランタイムfetchエラー追跡状態
@@ -225,37 +233,20 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
   // 1. 初回インデックスのロード
   const loadIndex = useCallback(async (forcedDir?: string) => {
     const dir = forcedDir || (isDemoMode ? './data/demo' : './data');
-    const altDir = dir === './data/demo' ? './data' : './data/demo';
     try {
-      let res = await fetch(resolveDataPath(`${dir}/index.json`));
-      // 双方向フォールバック: 指定パスで失敗した場合はもう一方のパス (./data <=> ./data/demo) を自動試行
-      if (!res.ok) {
-        try {
-          const fallbackRes = await fetch(resolveDataPath(`${altDir}/index.json`));
-          if (fallbackRes.ok) {
-            res = fallbackRes;
-            setIsDemoMode(altDir === './data/demo');
-          }
-        } catch {
-          // ignore fallback error
-        }
-      }
+      // 指定されたデータ (LIVE / DEMO) だけを読み込む。読み込めない場合に、もう一方 (DEMO など) へ
+      // 暗黙に切り替えない。デモ表示は明示的な操作 (?demo=true / DEMO 切替) のときだけ行う。
+      const res = await fetch(resolveDataPath(`${dir}/index.json`));
       if (!res.ok) throw new Error(`Failed to load index.json: ${res.status}`);
       const meta = (await res.json()) as IndexMetadata;
       setIndexMeta(meta);
 
-      // メタデータ自身が is_mock_mode を宣言している、または proud-corp の場合は DEMO モード確定
-      const totalSeats = meta.summary?.total_seats ?? 0;
-      const availableDaysCount = meta.available_days?.length ?? 0;
-      const hasRealMetrics = totalSeats > 0 || availableDaysCount > 0;
-      const shouldBeDemo =
-        meta.is_mock_mode === true ||
-        meta.repository?.owner === 'proud-corp' ||
-        (!hasRealMetrics && (dir === './data/demo' || !meta.repository?.owner));
-
-      if (shouldBeDemo && !isDemoMode) {
-        setIsDemoMode(true);
-      }
+      // isDemoMode は「どのディレクトリを読むか」の明示的な選択 (URL パラメータ / 環境変数 / 切替操作)。
+      // 読み込んだ index.json が is_mock_mode: true を宣言していても、ここでは書き換えない
+      // (読み込み先ディレクトリが変わり、同じデータが取れなくなる)。デモ表示かどうかは、
+      // 取得元パスと index.json の宣言からソース単位で判定する (activeDataIsDemoSourced)。
+      // リポジトリの所有者名や、シート数 0 / データ日数 0 といった状態からデモと推測しない
+      // (取得失敗や未設定の実運用データが、黙ってデモ扱いに切り替わっていた)。
 
       const defaultMonth = meta.default_scopes.latest_month || meta.available_months?.[0];
       if (defaultMonth) {
@@ -275,6 +266,8 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     } catch (e: any) {
       console.error('Error fetching index:', e);
       setError(e.message || 'Failed to initialize analytics index');
+      // 初期値 loading=true のままだとエラー表示 (error && !loading) に到達せず、スピナーが回り続ける
+      setLoading(false);
       addRuntimeIssue({
         id: 'runtime-error-index',
         timestamp: new Date().toISOString(),
@@ -282,7 +275,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
         category: 'not_found',
         target: `${dir}/index.json`,
         message: `インデックスメタデータの読み込みに失敗しました: ${e.message}`,
-        details: `取得先URL: ${resolveDataPath(`${dir}/index.json`)}\nDEMOデータセットアップコマンド: npm run demo:setup`,
+        details: `取得先URL: ${resolveDataPath(`${dir}/index.json`)}\nデータ収集 (GitHub Actions: copilot-analysis-cron.yml) が完了していることを確認してください。デモデータで画面を確認する場合は、画面上の「デモデータを表示」を選択するか、'?demo=true' を付けて開いてください (ローカル: npm run demo:setup)。`,
         http_status: 404,
         affected_fields: ['index'],
       });
@@ -300,13 +293,25 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
   }, []);
 
   // 手動でDEMOモードとLIVEモードを切り替えるハンドラー
+  // forcedMode を省略すると現在の逆へ切り替える。ボタンの onClick に直接渡さないこと
+  // (MouseEvent が forcedMode として解釈され、常にデモへ切り替わる)。
   const toggleDemoMode = useCallback((forcedMode?: boolean) => {
     setIsDemoMode((prev) => {
-      const next = forcedMode !== undefined ? forcedMode : !prev;
+      const next = typeof forcedMode === 'boolean' ? forcedMode : !prev;
       scopeDataCacheRef.current.clear();
       reportCacheRef.current.clear();
       currentDataRef.current = null;
       currentReportDataRef.current = null;
+      // 切替先のデータが取得できない場合に、切替前のデータが表示され続けないようにする
+      setIndexMeta(null);
+      setCurrentData(null);
+      setCurrentReportData(null);
+      setScopeDataIsDemoSourced(undefined);
+      setReportDataIsDemoSourced(undefined);
+      setSelectedKey('');
+      setSelectedReportMonth('');
+      setNoLiveData(false);
+      setLoading(true);
       setError(null);
       setReportError(null);
       setRuntimeIssues(new Map());
@@ -370,11 +375,15 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
         if (!res.ok) {
           throw new Error(`Data for scope ${scopeType} (${selectedKey}) not found at ${candidateUrls[0]}`);
         }
-        // このリクエスト単体が /demo/ パスへフォールバックしたかどうかをソース単位で記録する。
+        // このリクエストの取得元が /demo/ パスかどうかをソース単位で記録する。
         // グローバルな isDemoMode (ユーザーの既定ディレクトリ選好) は書き換えない。これにより、
-        // Live Metrics だけがフォールバックしても Monthly Report 等 他ソースの表示が
+        // Live Metrics だけがデモの場合でも Monthly Report 等 他ソースの表示が
         // 誤って「DEMO」表示になることを防ぐ。
+        // 暗黙のデモフォールバックは行わない (候補にデモパスを含めない) ため、/demo/ パスになるのは
+        // ユーザーが明示的にデモを選択した場合のみ。実データ側に置かれた MOCK_MODE 生成データ
+        // (index.json が is_mock_mode: true を宣言) もデモ由来として扱う。
         const isDemoSourced = finalUrl.includes('/demo/');
+        const demoSourced = isDemoSourced || indexMetaRef.current?.is_mock_mode === true;
         let data = (await res.json()) as ScopeAggregatedData;
 
         if (scopeType === 'custom' && selectedKey.startsWith('custom:')) {
@@ -385,9 +394,9 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
         }
 
         if (!isCancelled) {
-          scopeDataCacheRef.current.set(cacheKey, { data, isDemoSourced });
+          scopeDataCacheRef.current.set(cacheKey, { data, isDemoSourced: demoSourced });
           setCurrentData(data);
-          setScopeDataIsDemoSourced(isDemoSourced);
+          setScopeDataIsDemoSourced(demoSourced);
           clearRuntimeIssue(`scope-${scopeType}-${selectedKey}`);
         }
       } catch (e: any) {
@@ -449,15 +458,16 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
         if (!res.ok) {
           throw new Error(`Monthly report for ${selectedReportMonth} not found at ${candidateUrls[0]}`);
         }
-        // Live Metrics と同様、このリクエスト単体のフォールバック有無をソース単位で記録する。
-        // グローバルな isDemoMode は書き換えない (Monthly Report がフォールバックしても
+        // Live Metrics と同様、このリクエストの取得元がデモかどうかをソース単位で記録する。
+        // グローバルな isDemoMode は書き換えない (Monthly Report がデモでも
         // Live Metrics 側の表示に影響を与えないようにするため)。
         const isDemoSourced = finalUrl.includes('/demo/');
+        const demoSourced = isDemoSourced || indexMetaRef.current?.is_mock_mode === true;
         const data = (await res.json()) as MonthlyReportAggregatedData;
         if (!isCancelled) {
-          reportCacheRef.current.set(`${dataBaseDir}:${selectedReportMonth}`, { data, isDemoSourced });
+          reportCacheRef.current.set(`${dataBaseDir}:${selectedReportMonth}`, { data, isDemoSourced: demoSourced });
           setCurrentReportData(data);
-          setReportDataIsDemoSourced(isDemoSourced);
+          setReportDataIsDemoSourced(demoSourced);
           clearRuntimeIssue(`report-${selectedReportMonth}`);
         }
       } catch (e: any) {
@@ -488,6 +498,11 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     return () => {
       isCancelled = true;
     };
+    // 依存配列は意図的に [selectedReportMonth] だけ。取得は「レポート月が変わったとき」だけ行う。
+    // dataBaseDir (DEMO / LIVE の切替) は toggleDemoMode がレポート月を一度リセットして
+    // loadIndex が再設定するため、切替時にもこのエフェクトが再実行される。
+    // addRuntimeIssue / clearRuntimeIssue は安定した useCallback。currentReportData を依存に含めると無限ループになる。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedReportMonth]);
 
   // アップロードファイル読み込みハンドラー
@@ -546,6 +561,8 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
   }, [activeSource, scopeDataIsDemoSourced, reportDataIsDemoSourced]);
 
   // フィルター選択肢候補の抽出 (現在のデータソースから動的に導出)
+  // 未割当 (Default-CostCenter / Unassigned-CC / 未分類 (Unassigned) 等) は、専用の「未割当のみ」選択肢が
+  // あるため通常の候補には含めない (単一の定義: isUnassignedValue)。
   const {
     availableCostCenters,
     availableOrganizations,
@@ -557,36 +574,19 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     const groups = new Set<string>();
     const tags = new Set<string>();
 
+    const collect = (u: { cost_center?: string; organization?: string; department?: string; tags?: string[] }) => {
+      if (u.cost_center && !isUnassignedValue(u.cost_center)) costCenters.add(u.cost_center.trim());
+      if (u.organization && !isUnassignedValue(u.organization)) orgs.add(u.organization.trim());
+      if (u.department && !isUnassignedValue(u.department)) groups.add(u.department.trim());
+      for (const t of u.tags || []) {
+        if (t && t.trim()) tags.add(t.trim());
+      }
+    };
+
     if (activeSource === 'live_metrics' && currentData?.users) {
-      for (const u of currentData.users) {
-        if (u.cost_center && u.cost_center.trim() && u.cost_center !== 'Unassigned') {
-          costCenters.add(u.cost_center.trim());
-        }
-        if (u.organization && u.organization.trim() && u.organization !== 'Unassigned') {
-          orgs.add(u.organization.trim());
-        }
-        if (u.department && u.department.trim() && u.department !== 'Unassigned') {
-          groups.add(u.department.trim());
-        }
-        for (const t of u.tags || []) {
-          if (t && t.trim()) tags.add(t.trim());
-        }
-      }
+      for (const u of currentData.users) collect(u);
     } else if (activeReportData?.user_details) {
-      for (const u of activeReportData.user_details) {
-        if (u.cost_center && u.cost_center.trim() && u.cost_center !== 'Unassigned') {
-          costCenters.add(u.cost_center.trim());
-        }
-        if (u.organization && u.organization.trim() && u.organization !== 'Unassigned') {
-          orgs.add(u.organization.trim());
-        }
-        if (u.department && u.department.trim() && u.department !== 'Unassigned') {
-          groups.add(u.department.trim());
-        }
-        for (const t of u.tags || []) {
-          if (t && t.trim()) tags.add(t.trim());
-        }
-      }
+      for (const u of activeReportData.user_details) collect(u);
     }
 
     return {
@@ -604,89 +604,13 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
   }, [currentData, filterCriteria]);
 
   // 統合フィルター条件 (FilterCriteria) を適用したレポートデータ (SDD-15 準拠・完全再集計)
+  // 再集計は filterEngine の単一実装 (applyFilterCriteriaToMonthlyReport) に委譲する。
+  // 依存配列は filterCriteria 全体 (Cost Center / Org / 部署 / タグ / ユーザー)。以前はタグ (selectedTags) だけを
+  // 依存に含めており、タグ以外の条件を変えてもレポートの KPI・明細が再計算されなかった。
   const filteredActiveReportData = useMemo<MonthlyReportAggregatedData | null>(() => {
     if (!activeReportData) return null;
-    if (!isFilterCriteriaActive(filterCriteria)) {
-      if (selectedTags.length === 0) return activeReportData;
-    }
-
-    const filteredDetails = activeReportData.user_details.filter((u) => {
-      const userItem: FilterableUser = {
-        login: u.login,
-        display_name: u.display_name,
-        cost_center: u.cost_center,
-        organization: u.organization,
-        department: u.department,
-        tags: u.tags,
-      };
-      return matchUserWithCriteria(userItem, filterCriteria);
-    });
-
-    const totalNetSpend = filteredDetails.reduce(
-      (sum, u) => sum + (u.net_spend_usd ?? u.total_spend_usd),
-      0
-    );
-    const totalGrossSpend = filteredDetails.reduce(
-      (sum, u) => sum + (u.gross_spend_usd ?? u.total_spend_usd),
-      0
-    );
-    const totalDiscount = totalGrossSpend - totalNetSpend;
-    const totalRequests = filteredDetails.reduce(
-      (sum, u) => sum + u.total_requests,
-      0
-    );
-
-    const buildFilteredReportGroups = (field: 'department' | 'cost_center' | 'organization') => {
-      const res: Record<string, GroupSummary> = {};
-      for (const u of filteredDetails) {
-        const key = (u[field] || '').trim() || 'Unassigned';
-        if (!res[key]) {
-          res[key] = {
-            group_name: key,
-            total_seats: 0,
-            active_seats: 0,
-            idle_seats: 0,
-            total_cost_usd: 0,
-            potential_savings_usd: 0,
-            active_ratio: 1.0,
-            acceptance_rate: 0.35,
-            total_suggestions: 0,
-            total_acceptances: 0,
-            total_chats: 0,
-            total_pr_summaries: 0,
-          };
-        }
-        res[key].total_seats += 1;
-        res[key].active_seats += 1;
-        res[key].total_cost_usd += u.total_spend_usd;
-        res[key].total_suggestions += u.total_requests;
-      }
-      for (const g of Object.values(res)) {
-        g.total_cost_usd = Number(g.total_cost_usd.toFixed(2));
-      }
-      return res;
-    };
-
-    const filteredModelBreakdown = buildFilteredModelBreakdown(filteredDetails);
-
-    return {
-      ...activeReportData,
-      overview: {
-        ...activeReportData.overview,
-        total_active_users: filteredDetails.length,
-        total_net_spend_usd: Number(totalNetSpend.toFixed(2)),
-        total_gross_spend_usd: Number(totalGrossSpend.toFixed(2)),
-        total_discount_usd: Number(totalDiscount.toFixed(2)),
-        total_requests: totalRequests,
-        top_model: filteredModelBreakdown[0]?.model_name || 'N/A',
-      },
-      user_details: filteredDetails,
-      model_breakdown: filteredModelBreakdown,
-      by_department: buildFilteredReportGroups('department'),
-      by_cost_center: buildFilteredReportGroups('cost_center'),
-      by_organization: buildFilteredReportGroups('organization'),
-    };
-  }, [activeReportData, selectedTags]);
+    return applyFilterCriteriaToMonthlyReport(activeReportData, filterCriteria);
+  }, [activeReportData, filterCriteria]);
 
   // 決定論的データセットバージョンキー (表示更新・再マウント保証)
   const currentScopeKey =

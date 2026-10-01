@@ -31,6 +31,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint dashboard/src",
     "pipeline:run": "tsx src/cli/run-pipeline.ts",
     "pipeline:mock": "tsx src/cli/run-pipeline.ts --mock",
     "demo:generate": "tsx scripts/generate-demo-data.ts",
@@ -46,6 +47,8 @@
     "upstream:audit": "tsx scripts/audit-upstream-contribution.ts",
     "fork:verify": "tsx scripts/verify-fork-health.ts",
     "fork:status": "tsx scripts/verify-fork-health.ts --quick",
+    "pages:stage": "tsx scripts/pages-staging.ts stage",
+    "pages:verify": "tsx scripts/pages-staging.ts verify",
     "worktree:add": "tsx scripts/worktree-manage.ts add",
     "worktree:list": "tsx scripts/worktree-manage.ts list",
     "worktree:clean": "tsx scripts/worktree-manage.ts clean"

@@ -108,7 +108,10 @@ export const OverviewViewComponent: React.FC<ViewPluginProps<OverviewViewModel>>
             icon={<BarChart3 className="w-4 h-4 text-cyan-400" />}
             summaryChips={
               <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-                Inline補完受諾率 {Math.round((currentData.overview?.overall_acceptance_rate || 0) * 100)}%
+                Inline補完受諾率{' '}
+                {currentData.overview?.overall_acceptance_rate == null
+                  ? '—'
+                  : `${Math.round(currentData.overview.overall_acceptance_rate * 100)}%`}
               </span>
             }
             isExpanded={isExpanded('usage')}

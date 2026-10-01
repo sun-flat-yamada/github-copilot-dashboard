@@ -32,6 +32,9 @@ jobs:
       - name: Run TypeScript typecheck
         run: npm run typecheck
 
+      - name: Run ESLint (React Hooks rules)
+        run: npm run lint
+
       - name: Run Unit Tests
         run: npm run test
 

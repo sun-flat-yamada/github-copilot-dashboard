@@ -87,13 +87,7 @@ export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
       Object.keys(currentProfile.model_usage_totals).forEach((m) => foundModels.add(m));
     }
 
-    // モデルが1つも無い場合のフォールバック（代表モデル）
-    if (foundModels.size === 0) {
-      foundModels.add('claude-3-7-sonnet');
-      foundModels.add('gpt-4o');
-      foundModels.add('o1');
-      foundModels.add('gemini-2-0-flash');
-    }
+    // モデル別の実績が無い場合に代表モデルを仮定して系列を作らない (実測のないモデルを凡例に出さない)
 
     const modelList = Array.from(foundModels);
     let fallbackIdx = 0;
@@ -116,11 +110,31 @@ export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
     });
   }, [currentProfile]);
 
+  // フックは早期 return より前に置く (プロファイルの有無でフック数が変わると React が例外を投げる)。
+  // 最も多く利用されているモデルの特定 (レーダー連携用)
+  // モデル別の実績が無い場合は null (特定のモデルを既定として仮定しない)
+  const primaryModelId = useMemo<string | null>(() => {
+    if (!currentProfile) return null;
+    if (currentProfile.model_usage_totals) {
+      const entries = Object.entries(currentProfile.model_usage_totals);
+      if (entries.length > 0) {
+        entries.sort((a, b) => b[1] - a[1]);
+        return entries[0][0];
+      }
+    }
+    return activeModelConfigs[0]?.id ?? null;
+  }, [currentProfile, activeModelConfigs]);
+
   if (!currentProfile) {
     return (
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center text-slate-500">
         <User className="w-8 h-8 mx-auto text-slate-600 mb-2" />
         <p className="text-sm">ユーザープロファイルデータが存在しません。</p>
+        {sourceInfo?.details && (
+          <p className="text-xs text-slate-400 mt-2 leading-relaxed" data-testid="user-trend-no-profile-reason">
+            {sourceInfo.details}
+          </p>
+        )}
       </div>
     );
   }
@@ -147,19 +161,6 @@ export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
 
     return row;
   });
-
-  // 最も多く利用されているモデルの特定 (レーダー連携用)
-  const primaryModelId = useMemo(() => {
-    if (!currentProfile) return 'claude-3-7-sonnet';
-    if (currentProfile.model_usage_totals) {
-      const entries = Object.entries(currentProfile.model_usage_totals);
-      if (entries.length > 0) {
-        entries.sort((a, b) => b[1] - a[1]);
-        return entries[0][0];
-      }
-    }
-    return activeModelConfigs[0]?.id || 'claude-3-7-sonnet';
-  }, [currentProfile, activeModelConfigs]);
 
   return (
     <div className="flex flex-col space-y-6">
@@ -191,17 +192,27 @@ export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
       {/* 1. ユーザー選択ヘッダーバー */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
-          <img
-            src={currentProfile.avatar_url || 'https://github.com/ghost.png'}
-            alt={currentProfile.login}
-            className="w-12 h-12 rounded-full border-2 border-indigo-500/80 bg-slate-800"
-          />
+          {currentProfile.avatar_url ? (
+            <img
+              src={currentProfile.avatar_url}
+              alt={currentProfile.login}
+              className="w-12 h-12 rounded-full border-2 border-indigo-500/80 bg-slate-800"
+            />
+          ) : (
+            // アバター URL が無い (匿名化時など) ときは外部画像を取得せず、アイコンで代替する
+            <div
+              className="w-12 h-12 rounded-full border-2 border-indigo-500/80 bg-slate-800 flex items-center justify-center"
+              aria-hidden="true"
+            >
+              <User className="w-6 h-6 text-slate-500" />
+            </div>
+          )}
           <div>
             <div className="flex items-center space-x-2">
               <h3 className="text-base font-bold text-white tracking-tight">{currentProfile.display_name}</h3>
               <span className="text-xs font-mono text-indigo-400">@{currentProfile.login}</span>
               <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-purple-950 text-purple-300 border border-purple-800">
-                {currentProfile.plan_type}
+                {currentProfile.plan_type === 'unknown' ? 'プラン未確定' : currentProfile.plan_type}
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-slate-400">
@@ -273,7 +284,7 @@ export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
           <span className="text-2xl font-bold text-purple-300 font-mono">
             {currentProfile.total_acceptances.toLocaleString()}{' '}
             <span className="text-sm font-sans font-medium text-slate-400">
-              ({(currentProfile.acceptance_rate * 100).toFixed(1)}%)
+              ({currentProfile.total_suggestions > 0 ? `${(currentProfile.acceptance_rate * 100).toFixed(1)}%` : '—'})
             </span>
           </span>
           <p className="text-[11px] text-slate-500 mt-1">実コードに反映された回数</p>
@@ -281,10 +292,21 @@ export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
 
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-md">
           <span className="text-xs text-emerald-400 block mb-1">期間 推計ライセンス費用</span>
-          <span className="text-2xl font-bold text-emerald-300 font-mono">
-            ${currentProfile.total_cost_usd.toFixed(2)}
-          </span>
-          <p className="text-[11px] text-slate-500 mt-1">プラン: {currentProfile.plan_type}</p>
+          {currentProfile.plan_type === 'unknown' ? (
+            <>
+              <span className="text-2xl font-bold text-slate-500 font-mono" data-testid="user-trend-cost-unconfirmed">
+                —
+              </span>
+              <p className="text-[11px] text-amber-400 mt-1">料金プランが未確定のため費用を算定できません</p>
+            </>
+          ) : (
+            <>
+              <span className="text-2xl font-bold text-emerald-300 font-mono">
+                ${currentProfile.total_cost_usd.toFixed(2)}
+              </span>
+              <p className="text-[11px] text-slate-500 mt-1">プラン: {currentProfile.plan_type}</p>
+            </>
+          )}
         </div>
       </div>
 
@@ -312,7 +334,7 @@ export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
               <span className="text-[11px] text-slate-400">+{activeModelConfigs.length - 5} モデル</span>
             )}
 
-            {onOpenRadar && (
+            {onOpenRadar && primaryModelId && (
               <button
                 onClick={() => onOpenRadar(primaryModelId)}
                 className="flex items-center space-x-1 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-purple-950/60 hover:bg-purple-900/80 text-purple-300 border border-purple-800/70 transition-all shadow-sm ml-1 cursor-pointer"

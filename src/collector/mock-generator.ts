@@ -7,6 +7,14 @@ import {
   UserModelDailyUsage,
   UserUsageProfile,
 } from '../types/copilot.js';
+import { UNASSIGNED_LABELS } from '../domain/constants/unassigned.js';
+
+/**
+ * モックデータ (デモ表示) で「データ取得不可」を再現する Organization 名。
+ * 本番のロジックにデモ用の Org 名を埋め込まず、モック運用 (MOCK_MODE) のときだけ
+ * オーケストレーターから BillingCalculator へ明示的に注入する。
+ */
+export const MOCK_DATA_UNAVAILABLE_ORGS: readonly string[] = ['proud-internal-sys'];
 
 export interface MockDataBundle {
   metrics: CopilotDailyMetrics[];
@@ -408,7 +416,7 @@ export class MockDataGenerator {
     return costCenters.map((cc) => {
       const cfg = budgetConfigs[cc.id] || { limit: 1500, free: 200 };
       // 該当Cost Centerのシート数を概算
-      const seatCount = seats.filter((s) => s.organization.login === cc.resources[0]?.name).length || 15;
+      const seatCount = seats.filter((s) => s.organization?.login === cc.resources[0]?.name).length || 15;
       const currentSpend = seatCount * 39 + Math.floor(Math.random() * 300);
       const netBillable = Math.max(0, currentSpend - cfg.free);
       const remaining = Math.max(0, cfg.limit - netBillable);
@@ -581,7 +589,7 @@ export class MockDataGenerator {
         avatar_url: seat.assignee.avatar_url,
         department,
         cost_center: costCenter,
-        organization: seat.organization.login,
+        organization: seat.organization?.login ?? UNASSIGNED_LABELS.organization,
         plan_type: seat.plan_type,
         total_chats: totalChats,
         total_suggestions: totalSuggestions,

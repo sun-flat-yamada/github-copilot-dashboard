@@ -6,6 +6,7 @@ import {
   CostCenterBudget,
   UserUsageProfile,
   DataFetchIssue,
+  SourceStatus,
 } from '../../domain/entities/copilot.js';
 import { TeamDailyMetrics } from '../../domain/entities/agent-metrics.js';
 import { MockDataGenerator, MockDataBundle } from '../../collector/mock-generator.js';
@@ -69,5 +70,21 @@ export class MockCopilotDataSource implements ICopilotDataSource {
 
   getIssues(): DataFetchIssue[] {
     return [];
+  }
+
+  getSourceStatuses(): SourceStatus[] {
+    const now = new Date().toISOString();
+    const ok = (source: SourceStatus['source'], records: number): SourceStatus => ({
+      source,
+      status: 'ok',
+      records,
+      last_attempt_at: now,
+      last_success_at: now,
+    });
+    return [
+      ok('metrics', this.bundle.metrics.length),
+      ok('seats', this.bundle.seats.length),
+      ok('cost_centers', this.bundle.costCenters.length),
+    ];
   }
 }

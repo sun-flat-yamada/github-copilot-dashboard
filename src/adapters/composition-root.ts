@@ -28,10 +28,14 @@ export function createPipelineApp(config: PipelineAppConfig = {}): PipelineOrche
         orgs: config.orgs,
       });
 
+  // 匿名化 (仮名化): 明示指定が無ければ環境変数 ANONYMIZE_USERS=true に従う。
+  // 資格情報の解決・ワークフローからの結線はここ (Composition Root) に集約する。
+  const anonymize = config.anonymize ?? process.env.ANONYMIZE_USERS === 'true';
+
   const resolver: IAttributeResolver =
     isMock && !config.mappingConfig && !process.env.COPILOT_USER_MAPPING
       ? new DemoAttributeResolver()
-      : new AttributeResolverAdapter(config.mappingConfig, config.anonymize);
+      : new AttributeResolverAdapter(config.mappingConfig, anonymize);
 
   const storage: IStorageWriter = new ForkSafeStorageWriter({
     isDemo: isMock,
@@ -42,5 +46,6 @@ export function createPipelineApp(config: PipelineAppConfig = {}): PipelineOrche
     resolver,
     storage,
     isMock,
+    anonymize,
   });
 }

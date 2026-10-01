@@ -25,7 +25,7 @@ export const PatternAccordionItem: React.FC<PatternAccordionItemProps> = ({
             <span>AI利用 非効率パターン判定 & 兆候確率 (Pattern Diagnostic)</span>
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            5つの典型的なアンチパターンの兆候有無を判定。カードをクリックして要因と処方箋をドリルダウン表示
+            {patterns.length}つの典型的なアンチパターンの兆候有無を判定。判定に必要な実測値が無いものは「判定不能」と表示します。カードをクリックして要因と処方箋をドリルダウン表示
           </p>
         </div>
       </div>
@@ -34,6 +34,8 @@ export const PatternAccordionItem: React.FC<PatternAccordionItemProps> = ({
         {patterns.map((pattern) => {
           const isSelected = expandedPatternId === pattern.id;
           const prob = pattern.probabilityPercent;
+          // 判定に必要な実測値が揃っていない。確率を 0% (= 兆候なし) と見せかけない
+          const isEvaluable = pattern.evaluable !== false;
 
           return (
             <div
@@ -49,7 +51,9 @@ export const PatternAccordionItem: React.FC<PatternAccordionItemProps> = ({
                 <div className="flex items-center justify-between mb-2">
                   <span
                     className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
-                      pattern.name.includes('スマート・オフロード')
+                      !isEvaluable
+                        ? 'bg-slate-800 text-slate-300 border border-slate-600'
+                        : pattern.name.includes('スマート・オフロード')
                         ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
                         : pattern.riskLevel === 'high'
                         ? 'bg-rose-950 text-rose-300 border border-rose-800'
@@ -60,7 +64,9 @@ export const PatternAccordionItem: React.FC<PatternAccordionItemProps> = ({
                         : 'bg-emerald-950 text-emerald-400 border border-emerald-800'
                     }`}
                   >
-                    {pattern.name.includes('スマート・オフロード')
+                    {!isEvaluable
+                      ? '判定不能 (データ不足)'
+                      : pattern.name.includes('スマート・オフロード')
                       ? '🌟 スマート・オフロード'
                       : pattern.riskLevel === 'high'
                       ? '高リスク (兆候あり)'
@@ -88,39 +94,51 @@ export const PatternAccordionItem: React.FC<PatternAccordionItemProps> = ({
                 </p>
               </div>
 
-              {/* 確率 % 表示 & プログレスバー */}
+              {/* 確率 % 表示 & プログレスバー (判定不能のときは「—」と理由を表示) */}
               <div className="pt-2 border-t border-slate-800/80">
                 <div className="flex items-baseline justify-between mb-1.5">
                   <span className="text-[10px] text-slate-400">兆候確率</span>
-                  <span
-                    className={`text-xl font-black ${
-                      prob >= 70
-                        ? 'text-rose-400'
-                        : prob >= 40
-                        ? 'text-amber-400'
-                        : prob >= 15
-                        ? 'text-indigo-300'
-                        : 'text-emerald-400'
-                    }`}
-                  >
-                    {prob}%
-                  </span>
+                  {isEvaluable ? (
+                    <span
+                      className={`text-xl font-black ${
+                        prob >= 70
+                          ? 'text-rose-400'
+                          : prob >= 40
+                          ? 'text-amber-400'
+                          : prob >= 15
+                          ? 'text-indigo-300'
+                          : 'text-emerald-400'
+                      }`}
+                    >
+                      {prob}%
+                    </span>
+                  ) : (
+                    <span className="text-xl font-black text-slate-500" data-testid={`pattern-unevaluable-${pattern.id}`}>
+                      —
+                    </span>
+                  )}
                 </div>
 
-                <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
-                  <div
-                    className={`h-full rounded-full transition-all duration-700 ${
-                      prob >= 70
-                        ? 'bg-gradient-to-r from-orange-500 to-rose-500'
-                        : prob >= 40
-                        ? 'bg-gradient-to-r from-amber-500 to-yellow-500'
-                        : prob >= 15
-                        ? 'bg-gradient-to-r from-indigo-500 to-violet-500'
-                        : 'bg-gradient-to-r from-emerald-500 to-teal-500'
-                    }`}
-                    style={{ width: `${Math.max(5, prob)}%` }}
-                  />
-                </div>
+                {isEvaluable ? (
+                  <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                    <div
+                      className={`h-full rounded-full transition-all duration-700 ${
+                        prob >= 70
+                          ? 'bg-gradient-to-r from-orange-500 to-rose-500'
+                          : prob >= 40
+                          ? 'bg-gradient-to-r from-amber-500 to-yellow-500'
+                          : prob >= 15
+                          ? 'bg-gradient-to-r from-indigo-500 to-violet-500'
+                          : 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                      }`}
+                      style={{ width: `${Math.max(5, prob)}%` }}
+                    />
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-slate-400 leading-relaxed">
+                    {pattern.insufficientDataReason ?? '判定に必要な実測値が収集されていません'}
+                  </p>
+                )}
 
                 <span className="text-[10px] text-indigo-400 font-semibold mt-2.5 block text-center">
                   {isSelected ? 'ドリルダウンを閉じる ▲' : 'ドリルダウン深掘り ▼'}

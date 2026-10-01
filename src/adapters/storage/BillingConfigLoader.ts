@@ -7,6 +7,7 @@ import {
   DEFAULT_CURRENCY_USD,
   resolveBillingConfigForMonth,
 } from '../../domain/entities/billing-config.js';
+import { BASELINE_PRICING } from '../../domain/pricing/pricing-catalog.js';
 
 export const CurrencyConfigSchema = z.object({
   code: z.string().min(1),
@@ -60,7 +61,8 @@ export function normalizePeriodInput(raw: any): any {
         p.creditsPricing = {
           ...(p.creditsPricing || {}),
           costPerCreditUSD: unitVal,
-          includedCreditsPerSeat: cp.includedCreditsPerSeat ?? 3900,
+          // 未指定のときは価格カタログのプラン別の値を使うため、既定値を注入しない
+          ...(cp.includedCreditsPerSeat !== undefined ? { includedCreditsPerSeat: cp.includedCreditsPerSeat } : {}),
         };
       }
     }
@@ -122,8 +124,8 @@ export function normalizeBillingConfigInput(raw: any): any {
       };
     } else if (entVal !== undefined || bizVal !== undefined) {
       cfg.seatPricing = {
-        enterpriseMonthlyUSD: entVal ?? 39,
-        businessMonthlyUSD: bizVal ?? 19,
+        enterpriseMonthlyUSD: entVal ?? BASELINE_PRICING.seatPriceUsd.enterprise,
+        businessMonthlyUSD: bizVal ?? BASELINE_PRICING.seatPriceUsd.business,
       };
     }
   }
@@ -139,7 +141,8 @@ export function normalizeBillingConfigInput(raw: any): any {
       } else {
         cfg.creditsPricing = {
           costPerCreditUSD: unitVal,
-          includedCreditsPerSeat: cp.includedCreditsPerSeat ?? 3900,
+          // 未指定のときは価格カタログのプラン別の値を使うため、既定値を注入しない
+          ...(cp.includedCreditsPerSeat !== undefined ? { includedCreditsPerSeat: cp.includedCreditsPerSeat } : {}),
         };
       }
     }
@@ -158,13 +161,17 @@ export const BillingConfigSchema = z.preprocess(
     currency: CurrencyConfigSchema.default(DEFAULT_CURRENCY_USD),
     subCurrency: CurrencyConfigSchema.nullable().optional(),
     seatPricing: z.object({
-      businessMonthlyUSD: z.number().nonnegative().default(19),
-      enterpriseMonthlyUSD: z.number().nonnegative().default(39),
-    }).default({ businessMonthlyUSD: 19, enterpriseMonthlyUSD: 39 }),
+      businessMonthlyUSD: z.number().nonnegative().default(BASELINE_PRICING.seatPriceUsd.business),
+      enterpriseMonthlyUSD: z.number().nonnegative().default(BASELINE_PRICING.seatPriceUsd.enterprise),
+    }).default({
+      businessMonthlyUSD: BASELINE_PRICING.seatPriceUsd.business,
+      enterpriseMonthlyUSD: BASELINE_PRICING.seatPriceUsd.enterprise,
+    }),
     creditsPricing: z.object({
-      costPerCreditUSD: z.number().nonnegative().default(0.01),
-      includedCreditsPerSeat: z.number().nonnegative().default(3900),
-    }).default({ costPerCreditUSD: 0.01, includedCreditsPerSeat: 3900 }),
+      costPerCreditUSD: z.number().nonnegative().default(BASELINE_PRICING.creditUnitPriceUsd),
+      // 指定時のみ全プラン共通の上書きとして扱う (未指定はカタログのプラン別・期間別の値)
+      includedCreditsPerSeat: z.number().nonnegative().optional(),
+    }).default({ costPerCreditUSD: BASELINE_PRICING.creditUnitPriceUsd }),
     discountPercent: z.number().min(0).max(100).default(0),
     customPricePerCredit: z.number().nonnegative().optional(),
     customPricePerCreditCurrency: z.string().optional(),
@@ -177,22 +184,63 @@ export const BillingConfigSchema = z.preprocess(
   })
 );
 
+export interface BillingConfigLoadResult {
+  config: EnterpriseBillingConfig;
+  /** 設定の取得元。'default' は設定なし (価格カタログの既定値) */
+  source: 'argument' | 'env' | 'file' | 'default';
+  /**
+   * 設定が不正で既定値にフォールバックした場合の要約 (設定値そのものは含めない)。
+   * 呼び出し側 (パイプライン) は issue として記録し、画面上で気付けるようにする。
+   */
+  error?: string;
+}
+
+/** 検証エラーを、入力値 (契約単価など) を含まない 1 行の要約にする */
+function summarizeConfigError(err: any): string {
+  const issues: Array<{ path?: Array<string | number>; message?: string }> | undefined = err?.issues;
+  if (Array.isArray(issues) && issues.length > 0) {
+    return (
+      'invalid value(s): ' +
+      issues
+        .slice(0, 5)
+        .map((i) => `${(i.path ?? []).join('.') || '(root)'}: ${i.message ?? 'invalid'}`)
+        .join('; ')
+    );
+  }
+  return err instanceof SyntaxError ? 'not valid JSON' : 'could not be parsed';
+}
+
 export class BillingConfigLoader {
+  /** 同じエラーを毎シート・毎呼び出しで警告し続けないための既出メッセージ */
+  private static warned = new Set<string>();
+
   /**
    * Loads and validates EnterpriseBillingConfig.
    * Checks process.env.COPILOT_BILLING_CONFIG, data/config/billing.json, or raw JSON string.
    * Falls back cleanly to DEFAULT_BILLING_CONFIG on missing or invalid configuration.
+   * 不正な設定の診断結果が必要な場合は loadWithDiagnostics() を使う。
    */
   static load(rawConfigStr?: string): EnterpriseBillingConfig {
+    return this.loadWithDiagnostics(rawConfigStr).config;
+  }
+
+  /**
+   * load() と同じ解決順で設定を読み込み、取得元と (不正だった場合の) エラー要約も返す。
+   */
+  static loadWithDiagnostics(rawConfigStr?: string): BillingConfigLoadResult {
     let configStr = rawConfigStr;
+    let source: BillingConfigLoadResult['source'] = rawConfigStr ? 'argument' : 'default';
 
     if (!configStr && typeof process !== 'undefined') {
       configStr = process.env?.COPILOT_BILLING_CONFIG;
-      if (!configStr) {
+      if (configStr) {
+        source = 'env';
+      } else {
         try {
           const configFile = path.resolve(process.cwd(), 'data/config/billing.json');
           if (fs.existsSync(configFile)) {
             configStr = fs.readFileSync(configFile, 'utf-8');
+            source = 'file';
           }
         } catch {
           // Ignore filesystem lookup errors in browser/non-node environments
@@ -201,16 +249,20 @@ export class BillingConfigLoader {
     }
 
     if (!configStr) {
-      return DEFAULT_BILLING_CONFIG;
+      return { config: DEFAULT_BILLING_CONFIG, source: 'default' };
     }
 
     try {
       const parsed = JSON.parse(configStr);
       const validated = BillingConfigSchema.parse(parsed);
-      return validated as EnterpriseBillingConfig;
+      return { config: validated as EnterpriseBillingConfig, source };
     } catch (err: any) {
-      console.warn('[BillingConfigLoader] Failed to parse COPILOT_BILLING_CONFIG, falling back to defaults:', err.message);
-      return DEFAULT_BILLING_CONFIG;
+      const summary = summarizeConfigError(err);
+      if (!this.warned.has(summary)) {
+        this.warned.add(summary);
+        console.warn(`[BillingConfigLoader] Failed to parse billing configuration (${source}), falling back to defaults: ${summary}`);
+      }
+      return { config: DEFAULT_BILLING_CONFIG, source, error: summary };
     }
   }
 

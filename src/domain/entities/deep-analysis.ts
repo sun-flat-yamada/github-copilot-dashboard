@@ -75,6 +75,13 @@ export interface InefficiencyPatternResult {
   name: string;
   nameEn: string;
   probabilityPercent: number; // 0 - 100%
+  /**
+   * false のとき、判定に必要な実測値が揃っておらず評価できていない (probabilityPercent は意味を持たない)。
+   * 固定値や推定値で埋めて「兆候なし」と見せかけない。省略時は評価済み。
+   */
+  evaluable?: boolean;
+  /** evaluable = false の理由 (例: 「Agent の完了セッション数が取得できていません」) */
+  insufficientDataReason?: string;
   riskLevel: PatternRiskLevel;
   tagline: string;
   summary: string;
@@ -127,6 +134,14 @@ export interface UserDiagnosticResult {
     dailyAvgSuggestions: number;
   };
   patterns: InefficiencyPatternResult[];
+  /**
+   * 判定に必要な実測値が揃い、評価できたパターン数 (evaluable !== false)。
+   * healthScore は評価できたパターンだけから算出する参考値のため、0 のときはスコアを表示してはならない
+   * (全パターンが判定不能なのに「健全 100 点」と見せかけない)。
+   */
+  evaluatedPatternCount: number;
+  /** 診断対象のパターン総数 */
+  patternCount: number;
   drilldown: UserDiagnosticDrilldown;
 }
 

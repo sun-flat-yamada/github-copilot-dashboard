@@ -3,6 +3,10 @@ import { CreditsAnalysisResult } from '../../application/store/derived/nodes/cre
 import { BillingConfigLoader } from '../storage/BillingConfigLoader.js';
 import { calculateDualCreditRate } from '../../domain/entities/billing-config.js';
 import { Money } from '../../domain/value-objects/Money.js';
+import {
+  computeCreditsPoolUtilizationPercent,
+  estimateIncludedCreditsPool,
+} from '../../domain/pricing/pricing-catalog.js';
 
 export interface CreditsViewModel {
   hasData: boolean;
@@ -19,8 +23,13 @@ export interface CreditsViewModel {
   totalCreditsCostFormatted: string;
   totalCombinedCostUsd: number;
   totalCombinedCostFormatted: string;
-  poolUtilizationPercent: number;
+  /** 請求エンティティ単位のプール使用率。プール (プラン別の包含量) を特定できない場合は null */
+  poolUtilizationPercent: number | null;
   poolStatus: 'normal' | 'warning' | 'exceeded';
+  /** 包含クレジットの合計 (プラン別・実効期間付き)。算出できない場合は null */
+  poolIncludedCredits: number | null;
+  /** プランが未確定のため包含量を算入できなかったシート数 */
+  poolUnknownPlanSeats: number;
   byModel: Array<{ modelName: string; credits: number; costUsdFormatted: string; percentage: number }>;
   byCostCenter: Array<{ costCenter: string; credits: number; costUsdFormatted: string; status?: string }>;
   topConsumers: Array<{ login: string; credits: number; costUsd: number; costUsdFormatted: string; department?: string; costCenter?: string }>;
@@ -54,12 +63,19 @@ export class CreditsPresenter {
     const totalSpend = currentData?.overview?.total_spend_usd ?? 0;
     const totalCombinedCost = totalSpend + totalCreditsCost;
 
-    const totalSeats = currentData?.overview?.total_seats || currentData?.users?.length || 1;
-    const poolAllowance = totalSeats * 3900;
-    const poolUtilization = poolAllowance > 0 ? Number(((totalCredits / poolAllowance) * 100).toFixed(1)) : 0;
+    // プール = 全シートのプラン別の包含クレジット合計 (価格カタログ / 請求設定が唯一のソース)。
+    // 旧実装は全プラン共通の 3,900 クレジット/席を固定で使っていた。
+    const periodEnd = currentData?.date_range?.end ?? currentData?.scope_key ?? '';
+    const poolMonth = /^\d{4}-\d{2}/.test(periodEnd) ? periodEnd.slice(0, 7) : undefined;
+    const pool = estimateIncludedCreditsPool(
+      (currentData?.users ?? []).map((u) => u.plan_type),
+      poolMonth,
+      billingConfig.creditsPricing.includedCreditsPerSeat
+    );
+    const poolUtilization = computeCreditsPoolUtilizationPercent(totalCredits, pool.includedCredits);
     let poolStatus: 'normal' | 'warning' | 'exceeded' = 'normal';
-    if (poolUtilization >= 100) poolStatus = 'exceeded';
-    else if (poolUtilization >= 80) poolStatus = 'warning';
+    if (poolUtilization !== null && poolUtilization >= 100) poolStatus = 'exceeded';
+    else if (poolUtilization !== null && poolUtilization >= 80) poolStatus = 'warning';
 
     const byModel: Array<{ modelName: string; credits: number; costUsdFormatted: string; percentage: number }> = [];
     if (creditsAnalysis?.byModel) {
@@ -134,6 +150,8 @@ export class CreditsPresenter {
       totalCombinedCostFormatted: formatMoney(totalCombinedCost),
       poolUtilizationPercent: poolUtilization,
       poolStatus,
+      poolIncludedCredits: pool.includedCredits > 0 ? pool.includedCredits : null,
+      poolUnknownPlanSeats: pool.unknownPlanSeats,
       byModel,
       byCostCenter,
       topConsumers,

@@ -1,5 +1,6 @@
 import { DomainError } from './DomainError.js';
 import { CurrencyConfig, DEFAULT_CURRENCY_USD } from '../entities/billing-config.js';
+import { BASELINE_PRICING } from '../pricing/pricing-catalog.js';
 
 export class Money {
   readonly amount: number;
@@ -153,8 +154,9 @@ export interface SeatPricing {
 }
 
 export function getSeatPricing(): SeatPricing {
-  const defaultBusiness = 19;
-  const defaultEnterprise = 39;
+  // 既定のシート単価は価格カタログ (src/domain/pricing) が唯一のソース
+  const defaultBusiness = BASELINE_PRICING.seatPriceUsd.business;
+  const defaultEnterprise = BASELINE_PRICING.seatPriceUsd.enterprise;
   const overrideStr = typeof process !== 'undefined' ? process.env?.COPILOT_SEAT_PRICING_OVERRIDE : undefined;
   if (overrideStr) {
     try {

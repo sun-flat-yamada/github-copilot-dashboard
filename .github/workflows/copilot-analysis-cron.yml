@@ -127,6 +127,22 @@ jobs:
             echo "ℹ️ No GPG-encrypted user mapping found at $ENCRYPTED_FILE. Using COPILOT_USER_MAPPING variable/secret if configured."
           fi
 
+      - name: Verify repository / Pages exposure before collecting real data (fork:verify)
+        # リポジトリや Pages が公開されている状態で、仮名化なしの実データ (氏名・部署・個人別利用) を
+        # 収集・配信しようとしている場合は、ここで失敗させて公開を未然に防ぐ (SECURITY.md / SDD-05 参照)。
+        # デモデータのみの運用 (資格情報なし) や、仮名化 (ANONYMIZE_USERS + ANONYMIZE_SECRET) 済みの運用は通る。
+        if: env.MOCK_MODE != 'true'
+        env:
+          COPILOT_READ_TOKEN: ${{ secrets.COPILOT_READ_TOKEN }}
+          COPILOT_ENTERPRISE: ${{ vars.COPILOT_ENTERPRISE }}
+          COPILOT_ORGS: ${{ vars.COPILOT_ORGS }}
+          ANONYMIZE_USERS: ${{ vars.ANONYMIZE_USERS }}
+          ANONYMIZE_SECRET: ${{ secrets.ANONYMIZE_SECRET }}
+          COPILOT_ALLOW_PUBLIC_DATA: ${{ vars.COPILOT_ALLOW_PUBLIC_DATA }}
+          COPILOT_PAGES_URL: ${{ vars.COPILOT_PAGES_URL }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: npm run fork:verify
+
       - name: Run Copilot Analytics Pipeline
         env:
           COPILOT_READ_TOKEN: ${{ secrets.COPILOT_READ_TOKEN }}
@@ -135,6 +151,13 @@ jobs:
           COPILOT_USER_MAPPING: ${{ vars.COPILOT_USER_MAPPING || secrets.COPILOT_USER_MAPPING }}
           COPILOT_USER_MAPPING_FILE: ${{ env.COPILOT_USER_MAPPING_FILE }}
           COPILOT_COST_CENTER_BUDGETS: ${{ vars.COPILOT_COST_CENTER_BUDGETS || secrets.COPILOT_COST_CENTER_BUDGETS }}
+          # 請求設定 (EA 契約価格・為替・割引)。未設定なら価格カタログの既定値。不正な JSON は issue として記録される
+          COPILOT_BILLING_CONFIG: ${{ vars.COPILOT_BILLING_CONFIG || secrets.COPILOT_BILLING_CONFIG }}
+          # 匿名化 (仮名化)。ANONYMIZE_USERS=true のときは秘密鍵 ANONYMIZE_SECRET (16 文字以上) が必須 (無ければ停止する)
+          ANONYMIZE_USERS: ${{ vars.ANONYMIZE_USERS }}
+          ANONYMIZE_SECRET: ${{ secrets.ANONYMIZE_SECRET }}
+          # GitHub REST API のバージョン (未設定なら 2026-03-10)
+          GITHUB_API_VERSION: ${{ vars.GITHUB_API_VERSION }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
           IS_FORK: ${{ github.event.repository.fork }}
@@ -207,6 +230,13 @@ jobs:
         if: env.MOCK_MODE != 'true'
         run: npm run benchmark:update
 
+      - name: Stage processed data for GitHub Pages
+        # 実データの processed/* (過去月の monthly / reports / deep-analysis / trends 等) を SPA の配信ルートへ展開する。
+        # 以前は DEMO パーティションしかステージされず、過去月がデプロイ版で 404 → デモデータへ暗黙にフォールバックしていた。
+        # 公開してよいものだけを許可リスト方式でコピーする (raw/・取り込んだ CSV の原本・config/ は含めない)。
+        if: env.MOCK_MODE != 'true'
+        run: npm run pages:stage
+
       - name: Stage DEMO Partitions for GitHub Pages
         if: env.MOCK_MODE != 'true'
         run: |
@@ -229,6 +259,10 @@ jobs:
         env:
           BASE_URL: './'
         run: npm run build
+
+      - name: Verify Pages artifact (past months present, nothing private published)
+        if: env.MOCK_MODE != 'true'
+        run: npm run pages:verify
 
       - name: Setup Pages
         if: env.MOCK_MODE != 'true'

@@ -164,7 +164,18 @@ suzuki,Suzuki Ken,Design,CC-200,,業務委託;リモート`;
       storage.saveRolling1YearTrend({
         generated_at: '2026-09-10T00:00:00Z',
         months: ['2026-09', '2026-08'],
-        trends: [{ month: '2026-09', spend: 500 }],
+        trends: [
+          {
+            month: '2026-09',
+            total_spend_usd: 500,
+            total_seats: 20,
+            active_seats: 15,
+            idle_seats: 3,
+            // 利用状況メトリクスが取得できていない月は 0 ではなく null
+            acceptance_rate: null,
+            total_chats: null,
+          },
+        ],
       });
       const trendPath = path.join(tmpBase, 'processed', 'trends', 'rolling-1year.json');
       assert.ok(fs.existsSync(trendPath));

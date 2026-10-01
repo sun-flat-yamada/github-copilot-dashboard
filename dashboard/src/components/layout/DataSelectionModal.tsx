@@ -134,24 +134,29 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
   }, [isOpen, activeSource, scopeType, selectedScopeKey, selectedReportMonth, filterCriteria, indexMeta]);
 
   // キーボードショートカット (Esc で閉じる、Enter で適用)
+  // 最新の handleApply / onClose は ref 経由で参照する (リスナーの付け替えを isOpen の変化時だけにしつつ、
+  // 古いクロージャ (更新前のローカル状態) で適用してしまわないようにする)
+  const handleApplyRef = useRef<() => void>(() => {});
+  const onCloseRef = useRef<() => void>(onClose);
+  onCloseRef.current = onClose;
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
       } else if (
         e.key === 'Enter' &&
         (e.ctrlKey || e.metaKey || (e.target as HTMLElement)?.tagName !== 'TEXTAREA')
       ) {
         // 入力欄で単独 Enter を押したときの誤適用を防ぎつつ適用可能にする
         if ((e.target as HTMLElement)?.id !== 'regex-pattern-input') {
-          handleApply();
+          handleApplyRef.current();
         }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, localSource, localScopeType, localScopeKey, localReportMonth, localCriteria]);
+  }, [isOpen]);
 
   // 正規表現検証
   const patternValidation = useMemo(() => {
@@ -269,6 +274,7 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
     onApplyFilterCriteria(localCriteria);
     onClose();
   };
+  handleApplyRef.current = handleApply;
 
   if (!isOpen || typeof document === 'undefined') return null;
 

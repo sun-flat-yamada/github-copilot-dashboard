@@ -1,4 +1,5 @@
-import { UserAttributeMapping } from '../types/copilot.js';
+import { CopilotSeatAssignment, EnterpriseCostCenter, UserAttributeMapping } from '../types/copilot.js';
+import { Pseudonymizer } from './pseudonymizer.js';
 
 export interface ResolvedUserAttribute {
   login: string;
@@ -15,13 +16,52 @@ export interface ResolvedUserAttribute {
   targetAcceptanceRate?: number;
 }
 
+/**
+ * 環境変数の読み取り。ブラウザには process が無い (CSV の取り込みで ReportParser → AttributeResolver が
+ * ブラウザ内でも生成されるため、process に直接触れると ReferenceError になる)。
+ */
+function readEnv(name: string): string | undefined {
+  return typeof process !== 'undefined' && process.env ? process.env[name] : undefined;
+}
+
+export interface AttributeResolverOptions {
+  /** 匿名化の秘密鍵。省略時は環境変数 ANONYMIZE_SECRET */
+  anonymizeSecret?: string;
+}
+
 export class AttributeResolver {
   private mappings: Map<string, UserAttributeMapping> = new Map();
   private isAnonymize: boolean = false;
+  private pseudonymizer: Pseudonymizer | null = null;
 
-  constructor(rawConfig?: string, anonymize: boolean = false) {
-    this.isAnonymize = anonymize || process.env.ANONYMIZE_USERS === 'true';
-    this.loadMappings(rawConfig || process.env.COPILOT_USER_MAPPING || process.env.COPILOT_USER_MAPPING_BASE64);
+  /**
+   * @param anonymize 匿名化 (仮名化) モード。環境変数 ANONYMIZE_USERS=true でも有効になる。
+   *                  有効なときは秘密鍵 (ANONYMIZE_SECRET) が必須で、無い場合は例外 (復元可能な匿名化を発行しない)。
+   */
+  constructor(rawConfig?: string, anonymize: boolean = false, options: AttributeResolverOptions = {}) {
+    this.isAnonymize = anonymize || readEnv('ANONYMIZE_USERS') === 'true';
+    if (this.isAnonymize) {
+      this.pseudonymizer = new Pseudonymizer(options.anonymizeSecret ?? readEnv('ANONYMIZE_SECRET'));
+    }
+    this.loadMappings(rawConfig || readEnv('COPILOT_USER_MAPPING') || readEnv('COPILOT_USER_MAPPING_BASE64'));
+  }
+
+  /** 匿名化 (仮名化) モードか */
+  public isAnonymizing(): boolean {
+    return this.isAnonymize;
+  }
+
+  /**
+   * 匿名化モードのとき Raw 保存用にシート割り当てから個人を特定できる識別子 (ログイン名・ユーザー ID・
+   * アバター URL 等) を除去する。匿名化でなければそのまま返す。
+   */
+  public redactSeatForStorage(seat: CopilotSeatAssignment): CopilotSeatAssignment {
+    return this.pseudonymizer ? this.pseudonymizer.redactSeat(seat) : seat;
+  }
+
+  /** 匿名化モードのとき Raw 保存用に Cost Center のユーザーリソース名を仮名にする */
+  public redactCostCenterForStorage(costCenter: EnterpriseCostCenter): EnterpriseCostCenter {
+    return this.pseudonymizer ? this.pseudonymizer.redactCostCenter(costCenter) : costCenter;
   }
 
   /**
@@ -118,7 +158,7 @@ export class AttributeResolver {
     let displayName = mapped?.display_name || login;
     let department = mapped?.department || '未分類 (Unassigned)';
     let costCenterOverride = mapped?.cost_center_override;
-    const notes = mapped?.notes;
+    let notes = mapped?.notes;
     // tagsはPII(個人特定情報)ではないためアノニマイズ対象外 (notesと同様の扱い)
     const tags = mapped?.tags;
     let teams = (mapped as any)?.teams;
@@ -128,20 +168,22 @@ export class AttributeResolver {
     const targetAdoptionPhase = (mapped as any)?.target_adoption_phase;
     const targetAcceptanceRate = (mapped as any)?.target_acceptance_rate;
 
-    // アノニマイズ（匿名化）モードの処理
-    if (this.isAnonymize) {
-      const hash = this.simpleHash(login);
-      displayName = `User-${hash.substring(0, 6)}`;
-      login = `dev_${hash.substring(0, 8)}`;
+    // アノニマイズ（匿名化）モードの処理: 秘密鍵付きの HMAC で仮名化する (辞書照合で復元できない)
+    if (this.pseudonymizer) {
+      const pz = this.pseudonymizer;
+      displayName = pz.displayName(login);
+      login = pz.login(login);
       if (department !== '未分類 (Unassigned)') {
-        department = `Group-${this.simpleHash(department).substring(0, 4)}`;
+        department = pz.department(department);
       }
       if (teams && Array.isArray(teams)) {
-        teams = teams.map((t: string) => `Team-${this.simpleHash(t).substring(0, 4)}`);
+        teams = teams.map((t: string) => pz.team(t));
       }
       if (projects && Array.isArray(projects)) {
-        projects = projects.map((p: string) => `Project-${this.simpleHash(p).substring(0, 4)}`);
+        projects = projects.map((p: string) => pz.project(p));
       }
+      // 自由記述の備考には氏名などが含まれうるため、匿名化モードでは出力しない
+      notes = undefined;
     }
 
     return {
@@ -162,14 +204,5 @@ export class AttributeResolver {
 
   public getMappingCount(): number {
     return this.mappings.size;
-  }
-
-  private simpleHash(str: string): string {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = (hash << 5) - hash + str.charCodeAt(i);
-      hash |= 0;
-    }
-    return Math.abs(hash).toString(16).padStart(8, '0');
   }
 }

@@ -1,11 +1,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import {
+  AnalysisScopeType,
   CopilotDailyMetrics,
   CopilotSeatAssignment,
   EnterpriseCostCenter,
   IndexMetadata,
   MonthlyReportAggregatedData,
+  RollingTrendDataset,
   ScopeAggregatedData,
 } from '../types/copilot.js';
 
@@ -119,6 +121,32 @@ export class ForkSafeStorage {
     if (this.publicDir) {
       this.ensureDirectory(this.publicDir);
       fs.writeFileSync(path.join(this.publicDir, 'index.json'), JSON.stringify(metadata, null, 2), 'utf-8');
+    }
+  }
+
+  /**
+   * 前回保存した index.json を読み出す (取得失敗ソースの Last-known-good 維持に使う)。
+   * 未保存・JSON 破損時は null (呼び出し側は「前回なし」として扱う)。
+   */
+  public loadIndex(): IndexMetadata | null {
+    return this.readJson<IndexMetadata>(path.join(this.baseDir, 'index.json'));
+  }
+
+  /**
+   * 保存済みのスコープ集計 (processed/{daily|monthly|custom}/...) を読み出す。
+   */
+  public loadScopeData(scopeType: AnalysisScopeType, key: string): ScopeAggregatedData | null {
+    const subDir = scopeType === 'daily' ? 'daily' : scopeType === 'monthly' ? 'monthly' : 'custom';
+    const fileName = scopeType === 'custom' ? `${key.replace(/[:\/]/g, '_')}.json` : `${key}.json`;
+    return this.readJson<ScopeAggregatedData>(path.join(this.baseDir, 'processed', subDir, fileName));
+  }
+
+  private readJson<T>(filePath: string): T | null {
+    try {
+      if (!fs.existsSync(filePath)) return null;
+      return JSON.parse(fs.readFileSync(filePath, 'utf-8')) as T;
+    } catch {
+      return null;
     }
   }
 
@@ -244,7 +272,7 @@ export class ForkSafeStorage {
   /**
    * 過去1年間のマクロ推移トレンドデータ (trends/rolling-1year.json) を保存
    */
-  public saveRolling1YearTrend(data: any): void {
+  public saveRolling1YearTrend(data: RollingTrendDataset): void {
     const targetDir = path.join(this.baseDir, 'processed', 'trends');
     this.ensureDirectory(targetDir);
 

@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { MonthlyReportAggregatedData } from '../types/copilot.js';
-import { adaptReportToProfiles } from '../../dashboard/src/utils/deepAnalysisAdapter.js';
+import { resolveDeepAnalysisProfiles } from '../../dashboard/src/hooks/useDeepAnalysisData.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -102,32 +102,23 @@ describe('User Trend Viewer Active Source & Cross-View Consistency Tests', () =>
     ],
   };
 
-  it('adapts monthly report into profiles that support daily model trend chart mapping', () => {
-    const profiles = adaptReportToProfiles(mockReportData);
-    assert.strictEqual(profiles.length, 2);
+  it('does not build per-user daily trend profiles from an aggregated monthly report', () => {
+    // 月次レポート (CSV の集計) にはユーザー別の日次実績・モデル内訳が無い。以前は組織全体の日次形状を
+    // 按分して個人の日次モデル内訳を合成していたため、実在しない推移がユーザー別推移に表示されていた。
+    const resolved = resolveDeepAnalysisProfiles({
+      activeSource: 'monthly_report',
+      currentData: null,
+      selectedReportMonth: '2026-09',
+      archiveData: null,
+      currentReportData: mockReportData,
+      uploadedData: null,
+      selectedTags: [],
+    });
 
-    const alice = profiles.find((p) => p.login === 'trend-user-alice');
-    assert.ok(alice);
-    assert.strictEqual(alice.daily_history.length, 2);
-
-    // 日付昇順確認
-    assert.strictEqual(alice.daily_history[0].date, '2026-09-01');
-    assert.strictEqual(alice.daily_history[1].date, '2026-09-02');
-
-    // Alice のモデル内訳 (primary_model: claude-3-7-sonnet)
-    const aliceDay1Breakdown = alice.daily_history[0].model_breakdown;
-    assert.ok(aliceDay1Breakdown);
-    assert.ok(aliceDay1Breakdown['claude-3-7-sonnet'] > 0);
-
-    const bob = profiles.find((p) => p.login === 'trend-user-bob');
-    assert.ok(bob);
-    const bobDay1Breakdown = bob.daily_history[0].model_breakdown;
-    assert.ok(bobDay1Breakdown);
-    assert.ok(bobDay1Breakdown['custom-internal-model'] > 0);
-
-    // 合計値の算出
-    const totalDay1 = Object.values(aliceDay1Breakdown).reduce((a, b) => a + b, 0);
-    assert.ok(totalDay1 > 0);
+    assert.deepStrictEqual(resolved.profiles, []);
+    // ユーザー別推移ビューは、空表示ではなく「なぜ表示できないか」を sourceInfo.details で示す
+    assert.ok(resolved.sourceInfo.details && resolved.sourceInfo.details.length > 0);
+    assert.strictEqual(resolved.sourceInfo.totalUsers, 2);
   });
 
   it('UserTrendViewer component supports dynamic models and sourceInfo badge without hardcoding only 4 models', () => {
@@ -165,6 +156,23 @@ describe('User Trend Viewer Active Source & Cross-View Consistency Tests', () =>
       content.includes('setSelectedLogin(initialSelectedLogin)'),
       'UserTrendViewer should sync selectedLogin when initialSelectedLogin changes'
     );
+  });
+
+  it('UserTrendViewer does not invent models, avatars or a default radar model when nothing was measured', () => {
+    const trendViewerFile = path.resolve(projectRoot, 'dashboard/src/components/UserTrendViewer.tsx');
+    const content = fs.readFileSync(trendViewerFile, 'utf-8');
+
+    // 実測のモデルが無いときに代表モデル (claude-3-7-sonnet / gpt-4o / o1 / gemini) を仮定して系列を作らない
+    assert.ok(!content.includes("foundModels.add('claude-3-7-sonnet')"), 'must not add placeholder models to the series');
+    assert.ok(!content.includes("?? 'claude-3-7-sonnet'") && !content.includes("|| 'claude-3-7-sonnet'"), 'must not default the radar model');
+    // アバター URL が無いときに外部の ghost 画像を取得しない (閲覧者の IP を外部へ送らない)
+    assert.ok(!content.includes('github.com/ghost.png'), 'must not fetch an external placeholder avatar');
+    // 実測が無いときは理由を表示する
+    assert.ok(content.includes('user-trend-no-profile-reason'), 'must show why no profile is available');
+    // フックの呼び出し順を保つ: useMemo は早期 return より前に置く (プロファイルの有無でフック数が変わると例外になる)
+    const earlyReturn = content.indexOf('if (!currentProfile) {');
+    const lastMemo = content.lastIndexOf('useMemo');
+    assert.ok(earlyReturn > 0 && lastMemo < earlyReturn, 'all hooks must be declared before the early return');
   });
 
   it('App.tsx renders UserTrendViewer for all data sources without isReportSource blocking', () => {

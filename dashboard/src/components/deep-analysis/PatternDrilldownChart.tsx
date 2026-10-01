@@ -179,6 +179,12 @@ export const PatternDrilldownChart: React.FC<PatternDrilldownChartProps> = ({ dr
           <span className="text-[10px] text-slate-400">同社エンジニア群との差異</span>
         </div>
 
+        {drilldown.peerBenchmarks.length === 0 && (
+          <p className="text-xs text-slate-400" data-testid="peer-benchmark-unavailable">
+            比較対象となるユーザー別の利用実績が無いため、組織平均との比較は表示できません (固定の平均値は使用しません)。
+          </p>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {drilldown.peerBenchmarks.map((bench, idx) => (
             <div

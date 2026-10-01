@@ -9,6 +9,7 @@ import {
   UserUsageProfile,
   IndexMetadata,
   DataFetchIssue,
+  RollingTrendDataset,
 } from '../../domain/entities/copilot.js';
 import { ForkSafeStorage, StorageConfig } from '../../storage/fork-safe-storage.js';
 
@@ -44,12 +45,20 @@ export class ForkSafeStorageWriter implements IStorageWriter {
     });
   }
 
-  saveRolling1YearTrend(data: any): void {
+  saveRolling1YearTrend(data: RollingTrendDataset): void {
     this.storage.saveRolling1YearTrend(data);
   }
 
   saveIndex(metadata: IndexMetadata): void {
     this.storage.saveIndex(metadata);
+  }
+
+  loadIndex(): IndexMetadata | null {
+    return this.storage.loadIndex();
+  }
+
+  loadScopeData(scopeType: AnalysisScopeType, key: string): ScopeAggregatedData | null {
+    return this.storage.loadScopeData(scopeType, key);
   }
 
   saveErrorLog(issues: DataFetchIssue[]): void {

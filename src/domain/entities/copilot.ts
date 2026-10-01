@@ -4,9 +4,17 @@
 
 import { CurrencyConfig } from './billing-config.js';
 
-export type CopilotPlanType = 'business' | 'enterprise';
+/**
+ * 'unknown' は API が plan_type を返さない / 未知の値を返した場合の「未確定」。
+ * 料金を推測せず (旧: enterprise=$39 と見なしていた)、費用は未確定として扱う。
+ */
+export type CopilotPlanType = 'business' | 'enterprise' | 'unknown';
 
-export type UserSeatStatus = 'active' | 'low_active' | 'idle' | 'never_used';
+/**
+ * シートの利用ステータス。
+ * - 'onboarding': 付与から間もなく (SEAT_ONBOARDING_DAYS 未満) 未使用のシート。遊休 (削減可能) に含めない。
+ */
+export type UserSeatStatus = 'active' | 'low_active' | 'idle' | 'never_used' | 'onboarding';
 
 export type GroupingDimension = 'department' | 'cost_center' | 'organization';
 
@@ -24,6 +32,34 @@ export interface DataFetchIssue {
   details?: string;
   http_status?: number;
   affected_fields?: string[];
+}
+
+/**
+ * パイプラインが収集する外部ソースの識別子。
+ * ソースごとに独立して縮退 (Last-known-good 維持) する単位。
+ */
+export type DataSourceId = 'metrics' | 'seats' | 'cost_centers';
+
+/**
+ * - 'ok': 取得成功
+ * - 'partial': 取得はできたが一部レコードを隔離した / 件数が一致しなかった
+ * - 'failed': 取得に失敗した (前回成功データを維持する)
+ * - 'skipped': 設定が無く対象外 (障害ではない)
+ */
+export type SourceFetchStatus = 'ok' | 'partial' | 'failed' | 'skipped';
+
+export interface SourceStatus {
+  source: DataSourceId;
+  status: SourceFetchStatus;
+  /** 取得したレコード数 (隔離分を除く) */
+  records: number;
+  /** 検証に失敗して隔離したレコード数 */
+  quarantined?: number;
+  last_attempt_at: string;
+  /** 最後に成功した時刻。失敗時は前回の index.json から引き継ぐ (未成功なら null) */
+  last_success_at: string | null;
+  /** 失敗理由の要約 (個人情報を含めない) */
+  error?: string;
 }
 
 // ==========================================
@@ -146,7 +182,8 @@ export interface CopilotSeatAssignment {
   assignee: GitHubUserAssignee;
   assigning_team?: AssigningTeam | null;
   assigning_teams?: AssigningTeam[];
-  organization: SeatOrganization;
+  /** Enterprise 直下のシート等では API が null を返す */
+  organization: SeatOrganization | null;
   ai_credits_used?: number;
   seat_status?: 'active' | 'pending' | 'suspended';
   prepaid?: boolean;
@@ -154,7 +191,8 @@ export interface CopilotSeatAssignment {
 }
 
 export interface CostCenterResource {
-  type: 'Org' | 'User' | 'Repository';
+  /** 'Org' | 'User' | 'Repository' に正規化する。未知の種別は文字列のまま保持する */
+  type: 'Org' | 'User' | 'Repository' | (string & {});
   name: string;
 }
 
@@ -249,6 +287,8 @@ export interface EnrichedUserSeat {
   plan_type: CopilotPlanType;
   monthly_cost_usd: number;
   prorated_daily_cost_usd: number;
+  /** plan_type が未確定のため料金を算定できていない (monthly_cost_usd は 0 として集計される) */
+  cost_unconfirmed?: boolean;
   created_at: string;
   last_activity_at: string | null;
   last_activity_editor: string | null;
@@ -280,11 +320,18 @@ export interface GroupSummary {
   spending_limit_usd?: number; // Cost Center 等の予算上限 (Limit設定値)
   potential_savings_usd: number;
   active_ratio: number; // 0.0 - 1.0
-  acceptance_rate: number; // 0.0 - 1.0
-  total_suggestions: number;
-  total_acceptances: number;
-  total_chats: number;
-  total_pr_summaries: number;
+  /**
+   * 利用状況メトリクス由来の指標。取得できていない場合 (月次レポート CSV・フィルター後のグループなど) は
+   * 0 や固定値で埋めず null とする。ライブ集計のグループ別の値はシート比による按分推定で、
+   * is_estimated / estimation_method が設定される。
+   */
+  acceptance_rate: number | null; // 0.0 - 1.0
+  total_suggestions: number | null;
+  total_acceptances: number | null;
+  total_chats: number | null;
+  total_pr_summaries: number | null;
+  /** 月次レポート (CSV) のグループ集計: unit_type が requests の明細の数量合計 */
+  total_requests?: number;
   is_data_partial?: boolean;
   total_ai_credits_used?: number;
   ai_credits_cost_usd?: number;
@@ -310,6 +357,26 @@ export interface DailyTrendEntry {
   lines_added_by_ai?: number;
 }
 
+/**
+ * フィルター (Cost Center / Org / 部署 / タグ / ユーザー) の適用対象外のセクション。
+ * 利用状況メトリクス等はユーザー別の実測を持たない集計のため、フィルター適用後も全社値のまま。
+ * 画面で「全社値 (フィルター非対応)」と明示するために使う (絞り込み後の席数と並べて誤読させない)。
+ */
+export interface FilterScopeNotice {
+  unfiltered_sections: string[];
+}
+
+/**
+ * 利用状況メトリクス (補完・チャット・PR・エージェント等) の出所。
+ * - live: 今回の収集で取得した値
+ * - carried_over: メトリクスの取得に失敗したため、前回成功時の値を引き継いだ (as_of = 前回の取得時刻)
+ * - unavailable: 一度も取得できていない (画面では「—（取得不可）」と表示する)
+ */
+export interface UsageMetricsProvenance {
+  availability: 'live' | 'carried_over' | 'unavailable';
+  as_of?: string;
+}
+
 export interface ScopeAggregatedData {
   scope_type: AnalysisScopeType;
   scope_key: string; // '2026-09-09' or '2026-09' or 'custom:2026-08-11_2026-09-09'
@@ -322,19 +389,28 @@ export interface ScopeAggregatedData {
     total_seats: number;
     active_users: number;
     idle_seats: number;
+    /** 付与から間もない未使用シート (導入期間)。遊休には含めない */
+    onboarding_seats?: number;
+    /** plan_type が未確定で費用を算定できていないシート数 (total_spend_usd には含まれない) */
+    cost_unconfirmed_seats?: number;
     total_spend_usd: number;
     total_net_billable_usd?: number; // 従量課金/超過請求費用合計 (無料枠控除後の請求対象実額)
     total_spending_limit_usd?: number; // 上限Limit設定値合計
     idle_waste_usd: number;
     active_ratio: number;
-    overall_acceptance_rate: number;
-    total_suggestions: number;
-    total_acceptances: number;
-    total_chats: number;
-    total_pr_summaries: number;
-    total_cli_commands: number;
+    /** 利用状況メトリクス由来の指標。メトリクスを取得できていない場合は null (0 として描画しない) */
+    overall_acceptance_rate: number | null;
+    total_suggestions: number | null;
+    total_acceptances: number | null;
+    total_chats: number | null;
+    total_pr_summaries: number | null;
+    total_cli_commands: number | null;
     missing_metrics?: string[]; // 欠損項目 (e.g. ['copilot_ide_chat', 'top_languages'])
   };
+  /** 利用状況メトリクスの出所。省略時は取得済み (live) */
+  usage_metrics?: UsageMetricsProvenance;
+  /** フィルター適用中のとき、適用対象外 (全社値のまま) のセクション */
+  filter_notice?: FilterScopeNotice;
   by_department: Record<string, GroupSummary>;
   by_cost_center: Record<string, GroupSummary>;
   by_organization: Record<string, GroupSummary>;
@@ -484,9 +560,26 @@ export interface ReportUserDetail {
   gross_spend_usd?: number; // 利用費用 (定価・割引前総額)
   net_spend_usd?: number; // 超過請求費用 (無料Credit控除後実質請求額)
   primary_model: string;
+  /** モデル別のリクエスト数 (requests 系の明細)。フィルター後の内訳を正確に再集計するために保持する */
+  model_requests?: Record<string, number>;
+  /** モデル別の費用 (net, USD) */
+  model_spend_usd?: Record<string, number>;
   last_activity_date?: string;
   surface?: string;
   tags?: string[];
+}
+
+/**
+ * 取り込みの要約。複数 CSV の結合・重複検知・日付なし行の件数を残し、集計の根拠を追えるようにする。
+ */
+export interface ReportImportSummary {
+  source_files: string[];
+  /** 重複を除いて集計に使ったレコード数 */
+  records_total: number;
+  /** 別ファイルとの重複として 1 件に集約した行数 */
+  duplicates_skipped: number;
+  /** 日付がなく、日別推移に載せられなかった行数 (合計には含む) */
+  undated_records?: number;
 }
 
 export interface MonthlyReportAggregatedData {
@@ -494,11 +587,16 @@ export interface MonthlyReportAggregatedData {
   source_type: 'persisted' | 'local_drop';
   file_name: string;
   parsed_at: string;
+  /** 複数ファイルの結合・重複検知の結果 (結合した月次レポートのみ) */
+  import_summary?: ReportImportSummary;
   overview: {
     total_net_spend_usd: number;
     total_gross_spend_usd: number;
     total_discount_usd: number;
+    /** unit_type が requests 系の明細の数量合計 (シート行・クレジット行は含まない) */
     total_requests: number;
+    /** unit_type 別の数量合計 (例: { requests: 120, 'ai-credits': 3400, seats: 85 }) */
+    quantity_by_unit?: Record<string, number>;
     total_active_users: number;
     top_model: string;
     top_sku: string;
@@ -510,6 +608,8 @@ export interface MonthlyReportAggregatedData {
   sku_breakdown: ReportSkuBreakdown[];
   daily_trends: ReportDailyTrend[];
   user_details: ReportUserDetail[];
+  /** フィルター適用中のとき、適用対象外 (全体値のまま) のセクション */
+  filter_notice?: FilterScopeNotice;
 }
 
 export interface IndexMetadata {
@@ -526,7 +626,20 @@ export interface IndexMetadata {
   available_reports?: string[]; // e.g. ["2026-09", "2026-08"]
   rolling_1year_trend_file?: string; // e.g. "trends/rolling-1year.json"
   deep_analysis_months?: string[]; // ディープ分析用アーカイブが存在する月一覧
-  is_mock_mode?: boolean; // モック動作モード (DEMO用シミュレーションデータ) の有無
+  /** MOCK_MODE (--mock / --demo) で生成したシミュレーションデータのときだけ true。取得失敗では true にしない */
+  is_mock_mode?: boolean;
+  /** ソース別の取得状態。失敗ソースの last_success_at は前回成功時刻を指す */
+  source_status?: SourceStatus[];
+  /**
+   * 公開範囲の検査 (npm run fork:verify) が参照する、この成果物のプライバシー属性。
+   * リポジトリ / Pages が公開されているときに、個人単位のデータが含まれるかを判定する。
+   */
+  privacy?: {
+    /** 仮名化 (ANONYMIZE_USERS + 秘密鍵) された出力か */
+    anonymized: boolean;
+    /** ユーザー単位 (氏名・部署・ログイン名・個人別利用) のデータを含むか。デモデータは false */
+    contains_user_level_data: boolean;
+  };
   billing?: {
     currency: CurrencyConfig;
     subCurrency?: CurrencyConfig | null;
@@ -548,6 +661,10 @@ export interface IndexMetadata {
     total_seats: number;
     active_seats_30d: number;
     idle_seats_30d: number;
+    /** 付与から間もない未使用シート (遊休・稼働のいずれにも含めない) */
+    onboarding_seats?: number;
+    /** plan_type が未確定で費用を算定できていないシート数 (費用に含まれない) */
+    cost_unconfirmed_seats?: number;
     total_monthly_spend_usd: number;
     idle_waste_spend_usd: number;
     total_ai_credits_used?: number;
@@ -561,21 +678,29 @@ export interface IndexMetadata {
 
 export type SeatBillingStatus = 'active' | 'prepaid_pending' | 'prorated';
 
+/**
+ * 1 年ローリング推移の 1 か月分。保存済みの月次集計 (processed/monthly) から実値で構成する。
+ * 取得できていない指標は 0 や定数で埋めず null とする (以前は受諾率 0.35 を全月に複写していた)。
+ */
 export interface RollingTrendEntry {
   month: string; // 'YYYY-MM'
+  /** シート費の月次スナップショット (カタログ / 契約価格ベース) */
   total_spend_usd: number;
   total_seats: number;
   active_seats: number;
   idle_seats: number;
-  acceptance_rate: number;
-  total_chats: number;
-  total_ai_credits_used?: number;
-  total_agent_sessions?: number;
-  agent_adoption_rate?: number;
+  /** 利用状況メトリクスが取得できていない月は null */
+  acceptance_rate: number | null;
+  total_chats: number | null;
+  total_ai_credits_used?: number | null;
+  total_agent_sessions?: number | null;
+  agent_adoption_rate?: number | null;
 }
 
 export interface RollingTrendDataset {
   generated_at: string;
-  data_points: RollingTrendEntry[];
+  /** 対象月 (新しい順) */
+  months: string[];
+  /** months と同じ順序の実績。保存済みの月次集計が無い月は含めない */
+  trends: RollingTrendEntry[];
 }
-

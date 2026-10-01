@@ -12,6 +12,28 @@ export const AgentActivityView: React.FC<AgentActivityViewProps> = ({ viewModel 
   const [sortKey, setSortKey] = useState<AgentTeamSortKey>('sessions');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
+  // フックは早期 return (データなし表示) より前に宣言する。データの有無でフック数が変わると React が例外を投げる
+  const sortedTeams = useMemo(() => {
+    return [...viewModel.teams].sort((a, b) => {
+      let diff = 0;
+      switch (sortKey) {
+        case 'teamName':
+          diff = a.teamName.localeCompare(b.teamName, 'ja');
+          break;
+        case 'sessions':
+          diff = a.sessions - b.sessions;
+          break;
+        case 'engagedUsers':
+          diff = a.engagedUsers - b.engagedUsers;
+          break;
+        case 'adoptionRate':
+          diff = a.adoptionRate - b.adoptionRate;
+          break;
+      }
+      return sortDir === 'asc' ? diff : -diff;
+    });
+  }, [viewModel.teams, sortKey, sortDir]);
+
   if (!viewModel.hasData) {
     return (
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center text-slate-500">
@@ -53,27 +75,6 @@ export const AgentActivityView: React.FC<AgentActivityViewProps> = ({ viewModel 
       <ArrowDown className="w-3 h-3 text-purple-400" />
     );
   };
-
-  const sortedTeams = useMemo(() => {
-    return [...teams].sort((a, b) => {
-      let diff = 0;
-      switch (sortKey) {
-        case 'teamName':
-          diff = a.teamName.localeCompare(b.teamName, 'ja');
-          break;
-        case 'sessions':
-          diff = a.sessions - b.sessions;
-          break;
-        case 'engagedUsers':
-          diff = a.engagedUsers - b.engagedUsers;
-          break;
-        case 'adoptionRate':
-          diff = a.adoptionRate - b.adoptionRate;
-          break;
-      }
-      return sortDir === 'asc' ? diff : -diff;
-    });
-  }, [teams, sortKey, sortDir]);
 
   return (
     <div className="space-y-6">

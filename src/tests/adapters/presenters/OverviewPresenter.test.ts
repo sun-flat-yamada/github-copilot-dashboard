@@ -13,7 +13,9 @@ describe('OverviewPresenter Tests', () => {
 
     assert.strictEqual(vm.hasData, false);
     assert.strictEqual(vm.kpis.totalCostFormatted, '$0.00');
-    assert.strictEqual(vm.kpis.acceptanceRateFormatted, '0%');
+    // データが無いときの受諾率は 0% ではなく「—」 (欠損を 0 として見せない)
+    assert.strictEqual(vm.kpis.acceptanceRateFormatted, '—');
+    assert.strictEqual(vm.kpis.acceptanceRateRaw, null);
     assert.strictEqual(vm.chips.departmentCountText, '0 部署');
   });
 
@@ -36,10 +38,13 @@ describe('OverviewPresenter Tests', () => {
       cost_center_budgets: [
         { cost_center_id: 'CC-01' } as any,
       ],
+      // 遊休 = idle / never_used。導入期間 (onboarding) は遊休に含めない。
+      // 削減可能額は遊休シートの月額費用の合計 (overview.idle_waste_usd = スコープ内の費用 とは別)
       users: [
-        { login: 'user1', status: 'active' } as any,
-        { login: 'user2', status: 'dormant' } as any,
-        { login: 'user3', status: 'inactive' } as any,
+        { login: 'user1', status: 'active', monthly_cost_usd: 39 } as any,
+        { login: 'user2', status: 'idle', monthly_cost_usd: 19 } as any,
+        { login: 'user3', status: 'never_used', monthly_cost_usd: 39 } as any,
+        { login: 'user4', status: 'onboarding', monthly_cost_usd: 39 } as any,
       ],
     };
 
@@ -55,11 +60,12 @@ describe('OverviewPresenter Tests', () => {
     assert.strictEqual(vm.kpis.activeUsersCount, 42);
     assert.strictEqual(vm.kpis.totalUsersCount, 50);
     assert.strictEqual(vm.kpis.acceptanceRateFormatted, '35%');
-    assert.strictEqual(vm.kpis.idleWasteFormatted, '$152.00/月');
+    assert.strictEqual(vm.kpis.idleWasteFormatted, '$58.00/月');
+    assert.strictEqual(vm.kpis.idleWasteRaw, 58);
     assert.strictEqual(vm.kpis.idleCount, 2);
     assert.strictEqual(vm.chips.departmentCountText, '2 部署');
     assert.strictEqual(vm.chips.budgetCountText, '1 Cost Centers');
-    assert.strictEqual(vm.chips.userCountText, '3 名');
+    assert.strictEqual(vm.chips.userCountText, '4 名');
     assert.strictEqual(vm.canShowAdvisor, true);
     assert.strictEqual(vm.canShowBudgets, true);
   });
@@ -102,5 +108,8 @@ describe('OverviewPresenter Tests', () => {
     assert.strictEqual(vm.chips.modelCountText, '2 モデル');
     assert.strictEqual(vm.chips.departmentCountText, '1 部署');
     assert.strictEqual(vm.canShowAdvisor, false);
+    // 月次レポートにはシートの稼働状況・受諾率が無い。0 ではなく「—」 (算出不能) と表示する
+    assert.strictEqual(vm.kpis.acceptanceRateFormatted, '—');
+    assert.strictEqual(vm.kpis.idleWasteFormatted, '—');
   });
 });

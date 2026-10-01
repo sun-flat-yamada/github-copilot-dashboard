@@ -18,8 +18,12 @@ import {
   ChevronUp,
   ChevronLeft,
   ChevronRight,
+  Hourglass,
+  User,
 } from 'lucide-react';
 import { ActionColumnHeader } from './common/ActionColumnHeader';
+import { seatCostForScope } from '../../../src/domain/rules/ScopeCostRule';
+import { SEAT_IDLE_DAYS, SEAT_LOW_ACTIVE_DAYS, SEAT_ONBOARDING_DAYS } from '../../../src/domain/rules/SeatClassificationRule';
 import { UserDrilldownPanel } from './UserDrilldownPanel';
 import { useCurrency } from '../contexts/CurrencyContext';
 
@@ -65,6 +69,14 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const { users, scope_type } = data;
   const { formatMoney } = useCurrency();
+  // 費用はスコープ種別に応じた単位 (日次=日割り / 月次=月額 / 期間=日割り×日数) で表示する。
+  // パイプラインやフィルター再集計と同じ共通ルール (seatCostForScope) を使う。
+  const scopeDaysCount = data.date_range?.days_count ?? 1;
+  const costOf = useCallback(
+    (u: (typeof users)[number]) => seatCostForScope(u, scope_type, scopeDaysCount),
+    [scope_type, scopeDaysCount]
+  );
+  const costUnitLabel = scope_type === 'daily' ? '日割り' : scope_type === 'monthly' ? '月額' : `期間 (日割り×${scopeDaysCount}日)`;
   const [selectedUserLogin, setSelectedUserLogin] = useState<string | null>(initialSelectedLogin || null);
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -244,9 +256,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
           break;
         case 'cost':
         case 'excess': {
-          const costA = scope_type === 'daily' ? a.prorated_daily_cost_usd : a.monthly_cost_usd;
-          const costB = scope_type === 'daily' ? b.prorated_daily_cost_usd : b.monthly_cost_usd;
-          cmp = costA - costB;
+          cmp = costOf(a) - costOf(b);
           break;
         }
         case 'days_inactive':
@@ -257,7 +267,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
       }
       return sortOrder === 'asc' ? cmp : -cmp;
     });
-  }, [users, searchTerm, statusFilter, selectedDept, sortBy, sortOrder, profileMap, scope_type]);
+  }, [users, searchTerm, statusFilter, selectedDept, sortBy, sortOrder, profileMap, costOf]);
 
   // CSVエクスポート
   const handleExportCsv = () => {
@@ -295,14 +305,16 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
         u.last_activity_at || '未利用',
         u.last_activity_editor || '-',
         u.days_inactive === 999 ? 'N/A' : u.days_inactive,
-        u.monthly_cost_usd.toFixed(2),
-        u.prorated_daily_cost_usd.toFixed(4),
+        // プラン未確定のシートは費用を算定していない。0 と区別するため空欄にする
+        u.cost_unconfirmed ? '' : u.monthly_cost_usd.toFixed(2),
+        u.cost_unconfirmed ? '' : u.prorated_daily_cost_usd.toFixed(4),
+        // 利用実績が無いユーザーは 0 ではなく空欄 (欠損) にする
         ...(hasUsageMetrics
           ? [
-              prof?.total_suggestions ?? 0,
-              prof?.total_acceptances ?? 0,
-              ((prof?.acceptance_rate ?? 0) * 100).toFixed(1),
-              prof?.total_chats ?? 0,
+              prof?.total_suggestions ?? '',
+              prof?.total_acceptances ?? '',
+              prof && prof.total_suggestions > 0 ? (prof.acceptance_rate * 100).toFixed(1) : '',
+              prof?.total_chats ?? '',
             ]
           : []),
         `"${(u.notes || '').replace(/"/g, '""')}"`,
@@ -350,6 +362,16 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
             <span>未利用 (Never)</span>
           </span>
         );
+      case 'onboarding':
+        return (
+          <span
+            className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-sky-950 text-sky-300 border border-sky-800"
+            title={`付与から${SEAT_ONBOARDING_DAYS}日未満で、まだ利用がないシートです。遊休 (削減可能) には含めません`}
+          >
+            <Hourglass className="w-3 h-3" />
+            <span>導入期間</span>
+          </span>
+        );
     }
   };
 
@@ -392,10 +414,11 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
             className="bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-300 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="all">全ステータス</option>
-            <option value="active">Active (14日以内)</option>
-            <option value="low_active">Low Active (15-30日)</option>
-            <option value="idle">Idle (30日以上未利用)</option>
-            <option value="never_used">Never Used (未利用)</option>
+            <option value="active">Active ({SEAT_LOW_ACTIVE_DAYS}日以内)</option>
+            <option value="low_active">Low Active ({SEAT_LOW_ACTIVE_DAYS + 1}-{SEAT_IDLE_DAYS}日)</option>
+            <option value="idle">Idle ({SEAT_IDLE_DAYS}日超 未利用 / AIクレジット消費0は{SEAT_LOW_ACTIVE_DAYS}日超)</option>
+            <option value="never_used">Never Used (付与から{SEAT_ONBOARDING_DAYS}日以上 未利用)</option>
+            <option value="onboarding">導入期間 (付与から{SEAT_ONBOARDING_DAYS}日未満・未利用)</option>
           </select>
 
           {/* 部署絞り込み */}
@@ -590,7 +613,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                 title="利用費用 (GitHubのカタログ価格(USD)基準)"
               >
                 <div className="flex items-center justify-end space-x-1">
-                  <span>利用費用 ({scope_type === 'daily' ? '日割り' : '月額'})</span>
+                  <span>利用費用 ({costUnitLabel})</span>
                   {renderSortIcon('cost')}
                 </div>
               </th>
@@ -641,11 +664,21 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                         isSelected ? 'bg-indigo-950' : 'bg-slate-900 group-hover:bg-slate-800/90'
                       }`}>
                         <div className="flex items-center space-x-2">
-                          <img
-                            src={u.avatar_url || 'https://github.com/ghost.png'}
-                            alt={u.login}
-                            className="w-5 h-5 rounded-full border border-slate-700 bg-slate-800 shrink-0"
-                          />
+                          {u.avatar_url ? (
+                            <img
+                              src={u.avatar_url}
+                              alt={u.login}
+                              className="w-5 h-5 rounded-full border border-slate-700 bg-slate-800 shrink-0"
+                            />
+                          ) : (
+                            // アバター URL が無い (匿名化時など) ときは外部画像を取得せず、アイコンで代替する
+                            <span
+                              className="w-5 h-5 rounded-full border border-slate-700 bg-slate-800 shrink-0 flex items-center justify-center"
+                              aria-hidden="true"
+                            >
+                              <User className="w-3 h-3 text-slate-500" />
+                            </span>
+                          )}
                           <span className="text-slate-200 font-mono text-xs font-medium truncate">@{u.login}</span>
                         </div>
                       </td>
@@ -715,13 +748,22 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                       </td>
 
                       <td className="px-2.5 py-2">
-                        <span
-                          className={`text-[11px] font-bold uppercase ${
-                            u.plan_type === 'enterprise' ? 'text-indigo-400' : 'text-slate-400'
-                          }`}
-                        >
-                          {u.plan_type}
-                        </span>
+                        {u.plan_type === 'unknown' ? (
+                          <span
+                            className="text-[11px] font-bold text-amber-400"
+                            title="API が plan_type を返さない / 未知の値のため、料金を推測せず費用を算定していません"
+                          >
+                            未確定
+                          </span>
+                        ) : (
+                          <span
+                            className={`text-[11px] font-bold uppercase ${
+                              u.plan_type === 'enterprise' ? 'text-indigo-400' : 'text-slate-400'
+                            }`}
+                          >
+                            {u.plan_type}
+                          </span>
+                        )}
                       </td>
 
                       <td className="px-2.5 py-2">{getStatusBadge(u.status, u.days_inactive)}</td>
@@ -735,7 +777,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                             {prof ? prof.total_acceptances.toLocaleString() : '-'}
                           </td>
                           <td className="px-2.5 py-2 text-right font-mono font-semibold text-purple-300">
-                            {prof ? `${(prof.acceptance_rate * 100).toFixed(1)}%` : '-'}
+                            {prof && prof.total_suggestions > 0 ? `${(prof.acceptance_rate * 100).toFixed(1)}%` : '-'}
                           </td>
                           <td className="px-2.5 py-2 text-right font-mono text-indigo-300">
                             {prof ? prof.total_chats.toLocaleString() : '-'}
@@ -745,8 +787,18 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
 
                       <td className="px-2.5 py-2 text-right">
                         {(() => {
-                          const cost = scope_type === 'daily' ? u.prorated_daily_cost_usd : u.monthly_cost_usd;
-                          const costDual = formatMoney(cost);
+                          if (u.cost_unconfirmed) {
+                            return (
+                              <div
+                                className="font-mono text-slate-500"
+                                title="料金プランが未確定のため費用を算定していません (集計にも含まれません)"
+                                data-testid="user-cost-unconfirmed"
+                              >
+                                —
+                              </div>
+                            );
+                          }
+                          const costDual = formatMoney(costOf(u));
                           return (
                             <div className="font-mono font-semibold text-slate-200">
                               {costDual.usd} {costDual.sub && <span className="text-[11px] text-slate-400">({costDual.sub})</span>}
@@ -756,8 +808,10 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                       </td>
                       <td className="px-2.5 py-2 text-right font-mono">
                         {(() => {
-                          const cost = scope_type === 'daily' ? u.prorated_daily_cost_usd : u.monthly_cost_usd;
-                          const costDual = formatMoney(cost);
+                          if (u.cost_unconfirmed) {
+                            return <div className="text-[11px] text-slate-500">—</div>;
+                          }
+                          const costDual = formatMoney(costOf(u));
                           return (
                             <div className="text-[11px] font-semibold text-amber-400">
                               {costDual.usd} {costDual.sub && <span className="text-[10px] text-amber-300/80">({costDual.sub})</span>}
@@ -833,7 +887,8 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                               daysInactive={u.days_inactive}
                               monthlyCostUsd={u.monthly_cost_usd}
                               proratedCostUsd={u.prorated_daily_cost_usd}
-                              excessBillingUsd={scope_type === 'daily' ? u.prorated_daily_cost_usd : u.monthly_cost_usd}
+                              excessBillingUsd={costOf(u)}
+                              costUnconfirmed={u.cost_unconfirmed}
                               profile={prof}
                               allProfiles={effectiveProfiles}
                               onSelectUserForTrend={onSelectUserForTrend}

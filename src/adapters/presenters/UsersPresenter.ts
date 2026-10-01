@@ -27,6 +27,8 @@ export interface UsersStatusCounts {
   low_active: number;
   idle: number;
   never_used: number;
+  /** 付与から間もなく未使用のシート (導入期間)。遊休には含めない */
+  onboarding: number;
 }
 
 export interface UsersViewModel {
@@ -69,6 +71,7 @@ export class UsersPresenter {
         low_active: allUsers.filter((u: EnrichedUserSeat) => u.status === 'low_active').length,
         idle: allUsers.filter((u: EnrichedUserSeat) => u.status === 'idle').length,
         never_used: allUsers.filter((u: EnrichedUserSeat) => u.status === 'never_used').length,
+        onboarding: allUsers.filter((u: EnrichedUserSeat) => u.status === 'onboarding').length,
       };
 
       let filtered = allUsers;
@@ -91,7 +94,8 @@ export class UsersPresenter {
         department: u.department || '未設定',
         costCenter: u.cost_center || '未設定',
         status: u.status,
-        costFormatted: `$${(u.monthly_cost_usd || 0).toFixed(2)}`,
+        // プラン未確定のシートは費用を算定していない。$0.00 とは表示しない
+        costFormatted: u.cost_unconfirmed ? '—' : `$${(u.monthly_cost_usd || 0).toFixed(2)}`,
         costRaw: u.monthly_cost_usd || 0,
         lastActivityText: u.last_activity_at || '未利用',
         tags: u.tags || [],
@@ -145,6 +149,7 @@ export class UsersPresenter {
           low_active: 0,
           idle: allDetails.filter((u: ReportUserDetail) => (u.total_requests || 0) === 0).length,
           never_used: 0,
+          onboarding: 0,
         },
         users: formattedRows,
       };
@@ -156,7 +161,7 @@ export class UsersPresenter {
       isReportSource,
       totalCount: 0,
       filteredCount: 0,
-      statusCounts: { all: 0, active: 0, low_active: 0, idle: 0, never_used: 0 },
+      statusCounts: { all: 0, active: 0, low_active: 0, idle: 0, never_used: 0, onboarding: 0 },
       users: [],
     };
   }

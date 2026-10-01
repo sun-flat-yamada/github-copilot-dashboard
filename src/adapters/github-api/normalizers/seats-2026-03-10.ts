@@ -1,12 +1,16 @@
 import { CopilotSeatAssignmentRawSchema } from '../schemas/seats-schema.js';
 import { CopilotSeatAssignment } from '../../../domain/entities/copilot.js';
 
+/**
+ * 1 レコードを正規化する。検証に失敗した場合は ZodError を投げる。
+ * 呼び出し側 (データソース) がレコード単位で捕捉して隔離し、1 件の異常で全件を失わないようにする。
+ */
 export function normalizeSeats20260310(raw: unknown): CopilotSeatAssignment {
   const parsed = CopilotSeatAssignmentRawSchema.parse(raw);
 
   return {
     created_at: parsed.created_at,
-    updated_at: parsed.updated_at,
+    updated_at: parsed.updated_at ?? parsed.created_at,
     pending_cancellation_date: parsed.pending_cancellation_date,
     last_activity_at: parsed.last_activity_at,
     last_activity_editor: parsed.last_activity_editor,
@@ -20,10 +24,12 @@ export function normalizeSeats20260310(raw: unknown): CopilotSeatAssignment {
     },
     assigning_team: parsed.assigning_team,
     assigning_teams: parsed.assigning_teams,
-    organization: {
-      login: parsed.organization.login,
-      id: parsed.organization.id,
-    },
+    organization: parsed.organization
+      ? {
+          login: parsed.organization.login,
+          id: parsed.organization.id,
+        }
+      : null,
     ai_credits_used: parsed.ai_credits_used,
     seat_status: parsed.seat_status,
     prepaid: parsed.prepaid,

@@ -27,6 +27,11 @@ import { MonthlyReportKpis } from './components/monthly-report/MonthlyReportKpis
 import { MonthlyReportCharts } from './components/monthly-report/MonthlyReportCharts';
 import { MonthlyReportUserTable } from './components/monthly-report/MonthlyReportUserTable';
 import { ViewSkeleton } from './components/common/ViewSkeleton';
+import { DataStatusBanner } from './components/common/DataStatusBanner';
+import { buildDataStatusItems } from './utils/dataStatus';
+import { BudgetUtilizationRule } from '../../src/domain/rules/BudgetUtilizationRule';
+import { monthlyIdleSavingsUsd } from '../../src/domain/rules/ScopeCostRule';
+import { SEAT_IDLE_CRITERIA_TEXT } from '../../src/domain/rules/SeatClassificationRule';
 const ModelRadarView = React.lazy(() => import('./components/ModelRadarView').then(m => ({ default: m.ModelRadarView })));
 const DeepAnalysisView = React.lazy(() => import('./components/DeepAnalysisView').then(m => ({ default: m.DeepAnalysisView })));
 const CreditsView = React.lazy(() => import('./components/views/CreditsView').then(m => ({ default: m.CreditsView })));
@@ -59,6 +64,27 @@ const ALL_SECTION_IDS = [
   'report_users',
 ];
 
+/** 集計軸ごとの単位ラベル (サマリーチップの件数表示用) */
+const GROUPING_UNIT_LABEL: Record<GroupingDimension, string> = {
+  department: '部署',
+  cost_center: 'Cost Center',
+  organization: 'Org',
+};
+
+/** 選択中の集計軸に対応するグループ数 (集計軸に関係なく部署数を出さない) */
+function countGroups(
+  data: { by_department?: object; by_cost_center?: object; by_organization?: object },
+  grouping: GroupingDimension
+): number {
+  const groups =
+    grouping === 'department'
+      ? data.by_department
+      : grouping === 'cost_center'
+      ? data.by_cost_center
+      : data.by_organization;
+  return Object.keys(groups || {}).length;
+}
+
 export const App: React.FC = () => {
   // 1. データ取得カスタムフック (3データソース統合 & タグANDフィルター対応)
   const {
@@ -90,6 +116,7 @@ export const App: React.FC = () => {
     selectedTags,
     isDemoMode,
     toggleDemoMode,
+    dataBaseDir,
     activeDataIsDemoSourced,
     // 統合フィルター条件 (2階層特定モデル & SDD-15)
     filterCriteria,
@@ -106,6 +133,7 @@ export const App: React.FC = () => {
     profiles: deepAnalysisProfiles,
     sourceInfo: deepAnalysisSourceInfo,
   } = useDeepAnalysisData({
+    dataBaseDir,
     activeSource,
     currentData,
     selectedReportMonth,
@@ -209,9 +237,8 @@ export const App: React.FC = () => {
       const actualSpend = gs.total_cost_usd;
       const spendingLimit = master ? master.spending_limit_usd : 0;
       const freeTier = master ? master.free_tier_budget_usd : 0;
-      const netBillable = Math.max(0, actualSpend - freeTier);
-      const remaining = spendingLimit > 0 ? Math.max(0, spendingLimit - netBillable) : 0;
-      const utilization = spendingLimit > 0 ? (netBillable / spendingLimit) * 100 : 0;
+      // 予算の評価はパイプライン・フィルター再集計と同じ共通ルール (BudgetUtilizationRule) を使う
+      const evaluation = BudgetUtilizationRule.evaluateUsd(spendingLimit, freeTier, actualSpend);
 
       result.push({
         cost_center_id: master?.cost_center_id || `cc-report-${idx + 1}`,
@@ -220,10 +247,7 @@ export const App: React.FC = () => {
         spending_limit_usd: spendingLimit,
         free_tier_budget_usd: freeTier,
         current_spend_usd: actualSpend,
-        net_billable_spend_usd: netBillable,
-        remaining_budget_usd: remaining,
-        budget_utilization_percent: Number(utilization.toFixed(1)),
-        status: spendingLimit > 0 && utilization >= 100 ? 'exceeded' : spendingLimit > 0 && utilization >= 80 ? 'warning' : 'normal',
+        ...evaluation,
       });
     });
 
@@ -233,16 +257,22 @@ export const App: React.FC = () => {
         result.push({
           ...b,
           current_spend_usd: 0,
-          net_billable_spend_usd: 0,
-          remaining_budget_usd: b.spending_limit_usd,
-          budget_utilization_percent: 0,
-          status: 'normal',
+          ...BudgetUtilizationRule.evaluateUsd(b.spending_limit_usd, b.free_tier_budget_usd, 0),
         });
       }
     });
 
     return result.sort((a, b) => b.current_spend_usd - a.current_spend_usd);
   }, [currentReportData, rawCurrentData]);
+
+  // 画面最上部のデータ状態バナー (デモ表示 / ソース取得失敗)。実測・前回値・欠損・デモを画面上で区別する
+  const dataStatusItems = useMemo(
+    () => buildDataStatusItems({ indexMeta, activeSource, activeDataIsDemoSourced }),
+    [indexMeta, activeSource, activeDataIsDemoSourced]
+  );
+  // 「実データを表示」ボタンは、ユーザーが明示的にデモを選択している場合だけ出す
+  // (データ自身が is_mock_mode を宣言している場合は、戻す先の実データがない)
+  const canSwitchToLive = isDemoMode && indexMeta?.is_mock_mode !== true ? () => toggleDemoMode(false) : undefined;
 
   const currentActiveMonth = selectedReportMonth || (selectedKey && selectedKey.length >= 7 ? selectedKey.slice(0, 7) : indexMeta?.default_scopes?.latest_month);
 
@@ -295,6 +325,9 @@ export const App: React.FC = () => {
 
       {/* 3. メインコンテンツエリア (フルレスポンシブ & 1カラム垂直スタック ★要件5 & 構造的リアクティビティキーイング SDD-15) */}
       <main className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col space-y-6" key={datasetVersionKey}>
+        {/* データ状態バナー: デモ表示・ソース取得失敗を最上部で明示する (D-05 / C-06) */}
+        <DataStatusBanner items={dataStatusItems} onSwitchToLive={canSwitchToLive} />
+
         {/* ローディング表示 */}
         {((activeSource === 'live_metrics' && loading) ||
           (isReportSource && reportLoading && !currentReportData)) && (
@@ -315,14 +348,26 @@ export const App: React.FC = () => {
               </p>
               <p className="mt-1 font-mono text-red-300 break-all">{isReportSource ? reportError : error}</p>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsErrorModalOpen(true)}
-              className="px-3 py-1.5 bg-rose-900/80 hover:bg-rose-800 text-rose-100 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors border border-rose-700/60 shrink-0 cursor-pointer self-start sm:self-auto"
-            >
-              <AlertCircle className="w-3.5 h-3.5 text-rose-300" />
-              <span>エラー詳細を確認</span>
-            </button>
+            <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+              {!isDemoMode && (
+                <button
+                  type="button"
+                  onClick={() => toggleDemoMode(true)}
+                  data-testid="show-demo-data-button"
+                  className="px-3 py-1.5 bg-amber-900/70 hover:bg-amber-800 text-amber-100 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors border border-amber-700/60 cursor-pointer"
+                >
+                  <span>デモデータを表示</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsErrorModalOpen(true)}
+                className="px-3 py-1.5 bg-rose-900/80 hover:bg-rose-800 text-rose-100 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors border border-rose-700/60 cursor-pointer"
+              >
+                <AlertCircle className="w-3.5 h-3.5 text-rose-300" />
+                <span>エラー詳細を確認</span>
+              </button>
+            </div>
           </div>
         )}
 
@@ -334,6 +379,16 @@ export const App: React.FC = () => {
               COPILOT_READ_TOKEN / COPILOT_ENTERPRISE を設定すると自動収集されます。ヘッダーのデータセレクターから
               Monthly Usage Report や User Upload (CSV) を選択して即座に分析を開始することも可能です。
             </p>
+            {!isDemoMode && (
+              <button
+                type="button"
+                onClick={() => toggleDemoMode(true)}
+                data-testid="show-demo-data-button"
+                className="mt-2 px-3 py-1.5 bg-amber-900/70 hover:bg-amber-800 text-amber-100 rounded-lg text-xs font-semibold transition-colors border border-amber-700/60 cursor-pointer"
+              >
+                デモデータを表示
+              </button>
+            )}
           </div>
         )}
 
@@ -398,11 +453,11 @@ export const App: React.FC = () => {
                 <CollapsibleSection
                   id="advisor"
                   title="遊休シート・コスト削減アドバイザー"
-                  subtitle="30日以上未利用の遊休アカウント検出と削減可能額"
+                  subtitle={`遊休アカウント検出と削減可能額 (判定基準: ${SEAT_IDLE_CRITERIA_TEXT})`}
                   icon={<AlertTriangle className="w-4 h-4 text-amber-400" />}
                   summaryChips={
                     <span className="text-xs px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-800 font-bold">
-                      削減可能: ${currentData.overview.idle_waste_usd.toFixed(2)}/月
+                      削減可能: ${monthlyIdleSavingsUsd(currentData.users).toFixed(2)}/月
                     </span>
                   }
                   isExpanded={isExpanded('advisor')}
@@ -418,7 +473,7 @@ export const App: React.FC = () => {
                   icon={<PieIcon className="w-4 h-4 text-purple-400" />}
                   summaryChips={
                     <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-                      {Object.keys(currentData.by_department || {}).length} 部署
+                      {countGroups(currentData, currentGrouping)} {GROUPING_UNIT_LABEL[currentGrouping]}
                     </span>
                   }
                   isExpanded={isExpanded('allocation')}
@@ -454,7 +509,10 @@ export const App: React.FC = () => {
                   icon={<BarChart3 className="w-4 h-4 text-cyan-400" />}
                   summaryChips={
                     <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-                      Inline補完受諾率 {Math.round(currentData.overview.overall_acceptance_rate * 100)}%
+                      Inline補完受諾率{' '}
+                      {currentData.overview.overall_acceptance_rate === null
+                        ? '—'
+                        : `${Math.round(currentData.overview.overall_acceptance_rate * 100)}%`}
                     </span>
                   }
                   isExpanded={isExpanded('usage')}

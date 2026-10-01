@@ -4,6 +4,7 @@ import {
   calculateEffectiveCreditRate,
 } from '../../domain/entities/billing-config.js';
 import { BillingConfigLoader } from '../../adapters/storage/BillingConfigLoader.js';
+import { getCreditUnitPriceUsd } from '../../domain/pricing/pricing-catalog.js';
 
 export interface ModelCreditsDetail {
   modelName: string;
@@ -31,11 +32,15 @@ export interface CostCenterCreditsBudgetEvaluation {
   status: 'under_budget' | 'warning' | 'exceeded';
 }
 
+/**
+ * AI クレジットの金額計算。単価は価格カタログ (src/domain/pricing) と請求設定
+ * (EnterpriseBillingConfig) から解決する唯一の経路で、サービス固有の既定単価は持たない。
+ * (以前は固定の $0.05 を持ち、パイプライン集計の $0.01 と同じ消費量で 5 倍ずれていた)
+ */
 export class CreditsBillingService {
-  public static readonly DEFAULT_CREDIT_RATE_USD = 0.05;
-
   /**
    * Calculates cost for consumed AI Credits using effective rate from config or provided override.
+   * 設定が無ければ価格カタログの単価 ($0.01 / credit) になる。
    */
   static calculateCreditsCost(
     creditsConsumed: number,
@@ -45,14 +50,8 @@ export class CreditsBillingService {
   ): Money {
     const resolvedConfig = config ?? BillingConfigLoader.loadForMonth(targetMonth);
     if (creditsConsumed <= 0) return Money.zero(resolvedConfig.currency.code);
-    let effectiveRate: number;
-    if (typeof ratePerCredit === 'number') {
-      effectiveRate = ratePerCredit;
-    } else if (resolvedConfig.customPricePerCredit !== undefined || resolvedConfig.discountPercent > 0 || resolvedConfig.currency.code !== 'USD') {
-      effectiveRate = calculateEffectiveCreditRate(resolvedConfig);
-    } else {
-      effectiveRate = this.DEFAULT_CREDIT_RATE_USD;
-    }
+    const effectiveRate =
+      typeof ratePerCredit === 'number' ? ratePerCredit : calculateEffectiveCreditRate(resolvedConfig);
     return Money.of(creditsConsumed * effectiveRate, resolvedConfig.currency.code);
   }
 
@@ -67,7 +66,7 @@ export class CreditsBillingService {
     let totalCredits = 0;
     let totalCost = Money.zero();
     const byModel: Record<string, ModelCreditsDetail> = {};
-    const fallbackRate = typeof defaultRate === 'number' ? defaultRate : this.DEFAULT_CREDIT_RATE_USD;
+    const fallbackRate = typeof defaultRate === 'number' ? defaultRate : getCreditUnitPriceUsd();
 
     for (const [model, credits] of Object.entries(creditsByModel)) {
       if (credits <= 0) continue;
@@ -99,7 +98,7 @@ export class CreditsBillingService {
     budget: { cost_center: string; monthly_budget_usd: number; credits_limit?: number },
     seatSpendUsd: number,
     creditsConsumed: number,
-    ratePerCredit: number = this.DEFAULT_CREDIT_RATE_USD
+    ratePerCredit?: number
   ): CostCenterCreditsBudgetEvaluation {
     const creditsSpend = this.calculateCreditsCost(creditsConsumed, ratePerCredit).amount;
     const totalCombined = seatSpendUsd + creditsSpend;

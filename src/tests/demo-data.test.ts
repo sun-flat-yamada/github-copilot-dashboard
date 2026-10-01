@@ -105,8 +105,9 @@ describe('Live Metrics DEMO Data & Referencing Tests', () => {
       assert.ok(Array.isArray(dailyData.users), 'users must be an array');
       assert.ok(dailyData.users.length > 0, 'users must not be empty');
 
-      // 受諾率が 0 - 100% (0.0 - 1.0) の範囲内
+      // 受諾率が 0 - 100% (0.0 - 1.0) の範囲内。DEMO データは利用状況メトリクスを持つため null (欠損) ではない
       const accRate = dailyData.overview.overall_acceptance_rate;
+      assert.ok(accRate !== null, 'DEMO data includes usage metrics, so the acceptance rate must not be missing (null)');
       assert.ok(accRate >= 0 && accRate <= 1, `Acceptance rate (${accRate}) must be between 0 and 1`);
     }
   });
@@ -222,7 +223,7 @@ describe('Live Metrics DEMO Data & Referencing Tests', () => {
       path.resolve(projectRoot, 'dashboard/src/components/layout/DashboardHeader.tsx'),
       'utf-8'
     );
-    assert.match(headerContent, /const isMockMode = isMockModeData\(indexMeta, repoInfo\);/);
+    assert.match(headerContent, /const isMockMode = isMockModeData\(indexMeta\);/);
     assert.match(
       headerContent,
       /const showDemoBadge = activeDataIsDemoSourced !== undefined \? activeDataIsDemoSourced : isMockMode;/,
@@ -328,7 +329,7 @@ describe('Live Metrics DEMO Data & Referencing Tests', () => {
     );
   });
 
-  it('verifies getCandidateDataUrls generates multi-tier fallback paths including processed directory', () => {
+  it('verifies getCandidateDataUrls generates fallback paths including processed directory without crossing into the other mode', () => {
     const originalWindow = global.window;
     try {
       (global as any).window = {
@@ -347,9 +348,24 @@ describe('Live Metrics DEMO Data & Referencing Tests', () => {
         candidates.includes('/github-copilot-dashboard/data/demo/processed/monthly/2026-09.json'),
         'Must include processed fallback demo path'
       );
+      // 暗黙の DEMO <=> LIVE フォールバックはしない。実データの該当ファイルが無いときに黙ってデモデータへ
+      // 切り替わり、「確定テレメトリ」と表示されていた (過去月がデプロイ版で 404 → デモ表示)。
       assert.ok(
-        candidates.includes('/github-copilot-dashboard/data/monthly/2026-09.json'),
-        'Must include live alternate path'
+        !candidates.includes('/github-copilot-dashboard/data/monthly/2026-09.json'),
+        'Must NOT include the live path as an implicit fallback of a demo request'
+      );
+
+      const liveCandidates = getCandidateDataUrls('./data', 'monthly', '2026-08.json');
+      assert.ok(
+        liveCandidates.every((url) => !url.includes('/demo/')),
+        'A live request must never fall back to the demo directory implicitly'
+      );
+
+      // 反対モードのパスは明示的にオプトインしたときだけ候補に含める
+      const withAlternate = getCandidateDataUrls('./data/demo', 'monthly', '2026-09.json', { includeAlternateMode: true });
+      assert.ok(
+        withAlternate.includes('/github-copilot-dashboard/data/monthly/2026-09.json'),
+        'includeAlternateMode must add the live alternate path'
       );
     } finally {
       if (originalWindow === undefined) {

@@ -6,12 +6,50 @@ import {
   MonthlyReportAggregatedData,
   MonthlyUsageReportRawRecord,
   ReportDailyTrend,
+  ReportImportSummary,
   ReportModelBreakdown,
   ReportSkuBreakdown,
   ReportUserDetail,
   UserModelDailyUsage,
   UserUsageProfile,
 } from '../types/copilot.js';
+import { UNASSIGNED_LABELS } from '../domain/constants/unassigned.js';
+
+/**
+ * 数量 (quantity) の単位の系統。レポートにはリクエスト数・AI クレジット・シート (ユーザー月) 等が
+ * 混在するため、単位を区別せずに合算すると意味のない「リクエスト数」になる。
+ */
+export type UnitFamily = 'requests' | 'credits' | 'seats' | 'tokens' | 'other';
+
+/**
+ * unit_type から単位の系統を判定する。
+ * unit_type 列が無い CSV は、従来どおり quantity をリクエスト数として扱う (互換)。
+ */
+export function classifyUnit(unitType?: string): UnitFamily {
+  const u = (unitType ?? '').trim().toLowerCase();
+  if (!u) return 'requests';
+  if (/credit/.test(u)) return 'credits';
+  if (/request|prompt|interaction|completion|message|chat/.test(u)) return 'requests';
+  if (/seat|licen[sc]e|user|member|month/.test(u)) return 'seats';
+  if (/token/.test(u)) return 'tokens';
+  return 'other';
+}
+
+/** 数値マップの値を丸める (0 の項目は落とす) */
+function roundMap(map: Record<string, number>, digits: number): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const [key, value] of Object.entries(map)) {
+    const rounded = Number(value.toFixed(digits));
+    if (rounded !== 0) out[key] = rounded;
+  }
+  return out;
+}
+
+/** 数量の単位別集計で使うキー (表記ゆれを小文字・ハイフン区切りに揃える)。unit_type 列が無ければ 'requests' */
+function normalizeUnitKey(unitType?: string): string {
+  const u = (unitType ?? '').trim().toLowerCase().replace(/[\s_]+/g, '-');
+  return u || 'requests';
+}
 
 /**
  * モデルの表示名(例: "Claude 3.7 Sonnet")をアプリ全体で使われる正規化ID(例: 'claude-3-7-sonnet')に変換する。
@@ -61,8 +99,8 @@ export class ReportParser {
       // モデル
       if (['model', 'model_name', 'ai_model'].includes(h)) map.model = idx;
 
-      // 数量
-      if (['quantity', 'requests', 'requests_count', 'count', 'tokens'].includes(h)) map.quantity = idx;
+      // 数量 ('tokens' は token_count 専用。quantity と token_count の両方に割り当てない)
+      if (['quantity', 'requests', 'requests_count', 'count'].includes(h)) map.quantity = idx;
 
       // 単位
       if (['unit_type', 'unit', 'pricing_unit'].includes(h)) map.unit_type = idx;
@@ -172,7 +210,9 @@ export class ReportParser {
           date = rawDateValue.substring(0, 10);
         }
       } else {
-        date = new Date().toISOString().substring(0, 10);
+        // 日付が無い行を「今日」にしない。日付なし (空文字) のまま保持し、集計では合計にのみ含めて
+        // 日別推移からは除外する。
+        date = '';
       }
 
       // 数値項目の取得とパース
@@ -182,7 +222,8 @@ export class ReportParser {
         return isNaN(val) ? undefined : val;
       };
 
-      const quantity = parseNum(headerMap.quantity) ?? 1;
+      // 数量が無い行を 1 件とみなさない (欠損は欠損として扱う)
+      const quantity = parseNum(headerMap.quantity);
       const unitCost = parseNum(headerMap.applied_cost_per_quantity);
       let grossAmount = parseNum(headerMap.gross_amount);
       const discountAmount = parseNum(headerMap.discount_amount) ?? 0;
@@ -193,8 +234,8 @@ export class ReportParser {
         netAmount = Math.max(0, grossAmount - discountAmount);
       } else if (grossAmount === undefined && netAmount !== undefined) {
         grossAmount = netAmount + discountAmount;
-      } else if (netAmount === undefined && unitCost !== undefined) {
-        grossAmount = quantity * unitCost;
+      } else if (netAmount === undefined && unitCost !== undefined && quantity !== undefined) {
+        grossAmount = (quantity ?? 0) * unitCost;
         netAmount = Math.max(0, grossAmount - discountAmount);
       }
 
@@ -205,7 +246,7 @@ export class ReportParser {
         sku: headerMap.sku !== undefined ? row[headerMap.sku] : 'copilot_usage',
         model: headerMap.model !== undefined ? row[headerMap.model] : undefined,
         quantity,
-        unit_type: headerMap.unit_type !== undefined ? row[headerMap.unit_type] : 'requests',
+        unit_type: headerMap.unit_type !== undefined ? row[headerMap.unit_type] : undefined,
         applied_cost_per_quantity: unitCost,
         gross_amount: grossAmount !== undefined ? Number(grossAmount.toFixed(4)) : undefined,
         discount_amount: Number(discountAmount.toFixed(4)),
@@ -246,7 +287,8 @@ export class ReportParser {
 
     for (const rec of records) {
       const login = rec.username;
-      if (!login) continue;
+      // 日付が無い行は日次履歴に載せられない (「今日」と偽らない)
+      if (!login || !rec.date) continue;
 
       const dayMap = byUserByDate.get(login) || new Map<string, UserModelDailyUsage>();
       byUserByDate.set(login, dayMap);
@@ -263,7 +305,8 @@ export class ReportParser {
         daily_cost_usd: 0,
       };
 
-      const qty = rec.quantity ?? 0;
+      // リクエスト数として数えるのは単位が requests 系の明細だけ (シート行・クレジット行は費用にのみ反映)
+      const qty = classifyUnit(rec.unit_type) === 'requests' ? (rec.quantity ?? 0) : 0;
       const modelKey = slugifyModelName(rec.model || 'unknown-model');
       day.total_chats += qty;
       day.model_breakdown[modelKey] = (day.model_breakdown[modelKey] || 0) + qty;
@@ -303,8 +346,8 @@ export class ReportParser {
         display_name: resolved.displayName,
         avatar_url: seat?.avatar_url || '',
         department: resolved.department,
-        cost_center: resolved.costCenterOverride || seat?.cost_center || 'Unassigned-CC',
-        organization: seat?.organization || orgByUser.get(login) || 'Default-Org',
+        cost_center: resolved.costCenterOverride || seat?.cost_center || UNASSIGNED_LABELS.reportCostCenter,
+        organization: seat?.organization || orgByUser.get(login) || UNASSIGNED_LABELS.organization,
         plan_type: seat?.plan_type ?? (sku?.includes('enterprise') ? 'enterprise' : 'business'),
         total_chats: totalChats,
         // Monthly Usage Report には suggestions/acceptances 相当の指標が存在しないため捏造せず0固定
@@ -322,24 +365,99 @@ export class ReportParser {
   }
 
   /**
+   * 複数の CSV (同じ月の複数ファイル) のレコードを 1 つに結合する。
+   *
+   * 別ファイルに同じ行 (日付・ユーザー・SKU・モデル・数量・金額が同一) が含まれている場合 (同じ
+   * エクスポートの再取り込み、期間が重なる分割エクスポート等) は 1 件に集約する。
+   * 同一ファイル内の同一行は正当な複数明細の可能性があるため残し、ファイル間では
+   * 「各行の出現回数の最大値」を採る (集合和)。
+   */
+  public mergeRecordSets(
+    sets: Array<{ fileName: string; records: MonthlyUsageReportRawRecord[] }>
+  ): { records: MonthlyUsageReportRawRecord[]; duplicatesSkipped: number; sourceFiles: string[] } {
+    const keptCount = new Map<string, number>();
+    const merged: MonthlyUsageReportRawRecord[] = [];
+    let duplicatesSkipped = 0;
+    const sourceFiles: string[] = [];
+
+    for (const set of sets) {
+      sourceFiles.push(set.fileName);
+
+      const rowsByKey = new Map<string, MonthlyUsageReportRawRecord[]>();
+      for (const rec of set.records) {
+        const key = this.recordKey(rec);
+        const rows = rowsByKey.get(key);
+        if (rows) rows.push(rec);
+        else rowsByKey.set(key, [rec]);
+      }
+
+      for (const [key, rows] of rowsByKey) {
+        const already = keptCount.get(key) ?? 0;
+        if (rows.length > already) {
+          merged.push(...rows.slice(already));
+          keptCount.set(key, rows.length);
+        }
+        duplicatesSkipped += Math.min(rows.length, already);
+      }
+    }
+
+    return { records: merged, duplicatesSkipped, sourceFiles };
+  }
+
+  /** 重複検知用の行キー (識別に関わる全フィールド。ユーザー名は大文字小文字を区別しない) */
+  private recordKey(rec: MonthlyUsageReportRawRecord): string {
+    return JSON.stringify([
+      rec.date,
+      rec.username?.toLowerCase(),
+      rec.product,
+      rec.sku,
+      rec.model,
+      rec.quantity,
+      rec.unit_type,
+      rec.applied_cost_per_quantity,
+      rec.gross_amount,
+      rec.discount_amount,
+      rec.net_amount,
+      rec.organization,
+      rec.cost_center_name,
+      rec.last_activity_at,
+      rec.last_surface_used,
+      rec.ai_credits_consumed,
+      rec.token_count,
+    ]);
+  }
+
+  /**
    * レコード群から MonthlyReportAggregatedData を生成
+   *
+   * - 数量は unit_type の系統 (requests / credits / seats …) で区別する。リクエスト数
+   *   (total_requests) に数えるのは requests 系の明細だけで、シート行やクレジット行の数量を
+   *   リクエスト数に混ぜない。単位別の数量は overview.quantity_by_unit に残す。
+   * - レポート CSV には提案数・受諾数・チャット数・PR 要約数が存在しないため、グループ別のこれらの
+   *   指標は固定値 (旧: 受諾率 0.35 など) で埋めず null とする。
    */
   public aggregate(
     records: MonthlyUsageReportRawRecord[],
     reportMonth: string,
     fileName: string,
-    sourceType: 'persisted' | 'local_drop' = 'persisted'
+    sourceType: 'persisted' | 'local_drop' = 'persisted',
+    importSummary?: Omit<ReportImportSummary, 'undated_records'>
   ): MonthlyReportAggregatedData {
     let totalNetSpend = 0;
     let totalGrossSpend = 0;
     let totalDiscount = 0;
     let totalRequests = 0;
+    let undatedRecords = 0;
 
+    const quantityByUnit: Record<string, number> = {};
     const uniqueUsers = new Set<string>();
     const userSummaryMap = new Map<
       string,
       {
+        /** CSV 上のユーザー名 (集計キー・属性の解決に使う) */
         login: string;
+        /** 出力 (ユーザー別明細) に使うログイン名。匿名化モードでは仮名 */
+        outputLogin: string;
         displayName: string;
         department: string;
         costCenter: string;
@@ -349,17 +467,20 @@ export class ReportParser {
         grossSpendUsd: number;
         netSpendUsd: number;
         modelCounts: Record<string, number>;
+        modelSpend: Record<string, number>;
         lastActivityDate?: string;
         surface?: string;
       }
     >();
 
-    const deptMap = new Map<string, { seats: Set<string>; requests: number; spend: number; grossSpend: number; netSpend: number }>();
-    const ccMap = new Map<string, { seats: Set<string>; requests: number; spend: number; grossSpend: number; netSpend: number }>();
-    const orgMap = new Map<string, { seats: Set<string>; requests: number; spend: number; grossSpend: number; netSpend: number }>();
+    type GroupAcc = { seats: Set<string>; requests: number; grossSpend: number; netSpend: number };
+    const deptMap = new Map<string, GroupAcc>();
+    const ccMap = new Map<string, GroupAcc>();
+    const orgMap = new Map<string, GroupAcc>();
 
     const modelMap = new Map<string, { requests: number; spend: number; users: Set<string> }>();
-    const skuMap = new Map<string, { quantity: number; spend: number; unitType: string }>();
+    // SKU は単位ごとに行を分ける (単位の異なる数量を 1 行に合算しない)
+    const skuMap = new Map<string, { sku: string; quantity: number; spend: number; unitType: string }>();
     const dailyMap = new Map<string, { requests: number; spend: number; users: Set<string> }>();
 
     let skippedOutOfMonth = 0;
@@ -374,6 +495,7 @@ export class ReportParser {
         skippedOutOfMonth++;
         continue;
       }
+      if (!rec.date) undatedRecords++;
 
       const login = rec.username;
       uniqueUsers.add(login);
@@ -381,7 +503,14 @@ export class ReportParser {
       const netSpend = rec.net_amount || 0;
       const grossSpend = rec.gross_amount ?? netSpend;
       const discount = rec.discount_amount || 0;
-      const reqCount = rec.quantity || 1;
+
+      // 数量: 単位別に集計し、リクエスト数に数えるのは requests 系の単位だけ。数量が無い行は 0 (1 件とみなさない)
+      const quantity = rec.quantity ?? 0;
+      const unitKey = normalizeUnitKey(rec.unit_type);
+      if (rec.quantity !== undefined) {
+        quantityByUnit[unitKey] = (quantityByUnit[unitKey] || 0) + quantity;
+      }
+      const reqCount = classifyUnit(rec.unit_type) === 'requests' ? quantity : 0;
 
       totalNetSpend += netSpend;
       totalGrossSpend += grossSpend;
@@ -390,9 +519,9 @@ export class ReportParser {
 
       // 属性解決 (Department, CostCenter, etc.)
       const resolved = this.resolver.resolve(login);
-      const department = resolved.department || '未分類 (Unassigned)';
-      const costCenter = resolved.costCenterOverride || rec.cost_center_name || 'Unassigned-CC';
-      const organization = rec.organization || 'Default-Org';
+      const department = resolved.department || UNASSIGNED_LABELS.department;
+      const costCenter = resolved.costCenterOverride || rec.cost_center_name || UNASSIGNED_LABELS.reportCostCenter;
+      const organization = rec.organization || UNASSIGNED_LABELS.organization;
       const model = rec.model || 'Standard Completion';
       const sku = rec.sku || 'copilot_standard';
 
@@ -401,6 +530,7 @@ export class ReportParser {
       if (!userStat) {
         userStat = {
           login,
+          outputLogin: resolved.login,
           displayName: resolved.displayName,
           department,
           costCenter,
@@ -410,6 +540,7 @@ export class ReportParser {
           grossSpendUsd: 0,
           netSpendUsd: 0,
           modelCounts: {},
+          modelSpend: {},
           lastActivityDate: rec.date || rec.last_activity_at?.substring(0, 10),
           surface: rec.last_surface_used,
         };
@@ -420,6 +551,7 @@ export class ReportParser {
       userStat.grossSpendUsd += grossSpend;
       userStat.netSpendUsd += netSpend;
       userStat.modelCounts[model] = (userStat.modelCounts[model] || 0) + reqCount;
+      userStat.modelSpend[model] = (userStat.modelSpend[model] || 0) + netSpend;
       if (rec.date && (!userStat.lastActivityDate || rec.date > userStat.lastActivityDate)) {
         userStat.lastActivityDate = rec.date;
       }
@@ -427,41 +559,21 @@ export class ReportParser {
         userStat.surface = rec.last_surface_used;
       }
 
-      // 3軸集計 (Department)
-      let dStat = deptMap.get(department);
-      if (!dStat) {
-        dStat = { seats: new Set(), requests: 0, spend: 0, grossSpend: 0, netSpend: 0 };
-        deptMap.set(department, dStat);
-      }
-      dStat.seats.add(login);
-      dStat.requests += reqCount;
-      dStat.spend += grossSpend;
-      dStat.grossSpend += grossSpend;
-      dStat.netSpend += netSpend;
-
-      // 3軸集計 (Cost Center)
-      let cStat = ccMap.get(costCenter);
-      if (!cStat) {
-        cStat = { seats: new Set(), requests: 0, spend: 0, grossSpend: 0, netSpend: 0 };
-        ccMap.set(costCenter, cStat);
-      }
-      cStat.seats.add(login);
-      cStat.requests += reqCount;
-      cStat.spend += grossSpend;
-      cStat.grossSpend += grossSpend;
-      cStat.netSpend += netSpend;
-
-      // 3軸集計 (Organization)
-      let oStat = orgMap.get(organization);
-      if (!oStat) {
-        oStat = { seats: new Set(), requests: 0, spend: 0, grossSpend: 0, netSpend: 0 };
-        orgMap.set(organization, oStat);
-      }
-      oStat.seats.add(login);
-      oStat.requests += reqCount;
-      oStat.spend += grossSpend;
-      oStat.grossSpend += grossSpend;
-      oStat.netSpend += netSpend;
+      // 3軸集計 (Department / Cost Center / Organization)
+      const accumulate = (map: Map<string, GroupAcc>, key: string) => {
+        let acc = map.get(key);
+        if (!acc) {
+          acc = { seats: new Set(), requests: 0, grossSpend: 0, netSpend: 0 };
+          map.set(key, acc);
+        }
+        acc.seats.add(login);
+        acc.requests += reqCount;
+        acc.grossSpend += grossSpend;
+        acc.netSpend += netSpend;
+      };
+      accumulate(deptMap, department);
+      accumulate(ccMap, costCenter);
+      accumulate(orgMap, organization);
 
       // モデル別集計
       let mStat = modelMap.get(model);
@@ -473,16 +585,17 @@ export class ReportParser {
       mStat.spend += netSpend;
       mStat.users.add(login);
 
-      // SKU別集計
-      let sStat = skuMap.get(sku);
+      // SKU別集計 (SKU × 単位)
+      const skuKey = `${sku}\u0000${unitKey}`;
+      let sStat = skuMap.get(skuKey);
       if (!sStat) {
-        sStat = { quantity: 0, spend: 0, unitType: rec.unit_type || 'requests' };
-        skuMap.set(sku, sStat);
+        sStat = { sku, quantity: 0, spend: 0, unitType: rec.unit_type?.trim() || 'requests' };
+        skuMap.set(skuKey, sStat);
       }
-      sStat.quantity += reqCount;
+      sStat.quantity += quantity;
       sStat.spend += netSpend;
 
-      // 日別推移
+      // 日別推移 (日付が無い行は推移に載せない)
       const dayKey = rec.date;
       if (dayKey) {
         let dayStat = dailyMap.get(dayKey);
@@ -502,10 +615,9 @@ export class ReportParser {
       );
     }
 
-    // グループサマリーへの変換ヘルパー
-    const buildGroupSummaries = (
-      map: Map<string, { seats: Set<string>; requests: number; spend: number; grossSpend: number; netSpend: number }>
-    ): Record<string, GroupSummary> => {
+    // グループサマリーへの変換ヘルパー。
+    // 受諾率・提案数・受諾数・チャット数・PR 要約数はレポート CSV に存在しないため null (推定もしない)。
+    const buildGroupSummaries = (map: Map<string, GroupAcc>): Record<string, GroupSummary> => {
       const res: Record<string, GroupSummary> = {};
       map.forEach((val, name) => {
         const count = val.seats.size;
@@ -518,31 +630,37 @@ export class ReportParser {
           net_cost_usd: Number(val.netSpend.toFixed(2)),
           potential_savings_usd: 0,
           active_ratio: 1.0,
-          acceptance_rate: 0.35, // レポートCSVからの推定値
-          total_suggestions: val.requests,
-          total_acceptances: Math.round(val.requests * 0.35),
-          total_chats: Math.round(val.requests * 0.2),
-          total_pr_summaries: 0,
+          acceptance_rate: null,
+          total_suggestions: null,
+          total_acceptances: null,
+          total_chats: null,
+          total_pr_summaries: null,
+          total_requests: val.requests,
         };
       });
       return res;
     };
 
-    // モデル内訳リストの生成
+    // モデル内訳リストの生成 (割合はリクエスト数ベース。リクエスト数が無い場合は費用ベース)
     const modelBreakdown: ReportModelBreakdown[] = Array.from(modelMap.entries())
       .map(([name, stat]) => ({
         model_name: name,
         total_requests: stat.requests,
         total_spend_usd: Number(stat.spend.toFixed(2)),
         active_users: stat.users.size,
-        percentage: totalRequests > 0 ? Number(((stat.requests / totalRequests) * 100).toFixed(1)) : 0,
+        percentage:
+          totalRequests > 0
+            ? Number(((stat.requests / totalRequests) * 100).toFixed(1))
+            : totalNetSpend > 0
+            ? Number(((stat.spend / totalNetSpend) * 100).toFixed(1))
+            : 0,
       }))
-      .sort((a, b) => b.total_requests - a.total_requests);
+      .sort((a, b) => b.total_requests - a.total_requests || b.total_spend_usd - a.total_spend_usd);
 
     // SKU内訳リストの生成
-    const skuBreakdown: ReportSkuBreakdown[] = Array.from(skuMap.entries())
-      .map(([name, stat]) => ({
-        sku_name: name,
+    const skuBreakdown: ReportSkuBreakdown[] = Array.from(skuMap.values())
+      .map((stat) => ({
+        sku_name: stat.sku,
         total_quantity: stat.quantity,
         unit_type: stat.unitType,
         total_spend_usd: Number(stat.spend.toFixed(2)),
@@ -563,18 +681,17 @@ export class ReportParser {
     // ユーザー別明細リストの生成
     const userDetails: ReportUserDetail[] = Array.from(userSummaryMap.values())
       .map((u) => {
-        // 主要モデルを特定
-        let topM = 'None';
-        let topCount = -1;
-        for (const [m, count] of Object.entries(u.modelCounts)) {
-          if (count > topCount) {
-            topCount = count;
-            topM = m;
-          }
-        }
+        // 主要モデルを特定 (リクエスト数が最大のモデル。リクエスト数が無い場合は費用が最大のモデル)
+        const modelNames = Object.keys(u.modelCounts);
+        modelNames.sort(
+          (a, b) =>
+            (u.modelCounts[b] || 0) - (u.modelCounts[a] || 0) || (u.modelSpend[b] || 0) - (u.modelSpend[a] || 0)
+        );
+        const topM = modelNames[0] ?? 'None';
 
         return {
-          login: u.login,
+          // 匿名化モードでは仮名のログイン名を出力する (CSV 上の実ユーザー名を成果物に残さない)
+          login: u.outputLogin,
           display_name: u.displayName,
           department: u.department,
           cost_center: u.costCenter,
@@ -584,8 +701,12 @@ export class ReportParser {
           gross_spend_usd: Number(u.grossSpendUsd.toFixed(2)),
           net_spend_usd: Number(u.netSpendUsd.toFixed(2)),
           primary_model: topM,
+          // フィルター後のモデル別内訳を正確に再集計できるよう、ユーザー別のモデル内訳を保持する
+          model_requests: roundMap(u.modelCounts, 0),
+          model_spend_usd: roundMap(u.modelSpend, 4),
           last_activity_date: u.lastActivityDate,
-          surface: u.surface || 'VS Code',
+          // 実データが無い場合に既定のサーフェス (VS Code) を捏造しない
+          surface: u.surface,
           tags: this.resolver.resolve(u.login).tags,
         };
       })
@@ -601,6 +722,7 @@ export class ReportParser {
         total_gross_spend_usd: Number(totalGrossSpend.toFixed(2)),
         total_discount_usd: Number(totalDiscount.toFixed(2)),
         total_requests: totalRequests,
+        quantity_by_unit: quantityByUnit,
         total_active_users: uniqueUsers.size,
         top_model: modelBreakdown[0]?.model_name || 'N/A',
         top_sku: skuBreakdown[0]?.sku_name || 'N/A',
@@ -612,6 +734,11 @@ export class ReportParser {
       sku_breakdown: skuBreakdown,
       daily_trends: dailyTrends,
       user_details: userDetails,
+      ...(importSummary
+        ? { import_summary: { ...importSummary, ...(undatedRecords > 0 ? { undated_records: undatedRecords } : {}) } }
+        : undatedRecords > 0
+        ? { import_summary: { source_files: [fileName], records_total: records.length, duplicates_skipped: 0, undated_records: undatedRecords } }
+        : {}),
     };
   }
 }

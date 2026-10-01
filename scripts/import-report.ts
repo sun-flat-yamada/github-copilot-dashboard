@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
 import { ReportParser } from '../src/processor/report-parser.js';
+import { AttributeResolver } from '../src/collector/attribute-resolver.js';
 import { ForkSafeStorage } from '../src/storage/fork-safe-storage.js';
 
 async function importReport() {
@@ -23,8 +24,13 @@ async function importReport() {
     process.exit(1);
   }
 
+  // 匿名化モード (ANONYMIZE_USERS=true) では、実ユーザー名を含む元の CSV を保存・push しない。
+  // 集計結果 (user_details のログイン名・表示名・部署は仮名化される) だけを保存する。
+  const anonymizing = process.env.ANONYMIZE_USERS === 'true';
+
   const csvContent = fs.readFileSync(inputPath, 'utf-8');
-  const parser = new ReportParser();
+  // new AttributeResolver() は ANONYMIZE_USERS=true のとき秘密鍵 (ANONYMIZE_SECRET) を必須とし、無ければ例外で停止する
+  const parser = new ReportParser(new AttributeResolver());
   const records = parser.parseRecords(csvContent);
 
   if (records.length === 0) {
@@ -50,9 +56,15 @@ async function importReport() {
 
   const storage = new ForkSafeStorage();
 
-  // 1. ローカルリポジトリへの保存
-  const savedPath = storage.saveRawReportFile(targetMonth, fileName, csvContent);
-  console.log(`💾 Saved to local partition: ${savedPath}`);
+  // 1. ローカルリポジトリへの保存 (匿名化モードでは元の CSV を保存しない)
+  if (anonymizing) {
+    console.log(
+      '🕶️  ANONYMIZE_USERS is enabled: the original CSV (real user names) is NOT saved. Only the pseudonymized aggregate is stored.'
+    );
+  } else {
+    const savedPath = storage.saveRawReportFile(targetMonth, fileName, csvContent);
+    console.log(`💾 Saved to local partition: ${savedPath}`);
+  }
 
   // 2. 集計処理の実行
   const aggregated = parser.aggregate(records, targetMonth, fileName, 'persisted');
@@ -61,7 +73,11 @@ async function importReport() {
 
   // 3. Git リモートの確認と copilot-data への反映オプション
   const pushToRemote = process.argv.includes('--push');
-  if (pushToRemote) {
+  if (pushToRemote && anonymizing) {
+    console.warn(
+      "⚠️ --push is ignored in anonymization mode: the original CSV (real user names) must not be committed to the 'copilot-data' branch."
+    );
+  } else if (pushToRemote) {
     try {
       console.log("🚀 Syncing to 'copilot-data' branch (Fork-Safe Protocol)...");
       const tempDir = fs.mkdtempSync(path.join(process.cwd(), '.tmp-import-'));
@@ -99,6 +115,9 @@ async function importReport() {
   } else {
     console.log("💡 Tip: To automatically commit & push to the 'copilot-data' branch, append '--push'.");
     console.log("ℹ️ Run 'npm run pipeline:run' to update index.json and build the dashboard.");
+  }
+  if (pushToRemote && anonymizing) {
+    console.log("ℹ️ The pseudonymized aggregate was saved locally. Run 'npm run pipeline:run' to update all scopes.");
   }
 
   console.log('=====================================================');

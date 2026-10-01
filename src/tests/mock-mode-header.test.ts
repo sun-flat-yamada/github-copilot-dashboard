@@ -3,6 +3,7 @@ import * as assert from 'node:assert/strict';
 import * as fs from 'fs';
 import * as path from 'path';
 import { IndexMetadata } from '../types/copilot.js';
+import { isMockModeData } from '../../dashboard/src/utils/dataStatus.js';
 
 describe('Header Mock/DEMO Mode Status Tests', () => {
   it('validates IndexMetadata type contract with is_mock_mode', () => {
@@ -60,10 +61,12 @@ describe('Header Mock/DEMO Mode Status Tests', () => {
     const headerPath = path.resolve('dashboard/src/components/layout/DashboardHeader.tsx');
     const content = fs.readFileSync(headerPath, 'utf-8');
 
-    // isMockModeData 定義と導出ロジック
-    assert.match(content, /export function isMockModeData/);
-    assert.match(content, /proud-corp/);
-    assert.match(content, /const isMockMode = isMockModeData\(indexMeta, repoInfo\);/);
+    // isMockModeData は共通ユーティリティ (utils/dataStatus) の単一実装を使い、
+    // リポジトリ所有者名 (proud-corp 等) を判定に使わない
+    assert.match(content, /import \{ isMockModeData \} from '\.\.\/\.\.\/utils\/dataStatus';/);
+    assert.doesNotMatch(content, /export function isMockModeData/);
+    assert.doesNotMatch(content, /proud-corp/);
+    assert.match(content, /const isMockMode = isMockModeData\(indexMeta\);/);
 
     // DEMO (Mock) バッジ
     assert.match(content, /data-testid="mock-mode-badge"/);
@@ -95,74 +98,69 @@ describe('Header Mock/DEMO Mode Status Tests', () => {
     );
   });
 
-  it('verifies proud-corp and zero-live-metrics fallback heuristic logic', () => {
-    // 判定ロジックの契約テスト: DashboardHeader の isMockModeData と同等の判定
-    const simulateCheck = (meta: Partial<IndexMetadata> | null, repo?: { owner: string }) => {
-      if (meta?.is_mock_mode === true) return true;
-      if (meta?.repository?.owner === 'proud-corp' || repo?.owner === 'proud-corp') return true;
+  describe('isMockModeData: DEMO 判定は index.json の明示的な宣言だけで行う', () => {
+    it('is true only when the data declares is_mock_mode: true', () => {
+      assert.equal(
+        isMockModeData({ repository: { owner: 'anyone', name: 'x', is_fork: false }, is_mock_mode: true } as IndexMetadata),
+        true
+      );
+    });
 
-      const totalSeats = meta?.summary?.total_seats ?? 0;
-      const availableDaysCount = meta?.available_days?.length ?? 0;
-      const hasRealLiveMetrics = totalSeats > 0 || availableDaysCount > 0;
+    it('does not infer DEMO from the repository owner name', () => {
+      // 旧: owner === 'proud-corp' でデモと推測していた
+      assert.equal(
+        isMockModeData({ repository: { owner: 'proud-corp', name: 'dashboard', is_fork: false } } as IndexMetadata),
+        false
+      );
+    });
 
-      if (!hasRealLiveMetrics) return true;
-      if (meta?.is_mock_mode === false && hasRealLiveMetrics) return false;
-      return !hasRealLiveMetrics;
-    };
+    it('does not infer DEMO from empty metrics (zero seats / zero days)', () => {
+      // 旧: シート数 0 / データ日数 0 でデモと推測していた。取得失敗や未設定の実運用データが
+      // 黙ってデモ表示に切り替わり、架空データを実データと誤認させていた。
+      const failedCollection: Partial<IndexMetadata> = {
+        repository: { owner: 'sun-flat-yamada', name: 'github-copilot-dashboard', is_fork: false },
+        is_mock_mode: false,
+        available_days: [],
+        available_reports: ['2026-09', '2026-08'],
+        summary: {
+          total_seats: 0,
+          active_seats_30d: 0,
+          idle_seats_30d: 0,
+          total_monthly_spend_usd: 0,
+          idle_waste_spend_usd: 0,
+        },
+      };
+      assert.equal(isMockModeData(failedCollection as IndexMetadata), false);
+    });
 
-    // 1. 公開デモサイト (sun-flat-yamada) の実際のペイロード:
-    //    is_mock_mode: false でも、total_seats: 0, available_days: [] のため DEMO (true) と判定されること
-    const deployedPayload: Partial<IndexMetadata> = {
-      repository: { owner: 'sun-flat-yamada', name: 'github-copilot-dashboard', is_fork: false },
-      is_mock_mode: false,
-      available_days: [],
-      available_reports: ['2026-09', '2026-08'],
-      summary: {
-        total_seats: 0,
-        active_seats_30d: 0,
-        idle_seats_30d: 0,
-        total_monthly_spend_usd: 0,
-        idle_waste_spend_usd: 0,
-      },
-    };
-    assert.equal(
-      simulateCheck(deployedPayload, { owner: 'sun-flat-yamada' }),
-      true,
-      'Deployed public site without live metrics must be classified as DEMO (Mock)'
-    );
+    it('is false before the index is loaded', () => {
+      assert.equal(isMockModeData(null), false);
+    });
 
-    // 2. proud-corp のシミュレーションデータは常に DEMO
-    assert.equal(
-      simulateCheck({ repository: { owner: 'proud-corp', name: 'dashboard', is_fork: false } }),
-      true,
-      'Legacy proud-corp index must be detected as DEMO'
-    );
+    it('is false for production data with real seats', () => {
+      const productionLiveData: Partial<IndexMetadata> = {
+        repository: { owner: 'enterprise-org', name: 'copilot-dashboard', is_fork: true },
+        is_mock_mode: false,
+        available_days: ['2026-09-10', '2026-09-09'],
+        summary: {
+          total_seats: 120,
+          active_seats_30d: 110,
+          idle_seats_30d: 10,
+          total_monthly_spend_usd: 4200,
+          idle_waste_spend_usd: 350,
+        },
+      };
+      assert.equal(isMockModeData(productionLiveData as IndexMetadata), false);
+    });
+  });
 
-    // 3. 初期未ロード状態でも repoInfo が proud-corp なら DEMO
-    assert.equal(
-      simulateCheck(null, { owner: 'proud-corp' }),
-      true,
-      'Initial loading state with default proud-corp repoInfo must be detected as DEMO'
-    );
-
-    // 4. 実エンタープライズの正規ライブデータ (シート数 > 0, 日数 > 0, is_mock_mode: false) は LIVE (false)
-    const productionLiveData: Partial<IndexMetadata> = {
-      repository: { owner: 'enterprise-org', name: 'copilot-dashboard', is_fork: true },
-      is_mock_mode: false,
-      available_days: ['2026-09-10', '2026-09-09'],
-      summary: {
-        total_seats: 120,
-        active_seats_30d: 110,
-        idle_seats_30d: 10,
-        total_monthly_spend_usd: 4200,
-        idle_waste_spend_usd: 350,
-      },
-    };
-    assert.equal(
-      simulateCheck(productionLiveData, { owner: 'enterprise-org' }),
-      false,
-      'Production enterprise data with real seats must be classified as LIVE'
-    );
+  it('verifies the badge click passes an explicit target mode (not the MouseEvent) to the toggle handler', () => {
+    // 旧: onClick={onToggleDemoMode} で MouseEvent が forcedMode として渡り、常にデモへ切り替わっていた
+    const headerPath = path.resolve('dashboard/src/components/layout/DashboardHeader.tsx');
+    const content = fs.readFileSync(headerPath, 'utf-8');
+    assert.doesNotMatch(content, /onClick=\{onToggleDemoMode\}/);
+    assert.match(content, /onClick=\{onToggleDemoMode \? \(\) => onToggleDemoMode\(false\) : undefined\}/);
+    assert.match(content, /onClick=\{onToggleDemoMode \? \(\) => onToggleDemoMode\(true\) : undefined\}/);
   });
 
   it('verifies AboutModal.tsx displays operational mode (Mock vs Live)', () => {
