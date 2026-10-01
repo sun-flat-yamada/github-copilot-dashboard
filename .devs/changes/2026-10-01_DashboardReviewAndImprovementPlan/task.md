@@ -1,0 +1,21 @@
+# Task: ダッシュボード全体レビューに基づく改善
+
+- [x] Phase 1: Issue Definition & Scoping <!-- id: 0 -->
+  - [x] レビュー依頼に基づき、範囲と重点観点を確定（Issue は未起票）
+- [/] Phase 2: Implementation Plan formulated & approved <!-- id: 1 -->
+  - [x] `implementation_plan.md` を策定（全体レビューと Phase 0〜4 の改善計画）
+  - [x] 最新の `main`（`b163671`）へ rebase し、change-dev の成果物規約に沿って配置
+  - [ ] User Review Required の判断事項 1〜7 への回答
+- [ ] Phase 3: Sibling Worktree Provisioning & Implementation <!-- id: 2 -->
+  - [ ] Phase 0 止血（P0-1〜P0-11）
+  - [ ] Phase 1 取得基盤（P1-1〜P1-7）
+  - [ ] Phase 2 フロントエンド収束（P2-1〜P2-7）
+  - [ ] Phase 3 分析手法・可視化（P3-1〜P3-8）
+  - [ ] Phase 4 監査・レポート（P4-1〜P4-7）
+  - 各実装フェーズは、着手時にフェーズごとの change ディレクトリ（`.devs/changes/yyyy-mm-dd_<ChangeTitle>/`）を作成して進める
+- [ ] Phase 4: Local Quality Gate & Specification Sync <!-- id: 3 -->
+  - [ ] 各 PR で 5 段階の品質ゲートを通過
+  - [ ] SDD の同期（SDD-02 / 03 / 04 / 05 / 06 / 07 / 10 / 11 / 15 の改訂、SDD-16 / SDD-17 の新設）
+- [ ] Phase 5: Walkthrough Artifact Generation & Evidence Sealing <!-- id: 4 -->
+- [ ] Phase 6: Rebase onto Base & Create PR <!-- id: 5 -->
+- [ ] Phase 7: Rebase & Merge and Worktree Cleanup <!-- id: 6 -->
