@@ -19,7 +19,7 @@ interface UsageTotals {
   suggestions: number;
   acceptances: number;
   chats: number;
-  prSummaries: number;
+  prSummaries: number | null;
 }
 
 export class MetricsAggregator {
@@ -41,6 +41,7 @@ export class MetricsAggregator {
     let totalAcceptances = 0;
     let totalChats = 0;
     let totalPrSummaries = 0;
+    let prSummariesKnown = false;
     let totalCliCommands = 0;
     let totalAgentSessions = 0;
     let totalAgentMessages = 0;
@@ -80,7 +81,10 @@ export class MetricsAggregator {
       totalChats += dayChats;
 
       const dayPr = metric.copilot_dotcom_pull_requests.total_pr_summaries_created;
-      totalPrSummaries += dayPr;
+      if (typeof dayPr === 'number') {
+        prSummariesKnown = true;
+        totalPrSummaries += dayPr;
+      }
 
       const dayCli = metric.copilot_in_cli.total_cli_completions;
       totalCliCommands += dayCli;
@@ -110,7 +114,7 @@ export class MetricsAggregator {
         acceptances: dayAcceptances,
         acceptance_rate: dayRate,
         chats: dayChats,
-        pr_summaries: dayPr,
+        pr_summaries: dayPr ?? undefined,
         daily_cost_usd: Number(dailySeatCost.toFixed(2)),
         agent_sessions: agentSessions,
         agent_engaged_users: agentEngaged,
@@ -124,7 +128,12 @@ export class MetricsAggregator {
     const overallAcceptanceRate =
       totalSuggestions > 0 ? Number((totalAcceptances / totalSuggestions).toFixed(4)) : hasUsageMetrics ? 0 : null;
     const usageTotals: UsageTotals | null = hasUsageMetrics
-      ? { suggestions: totalSuggestions, acceptances: totalAcceptances, chats: totalChats, prSummaries: totalPrSummaries }
+      ? {
+          suggestions: totalSuggestions,
+          acceptances: totalAcceptances,
+          chats: totalChats,
+          prSummaries: prSummariesKnown ? totalPrSummaries : null,
+        }
       : null;
 
     // 言語別ランキング
@@ -267,7 +276,7 @@ export class MetricsAggregator {
         total_suggestions: hasUsageMetrics ? totalSuggestions : null,
         total_acceptances: hasUsageMetrics ? totalAcceptances : null,
         total_chats: hasUsageMetrics ? totalChats : null,
-        total_pr_summaries: hasUsageMetrics ? totalPrSummaries : null,
+        total_pr_summaries: hasUsageMetrics && prSummariesKnown ? totalPrSummaries : null,
         total_cli_commands: hasUsageMetrics ? totalCliCommands : null,
         missing_metrics: missingMetrics.length > 0 ? missingMetrics : undefined,
       },
@@ -366,7 +375,7 @@ export class MetricsAggregator {
         total_suggestions: estimatedSuggestions,
         total_acceptances: estimatedAcceptances,
         total_chats: usage ? Math.round(usage.chats * ratio) : null,
-        total_pr_summaries: usage ? Math.round(usage.prSummaries * ratio) : null,
+        total_pr_summaries: usage && usage.prSummaries !== null ? Math.round(usage.prSummaries * ratio) : null,
         ...(usage ? { is_estimated: true, estimation_method: 'proportional_seat_ratio' as const } : {}),
       };
     }

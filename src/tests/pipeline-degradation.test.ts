@@ -88,6 +88,7 @@ class FakeDataSource implements ICopilotDataSource {
       costCenters?: EnterpriseCostCenter[];
       statuses: SourceStatus[];
       issues?: DataFetchIssue[];
+      profiles?: UserUsageProfile[];
     }
   ) {}
   async fetchMetrics() {
@@ -103,7 +104,7 @@ class FakeDataSource implements ICopilotDataSource {
     return [];
   }
   async fetchUserProfiles(): Promise<UserUsageProfile[]> {
-    return [];
+    return this.data.profiles ?? [];
   }
   getIssues() {
     return this.data.issues ?? [];
@@ -133,7 +134,10 @@ class MemoryStorage implements IStorageWriter {
     this.scopes.set(`${scopeType}:${key}`, data);
   }
   saveReportData(_month: string, _data: MonthlyReportAggregatedData) {}
-  saveDeepAnalysisArchive() {}
+  archives: Array<{ month: string; profiles: UserUsageProfile[] }> = [];
+  saveDeepAnalysisArchive(month: string, profiles: UserUsageProfile[]) {
+    this.archives.push({ month, profiles });
+  }
   saveRolling1YearTrend(data: RollingTrendDataset) {
     this.trend = data;
   }
@@ -529,5 +533,78 @@ describe('PipelineOrchestrator: seat classification and unconfirmed cost (P0-9 /
     const summary = storage.index!.summary;
     assert.equal(summary.total_ai_credits_used, 1250);
     assert.equal(summary.total_ai_credits_cost_usd, 12.5, '1,250 credits x $0.01 (not $0.05)');
+  });
+});
+
+describe('PipelineOrchestrator: measured per-user profiles for live data (P1-1)', () => {
+  beforeEach(() => mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, 8, 10, 12, 0, 0) }));
+  afterEach(() => mock.timers.reset());
+
+  function reportProfile(login: string, date: string): UserUsageProfile {
+    return {
+      login,
+      display_name: login,
+      avatar_url: '',
+      department: '',
+      cost_center: '',
+      organization: '',
+      plan_type: 'unknown',
+      total_chats: 12,
+      total_suggestions: 100,
+      total_acceptances: 30,
+      acceptance_rate: 0.3,
+      total_cost_usd: 0.02,
+      model_usage_totals: { 'gpt-5': 12 },
+      daily_history: [
+        {
+          date,
+          total_chats: 12,
+          model_breakdown: { 'gpt-5': 12 },
+          suggestions: 100,
+          acceptances: 30,
+          lines_suggested: 400,
+          lines_accepted: 120,
+          acceptance_rate: 0.3,
+          daily_cost_usd: 0.02,
+        },
+      ],
+    };
+  }
+
+  it('enriches the measured profiles with the seat (plan, organization) and publishes them with the scopes and the archive', async () => {
+    const storage = new MemoryStorage();
+    await runPipeline(
+      new FakeDataSource({
+        metrics: METRICS,
+        seats: SEATS,
+        profiles: [reportProfile('alice', '2026-09-10'), reportProfile('stranger', '2026-09-10')],
+        statuses: [status('metrics', 'ok', 2), status('seats', 'ok', 3), status('cost_centers', 'skipped', 0)],
+      }),
+      storage
+    );
+
+    const monthly = storage.scopes.get('monthly:2026-09')!;
+    const profiles = monthly.user_profiles ?? [];
+    assert.deepEqual(profiles.map((p) => p.login).sort(), ['alice', 'stranger']);
+    const alice = profiles.find((p) => p.login === 'alice')!;
+    assert.equal(alice.plan_type, 'business', 'the plan comes from the seat');
+    assert.equal(alice.organization, 'acme-org');
+    assert.equal(profiles.find((p) => p.login === 'stranger')!.plan_type, 'unknown', 'no seat: the plan stays unconfirmed');
+    assert.equal(storage.archives.length, 1);
+    assert.equal(storage.archives[0].month, '2026-09');
+  });
+
+  it('publishes no profiles (and no archive) when the usage metrics failed', async () => {
+    const storage = new MemoryStorage();
+    await runPipeline(
+      new FakeDataSource({
+        metrics: [],
+        seats: SEATS,
+        profiles: [],
+        statuses: [status('metrics', 'failed', 0, 'HTTP 500'), status('seats', 'ok', 3), status('cost_centers', 'skipped', 0)],
+      }),
+      storage
+    );
+    assert.equal(storage.archives.length, 0);
   });
 });

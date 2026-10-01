@@ -123,7 +123,8 @@ export interface CopilotDailyMetrics {
   };
   copilot_dotcom_pull_requests: {
     total_engaged_users: number;
-    total_pr_summaries_created: number;
+    /** Reports API のユーザー単位レポートには無い指標。取得できないときは 0 ではなく null */
+    total_pr_summaries_created: number | null;
   };
   copilot_in_cli: {
     total_engaged_users: number;
@@ -348,7 +349,8 @@ export interface DailyTrendEntry {
   acceptances: number;
   acceptance_rate: number;
   chats: number;
-  pr_summaries: number;
+  /** PR 概要の作成数。レポートに無い場合は省略 (0 ではない) */
+  pr_summaries?: number;
   daily_cost_usd: number;
   is_anomaly?: boolean;
   agent_sessions?: number;
@@ -639,6 +641,8 @@ export interface IndexMetadata {
     anonymized: boolean;
     /** ユーザー単位 (氏名・部署・ログイン名・個人別利用) のデータを含むか。デモデータは false */
     contains_user_level_data: boolean;
+    /** 取り込んだ月次レポート (CSV) の集計を含むか (実データか見本かは判別できない)。公開時は fork:verify が警告する */
+    contains_imported_reports?: boolean;
   };
   billing?: {
     currency: CurrencyConfig;

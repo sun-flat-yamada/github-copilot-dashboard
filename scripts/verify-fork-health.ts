@@ -386,9 +386,10 @@ export function parseGitHubRepoSlug(remoteUrl: string | null | undefined): strin
 
 interface PrivacyIndexLike {
   is_mock_mode?: boolean;
-  privacy?: { anonymized?: boolean; contains_user_level_data?: boolean };
+  privacy?: { anonymized?: boolean; contains_user_level_data?: boolean; contains_imported_reports?: boolean };
   summary?: { total_seats?: number };
   available_days?: unknown[];
+  available_reports?: unknown[];
 }
 
 function asIndex(body: unknown): PrivacyIndexLike | null {
@@ -399,11 +400,21 @@ function asIndex(body: unknown): PrivacyIndexLike | null {
 export function indexHasUserLevelData(index: PrivacyIndexLike | null | undefined): boolean {
   if (!index) return false;
   if (index.is_mock_mode === true) return false;
+  // 個人単位のデータの証拠: ライブ収集したシート または 日次実績
+  const evidence = (index.summary?.total_seats ?? 0) > 0 || (index.available_days?.length ?? 0) > 0;
   if (typeof index.privacy?.contains_user_level_data === 'boolean') {
-    return index.privacy.contains_user_level_data;
+    // 旧版は、取り込んだレポート (CSV) の有無だけで true にしていた。シートも日次実績も無い true は、
+    // ライブ収集の実データではないため、レポートの警告 (indexHasImportedReports) の側で扱う
+    return index.privacy.contains_user_level_data && evidence;
   }
-  // privacy 属性のない旧形式: シートまたは日次実績があれば個人単位のデータを含むとみなす
-  return (index.summary?.total_seats ?? 0) > 0 || (index.available_days?.length ?? 0) > 0;
+  // privacy 属性のない旧形式
+  return evidence;
+}
+
+/** 取り込んだ月次レポート (CSV) の集計を含む実データ用の index か (見本か実データかは判別できない) */
+export function indexHasImportedReports(index: PrivacyIndexLike | null | undefined): boolean {
+  if (!index || index.is_mock_mode === true) return false;
+  return index.privacy?.contains_imported_reports === true || (index.available_reports?.length ?? 0) > 0;
 }
 
 export function indexIsAnonymized(index: PrivacyIndexLike | null | undefined): boolean {
@@ -517,6 +528,22 @@ export async function checkPublicExposure(options: PublicExposureOptions = {}): 
     ];
   }
   if (exposed) {
+    // 取り込んだレポート (CSV) の集計が公開されている。実データか見本かは判別できないため、失敗にはせず警告する
+    const publishedReports = [branchIndex, pagesIndex].some((i) => indexHasImportedReports(i) && !indexIsAnonymized(i));
+    if (publishedReports) {
+      return [
+        {
+          category,
+          name,
+          status: 'warn',
+          message:
+            `Publicly readable (${exposures.join('; ')}), and imported monthly usage reports (available_reports) are published. ` +
+            'They contain per-user names and usage; make sure they are fictional samples, not real data.',
+          remediation:
+            'This dashboard is meant for private / internal repositories (SDD-01 §1.1). If the reports are real, make the repository private and remove them from the copilot-data branch history.',
+        },
+      ];
+    }
     return [
       {
         category,

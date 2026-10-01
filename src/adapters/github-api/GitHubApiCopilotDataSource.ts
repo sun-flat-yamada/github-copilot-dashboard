@@ -10,10 +10,12 @@ import {
   SourceStatus,
 } from '../../domain/entities/copilot.js';
 import { TeamDailyMetrics } from '../../domain/entities/agent-metrics.js';
+import { UsageReportsClient, ReportScope, reportWindowDays, scopeLabel } from './usage-reports/UsageReportsClient.js';
+import { buildAllDailyMetrics, buildUserProfiles } from './usage-reports/user-report-mapper.js';
+import { UserReportRow } from './usage-reports/user-report-schema.js';
 import { RawApiFetcher } from './RawApiFetcher.js';
 import { NormalizerRegistry } from './NormalizerRegistry.js';
 import { DomainMapper } from './DomainMapper.js';
-import { normalizeMetrics20260310 } from './normalizers/metrics-2026-03-10.js';
 import { normalizeSeats20260310 } from './normalizers/seats-2026-03-10.js';
 import { normalizeTeams20260310 } from './normalizers/teams-2026-03-10.js';
 import { normalizeCostCenter20260310 } from './normalizers/cost-centers-2026-03-10.js';
@@ -41,7 +43,8 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
   private orgs: string[];
   private issues: DataFetchIssue[] = [];
   private statuses = new Map<DataSourceId, SourceStatus>();
-  private metricsNormalizers = new NormalizerRegistry<unknown, CopilotDailyMetrics>();
+  /** 直近の fetchMetrics で取得したユーザー行 (日付 → 重複排除済み)。fetchUserProfiles が使う */
+  private userRowsByDay: Map<string, UserReportRow[]> | null = null;
   private seatsNormalizers = new NormalizerRegistry<unknown, CopilotSeatAssignment>();
   private teamsNormalizers = new NormalizerRegistry<unknown, TeamDailyMetrics>();
 
@@ -55,42 +58,100 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
         : []);
 
     // 既定の Normalizers を登録
-    this.metricsNormalizers.register('2026-03-10', normalizeMetrics20260310);
     this.seatsNormalizers.register('2026-03-10', normalizeSeats20260310);
     this.teamsNormalizers.register('2026-03-10', normalizeTeams20260310);
   }
 
+  /**
+   * 利用状況メトリクス。Usage Metrics Reports API (users-1-day: 署名付き URL → NDJSON) から、
+   * Enterprise と各 Organization のユーザー別 1 日レポートを取得し、ユーザーで重複排除して
+   * 日次メトリクスを組み立てる。旧 `/copilot/metrics` エンドポイントは呼ばない (2026-04 に廃止)。
+   *
+   * 状態: 全て取得 → ok / 一部の日・スコープが失敗、または行を隔離 → partial /
+   *       1 件も取得できない → failed (呼び出し側は Last-known-good を維持する)
+   */
   async fetchMetrics(): Promise<CopilotDailyMetrics[]> {
+    this.userRowsByDay = null;
     if (!this.isConfigured()) {
       this.reportMissingConfig('metrics', 'config:copilot-metrics', 'Copilot Metrics');
       return [];
     }
     if (!this.hasToken('metrics')) return [];
 
-    const normalizer = this.metricsNormalizers.getNormalizer(this.fetcher.getApiVersion());
+    // Enterprise を優先 (重複排除で Enterprise の行を採る)。Org は併用する
+    const scopes: ReportScope[] = [
+      ...(this.enterprise ? [{ kind: 'enterprise' as const, slug: this.enterprise }] : []),
+      ...this.orgs.map((slug) => ({ kind: 'org' as const, slug })),
+    ];
+    const days = reportWindowDays();
 
     try {
-      const raws: unknown[] = [];
-      if (this.enterprise) {
-        const raw = await this.fetcher.fetchRaw<unknown>('/enterprises/{ent}/copilot/metrics', {
-          ent: this.enterprise,
-        });
-        if (Array.isArray(raw)) raws.push(...raw);
-      } else {
-        for (const org of this.orgs) {
-          const raw = await this.fetcher.fetchRaw<unknown>('/orgs/{org}/copilot/metrics', { org });
-          if (Array.isArray(raw)) raws.push(...raw);
-        }
+      const client = new UsageReportsClient(this.fetcher);
+      const result = await client.fetchUsersRange(scopes, days);
+
+      const ok = result.outcomes.filter((o) => o.outcome === 'ok').length;
+      const empty = result.outcomes.filter((o) => o.outcome === 'empty').length;
+      const errors = result.outcomes.filter(
+        (o): o is Extract<typeof o, { outcome: 'error' }> => o.outcome === 'error'
+      );
+
+      // 同じ原因 (スコープ × エラー種別) の失敗は 1 件の issue にまとめる
+      const reported = new Set<string>();
+      for (const e of errors) {
+        const key = `${scopeLabel(e.scope)}:${e.error.name}:${(e.error as any).status ?? ''}`;
+        if (reported.has(key)) continue;
+        reported.add(key);
+        this.recordIssue(`copilot/metrics/reports/users-1-day (${scopeLabel(e.scope)})`, e.error);
       }
 
-      const { records, quarantined } = this.normalizeEach(raws, (item) =>
-        DomainMapper.toDailyMetrics(normalizer(item))
+      if (result.quarantined > 0 || result.malformedLines > 0) {
+        const detail = [
+          ...result.quarantineReasons,
+          result.malformedLines > 0 ? `${result.malformedLines} malformed NDJSON line(s)` : '',
+        ]
+          .filter(Boolean)
+          .join('\n');
+        this.pushIssue({
+          severity: 'warning',
+          category: 'data_integrity',
+          target: 'copilot/metrics/reports/users-1-day',
+          message: `${result.quarantined + result.malformedLines} report row(s) failed validation and were quarantined (excluded from aggregation).`,
+          details: detail || undefined,
+        });
+      }
+
+      if (ok === 0) {
+        // 1 件も取得できなかった。認証・権限・設定の誤りを示すことが多い (空の結果を「データなし」と偽らない)
+        const reason =
+          errors.length > 0
+            ? `all ${errors.length} report request(s) failed`
+            : `no usage report was available (HTTP 404/204 for all ${empty} request(s))`;
+        if (errors.length === 0) {
+          this.pushIssue({
+            severity: 'error',
+            category: 'not_found',
+            target: 'copilot/metrics/reports/users-1-day',
+            message: `No Copilot usage report was available for ${days[0]} .. ${days[days.length - 1]}.`,
+            details:
+              'Check that the token can read Copilot usage metrics (enterprise: manage_billing:copilot or read:enterprise; organization: read:org), ' +
+              'that the "Copilot usage metrics" policy is enabled, and that COPILOT_ENTERPRISE / COPILOT_ORGS are correct.',
+          });
+        }
+        this.setFailed('metrics', errors[0]?.error ?? new Error(reason), errors.length > 0 ? reason : undefined);
+        return [];
+      }
+
+      this.userRowsByDay = result.rowsByDay;
+      const daily = buildAllDailyMetrics(result.rowsByDay);
+      this.setStatus(
+        'metrics',
+        errors.length > 0 || result.quarantined > 0 || result.malformedLines > 0 ? 'partial' : 'ok',
+        daily.length,
+        result.quarantined + result.malformedLines
       );
-      this.reportQuarantine('copilot/metrics', quarantined);
-      this.setStatus('metrics', quarantined.length > 0 ? 'partial' : 'ok', records.length, quarantined.length);
-      return records;
+      return daily;
     } catch (err: any) {
-      this.recordIssue('copilot/metrics', err);
+      this.recordIssue('copilot/metrics/reports/users-1-day', err);
       this.setFailed('metrics', err);
       return [];
     }
@@ -105,16 +166,19 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
 
     const normalizer = this.seatsNormalizers.getNormalizer(this.fetcher.getApiVersion());
 
-    // 取得対象 (Enterprise があればそれのみ、無ければ各 Org)。
+    // 取得対象: Enterprise と各 Organization を併用する (Enterprise を先頭に。重複排除では先頭の記録を採る)。
     // いずれかの対象が失敗した場合は、不完全な席数を「現在値」として返さないよう全体を失敗扱いにする
     // (呼び出し側は Last-known-good を維持する)。
-    const targets: Array<{ endpoint: string; params: Record<string, string>; label: string }> = this.enterprise
-      ? [{ endpoint: '/enterprises/{ent}/copilot/billing/seats', params: { ent: this.enterprise }, label: 'copilot/billing/seats' }]
-      : this.orgs.map((org) => ({
-          endpoint: '/orgs/{org}/copilot/billing/seats',
-          params: { org },
-          label: 'copilot/billing/seats',
-        }));
+    const targets: Array<{ endpoint: string; params: Record<string, string>; label: string }> = [
+      ...(this.enterprise
+        ? [{ endpoint: '/enterprises/{ent}/copilot/billing/seats', params: { ent: this.enterprise }, label: 'copilot/billing/seats' }]
+        : []),
+      ...this.orgs.map((org) => ({
+        endpoint: '/orgs/{org}/copilot/billing/seats',
+        params: { org },
+        label: 'copilot/billing/seats',
+      })),
+    ];
 
     const rawSeats: unknown[] = [];
     let expectedTotal = 0;
@@ -149,10 +213,12 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
       return [];
     }
 
-    const { records, quarantined } = this.normalizeEach(rawSeats, (item) =>
+    const { records: allRecords, quarantined } = this.normalizeEach(rawSeats, (item) =>
       DomainMapper.toSeatAssignment(normalizer(item))
     );
     this.reportQuarantine('copilot/billing/seats', quarantined);
+    // Enterprise と Organization の両方に現れる同一ユーザーは 1 席として数える (二重計上を防ぐ)
+    const records = targets.length > 1 ? mergeSeatsByLogin(allRecords) : allRecords;
 
     let integrityWarning = false;
     if (truncated) {
@@ -164,7 +230,8 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
         message: 'Seat pagination was truncated at the safety limit; the seat list may be incomplete.',
       });
     }
-    if (expectedTotalKnown && !truncated && expectedTotal !== rawSeats.length) {
+    // 件数の照合は対象が 1 つのときだけ (複数対象では重複排除により件数が一致しないのが正常)
+    if (targets.length === 1 && expectedTotalKnown && !truncated && expectedTotal !== rawSeats.length) {
       integrityWarning = true;
       this.pushIssue({
         severity: 'warning',
@@ -239,8 +306,12 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
     return [];
   }
 
+  /**
+   * ユーザー別の利用プロファイル (日次履歴付き)。直近の fetchMetrics で取得した実測 (users-1-day) から作る。
+   * 表示名・部署・Cost Center などの属性は、呼び出し側 (パイプライン) がシートとマッピングで補う。
+   */
   async fetchUserProfiles(): Promise<UserUsageProfile[]> {
-    return [];
+    return this.userRowsByDay ? buildUserProfiles(this.userRowsByDay) : [];
   }
 
   async fetchTeamMetrics(teamSlug: string): Promise<TeamDailyMetrics[]> {
@@ -433,4 +504,22 @@ function summarizeValidationError(err: any): string {
       .join('; ');
   }
   return String(err?.message ?? err).slice(0, 120);
+}
+
+/**
+ * Enterprise と Organization の取得結果を、ログイン名 (大文字小文字を区別しない) で 1 席にまとめる。
+ * 先に現れた記録 (Enterprise が先頭) を採り、その organization が null のときだけ後続の記録で補う。
+ */
+export function mergeSeatsByLogin(seats: CopilotSeatAssignment[]): CopilotSeatAssignment[] {
+  const byLogin = new Map<string, CopilotSeatAssignment>();
+  for (const seat of seats) {
+    const key = seat.assignee.login.toLowerCase();
+    const existing = byLogin.get(key);
+    if (!existing) {
+      byLogin.set(key, seat);
+    } else if (existing.organization === null && seat.organization !== null) {
+      byLogin.set(key, { ...existing, organization: seat.organization });
+    }
+  }
+  return Array.from(byLogin.values());
 }
