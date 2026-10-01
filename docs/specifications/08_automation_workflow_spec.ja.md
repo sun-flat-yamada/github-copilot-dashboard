@@ -35,7 +35,9 @@
 
 #### 2.1.1 認証トークンの種別と付与権限 (Permissions)
 
-> **決定 (2026-10-01): 認証は PAT のみとし、GitHub App は採用しない。** App のインストールトークンは Enterprise の請求データを読める (GitHub changelog 2026-08-26) が、Enterprise の Copilot シート割り当て API は GitHub App のトークンと fine-grained PAT に対応せず (`manage_billing:copilot` または `read:enterprise` の PAT (classic) が必要)、App だけでは収集を完結できないためである。GitHub ドキュメントの検索結果の要約に基づく。決定を見直す場合は、一次情報で再確認すること。
+> **決定 (2026-10-01、プロジェクトオーナー): 認証は PAT のみとし、GitHub App は採用しない。**
+>
+> **訂正 (2026-10-01)**: ここに最初に記録した根拠 (Enterprise の Copilot シート割り当て API は App のトークンに対応しない) は検索結果の要約に基づくもので、**GitHub 自身の REST API description と食い違う**。`ghec` の `2026-03-10` では、Enterprise のシート・Enterprise の請求 / Cost Center・メトリクスのレポートの各エンドポイントが `enabledForGitHubApps: true` とされている (エンドポイントの本文が記載しているのは PAT のスコープだけ)。App のインストールトークンが各エンドポイントで実際に最後まで動くかは**未検証**である (実際の Enterprise への呼び出しが必要)。決定はオーナーの判断として維持する。PAT の管理が負担になった場合は、実際の呼び出しで検証したうえで見直す。
 
 GitHubの最新仕様に基づき、**Fine-grained Personal Access Token (推奨)** または **Personal Access Token (classic)** を利用できます。
 
@@ -53,6 +55,7 @@ GitHubの最新仕様に基づき、**Fine-grained Personal Access Token (推奨
    | **Organization administration** | **Read-only** | Organizationメタデータ・ステータス参照（オプション） |
 
 ##### B. Personal Access Token (classic)
+> エンドポイント別のスコープ (REST API description による): Enterprise のメトリクスレポートと Enterprise のシート — `manage_billing:copilot` または `read:enterprise`、Organization のメトリクスレポート — `read:org`、Organization のシート — `manage_billing:copilot` または `read:org`、Enterprise の Cost Center / 請求 — Enterprise owner または billing manager。
 1. **設定場所**: `Settings` > `Developer settings` > `Personal access tokens` > `Tokens (classic)` > **Generate new token (classic)**
 2. **Select scopes（付与項目）**:
    | スコープ (Scope) | 目的 |

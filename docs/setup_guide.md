@@ -247,6 +247,9 @@ The configuration loader (`BillingConfigLoader`) automatically normalizes and st
 Generate a Personal Access Token (PAT) with the following scopes and register it as secret `COPILOT_READ_TOKEN`:
 - `manage_billing:copilot` (or Copilot Business/Enterprise Read access)
 - `read:org`
+- `read:enterprise` (Enterprise-level metrics reports and seats; `manage_billing:copilot` also works)
+
+Collection uses the **Enterprise and its Organizations together**: set `COPILOT_ENTERPRISE` and `COPILOT_ORGS`. A user who appears in more than one scope is counted once. The token's owner must be an enterprise owner / billing manager (Enterprise reports) and an organization owner (Organization reports) — see [SDD-08 §2.1.1](specifications/08_automation_workflow_spec.md) for the scope per endpoint.
 
 ### Enterprise vs. Organization Scope
 Configure either variable under **Settings** > **Secrets and variables** > **Actions** > **Variables**:

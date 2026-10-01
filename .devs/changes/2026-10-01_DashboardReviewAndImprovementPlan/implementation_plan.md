@@ -105,7 +105,7 @@ B-13 のフィルター不整合の内訳:
 | 2 | 個人単位診断 | 個人表示も画面に出す（社内限定の前提） | Phase 3 で個人表示を残す。identified / aggregate-only の二重ビルドは不要。個人表示は閲覧権限のある社員向けである旨を SDD に明記する |
 | 3 | データの公開範囲 | 上記の運用前提（公開は不可）。※先の「公開リポジトリで実データ運用を認める」回答は、この運用前提で置き換えられた | P1 の仮名化・データ分離の優先度は下がる |
 | 4 | ブラウザ内クエリ方式 | B案: DuckDB-WASM | Phase 2 の Query 層は DuckDB-WASM。バンドル予算（P2-7）は遅延ロードで満たす |
-| 5 | 収集スコープと認証 | Enterprise と Org を併用。**認証は PAT のみ（GitHub App は採用しない）** | 調査結果: App は Enterprise 請求 API（2026-08-26 changelog）には使えるが、Enterprise のシート一覧 API は App のインストールトークン・fine-grained PAT 非対応（PAT classic の `manage_billing:copilot` / `read:enterprise` が必要）。App だけでは収集を完結できないため、現行の PAT 運用を変えない。P1 は PAT 前提で設計し、重複排除（Enterprise と Org の併用）を扱う。出典は SDD-08 §2.1 |
+| 5 | 収集スコープと認証 | Enterprise と Org を併用。**認証は PAT のみ（GitHub App は採用しない。オーナーの判断）** | 訂正: 当初記録した根拠（Enterprise のシート API は App 非対応）は、GitHub 自身の REST API description（`ghec` 2026-03-10）と食い違い、Enterprise のシート・請求・メトリクスレポートは `enabledForGitHubApps: true`。App での実動作は未検証（実 Enterprise での呼び出しが必要）。決定は維持し、PAT 管理が負担になれば検証して見直す。P1 は PAT 前提で、Enterprise と Org の併用時の重複排除を扱う。出典は SDD-08 §2.1.1 |
 | 6 | 監査要件 | 翌月 5 営業日に締め。締め後の改訂は履歴付きで可。生データは 5 年（60 か月）保持 | Phase 4 の月次締め・改訂履歴・保持期間の既定値（`data_retention` は 60 か月） |
 
 ## Proposed Changes

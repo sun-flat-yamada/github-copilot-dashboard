@@ -84,6 +84,7 @@ flowchart TB
 - **認証**: トークンは 明示指定 → `COPILOT_READ_TOKEN` → `GITHUB_TOKEN` → `GH_TOKEN` の順に解決する。トークンが無い場合は、無認証でリクエストせず、明示的な理由を付けてソースを失敗として記録する (§2.6)。
 - **耐障害性**: レートリミット（429/403）時の指数バックオフと再試行、ページネーションの自動追従（`per_page=100` と `Link` ヘッダー。先頭ページ以降のシートが欠落しない）。
 - **レコード単位の検証 (ACL)**: レスポンスはレコード単位で検証する (`src/adapters/github-api/schemas/` の Zod スキーマ)。未知の列挙値や不正なレコードはレスポンス全体を失敗させず**隔離** (除外して件数を記録) する。未知の `plan_type` は `unknown` として保持する。Cost Center は 2026-03-10 のレスポンス形状 (`costCenters` キー) 用の専用ノーマライザーで処理する。API バージョンは `GITHUB_API_VERSION` で指定する (SDD-03 §1.1)。
+- **利用状況メトリクス**: Usage Metrics Reports API (`users-1-day`、署名付き URL → NDJSON) から、Enterprise **と** 設定された各 Organization について取得し、ユーザーで重複排除する。ユーザー別プロファイルも同じ行から作る (SDD-03 §2.1)。旧 `/copilot/metrics` エンドポイントは呼ばない。シートも Enterprise と Organization の和集合とし、ログイン名ごとに 1 席とする。
 - **モックモード**: 環境変数 `MOCK_MODE=true` 時は、実APIを呼び出さずに2026年仕様準拠の擬似データを生成（ローカル開発・テスト・デモ環境用）。出力は `is_mock_mode: true` とし、`is_mock_mode` が true になるのは**この場合だけ**である。
 
 ### 2.2 属性解決エンジン (Attribute Resolver)

@@ -34,18 +34,39 @@ All API requests must supply the following HTTP headers:
 
 Retrieves usage metrics (IDE code completions, chat, PR summaries, CLI, agents, etc.) across an entire Enterprise or Organization.
 
-### 2.1 Endpoint Architecture & Reports API (Latest as of September 2026)
-As of April 2026, the legacy metrics endpoint (`/orgs/{org}/copilot/metrics`) was fully deprecated and sunset. The current standard utilizes the **Usage Metrics Reports API**, which returns signed download links pointing to NDJSON data files.
+### 2.1 Endpoint Architecture & Reports API (verified against the REST API description)
+The legacy metrics endpoints (`/enterprises/{enterprise}/copilot/metrics`, `/orgs/{org}/copilot/metrics`) were sunset in April 2026 and are **not called**. The standard is the **Usage Metrics Reports API**: a request returns `{ report_day, download_links[] }` (1-day reports) or `{ report_start_day, report_end_day, download_links[] }` (28-day reports), and each link is a **signed, short-lived URL to an NDJSON file** (1 JSON object per line).
 
-- **Enterprise Reports**:
-  - `GET /enterprises/{enterprise}/copilot/metrics/reports/enterprise-1-day` (Daily NDJSON signed link)
-  - `GET /enterprises/{enterprise}/copilot/metrics/reports/enterprise-28-day/latest`
-- **Organization Reports**:
-  - `GET /orgs/{org}/copilot/metrics/reports/organization-1-day`
-  - `GET /orgs/{org}/copilot/metrics/reports/organization-28-day/latest`
-- **User-Level Reports**:
-  - `GET /orgs/{org}/copilot/metrics/reports/users-1-day`
-  - `GET /orgs/{org}/copilot/metrics/reports/users-28-day/latest`
+*Source: GitHub's REST API description (`api.github.com` / `ghec`, version `2026-03-10`, `github/rest-api-description`), checked 2026-10-01.*
+
+| Report | Enterprise path | Organization path |
+|:--|:--|:--|
+| Aggregate, 1 day (`?day=YYYY-MM-DD`) | `/enterprises/{enterprise}/copilot/metrics/reports/enterprise-1-day` | `/orgs/{org}/copilot/metrics/reports/organization-1-day` |
+| Aggregate, latest 28 days | `.../enterprise-28-day/latest` | `.../organization-28-day/latest` |
+| **Per user, 1 day** (`?day=`) — **used** | `.../users-1-day` | `.../users-1-day` |
+| Per user, latest 28 days | `.../users-28-day/latest` | `.../users-28-day/latest` |
+| Per repository / per user-team, 1 day | `.../repos-1-day`, `.../user-teams-1-day` | same |
+
+- **Availability**: reports exist from 2025-10-10; 1-day reports are available for up to 1 year back. The day must be complete (the latest day may not be generated yet → `404`; an organization may answer `204`).
+- **Authentication** (PAT, per decision 2026-10-01): classic PAT with `manage_billing:copilot` or `read:enterprise` for the Enterprise reports (the caller must be an enterprise owner / billing manager, or hold the fine-grained "View Enterprise Copilot Metrics" permission); classic PAT with `read:org` for Organization reports (organization owner, or "View Organization Copilot Metrics").
+- **The signed download link must be fetched without the `Authorization` header** (it points at object storage, not at `api.github.com`; sending the PAT there would leak it). The adapter also accepts `https` links only and caps the file size.
+- **Collection**: the pipeline requests `users-1-day` for the Enterprise **and** for every configured Organization, for each day of the 30 days ending yesterday (UTC), extended back to the first day of the current month if that is earlier, 3 requests in parallel. A user who appears in more than one scope on the same day is counted **once** (the Enterprise row wins, matched by `user_id`). The aggregate reports are not used: overall figures are derived from the de-duplicated user rows.
+- **Status**: every day fetched → `ok`; some days failed or rows were quarantined → `partial` (+ issue); not a single report could be read → `failed` (+ issue naming the required token scopes). A missing latest day alone is not an error.
+
+#### Field mapping (users-1-day row → internal metrics)
+Row fields (official names): `day`, `user_id`, `user_login`, `enterprise_id`, `organization_id`, `ai_credits_used`, `user_initiated_interaction_count`, `code_generation_activity_count`, `code_acceptance_activity_count`, `loc_suggested_to_add_sum`, `loc_suggested_to_delete_sum`, `loc_added_sum`, `loc_deleted_sum`, `used_agent` / `used_chat` / `used_cli` / `used_copilot_app` / `used_copilot_cloud_agent` (booleans) and the arrays `totals_by_ide`, `totals_by_feature`, `totals_by_language_feature`, `totals_by_language_model`, `totals_by_model_feature`. `feature` values include `code_completion`, `chat_inline`, `chat_panel_{ask,edit,agent,plan,custom,unknown}_mode`, `agent_edit`, `copilot_cli`, `copilot_app`, `others`; unknown values are kept, never dropped.
+
+| Internal value | Source |
+|:--|:--|
+| Inline suggestions / acceptances / lines | `totals_by_feature[feature = code_completion]`: `code_generation_activity_count`, `code_acceptance_activity_count`, `loc_suggested_to_add_sum`, `loc_added_sum` (per language from `totals_by_language_feature`). Chat, CLI and agent activity are **never** mixed in (§2.2 surface isolation). |
+| Chats | `user_initiated_interaction_count` summed over the `chat_*` features; models from `totals_by_model_feature` (chat features only) |
+| CLI | `copilot_cli` interactions |
+| AI credits | `ai_credits_used` (per user and day) |
+| Lines added / deleted | row-level `loc_added_sum` / `loc_deleted_sum`; by mode from `totals_by_feature` |
+| Active users | number of de-duplicated rows of the day |
+| **Not provided** | PR summaries created (stored as `null`, shown "—"), chat copy / insertion events, agent session counts (the agent block is omitted rather than invented) |
+
+Per-user profiles (daily history, totals, model use, 28-day credits) are built from the same rows; display name, department, Cost Center, organization and plan come from the seats and the attribute mapping (`enrichUserProfiles`).
 
 ### 2.2 Telemetry Definition of Inline Completion Acceptance Rate & Surface Isolation
 
@@ -65,7 +86,7 @@ In GitHub Copilot telemetry, acceptance rate is derived from IDE inline ghost-te
 - **IDE Code Completions Only**: Acceptance rates exclusively measure inline ghost-text completions (`copilot_ide_code_completions`).
 - **Exclusion of CLI, Chat, and Agent Actions**: Activity in GitHub Copilot CLI (`copilot_in_cli`), Copilot Chat, and autonomous agent/autopilot tool executions (patches, file edits, shell tool calls) is tracked separately and is **never** included in the completion acceptance rate counters.
 
-### 2.3 Response Schema (Daily Array / Report Structure)
+### 2.3 Legacy Response Schema (retired endpoint; for reference only)
 
 ```json
 [

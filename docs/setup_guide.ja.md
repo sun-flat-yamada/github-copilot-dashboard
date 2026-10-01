@@ -241,6 +241,9 @@ Enterprise Agreementにおいて、USD換算ではなく日本円建てでの固
 以下の権限を持つ個人アクセストークン（PAT）を発行し、GitHub Actions Secret `COPILOT_READ_TOKEN` に登録します：
 - `manage_billing:copilot` (または Copilot Business/Enterprise の読み取り権限)
 - `read:org`
+- `read:enterprise` (Enterprise 単位のメトリクスレポートとシート。`manage_billing:copilot` でも可)
+
+収集は **Enterprise と配下の Organization を併用**します: `COPILOT_ENTERPRISE` と `COPILOT_ORGS` の両方を設定してください。複数のスコープに現れるユーザーは 1 件として数えます。トークンの所有者は、Enterprise レポートでは Enterprise owner / billing manager、Organization レポートでは Organization owner である必要があります。エンドポイント別のスコープは [SDD-08 §2.1.1](specifications/08_automation_workflow_spec.ja.md) を参照してください。
 
 ### Enterprise 単位 vs Organization 単位
 **Settings** > **Secrets and variables** > **Actions** > **Variables** でいずれかを設定します：
