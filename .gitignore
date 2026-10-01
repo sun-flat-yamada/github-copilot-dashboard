@@ -129,4 +129,6 @@ Thumbs.db
 .cursor/sessions/
 .gemini/
 .agents/scratch/
-.devs/
+# change-dev artifacts under .devs/changes/ are shared via PRs; everything else in .devs/ stays local
+.devs/*
+!.devs/changes/
