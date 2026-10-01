@@ -5,7 +5,7 @@
 - [/] Phase 2: Implementation Plan formulated & approved <!-- id: 1 -->
   - [x] `implementation_plan.md` を策定（全体レビューと Phase 0〜4 の改善計画）
   - [x] 最新の `main`（`b163671`）へ rebase し、change-dev の成果物規約に沿って配置
-  - [ ] User Review Required の判断事項 1〜7 への回答
+  - [/] User Review Required の判断事項 1〜7 への回答 — 1・2・3・4・6・運用前提は回答済み（計画書「判断結果」）。5 は GitHub App の採否が未回答
 - [/] Phase 3: Sibling Worktree Provisioning & Implementation <!-- id: 2 -->
   - [x] Phase 0 止血（P0-1〜P0-11）— 実装済み（レビュー待ち）。成果物: [../2026-10-01_DashboardPhase0Stabilization/](../2026-10-01_DashboardPhase0Stabilization/)、Issue: [sun-flat-yamada/github-copilot-dashboard#160](https://github.com/sun-flat-yamada/github-copilot-dashboard/issues/160)
   - [ ] Phase 1 取得基盤（P1-1〜P1-7）— User Review Required の判断待ち（特に 3. データの公開範囲、5. 収集スコープと認証）

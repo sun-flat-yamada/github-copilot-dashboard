@@ -95,7 +95,7 @@ GitHubの最新仕様に基づき、**Fine-grained Personal Access Token (推奨
 - `COPILOT_ENTERPRISE`: 対象のEnterpriseスラッグ（Enterprise一括集計時）。
 - `COPILOT_ORGS`: 対象のOrganizationスラッグ（カンマ区切り、複数Org対応）。
 - `COPILOT_COST_CENTER_BUDGETS`: `{ cost_center_id?, cost_center_name?, spending_limit_usd, free_tier_budget_usd }` のJSON配列。GitHub APIには予算上限を返すエンドポイントが存在しないため、実データ運用でCost Center別予算を表示するには管理者がこの値を宣言する必要がある。VariableまたはSecretのどちらでも設定可能。
-- `ANONYMIZE_USERS`: `true` にすると、実名のかわりに仮名化したログイン名・氏名・部署を公開する (上記 Secret `ANONYMIZE_SECRET` が必要)。
+- `ANONYMIZE_USERS`: 任意 (SDD-01 §1.1 の社内限定の前提では不要)。`true` にすると、実名のかわりに仮名化したログイン名・氏名・部署を公開する (上記 Secret `ANONYMIZE_SECRET` が必要)。
 - `COPILOT_BILLING_CONFIG`: Enterprise の契約価格・為替・割引の JSON (`EnterpriseBillingConfig`、SDD-02 §4.3)。Variable または Secret。未設定なら価格カタログの既定値。不正な JSON は無視されず issue として記録される (ヘッダーの警告件数に反映)。
 - `GITHUB_API_VERSION`: `X-GitHub-Api-Version` ヘッダーの値 (既定 `2026-03-10`、SDD-03 §1.1)。
 - `COPILOT_ALLOW_PUBLIC_DATA` (オプション): `true` にすると、公開範囲の事前検査の失敗が警告に格下げされる。データを公開することが明示的に受け入れられた判断である場合のみ使用する。

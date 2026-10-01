@@ -95,7 +95,7 @@ When running in real-data mode (`MOCK_MODE` unset or `false`) without `COPILOT_E
 - `COPILOT_ENTERPRISE`: Enterprise slug (for enterprise-wide aggregation).
 - `COPILOT_ORGS`: Comma-separated list of organization slugs (for multi-org setups).
 - `COPILOT_COST_CENTER_BUDGETS`: JSON array of `{ cost_center_id?, cost_center_name?, spending_limit_usd, free_tier_budget_usd }`. The GitHub API exposes no budget/spending-limit endpoint, so this must be declared manually to populate Cost Center budgets in real-data mode. Can be set as either a Variable or a Secret.
-- `ANONYMIZE_USERS`: Set to `true` to publish pseudonymized logins / names / departments instead of real ones (requires the `ANONYMIZE_SECRET` secret above).
+- `ANONYMIZE_USERS`: Optional (not needed under the internal-use premise of SDD-01 §1.1). Set to `true` to publish pseudonymized logins / names / departments instead of real ones (requires the `ANONYMIZE_SECRET` secret above).
 - `COPILOT_BILLING_CONFIG`: JSON for enterprise contract pricing, exchange rates and discounts (`EnterpriseBillingConfig`, SDD-02 §4.3). Variable or Secret. Unset → the pricing catalog defaults; invalid JSON is recorded as an issue (visible in the header warning count) instead of being ignored.
 - `GITHUB_API_VERSION`: Value of the `X-GitHub-Api-Version` header (default `2026-03-10`, SDD-03 §1.1).
 - `COPILOT_ALLOW_PUBLIC_DATA` (Optional): `true` downgrades the exposure pre-flight failure to a warning. Use only when publishing the data publicly is an explicit, accepted decision.
