@@ -5,6 +5,7 @@ import { IStorageWriter } from '../../domain/ports/IStorageWriter.js';
 import { BillingCalculator } from '../../processor/billing-calculator.js';
 import { MetricsAggregator } from '../../processor/metrics-aggregator.js';
 import { ReportParser } from '../../processor/report-parser.js';
+import { enrichUserProfiles } from '../../processor/profile-enricher.js';
 import { carryOverUsageSections } from '../../processor/scope-merge.js';
 import { buildRollingTrendEntry } from '../../processor/rolling-trend.js';
 import { MockDataGenerator, MOCK_DATA_UNAVAILABLE_ORGS } from '../../collector/mock-generator.js';
@@ -193,6 +194,11 @@ export class PipelineOrchestrator {
         this.dataSource.fetchUserProfiles(),
       ]);
     } else if (seatsUsable) {
+      // ユーザー別プロファイル: 利用状況メトリクス (users-1-day) の実測から作り、シート・属性マッピングで属性を補う
+      if (hasLiveMetrics) {
+        const rawProfiles = await this.dataSource.fetchUserProfiles();
+        userProfiles = enrichUserProfiles(rawProfiles, seats, enrichedSeats, legacyResolver);
+      }
       const rawBudgets = process.env.COPILOT_COST_CENTER_BUDGETS;
       const budgetConfig = BillingCalculator.parseBudgetConfig(rawBudgets);
       if (rawBudgets && rawBudgets.trim() && budgetConfig.length === 0) {
@@ -407,14 +413,16 @@ export class PipelineOrchestrator {
       // リポジトリ / Pages の公開は個人情報の公開に直結する
       privacy: {
         anonymized: legacyResolver.isAnonymizing(),
-        // 前回までの成果物 (保存済みの月次集計など) が個人単位のデータを含むなら、今回の取得が失敗しても true のまま
+        // ライブ収集した個人単位のデータ (シート・ユーザー別プロファイル) を含むか。前回までの成果物に
+        // シートがあれば、今回の取得が失敗しても true のまま (保存済みの集計が公開され続けるため)。
         contains_user_level_data:
           !this.isMock &&
           (enrichedSeats.length > 0 ||
-            availableReportMonths.length > 0 ||
             userProfiles.length > 0 ||
-            previousIndex?.privacy?.contains_user_level_data === true ||
             (previousIndex?.is_mock_mode !== true && (previousIndex?.summary?.total_seats ?? 0) > 0)),
+        // 取り込んだ月次レポート (CSV) の集計を含むか。CSV が実データか見本かは判別できないため、
+        // contains_user_level_data とは分け、fork:verify は公開時に「警告」にする
+        contains_imported_reports: !this.isMock && availableReportMonths.length > 0,
       },
       billing: {
         currency: billingConfig.currency,
