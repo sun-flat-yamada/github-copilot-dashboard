@@ -3,6 +3,7 @@ import * as assert from 'node:assert/strict';
 import {
   ExposureProbe,
   checkPublicExposure,
+  indexHasImportedReports,
   indexHasUserLevelData,
   indexIsAnonymized,
   parseGitHubRepoSlug,
@@ -30,6 +31,13 @@ const REAL_INDEX = {
   privacy: { anonymized: false, contains_user_level_data: true },
 };
 const ANONYMIZED_INDEX = { ...REAL_INDEX, privacy: { anonymized: true, contains_user_level_data: true } };
+const REPORTS_ONLY_INDEX = {
+  is_mock_mode: false,
+  summary: { total_seats: 0 },
+  available_days: [],
+  available_reports: ['2026-09'],
+  privacy: { anonymized: false, contains_user_level_data: true }, // 旧版は CSV の有無だけで true にしていた
+};
 const DEMO_INDEX = { is_mock_mode: true, summary: { total_seats: 80 }, available_days: ['2026-09-10'] };
 
 const PUBLIC_REPO = { status: 200, body: { private: false } };
@@ -167,6 +175,33 @@ describe('fork:verify public exposure check (P0-11 / E-05)', () => {
     const results = await checkPublicExposure({ env: {}, repository: null, probe, localIndex: null });
     assert.equal(results[0].status, 'warn');
     assert.equal(calls.length, 0, 'no request must be made without a repository');
+  });
+});
+
+describe('fork:verify: imported reports are a warning, not a failure (P1 follow-up to P0-11)', () => {
+  it('a public repository whose index only has imported report CSVs (no seats, no daily data) warns and does not fail', async () => {
+    const { result } = await run({
+      'api.github.com/repos': PUBLIC_REPO,
+      'copilot-data/data/index.json': { status: 200, body: REPORTS_ONLY_INDEX },
+    });
+    assert.equal(result.status, 'warn');
+    assert.match(result.message, /imported monthly usage reports/);
+    assert.match(result.remediation ?? '', /private/);
+  });
+
+  it('seats / daily data still fail even when reports are present', async () => {
+    const { result } = await run({
+      'api.github.com/repos': PUBLIC_REPO,
+      'copilot-data/data/index.json': { status: 200, body: { ...REAL_INDEX, available_reports: ['2026-09'] } },
+    });
+    assert.equal(result.status, 'fail');
+  });
+
+  it('classifies a legacy "true" flag without seats or daily data as not user-level (the report-only case)', () => {
+    assert.equal(indexHasUserLevelData(REPORTS_ONLY_INDEX), false);
+    assert.equal(indexHasImportedReports(REPORTS_ONLY_INDEX), true);
+    assert.equal(indexHasImportedReports(DEMO_INDEX), false);
+    assert.equal(indexHasImportedReports({ ...REPORTS_ONLY_INDEX, privacy: { anonymized: true, contains_user_level_data: false, contains_imported_reports: true } }), true);
   });
 });
 

@@ -17,6 +17,9 @@ export const MAX_PER_PAGE = 100;
 /** ページング暴走の安全弁 (100 件 × 1,000 ページ = 10 万件) */
 export const MAX_PAGES = 1000;
 
+/** レポートファイル 1 つあたりのダウンロード上限 (文字数。暴走・誤設定の安全弁) */
+export const MAX_DOWNLOAD_BYTES = 256 * 1024 * 1024;
+
 /**
  * 認証トークンの解決順: 明示指定 → COPILOT_READ_TOKEN → GITHUB_TOKEN → GH_TOKEN。
  * ワークフローは COPILOT_READ_TOKEN だけを渡すため、これを最優先で読む。
@@ -94,6 +97,67 @@ export class RawApiFetcher {
   }
 
   /**
+   * 「想定内の非 2xx」を例外にせず返す取得 (Usage Metrics Reports の 204 / 404 など)。
+   * - 204 (本文なし) と allowStatuses に含まれるステータスは `{ status, body: null }` で返す
+   * - それ以外のエラーは fetchRaw と同じ (401/403 は AuthorizationError、429 は RateLimitError)
+   */
+  async fetchRawAllowing<T = unknown>(
+    endpoint: string,
+    params: Record<string, string>,
+    query: Record<string, string | number>,
+    allowStatuses: number[]
+  ): Promise<{ status: number; body: T | null }> {
+    const url = this.buildUrl(endpoint, params, query);
+    const { body, status } = await this.request<T>(url, allowStatuses);
+    return { status, body: (body as T | null) ?? null };
+  }
+
+  /**
+   * 署名付き URL (Usage Metrics Reports の download_links) を **認証ヘッダーなし** で取得する。
+   * 署名付き URL は GitHub の API とは別のホスト (オブジェクトストレージ) を指すため、
+   * Authorization を送ると PAT を第三者ホストへ漏えいさせてしまう。https のみ許可し、サイズ上限を設ける。
+   */
+  async downloadSigned(url: string, options: { maxBytes?: number } = {}): Promise<string> {
+    const maxBytes = options.maxBytes ?? MAX_DOWNLOAD_BYTES;
+    let parsed: URL;
+    try {
+      parsed = new URL(url);
+    } catch {
+      throw new ApiError('Report download link is not a valid URL', 502, 'download');
+    }
+    if (parsed.protocol !== 'https:') {
+      throw new ApiError('Refusing to download a report over a non-https link', 502, 'download');
+    }
+    // 署名 (クエリ) をログ・エラーに残さないよう、ホストとパスだけをラベルにする
+    const label = `${parsed.host}${parsed.pathname}`;
+
+    let lastError: Error | null = null;
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      try {
+        const response = await this.fetchImpl(url, { headers: {} });
+        if (!response.ok) {
+          throw new ApiError(`HTTP ${response.status} while downloading ${label}`, response.status, label);
+        }
+        const declared = Number(response.headers.get('content-length') ?? '0');
+        if (declared > maxBytes) {
+          throw new ApiError(`Report file ${label} is larger than the ${maxBytes}-byte limit`, 502, label);
+        }
+        const text = await response.text();
+        if (text.length > maxBytes) {
+          throw new ApiError(`Report file ${label} is larger than the ${maxBytes}-byte limit`, 502, label);
+        }
+        return text;
+      } catch (err: any) {
+        lastError = err;
+        const retryable = !(err instanceof ApiError) || err.status >= 500;
+        if (!retryable || attempt >= this.maxRetries) break;
+        await new Promise((resolve) => setTimeout(resolve, this.retryDelayMs * Math.pow(2, attempt)));
+      }
+    }
+    throw lastError || new ApiError('Report download failed', 500, label);
+  }
+
+  /**
    * Link ヘッダー (rel="next") を最終ページまで追従して全件取得する。
    * - per_page=100 を指定する
    * - 次ページ URL は同一オリジンのときだけ追従する (認証ヘッダーの漏えい防止)
@@ -159,7 +223,10 @@ export class RawApiFetcher {
     return url.toString();
   }
 
-  private async request<T>(url: string): Promise<{ body: T; headers: Headers }> {
+  private async request<T>(
+    url: string,
+    allowStatuses: number[] = []
+  ): Promise<{ body: T; headers: Headers; status: number }> {
     const label = new URL(url).pathname;
 
     // Copilot / Billing 系のエンドポイントは必ず認証が必要。トークン未設定で無認証リクエストを
@@ -187,6 +254,10 @@ export class RawApiFetcher {
           throw new RateLimitError(label, resetHeader);
         }
 
+        if (allowStatuses.includes(response.status) || response.status === 204) {
+          return { body: null as unknown as T, headers: response.headers, status: response.status };
+        }
+
         if (response.status === 401 || response.status === 403) {
           const bodyText = await response.text().catch(() => '');
           throw new AuthorizationError(label, bodyText, response.status);
@@ -197,10 +268,14 @@ export class RawApiFetcher {
           throw new ApiError(`HTTP ${response.status} from ${label}: ${bodyText}`, response.status, label);
         }
 
-        return { body: (await response.json()) as T, headers: response.headers };
+        return { body: (await response.json()) as T, headers: response.headers, status: response.status };
       } catch (err: any) {
         lastError = err;
         if (err instanceof RateLimitError || err instanceof AuthorizationError) {
+          throw err;
+        }
+        // 4xx (429 / 401 / 403 以外) は再試行しても結果が変わらない
+        if (err instanceof ApiError && err.status >= 400 && err.status < 500) {
           throw err;
         }
         if (attempt < this.maxRetries) {
