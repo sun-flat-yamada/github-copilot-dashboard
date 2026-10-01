@@ -35,6 +35,8 @@
 
 #### 2.1.1 認証トークンの種別と付与権限 (Permissions)
 
+> **決定 (2026-10-01): 認証は PAT のみとし、GitHub App は採用しない。** App のインストールトークンは Enterprise の請求データを読める (GitHub changelog 2026-08-26) が、Enterprise の Copilot シート割り当て API は GitHub App のトークンと fine-grained PAT に対応せず (`manage_billing:copilot` または `read:enterprise` の PAT (classic) が必要)、App だけでは収集を完結できないためである。GitHub ドキュメントの検索結果の要約に基づく。決定を見直す場合は、一次情報で再確認すること。
+
 GitHubの最新仕様に基づき、**Fine-grained Personal Access Token (推奨)** または **Personal Access Token (classic)** を利用できます。
 
 ##### A. Fine-grained Personal Access Token (推奨・最小権限)
