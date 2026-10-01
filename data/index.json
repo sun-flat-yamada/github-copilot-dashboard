@@ -4,7 +4,7 @@
     "name": "github-copilot-dashboard",
     "is_fork": false
   },
-  "generated_at": "2026-10-01T04:31:03.757Z",
+  "generated_at": "2026-10-01T13:48:00.652Z",
   "data_retention_days": 365,
   "available_months": [
     "2026-09"
@@ -48,8 +48,8 @@
   },
   "issues": [
     {
-      "id": "issue_1790829063744_hshu",
-      "timestamp": "2026-10-01T04:31:03.744Z",
+      "id": "issue_1790862480642_lwqi",
+      "timestamp": "2026-10-01T13:48:00.642Z",
       "severity": "warning",
       "category": "api_auth",
       "target": "config:copilot-metrics",
@@ -57,8 +57,8 @@
       "details": "Set COPILOT_ENTERPRISE (enterprise-wide) or COPILOT_ORGS (comma-separated org slugs) as a repository/organization Actions variable to enable live metrics collection. Monthly Usage Report (CSV import) and other credential-independent features remain unaffected."
     },
     {
-      "id": "issue_1790829063745_i35h",
-      "timestamp": "2026-10-01T04:31:03.745Z",
+      "id": "issue_1790862480643_960l",
+      "timestamp": "2026-10-01T13:48:00.643Z",
       "severity": "warning",
       "category": "api_auth",
       "target": "config:copilot-billing-seats",
