@@ -1,0 +1,27 @@
+# Task: ダッシュボード改善 Phase 0（止血）
+
+- [x] Phase 1: Issue Definition & Scoping <!-- id: 0 -->
+  - [x] Issue [sun-flat-yamada/github-copilot-dashboard#160](https://github.com/sun-flat-yamada/github-copilot-dashboard/issues/160) を起票（Why / What / 受け入れ基準）
+- [x] Phase 2: Implementation Plan <!-- id: 1 -->
+  - [x] 親計画（`../2026-10-01_DashboardReviewAndImprovementPlan/`）の Phase 0 を採用。判断事項に依存しない止血のため、先行して実施
+- [x] Phase 3: Implementation <!-- id: 2 -->
+  - [x] P0-1: `npm test` の glob をクォートし全テストを実行
+  - [x] P0-2: 収集クライアント修正（トークン解決、ページング、レコード単位の検証と隔離、Cost Centers 新形式）
+  - [x] P0-3: ソース別の縮退設計（`SourceStatus`、Last-known-good、`is_mock_mode` は `MOCK_MODE` のみ）
+  - [x] P0-4: 捏造値の撤去（固定定数、CSV からの個人プロファイル合成、代理値）と「—（理由）」表示
+  - [x] P0-5: 金額の単一化（価格カタログ、`BudgetUtilizationRule`、`seatCostForScope`）
+  - [x] P0-6: フィルター修正（依存配列、未割当センチネル、フィルター非対応の明示）と ESLint（react-hooks）
+  - [x] P0-7: 配信修正（許可リスト方式の `pages:stage` / `pages:verify`、暗黙のデモフォールバック無効化、データ状態バナー）
+  - [x] P0-8: 設定の結線（`COPILOT_BILLING_CONFIG` / `ANONYMIZE_USERS` / `GITHUB_API_VERSION`、設定不正の issue 化）
+  - [x] P0-9: シート分類に `onboarding` を新設し、遊休基準と表示ラベルを一致
+  - [x] P0-10: 同月複数 CSV の結合集計と重複検知、単位系統の分離
+  - [x] P0-11: プライバシー緊急対応（HMAC 仮名化と fail closed、`fork:verify` の公開範囲チェック、文書化）
+- [x] Phase 4: Local Quality Gate & Specification Sync <!-- id: 3 -->
+  - [x] `npm run fork:verify && npm run typecheck && npm test && npm run secret-scan && npm run build` 成功（結果は `walkthrough.md`）
+  - [x] `npm run lint` / `npm run pipeline:mock` 成功
+  - [x] SDD-01 / 02 / 03 / 04 / 05 / 06 / 07 / 08 / 09 / 11 / 15（日英）、README（日英）、SECURITY、セットアップガイド（日英）、`.agents/rules` を同期
+- [x] Phase 5: Walkthrough Artifact Generation & Evidence Sealing <!-- id: 4 -->
+  - [x] `walkthrough.md`
+- [ ] Phase 6: Rebase onto Base & Create PR <!-- id: 5 -->
+- [ ] Phase 7: Rebase & Merge and Worktree Cleanup <!-- id: 6 -->
+  - レビュー承認後にメンテナーが実施（直接 push は禁止）
