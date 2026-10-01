@@ -37,7 +37,9 @@ Artifacts are **not** written under `<appDataDir>`. They are output beneath the 
   - `<ChangeTitle>`: short PascalCase/kebab-case title of the change (no spaces or path-unsafe characters).
 - **Google Antigravity**: When running in Google Antigravity, a finished copy of every artifact (`implementation_plan.md`, `task.md`, `walkthrough.md`) must be placed in this directory upon completion, even if Antigravity's own artifact runtime keeps an internal working copy.
 - **Scratch Scripts & Temporary Data**: Keep out of the repository (use the agent's scratch area) and never commit them.
-- Artifacts must not contain secrets, PII, or machine-specific absolute paths (see `npm run secret-scan`).
+- Artifacts must not contain secrets, PII, or machine-specific absolute paths:
+  - `npm run secret-scan` covers `.devs/changes/` (it does not scan the rest of `.devs/` or other dot-directories). Run it before committing artifacts.
+  - The scanner only matches secret patterns (tokens, keys, credentials). Check artifacts for PII and absolute paths by review.
 
 ### 2. Canonical Antigravity Artifact Triad
 
