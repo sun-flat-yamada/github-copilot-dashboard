@@ -2,12 +2,16 @@
   "report_month": "2026-09",
   "source_type": "persisted",
   "file_name": "copilot_monthly_usage_2026-09.csv",
-  "parsed_at": "2026-10-01T14:37:18.881Z",
+  "parsed_at": "2026-10-01T20:25:32.202Z",
   "overview": {
     "total_net_spend_usd": 338.65,
     "total_gross_spend_usd": 340.33,
     "total_discount_usd": 1.68,
-    "total_requests": 2646,
+    "total_requests": 2636,
+    "quantity_by_unit": {
+      "seats": 10,
+      "requests": 2636
+    },
     "total_active_users": 10,
     "top_model": "Claude 3.7 Sonnet",
     "top_sku": "copilot_business"
@@ -22,11 +26,12 @@
       "net_cost_usd": 338.65,
       "potential_savings_usd": 0,
       "active_ratio": 1,
-      "acceptance_rate": 0.35,
-      "total_suggestions": 2646,
-      "total_acceptances": 926,
-      "total_chats": 529,
-      "total_pr_summaries": 0
+      "acceptance_rate": null,
+      "total_suggestions": null,
+      "total_acceptances": null,
+      "total_chats": null,
+      "total_pr_summaries": null,
+      "total_requests": 2636
     }
   },
   "by_cost_center": {
@@ -39,11 +44,12 @@
       "net_cost_usd": 134.21,
       "potential_savings_usd": 0,
       "active_ratio": 1,
-      "acceptance_rate": 0.35,
-      "total_suggestions": 1163,
-      "total_acceptances": 407,
-      "total_chats": 233,
-      "total_pr_summaries": 0
+      "acceptance_rate": null,
+      "total_suggestions": null,
+      "total_acceptances": null,
+      "total_chats": null,
+      "total_pr_summaries": null,
+      "total_requests": 1159
     },
     "IT-Infrastructure": {
       "group_name": "IT-Infrastructure",
@@ -54,11 +60,12 @@
       "net_cost_usd": 128.47,
       "potential_savings_usd": 0,
       "active_ratio": 1,
-      "acceptance_rate": 0.35,
-      "total_suggestions": 955,
-      "total_acceptances": 334,
-      "total_chats": 191,
-      "total_pr_summaries": 0
+      "acceptance_rate": null,
+      "total_suggestions": null,
+      "total_acceptances": null,
+      "total_chats": null,
+      "total_pr_summaries": null,
+      "total_requests": 951
     },
     "Data-AI-Lab": {
       "group_name": "Data-AI-Lab",
@@ -69,11 +76,12 @@
       "net_cost_usd": 75.98,
       "potential_savings_usd": 0,
       "active_ratio": 1,
-      "acceptance_rate": 0.35,
-      "total_suggestions": 528,
-      "total_acceptances": 185,
-      "total_chats": 106,
-      "total_pr_summaries": 0
+      "acceptance_rate": null,
+      "total_suggestions": null,
+      "total_acceptances": null,
+      "total_chats": null,
+      "total_pr_summaries": null,
+      "total_requests": 526
     }
   },
   "by_organization": {
@@ -86,11 +94,12 @@
       "net_cost_usd": 134.21,
       "potential_savings_usd": 0,
       "active_ratio": 1,
-      "acceptance_rate": 0.35,
-      "total_suggestions": 1163,
-      "total_acceptances": 407,
-      "total_chats": 233,
-      "total_pr_summaries": 0
+      "acceptance_rate": null,
+      "total_suggestions": null,
+      "total_acceptances": null,
+      "total_chats": null,
+      "total_pr_summaries": null,
+      "total_requests": 1159
     },
     "proud-internal-sys": {
       "group_name": "proud-internal-sys",
@@ -101,11 +110,12 @@
       "net_cost_usd": 75.27,
       "potential_savings_usd": 0,
       "active_ratio": 1,
-      "acceptance_rate": 0.35,
-      "total_suggestions": 500,
-      "total_acceptances": 175,
-      "total_chats": 100,
-      "total_pr_summaries": 0
+      "acceptance_rate": null,
+      "total_suggestions": null,
+      "total_acceptances": null,
+      "total_chats": null,
+      "total_pr_summaries": null,
+      "total_requests": 498
     },
     "proud-marketing": {
       "group_name": "proud-marketing",
@@ -116,11 +126,12 @@
       "net_cost_usd": 75.98,
       "potential_savings_usd": 0,
       "active_ratio": 1,
-      "acceptance_rate": 0.35,
-      "total_suggestions": 528,
-      "total_acceptances": 185,
-      "total_chats": 106,
-      "total_pr_summaries": 0
+      "acceptance_rate": null,
+      "total_suggestions": null,
+      "total_acceptances": null,
+      "total_chats": null,
+      "total_pr_summaries": null,
+      "total_requests": 526
     },
     "proud-core-api": {
       "group_name": "proud-core-api",
@@ -131,11 +142,12 @@
       "net_cost_usd": 53.19,
       "potential_savings_usd": 0,
       "active_ratio": 1,
-      "acceptance_rate": 0.35,
-      "total_suggestions": 455,
-      "total_acceptances": 159,
-      "total_chats": 91,
-      "total_pr_summaries": 0
+      "acceptance_rate": null,
+      "total_suggestions": null,
+      "total_acceptances": null,
+      "total_chats": null,
+      "total_pr_summaries": null,
+      "total_requests": 453
     }
   },
   "model_breakdown": [
@@ -144,35 +156,35 @@
       "total_requests": 755,
       "total_spend_usd": 29.52,
       "active_users": 10,
-      "percentage": 28.5
+      "percentage": 28.6
     },
     {
       "model_name": "Gemini 2.0 Flash",
       "total_requests": 728,
       "total_spend_usd": 14.31,
       "active_users": 10,
-      "percentage": 27.5
+      "percentage": 27.6
     },
     {
       "model_name": "GPT-4o",
       "total_requests": 604,
       "total_spend_usd": 17.66,
       "active_users": 10,
-      "percentage": 22.8
+      "percentage": 22.9
     },
     {
       "model_name": "o1",
       "total_requests": 549,
       "total_spend_usd": 27.17,
       "active_users": 10,
-      "percentage": 20.7
+      "percentage": 20.8
     },
     {
       "model_name": "Standard Completion",
-      "total_requests": 10,
+      "total_requests": 0,
       "total_spend_usd": 250,
       "active_users": 10,
-      "percentage": 0.4
+      "percentage": 0
     }
   ],
   "sku_breakdown": [
@@ -201,7 +213,7 @@
   "daily_trends": [
     {
       "date": "2026-09-01",
-      "requests": 139,
+      "requests": 129,
       "spend_usd": 253.45,
       "active_users": 10
     },
@@ -327,13 +339,25 @@
       "department": "未分類 (Unassigned)",
       "cost_center": "FinTech-Division",
       "organization": "proud-fintech",
-      "total_requests": 327,
+      "total_requests": 326,
       "total_spend_usd": 50.07,
       "gross_spend_usd": 50.07,
       "net_spend_usd": 49.96,
       "primary_model": "Gemini 2.0 Flash",
-      "last_activity_date": "2026-09-28",
-      "surface": "VS Code"
+      "model_requests": {
+        "Gemini 2.0 Flash": 119,
+        "Claude 3.7 Sonnet": 68,
+        "o1": 90,
+        "GPT-4o": 49
+      },
+      "model_spend_usd": {
+        "Standard Completion": 39,
+        "Gemini 2.0 Flash": 2.33,
+        "Claude 3.7 Sonnet": 2.72,
+        "o1": 4.5,
+        "GPT-4o": 1.41
+      },
+      "last_activity_date": "2026-09-28"
     },
     {
       "login": "daiki-suzuki",
@@ -341,13 +365,25 @@
       "department": "未分類 (Unassigned)",
       "cost_center": "IT-Infrastructure",
       "organization": "proud-internal-sys",
-      "total_requests": 247,
+      "total_requests": 246,
       "total_spend_usd": 47.28,
       "gross_spend_usd": 47.28,
       "net_spend_usd": 47.1,
       "primary_model": "Gemini 2.0 Flash",
-      "last_activity_date": "2026-09-28",
-      "surface": "VS Code"
+      "model_requests": {
+        "GPT-4o": 59,
+        "o1": 47,
+        "Gemini 2.0 Flash": 72,
+        "Claude 3.7 Sonnet": 68
+      },
+      "model_spend_usd": {
+        "Standard Completion": 39,
+        "GPT-4o": 1.683,
+        "o1": 2.305,
+        "Gemini 2.0 Flash": 1.392,
+        "Claude 3.7 Sonnet": 2.72
+      },
+      "last_activity_date": "2026-09-28"
     },
     {
       "login": "ren-takahashi",
@@ -355,13 +391,25 @@
       "department": "未分類 (Unassigned)",
       "cost_center": "Data-AI-Lab",
       "organization": "proud-marketing",
-      "total_requests": 219,
+      "total_requests": 218,
       "total_spend_usd": 46.34,
       "gross_spend_usd": 46.34,
       "net_spend_usd": 46.18,
       "primary_model": "Claude 3.7 Sonnet",
-      "last_activity_date": "2026-09-28",
-      "surface": "VS Code"
+      "model_requests": {
+        "Gemini 2.0 Flash": 55,
+        "Claude 3.7 Sonnet": 93,
+        "GPT-4o": 49,
+        "o1": 21
+      },
+      "model_spend_usd": {
+        "Standard Completion": 39,
+        "Gemini 2.0 Flash": 1.078,
+        "Claude 3.7 Sonnet": 3.616,
+        "GPT-4o": 1.47,
+        "o1": 1.02
+      },
+      "last_activity_date": "2026-09-28"
     },
     {
       "login": "mei-ito",
@@ -369,13 +417,25 @@
       "department": "未分類 (Unassigned)",
       "cost_center": "Data-AI-Lab",
       "organization": "proud-marketing",
-      "total_requests": 309,
+      "total_requests": 308,
       "total_spend_usd": 30.01,
       "gross_spend_usd": 30.01,
       "net_spend_usd": 29.79,
       "primary_model": "o1",
-      "last_activity_date": "2026-09-28",
-      "surface": "VS Code"
+      "model_requests": {
+        "Claude 3.7 Sonnet": 68,
+        "o1": 97,
+        "Gemini 2.0 Flash": 85,
+        "GPT-4o": 58
+      },
+      "model_spend_usd": {
+        "Standard Completion": 19,
+        "Claude 3.7 Sonnet": 2.644,
+        "o1": 4.78,
+        "Gemini 2.0 Flash": 1.7,
+        "GPT-4o": 1.668
+      },
+      "last_activity_date": "2026-09-28"
     },
     {
       "login": "yuki-tanaka",
@@ -383,13 +443,25 @@
       "department": "未分類 (Unassigned)",
       "cost_center": "FinTech-Division",
       "organization": "proud-fintech",
-      "total_requests": 292,
+      "total_requests": 291,
       "total_spend_usd": 28.77,
       "gross_spend_usd": 28.77,
       "net_spend_usd": 28.55,
       "primary_model": "Gemini 2.0 Flash",
-      "last_activity_date": "2026-09-28",
-      "surface": "VS Code"
+      "model_requests": {
+        "Claude 3.7 Sonnet": 76,
+        "GPT-4o": 51,
+        "o1": 64,
+        "Gemini 2.0 Flash": 100
+      },
+      "model_spend_usd": {
+        "Standard Completion": 19,
+        "Claude 3.7 Sonnet": 2.932,
+        "GPT-4o": 1.53,
+        "o1": 3.09,
+        "Gemini 2.0 Flash": 2
+      },
+      "last_activity_date": "2026-09-28"
     },
     {
       "login": "sakura-watanabe",
@@ -397,13 +469,25 @@
       "department": "未分類 (Unassigned)",
       "cost_center": "IT-Infrastructure",
       "organization": "proud-internal-sys",
-      "total_requests": 253,
+      "total_requests": 252,
       "total_spend_usd": 28.22,
       "gross_spend_usd": 28.22,
       "net_spend_usd": 28.18,
       "primary_model": "GPT-4o",
-      "last_activity_date": "2026-09-24",
-      "surface": "VS Code"
+      "model_requests": {
+        "Claude 3.7 Sonnet": 59,
+        "GPT-4o": 84,
+        "o1": 72,
+        "Gemini 2.0 Flash": 37
+      },
+      "model_spend_usd": {
+        "Standard Completion": 19,
+        "Claude 3.7 Sonnet": 2.36,
+        "GPT-4o": 2.475,
+        "o1": 3.6,
+        "Gemini 2.0 Flash": 0.74
+      },
+      "last_activity_date": "2026-09-24"
     },
     {
       "login": "external-contractor-01",
@@ -411,13 +495,25 @@
       "department": "未分類 (Unassigned)",
       "cost_center": "FinTech-Division",
       "organization": "proud-fintech",
-      "total_requests": 272,
+      "total_requests": 271,
       "total_spend_usd": 28.07,
       "gross_spend_usd": 28.07,
       "net_spend_usd": 27.85,
       "primary_model": "Gemini 2.0 Flash",
-      "last_activity_date": "2026-09-28",
-      "surface": "VS Code"
+      "model_requests": {
+        "Gemini 2.0 Flash": 89,
+        "Claude 3.7 Sonnet": 77,
+        "GPT-4o": 52,
+        "o1": 53
+      },
+      "model_spend_usd": {
+        "Standard Completion": 19,
+        "Gemini 2.0 Flash": 1.732,
+        "Claude 3.7 Sonnet": 2.964,
+        "GPT-4o": 1.503,
+        "o1": 2.65
+      },
+      "last_activity_date": "2026-09-28"
     },
     {
       "login": "external-contractor-02",
@@ -425,13 +521,25 @@
       "department": "未分類 (Unassigned)",
       "cost_center": "FinTech-Division",
       "organization": "proud-fintech",
-      "total_requests": 272,
+      "total_requests": 271,
       "total_spend_usd": 28.07,
       "gross_spend_usd": 28.07,
       "net_spend_usd": 27.85,
       "primary_model": "Gemini 2.0 Flash",
-      "last_activity_date": "2026-09-28",
-      "surface": "VS Code"
+      "model_requests": {
+        "Gemini 2.0 Flash": 89,
+        "Claude 3.7 Sonnet": 77,
+        "GPT-4o": 52,
+        "o1": 53
+      },
+      "model_spend_usd": {
+        "Standard Completion": 19,
+        "Gemini 2.0 Flash": 1.732,
+        "Claude 3.7 Sonnet": 2.964,
+        "GPT-4o": 1.503,
+        "o1": 2.65
+      },
+      "last_activity_date": "2026-09-28"
     },
     {
       "login": "kaito-nakamura",
@@ -439,13 +547,25 @@
       "department": "未分類 (Unassigned)",
       "cost_center": "IT-Infrastructure",
       "organization": "proud-core-api",
-      "total_requests": 236,
+      "total_requests": 235,
       "total_spend_usd": 27.16,
       "gross_spend_usd": 27.16,
       "net_spend_usd": 27.01,
       "primary_model": "GPT-4o",
-      "last_activity_date": "2026-09-25",
-      "surface": "VS Code"
+      "model_requests": {
+        "Claude 3.7 Sonnet": 76,
+        "GPT-4o": 101,
+        "o1": 31,
+        "Gemini 2.0 Flash": 27
+      },
+      "model_spend_usd": {
+        "Standard Completion": 19,
+        "Claude 3.7 Sonnet": 2.988,
+        "GPT-4o": 2.946,
+        "o1": 1.55,
+        "Gemini 2.0 Flash": 0.524
+      },
+      "last_activity_date": "2026-09-25"
     },
     {
       "login": "aoi-kobayashi",
@@ -453,13 +573,32 @@
       "department": "未分類 (Unassigned)",
       "cost_center": "IT-Infrastructure",
       "organization": "proud-core-api",
-      "total_requests": 219,
+      "total_requests": 218,
       "total_spend_usd": 26.34,
       "gross_spend_usd": 26.34,
       "net_spend_usd": 26.18,
       "primary_model": "Claude 3.7 Sonnet",
-      "last_activity_date": "2026-09-28",
-      "surface": "VS Code"
+      "model_requests": {
+        "Gemini 2.0 Flash": 55,
+        "Claude 3.7 Sonnet": 93,
+        "GPT-4o": 49,
+        "o1": 21
+      },
+      "model_spend_usd": {
+        "Standard Completion": 19,
+        "Gemini 2.0 Flash": 1.078,
+        "Claude 3.7 Sonnet": 3.616,
+        "GPT-4o": 1.47,
+        "o1": 1.02
+      },
+      "last_activity_date": "2026-09-28"
     }
-  ]
+  ],
+  "import_summary": {
+    "source_files": [
+      "copilot_monthly_usage_2026-09.csv"
+    ],
+    "records_total": 163,
+    "duplicates_skipped": 0
+  }
 }

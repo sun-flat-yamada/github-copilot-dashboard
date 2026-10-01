@@ -1,21 +1,20 @@
 {
-  "generated_at": "2026-10-01T14:37:18.888Z",
+  "generated_at": "2026-10-01T20:25:32.190Z",
   "months": [
     "2026-09"
   ],
   "trends": [
     {
       "month": "2026-09",
-      "total_monthly_spend_usd": 0,
-      "total_spend_usd": 0,
-      "active_seats": 0,
-      "idle_seats": 0,
-      "total_seats": 0,
-      "acceptance_rate": 0.35,
-      "total_chats": 0,
+      "total_spend_usd": 2975,
+      "total_seats": 85,
+      "active_seats": 77,
+      "idle_seats": 8,
+      "acceptance_rate": 0.3415,
+      "total_chats": 15239,
       "total_ai_credits_used": 0,
-      "total_agent_sessions": 0,
-      "agent_adoption_rate": 0
+      "total_agent_sessions": null,
+      "agent_adoption_rate": null
     }
   ]
 }
