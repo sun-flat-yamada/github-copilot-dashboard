@@ -15,6 +15,7 @@
   - [x] All 5 stages pass (122 tests; 359 files scanned, 5 of them in `.devs/changes/`)
   - [x] SDD sync not needed: no SDD describes which paths the scanner covers
 - [x] Phase 5: Walkthrough Artifact Generation & Evidence Sealing <!-- id: 4 -->
-- [/] Phase 6: Rebase onto Base & Create PR <!-- id: 5 -->
-  - [ ] Branch up to date with `origin/main`, pushed, draft PR opened against `main`
+- [x] Phase 6: Rebase onto Base & Create PR <!-- id: 5 -->
+  - [x] Branch up to date with `origin/main` (`bee5e8b`), pushed, draft PR opened against `main`: [#159](https://github.com/sun-flat-yamada/github-copilot-dashboard/pull/159)
 - [ ] Phase 7: Rebase & Merge and Worktree Cleanup <!-- id: 6 -->
+  - [ ] Rebase & Merge by the maintainer
