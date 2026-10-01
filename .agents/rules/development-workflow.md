@@ -44,7 +44,7 @@ When multiple AI agents work concurrently on the codebase:
 
 ### Step 2: Antigravity Implementation Plan & Task Orchestration (Pre-Execution Gate)
 
-- Before provisioning worktrees or modifying code, autonomous agents must formulate an `implementation_plan.md` artifact in `<appDataDir>\brain\<conversation-id>\` using `write_to_file` with `ArtifactMetadata` (`RequestFeedback: true`, `UserFacing: true`).
+- Before provisioning worktrees or modifying code, autonomous agents must formulate an `implementation_plan.md` artifact in `.devs/changes/yyyy-mm-dd_<ChangeTitle>/` under the original repository root (never under `<appDataDir>`) using `write_to_file` with `ArtifactMetadata` (`RequestFeedback: true`, `UserFacing: true`).
 - Initialize `task.md` (`RequestFeedback: false`, `UserFacing: true`) to track execution checklists.
 - Await user approval via the interactive **Proceed** button before proceeding to worktree provisioning.
 
@@ -68,8 +68,9 @@ When multiple AI agents work concurrently on the codebase:
   *(All checks must exit 0 cleanly with ZERO detected secrets or PII).*
 
 ### Step 5: Walkthrough Artifact Generation & Evidence Sealing
-- Generate `walkthrough.md` in `<appDataDir>\brain\<conversation-id>\` with `ArtifactMetadata` (`RequestFeedback: false`, `UserFacing: true`).
+- Generate `walkthrough.md` in `.devs/changes/yyyy-mm-dd_<ChangeTitle>/` with `ArtifactMetadata` (`RequestFeedback: false`, `UserFacing: true`).
 - Seal git diffs, file modifications, and the 5-stage quality gate verification results.
+- On Google Antigravity, place a finished copy of all artifacts in `.devs/changes/yyyy-mm-dd_<ChangeTitle>/` of the repository upon completion.
 
 ### Step 6: Rebase onto Base & Pull Request
 - Rebase onto updated base to resolve conflicts early:
