@@ -35,6 +35,8 @@
 
 #### 2.1.1 Token Types and Permissions
 
+> **Decision (2026-10-01): authentication stays PAT-only; a GitHub App is not adopted.** An App installation token can read enterprise billing data (GitHub changelog 2026-08-26), but the enterprise Copilot seat-assignment endpoint does not support GitHub App tokens or fine-grained PATs (a classic PAT with `manage_billing:copilot` or `read:enterprise` is required), so an App alone cannot complete collection. Based on search summaries of GitHub's documentation; re-verify against the primary source if the decision is revisited.
+
 Based on current GitHub specifications, you can use either a **Fine-grained Personal Access Token (recommended)** or a **Personal Access Token (classic)**.
 
 ##### A. Fine-grained Personal Access Token (Recommended / Least Privilege)
