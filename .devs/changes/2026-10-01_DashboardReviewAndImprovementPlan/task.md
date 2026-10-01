@@ -6,16 +6,17 @@
   - [x] `implementation_plan.md` を策定（全体レビューと Phase 0〜4 の改善計画）
   - [x] 最新の `main`（`b163671`）へ rebase し、change-dev の成果物規約に沿って配置
   - [ ] User Review Required の判断事項 1〜7 への回答
-- [ ] Phase 3: Sibling Worktree Provisioning & Implementation <!-- id: 2 -->
-  - [ ] Phase 0 止血（P0-1〜P0-11）
-  - [ ] Phase 1 取得基盤（P1-1〜P1-7）
-  - [ ] Phase 2 フロントエンド収束（P2-1〜P2-7）
-  - [ ] Phase 3 分析手法・可視化（P3-1〜P3-8）
-  - [ ] Phase 4 監査・レポート（P4-1〜P4-7）
+- [/] Phase 3: Sibling Worktree Provisioning & Implementation <!-- id: 2 -->
+  - [x] Phase 0 止血（P0-1〜P0-11）— 実装済み（レビュー待ち）。成果物: [../2026-10-01_DashboardPhase0Stabilization/](../2026-10-01_DashboardPhase0Stabilization/)、Issue: [sun-flat-yamada/github-copilot-dashboard#160](https://github.com/sun-flat-yamada/github-copilot-dashboard/issues/160)
+  - [ ] Phase 1 取得基盤（P1-1〜P1-7）— User Review Required の判断待ち（特に 3. データの公開範囲、5. 収集スコープと認証）
+  - [ ] Phase 2 フロントエンド収束（P2-1〜P2-7）— 判断事項 1（収束先）、4（ブラウザ内クエリ方式）の判断待ち
+  - [ ] Phase 3 分析手法・可視化（P3-1〜P3-8）— 判断事項 2（個人単位診断の扱い）の判断待ち
+  - [ ] Phase 4 監査・レポート（P4-1〜P4-7）— 判断事項 6（監査要件）の判断待ち
   - 各実装フェーズは、着手時にフェーズごとの change ディレクトリ（`.devs/changes/yyyy-mm-dd_<ChangeTitle>/`）を作成して進める
 - [ ] Phase 4: Local Quality Gate & Specification Sync <!-- id: 3 -->
-  - [ ] 各 PR で 5 段階の品質ゲートを通過
-  - [ ] SDD の同期（SDD-02 / 03 / 04 / 05 / 06 / 07 / 10 / 11 / 15 の改訂、SDD-16 / SDD-17 の新設）
-- [ ] Phase 5: Walkthrough Artifact Generation & Evidence Sealing <!-- id: 4 -->
+  - [/] 各 PR で 5 段階の品質ゲートを通過（Phase 0 はローカルで通過済み。結果は Phase 0 の `walkthrough.md`）
+  - [/] SDD の同期（SDD-02 / 03 / 04 / 05 / 06 / 07 / 10 / 11 / 15 の改訂、SDD-16 / SDD-17 の新設）— Phase 0 分（SDD-01 / 02 / 03 / 04 / 05 / 06 / 07 / 08 / 09 / 11 / 15、README、SECURITY、セットアップガイド）は完了。SDD-10 の改訂と SDD-16 / SDD-17 の新設は Phase 3 / 4
+- [/] Phase 5: Walkthrough Artifact Generation & Evidence Sealing <!-- id: 4 -->
+  - [x] Phase 0 の walkthrough（[../2026-10-01_DashboardPhase0Stabilization/walkthrough.md](../2026-10-01_DashboardPhase0Stabilization/walkthrough.md)）
 - [ ] Phase 6: Rebase onto Base & Create PR <!-- id: 5 -->
 - [ ] Phase 7: Rebase & Merge and Worktree Cleanup <!-- id: 6 -->
