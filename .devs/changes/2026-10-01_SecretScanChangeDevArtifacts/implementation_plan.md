@@ -67,5 +67,5 @@
 - `npm test` with the current glob runs the new file: its tests appear in the output and the total rises above the baseline of 118.
 
 ### Manual Verification
-- `npm run secret-scan` in the repository: the coverage line reports the files under `.devs/changes/` (this change's artifacts and the earlier plan), and the scanned-file total equals the baseline of 353 plus those files.
+- `npm run secret-scan` in the repository: the coverage line reports the files under `.devs/changes/` (this change's artifacts and the earlier plan), and the pre-change scanner, run on the same tree, reports exactly that many files fewer.
 - A scratch tree outside the repository: a secret-shaped line in `.devs/changes/<dir>/implementation_plan.md` makes the CLI exit with 1 and name that file. The same line only in `.devs/other/x.md` or `.agents/x.md` leaves the scan clean (exit 0).

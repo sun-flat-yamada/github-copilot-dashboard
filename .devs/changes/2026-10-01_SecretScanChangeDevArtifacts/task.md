@@ -5,13 +5,16 @@
 - [x] Phase 2: Implementation Plan formulated & approved <!-- id: 1 -->
   - [x] `implementation_plan.md` written
   - [x] No interactive Proceed gate in this environment: the change request fixes the scope, and the plan is reviewed with the PR
-- [/] Phase 3: Sibling Worktree Provisioning & Implementation <!-- id: 2 -->
+- [x] Phase 3: Sibling Worktree Provisioning & Implementation <!-- id: 2 -->
   - [x] Sibling worktree provisioned (`../github-copilot-dashboard-worktrees/claude-wonderful-turing-1icdpq`)
   - [x] Baseline quality gate on `bee5e8b`: all 5 stages pass (118 tests, 353 files scanned)
-  - [ ] Scanner: allowlisted dot-path walk (`scripts/scan-secrets.ts`)
-  - [ ] Regression test (`src/tests/scripts/scan-secrets.test.ts`)
-  - [ ] change-dev skill note (`.agents/skills/change-dev/SKILL.md`)
-- [ ] Phase 4: Local Quality Gate & Specification Sync <!-- id: 3 -->
-- [ ] Phase 5: Walkthrough Artifact Generation & Evidence Sealing <!-- id: 4 -->
-- [ ] Phase 6: Rebase onto Base & Create PR <!-- id: 5 -->
+  - [x] Scanner: allowlisted dot-path walk (`scripts/scan-secrets.ts`)
+  - [x] Regression test (`src/tests/scripts/scan-secrets.test.ts`), confirmed by a mutation check
+  - [x] change-dev skill note (`.agents/skills/change-dev/SKILL.md`)
+- [x] Phase 4: Local Quality Gate & Specification Sync <!-- id: 3 -->
+  - [x] All 5 stages pass (122 tests; 359 files scanned, 5 of them in `.devs/changes/`)
+  - [x] SDD sync not needed: no SDD describes which paths the scanner covers
+- [x] Phase 5: Walkthrough Artifact Generation & Evidence Sealing <!-- id: 4 -->
+- [/] Phase 6: Rebase onto Base & Create PR <!-- id: 5 -->
+  - [ ] Branch up to date with `origin/main`, pushed, draft PR opened against `main`
 - [ ] Phase 7: Rebase & Merge and Worktree Cleanup <!-- id: 6 -->
