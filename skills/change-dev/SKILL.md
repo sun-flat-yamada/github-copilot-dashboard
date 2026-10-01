@@ -1,9 +1,9 @@
 ---
-name: change-workflow
+name: change-dev
 description: End-to-end development lifecycle using sibling Git worktrees for concurrent AI agents. Covers Issue creation, sibling worktree provisioning, local quality gates, rebase synchronization, PR authoring, rebase merge, and workspace cleanup.
 ---
 
-# 🔄 Change Workflow & Multi-Agent Worktree Skill (`change-workflow`)
+# 🔄 Change Dev & Multi-Agent Worktree Skill (`change-dev`)
 
 Use this skill when making code, documentation, or architectural changes to the repository, particularly when multiple AI agents or parallel tasks operate simultaneously.
 

@@ -1,9 +1,9 @@
 ---
-name: change-workflow
+name: change-dev
 description: End-to-end development lifecycle for Google Antigravity and multi-agent systems using Antigravity Implementation Plan artifacts and sibling Git worktrees. Covers Issue scoping, implementation_plan.md artifact generation with ArtifactMetadata, user approval gating, sibling worktree provisioning, local quality gates, walkthrough.md verification sealing, PR authoring, rebase merge, and workspace cleanup.
 ---
 
-# 🔄 Change Workflow & Multi-Agent Worktree Skill (`change-workflow`)
+# 🔄 Change Dev & Multi-Agent Worktree Skill (`change-dev`)
 
 Use this skill when proposing, planning, and making code, documentation, or architectural changes to the repository, particularly within **Google Antigravity** and multi-agent collaboration environments.
 
@@ -23,21 +23,21 @@ Before executing changes, identify whether this workspace is:
 
 ## 📐 Google Antigravity Artifact Architecture & File Hierarchy
 
-In Google Antigravity, architectural changes and task executions are governed through **Artifacts** stored in the session's brain directory. All agents must strictly conform to this file hierarchy and metadata specification.
+In Google Antigravity, architectural changes and task executions are governed through **Artifacts** stored under `.devs/changes/yyyy-mm-dd_<ChangeTitle>/` in the repository root. All agents must strictly conform to this file hierarchy and metadata specification.
 
 ### 1. Storage Paths & Directory Conventions
 
-Artifacts are isolated from the repository working tree and persist under the conversation's brain storage:
+Artifacts are **not** written under `<appDataDir>`. They are output beneath the **original repository root** (not the sibling worktree), one directory per change:
 
-- **Brain Artifact Root Directory**:
+- **Change Artifact Directory**:
   ```text
-  <appDataDir>/brain/<conversation-id>/
+  <repo-root>/.devs/changes/yyyy-mm-dd_<ChangeTitle>/
   ```
-  *(Example Windows path: `C:\Users\<user>\.gemini\antigravity\brain\<conversation-id>\`)*
-- **Scratch Scripts & Temporary Data**:
-  ```text
-  <appDataDir>/brain/<conversation-id>/scratch/
-  ```
+  - `yyyy-mm-dd`: the date the change was started (local date).
+  - `<ChangeTitle>`: short PascalCase/kebab-case title of the change (no spaces or path-unsafe characters).
+- **Google Antigravity**: When running in Google Antigravity, a finished copy of every artifact (`implementation_plan.md`, `task.md`, `walkthrough.md`) must be placed in this directory upon completion, even if Antigravity's own artifact runtime keeps an internal working copy.
+- **Scratch Scripts & Temporary Data**: Keep out of the repository (use the agent's scratch area) and never commit them.
+- Artifacts must not contain secrets, PII, or machine-specific absolute paths (see `npm run secret-scan`).
 
 ### 2. Canonical Antigravity Artifact Triad
 
@@ -51,11 +51,11 @@ Artifacts are isolated from the repository working tree and persist under the co
 
 ### 3. `ArtifactMetadata` Schema Specification
 
-When calling `write_to_file` to create or update files inside `<appDataDir>\brain\<conversation-id>\`, the `ArtifactMetadata` object is **mandatory**:
+When calling `write_to_file` to create or update artifact files in the change artifact directory, the `ArtifactMetadata` object is **mandatory**:
 
 ```json
 {
-  "TargetFile": "<appDataDir>\\brain\\<conversation-id>\\implementation_plan.md",
+  "TargetFile": "<repo-root>/.devs/changes/yyyy-mm-dd_<ChangeTitle>/implementation_plan.md",
   "Overwrite": true,
   "ArtifactMetadata": {
     "UserFacing": true,
@@ -180,10 +180,10 @@ Record the Issue number (e.g. `#42`).
 Before writing any application code or provisioning worktrees:
 
 1. **Formulate `implementation_plan.md`**:
-   - Write to `<appDataDir>\brain\<conversation-id>\implementation_plan.md` with `ArtifactMetadata` (`RequestFeedback: true`, `UserFacing: true`).
+   - Write to `<repo-root>/.devs/changes/yyyy-mm-dd_<ChangeTitle>/implementation_plan.md` with `ArtifactMetadata` (`RequestFeedback: true`, `UserFacing: true`).
    - Detail user reviews, proposed file modifications with `file:///` links, and verification commands.
-2. **Initialize `task.md`**:
-   - Write to `<appDataDir>\brain\<conversation-id>\task.md` with `ArtifactMetadata` (`RequestFeedback: false`, `UserFacing: true`).
+2. **Initialize `task.md`** (same directory):
+   - Write to `<repo-root>/.devs/changes/yyyy-mm-dd_<ChangeTitle>/task.md` with `ArtifactMetadata` (`RequestFeedback: false`, `UserFacing: true`).
 3. **Await User Sign-Off**:
    - The interactive **Proceed** button appears in the Antigravity UI.
    - Wait for the user to review the plan and click **Proceed** before moving to Phase 3.
@@ -231,9 +231,10 @@ In the isolated worktree directory:
 ### Phase 5: Walkthrough Artifact Generation & Evidence Sealing
 
 Once all checks pass cleanly:
-1. Create `<appDataDir>\brain\<conversation-id>\walkthrough.md` using `write_to_file` with `ArtifactMetadata` (`RequestFeedback: false`, `UserFacing: true`).
+1. Create `<repo-root>/.devs/changes/yyyy-mm-dd_<ChangeTitle>/walkthrough.md` using `write_to_file` with `ArtifactMetadata` (`RequestFeedback: false`, `UserFacing: true`).
 2. Document summary, modified files, diffs, and the quality gate results table.
 3. Mark all tasks as completed (`[x]`) in `task.md`.
+4. **Antigravity**: place the finished copies of `implementation_plan.md`, `task.md` and `walkthrough.md` in `<repo-root>/.devs/changes/yyyy-mm-dd_<ChangeTitle>/`.
 
 ---
 
@@ -305,7 +306,7 @@ Always reference and adhere to the repository's specifications and rule files:
   - [Storage & Data Routing Policy](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/.agents/rules/storage-and-data-routing.md)
 
 - **Autonomous Agent Personas (`.agents/`)**:
-  - [Change Workflow Agent (`change-workflow-agent.md`)](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/.agents/change-workflow-agent.md)
+  - [Change Dev Agent (`change-dev.agent.md`)](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/.agents/change-dev.agent.md)
   - [Fork Synchronization Agent (`fork-sync-agent.md`)](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/.agents/fork-sync-agent.md)
 
 - **Antigravity Customization System & Built-in Guides**:
@@ -358,9 +359,8 @@ Agents should invoke `search_web` with targeted queries to verify artifact handl
 Before finalizing any task or proposing changes, execute this verification checklist:
 
 1. **Artifact Destination Check**:
-   - Is `implementation_plan.md` created in `<appDataDir>\brain\<conversation-id>\`?
-   - Is `task.md` created in `<appDataDir>\brain\<conversation-id>\`?
-   - Is `walkthrough.md` created in `<appDataDir>\brain\<conversation-id>\` upon task completion?
+   - Are `implementation_plan.md`, `task.md` and `walkthrough.md` located in `<repo-root>/.devs/changes/yyyy-mm-dd_<ChangeTitle>/` (not under `<appDataDir>`)?
+   - On Antigravity, is a finished copy of every artifact placed there upon task completion?
 2. **`ArtifactMetadata` Schema Integrity**:
    - Does `ArtifactMetadata` include `UserFacing: true`?
    - Does `implementation_plan.md` have `RequestFeedback: true` (to render the interactive Proceed button)?

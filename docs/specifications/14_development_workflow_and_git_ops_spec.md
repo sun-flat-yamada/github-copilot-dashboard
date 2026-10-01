@@ -72,7 +72,7 @@ All changes start with a dedicated GitHub Issue.
 Before provisioning worktrees or modifying code, autonomous agents must formulate an implementation plan conforming to Google Antigravity's artifact management architecture.
 
 1. **`implementation_plan.md` Generation**:
-   - Write to the conversation-scoped brain directory (`<appDataDir>\brain\<conversation-id>\implementation_plan.md`) using `write_to_file`.
+   - Write to the change artifact directory under the original repository root (`.devs/changes/yyyy-mm-dd_<ChangeTitle>/implementation_plan.md`, never under `<appDataDir>`) using `write_to_file`.
    - Specify `ArtifactMetadata` with `{ "UserFacing": true, "RequestFeedback": true, "Summary": "..." }`.
    - `RequestFeedback: true` instructs the Antigravity UI to render the interactive **Proceed** button, pausing execution until the user provides review and approval.
    - The plan details user reviews (`> [!IMPORTANT]`), proposed changes categorized by `[NEW]`, `[MODIFY]`, `[DELETE]` with clickable `file:///` links, and the automated/manual verification plan.
@@ -149,7 +149,7 @@ npm ci
 Once all local quality gates pass cleanly (Exit Code 0), seal the implementation evidence before submitting the PR:
 
 1. **`walkthrough.md` Generation**:
-   - Write to the conversation-scoped brain directory (`<appDataDir>\brain\<conversation-id>\walkthrough.md`) using `write_to_file`.
+   - Write to `.devs/changes/yyyy-mm-dd_<ChangeTitle>/walkthrough.md` under the original repository root using `write_to_file`. When running on Google Antigravity, place a finished copy of all artifacts (`implementation_plan.md`, `task.md`, `walkthrough.md`) in this directory upon completion.
    - Specify `ArtifactMetadata` with `{ "UserFacing": true, "RequestFeedback": false, "Summary": "..." }`.
    - Document the concise summary, modified file listings with diff indicators, and the complete 5-stage quality gate verification results table.
 

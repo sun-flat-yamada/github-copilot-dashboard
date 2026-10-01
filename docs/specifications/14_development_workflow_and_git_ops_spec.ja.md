@@ -70,7 +70,7 @@
 コードの変更やWorktreeの作成に着手する前に、AIエージェントは必ずAntigravityのアーティファクト管理規約に基づき実装計画を策定する。
 
 1. **`implementation_plan.md` の生成**:
-   - 会話セッション固有のBrainディレクトリ（`<appDataDir>\brain\<conversation-id>\implementation_plan.md`）に `write_to_file` で書き込む。
+   - 元のリポジトリルート直下の変更成果物ディレクトリ（`.devs/changes/yyyy-mm-dd_<ChangeTitle>/implementation_plan.md`。`<appDataDir>` 下は使用しない）に `write_to_file` で書き込む。
    - `ArtifactMetadata` に `{ "UserFacing": true, "RequestFeedback": true, "Summary": "..." }` を指定する。
    - `RequestFeedback: true` によりAntigravity UIに対話型の **"Proceed"** ボタンを表示させ、ユーザーの承認（またはフィードバック）を得るまでコード変更を実行しない。
    - 計画書には、変更コンテキスト、ユーザー確認必須事項（`> [!IMPORTANT]` 等）、変更対象ファイル（`[NEW]`, `[MODIFY]`, `[DELETE]` と `file:///` リンク）、自動/手動検証計画を明記する。
@@ -148,7 +148,7 @@ npm ci
 全品質ゲートが正常（Exit Code 0）に通過した後、変更内容の検証エビデンスを封印する。
 
 1. **`walkthrough.md` の生成**:
-   - 会話セッション固有のBrainディレクトリ（`<appDataDir>\brain\<conversation-id>\walkthrough.md`）に `write_to_file` で書き込む。
+   - 元のリポジトリルート直下の `.devs/changes/yyyy-mm-dd_<ChangeTitle>/walkthrough.md` に `write_to_file` で書き込む。Google Antigravity で動作している場合は、完了後に全成果物（`implementation_plan.md`, `task.md`, `walkthrough.md`）の複製を同ディレクトリに配置する。
    - `ArtifactMetadata` に `{ "UserFacing": true, "RequestFeedback": false, "Summary": "..." }` を指定する。
    - 変更の概要、変更ファイル一覧と diff サマリ、5重品質ゲートの実行結果テーブルを記録する。
 
