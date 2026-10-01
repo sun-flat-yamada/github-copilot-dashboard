@@ -7,7 +7,7 @@
 - **文書番号**: SPEC-COPILOT-008
 - **ステータス**: Approved / Active
 - **対象バージョン**: 2026.09-LTS
-- **作成日**: 2026-09-10
+- **作成日**: 2026-09-10 (2026-10-01 改訂: 公開範囲の事前検査、ステージング/検証ステップ、新しい Secrets/Variables、ソース別縮退)
 
 ---
 
@@ -15,8 +15,8 @@
 
 | ワークフロー名 | トリガー | 主な責務 |
 |---|---|---|
-| `copilot-analysis-cron.yml` | 定期実行 (毎日 UTC 00:00) / 手動実行 (`workflow_dispatch`) | 1. APIから最新データ収集 (認証情報が未設定/権限不足の場合もライブデータ0件として処理を継続)<br>2. 属性リゾルバでマッピング注入<br>3. 多次元集計・費用配賦<br>4. `MOCK_MODE` に応じて `copilot-data`(実データ、追記コミット) または `copilot-data-mock`(モックデータ、force-resetによる非蓄積) ブランチへ保存<br>5. ダッシュボードビルド & GitHub Pagesデプロイ (実データ運用時のみ。モック実行はステップ4で終了) |
-| `test-and-preview.yml` | `main` へのPull Request / Push | TypeScript型検査、単体テスト、モックデータによるビルド動作検証 |
+| `copilot-analysis-cron.yml` | 定期実行 (毎日 UTC 00:00) / 手動実行 (`workflow_dispatch`) | 1. **公開範囲の事前検査** (`npm run fork:verify`、実データ運用時のみ): 公開リポジトリや公開 Pages が、実在の・仮名化されていないユーザー単位のデータを公開してしまう状態なら、何も収集する前に失敗させる<br>2. APIからソース別に最新データ収集 (認証情報が未設定/権限不足の場合もライブデータ0件として処理を継続し、ソースごとの状態を記録)<br>3. 属性リゾルバでマッピング注入 (`ANONYMIZE_USERS=true` なら仮名化)<br>4. 多次元集計・費用配賦<br>5. `MOCK_MODE` に応じて `copilot-data`(実データ、追記コミット) または `copilot-data-mock`(モックデータ、force-resetによる非蓄積) ブランチへ保存<br>6. 許可リストの processed データをステージ (`pages:stage`)、ダッシュボードビルド、**ビルド成果物の検証** (`pages:verify`)、GitHub Pagesデプロイ (実データ運用時のみ。モック実行はステップ5で終了) |
+| `test-and-preview.yml` | `main` へのPull Request / Push | TypeScript型検査、ESLint (React Hooks ルール、SDD-15 §6)、単体テスト、モックデータによるビルド動作検証 |
 
 ---
 
@@ -25,7 +25,9 @@
 ### 2.1 Secrets
 - `COPILOT_READ_TOKEN`:
   - GitHub Enterprise または対象Orgの管理者権限を持つPersonal Access Token (PAT) または GitHub App。
-  - ※ モックモード (`MOCK_MODE=true`) 実行時は未設定でも動作可能。実データ運用でも、`COPILOT_READ_TOKEN`/`COPILOT_ENTERPRISE`/`COPILOT_ORGS` が未設定、または権限(Enterprise Owner/Org Admin)不足の場合でもパイプラインは中断しなくなった。詳細は[2.3節](#23-copilot-metricsseats-の認証情報が無い場合の動作)を参照。
+  - ※ モックモード (`MOCK_MODE=true`) 実行時は未設定でも動作可能。実データ運用でも、`COPILOT_ENTERPRISE`/`COPILOT_ORGS` が未設定ならライブのソースは `skipped`、トークンが無い・権限(Enterprise Owner/Org Admin)不足なら `failed` として記録され、いずれの場合もパイプラインは中断しなくなった。詳細は[2.3節](#23-copilot-metricsseats-の認証情報が無い場合の動作)を参照。
+- `ANONYMIZE_SECRET` (**`ANONYMIZE_USERS=true` のとき必須**):
+  - 秘密鍵付き HMAC-SHA256 仮名化の秘密鍵 (ランダムな 16 文字以上。例: `openssl rand -hex 32`)。`ANONYMIZE_USERS=true` で鍵が無い (または短い) 場合、パイプラインは何も公開せずに停止する (fail closed)。鍵を変更するとすべての仮名が変わる。詳細は [SDD-04 第5章](04_user_attribute_mapping_spec.ja.md) を参照。
 - `COPILOT_USER_MAPPING_PASSPHRASE` (オプション):
   - `COPILOT_USER_MAPPING` の48KBサイズ上限を超える大規模ユーザーマッピングを扱うための、GPG暗号化ワークアラウンド用パスフレーズ。
   - `copilot-data` ブランチの `data/config/copilot-user-mapping.json.gpg` を復号する際にのみ使用される。未設定、または対象ファイルが存在しない場合はこのステップ自体がスキップされ、通常どおり `COPILOT_USER_MAPPING`/`COPILOT_USER_MAPPING_BASE64` にフォールバックする。
@@ -80,10 +82,10 @@ GitHubの最新仕様に基づき、**Fine-grained Personal Access Token (推奨
 ### 2.3 Copilot Metrics/Seats の認証情報が無い場合の動作
 
 実データ運用 (`MOCK_MODE` 未設定または `false`) で `COPILOT_ENTERPRISE`/`COPILOT_ORGS` が未設定の場合、または設定された認証情報に Enterprise Owner/Org Admin 権限が無い場合でも、パイプラインは**中断しなくなった**。具体的には:
-- `fetchMetrics()`/`fetchSeats()` は、無言で失敗したりモックデータへフォールバックしたりせず、`warning`レベルの説明的な issue を記録する（`index.json` の `issues[]` に反映）。
+- ライブの各ソース (`metrics`・`seats`・`cost_centers`) は、自身の `SourceStatus` を `index.json` の `source_status[]` に記録する: `COPILOT_ENTERPRISE`/`COPILOT_ORGS` が未設定なら `skipped` と `warning` の issue、トークン (`COPILOT_READ_TOKEN`) が無い、または API 呼び出しが失敗したなら `failed` と原因を示す `error` の issue。無言で失敗したりモックデータへフォールバックしたりせず、失敗したソースは前回成功時の値を保持する (SDD-02 §2.6)。issue は `index.json` の `issues[]` と `error-log.json` に反映される。
 - `index.json` は引き続き生成され、`available_months`・`available_days`・`available_reports` は実際に利用可能なデータのみを反映する（ライブメトリクス/レポートが存在しない場合は捏造したプレースホルダ値ではなく `[]` となる）。
 - ライブの Copilot Metrics/Seats API アクセスに依存しない機能 ― 月次利用レポートCSVインポーター (`npm run import:report`)、AIモデルベンチマークレーダー、Cost Center予算宣言 ― は、Enterprise/Org認証情報の欠如や権限不足の影響を受けず正常に動作し続ける。
-- ダッシュボードSPAはライブデータ不在の状態を検知し、固定のフォールバック月表示やクラッシュではなく、案内バナー（本来のフェッチエラーバナーとは別枠）を表示する。
+- ダッシュボードSPAはライブデータ不在の状態を検知し、固定のフォールバック月表示やクラッシュではなく、案内バナー（本来のフェッチエラーバナーとは別枠）を表示する。失敗したソースはデータ状態バナーに表示する (SDD-07 §2.12)。どちらの場合もデモデータへは切り替えない。
 
 ### 2.2 Variables
 - `COPILOT_USER_MAPPING`:
@@ -93,6 +95,11 @@ GitHubの最新仕様に基づき、**Fine-grained Personal Access Token (推奨
 - `COPILOT_ENTERPRISE`: 対象のEnterpriseスラッグ（Enterprise一括集計時）。
 - `COPILOT_ORGS`: 対象のOrganizationスラッグ（カンマ区切り、複数Org対応）。
 - `COPILOT_COST_CENTER_BUDGETS`: `{ cost_center_id?, cost_center_name?, spending_limit_usd, free_tier_budget_usd }` のJSON配列。GitHub APIには予算上限を返すエンドポイントが存在しないため、実データ運用でCost Center別予算を表示するには管理者がこの値を宣言する必要がある。VariableまたはSecretのどちらでも設定可能。
+- `ANONYMIZE_USERS`: `true` にすると、実名のかわりに仮名化したログイン名・氏名・部署を公開する (上記 Secret `ANONYMIZE_SECRET` が必要)。
+- `COPILOT_BILLING_CONFIG`: Enterprise の契約価格・為替・割引の JSON (`EnterpriseBillingConfig`、SDD-02 §4.3)。Variable または Secret。未設定なら価格カタログの既定値。不正な JSON は無視されず issue として記録される (ヘッダーの警告件数に反映)。
+- `GITHUB_API_VERSION`: `X-GitHub-Api-Version` ヘッダーの値 (既定 `2026-03-10`、SDD-03 §1.1)。
+- `COPILOT_ALLOW_PUBLIC_DATA` (オプション): `true` にすると、公開範囲の事前検査の失敗が警告に格下げされる。データを公開することが明示的に受け入れられた判断である場合のみ使用する。
+- `COPILOT_PAGES_URL` (オプション): カスタムドメインで配信している場合のダッシュボードの公開 URL。公開範囲の検査が正しいアドレスを調べるために使う (既定 `https://<owner>.github.io/<repo>/`)。
 - `MOCK_MODE`: 実APIトークンなしでデモ・テスト運用する場合は `true` を指定（または `workflow_dispatch` 実行時に `mock_mode: true` を指定）。シミュレーションデータは実データの `copilot-data` には一切保存されず、隔離された `copilot-data-mock` ブランチにのみ書き込まれる。またSPAビルド・GitHub Pagesデプロイの各ステップは完全にスキップされる。詳細は[2.1.2節](#212-個人契約freeプランgithubアカウント利用時の重要注意点)および[SDD-05 1.3節](05_data_storage_and_fork_isolation_spec.ja.md#13-モック実データブランチ分離)を参照。
 
 ---
@@ -116,10 +123,13 @@ permissions:
 2. Node.js 22 セットアップ & 依存関係インストール (`npm ci`)
 3. 対象ブランチから既存データを復元(実データ運用時は `copilot-data`。モック実行はシミュレーションデータを毎回全量再生成するためスキップ)
 4. *(オプション)* GPG暗号化ワークアラウンドによる大容量ユーザーマッピングの復号: `data/config/copilot-user-mapping.json.gpg` と `COPILOT_USER_MAPPING_PASSPHRASE` Secret が両方存在する場合のみ実行され、`$RUNNER_TEMP` 配下に復号後 `COPILOT_USER_MAPPING_FILE` を自動設定する(詳細は[SDD-04 第6章](04_user_attribute_mapping_spec.ja.md#6-48kb超マッピング向け-gpg暗号化ワークアラウンド-オプション)を参照)
-5. データ収集・集計スクリプト実行 (`npm run pipeline:run`)。Copilot Metrics/Seats の認証情報が0件でも正常終了する(2.3節参照)
-6. 新規データを対象ブランチへ保存: 実データ運用は `copilot-data` への追記コミット、モック運用は `copilot-data-mock` の force-pushによるオーファンブランチ再構築(履歴を蓄積しない)
-7. *(実データ運用のみ)* SPAダッシュボードのビルド (`npm run build`)
-8. *(実データ運用のみ)* `actions/upload-pages-artifact@v5` で静的アーティファクトをアップロード
-9. *(実データ運用のみ)* `actions/deploy-pages@v5` でGitHub Pagesへ公開
+5. *(実データ運用のみ)* **公開範囲の事前検査** (`npm run fork:verify`): リポジトリ API・`copilot-data` ブランチの生 index・Pages の index を匿名で調べ、実在の・仮名化されていないユーザー単位のデータが公開されている (または公開されようとしている) 場合は失敗させる (SDD-04 §5.3)。オフライン・レート制限で調べられない場合は警告のみ
+6. データ収集・集計スクリプト実行 (`npm run pipeline:run`)。Copilot Metrics/Seats の認証情報が0件でも正常終了する(2.3節参照)
+7. 新規データを対象ブランチへ保存: 実データ運用は `copilot-data` への追記コミット、モック運用は `copilot-data-mock` の force-pushによるオーファンブランチ再構築(履歴を蓄積しない)
+8. *(実データ運用のみ)* AI モデルベンチマークデータセットを更新し、**processed データをステージ** (`npm run pages:stage`): 許可リストの `index.json`・`error-log.json`・全月の `processed/*`・index に載っている日次ファイルを `dashboard/public/data/` へコピーする。Raw データ・元 CSV・暗号化マッピングは決してコピーしない。DEMO パーティションは `data/demo/` から別途ステージする
+9. *(実データ運用のみ)* SPAダッシュボードのビルド (`npm run build`)
+10. *(実データ運用のみ)* **Pages 成果物の検証** (`npm run pages:verify`): ステージした全ファイル (過去月を含む) が `dist/data/` にあり、非公開のもの (raw・config・元 CSV) が含まれていないことを確認する (SDD-05 §2.2a)
+11. *(実データ運用のみ)* `actions/upload-pages-artifact@v5` で静的アーティファクトをアップロード
+12. *(実データ運用のみ)* `actions/deploy-pages@v5` でGitHub Pagesへ公開
 
-> モック実行 (`MOCK_MODE=true`) はステップ6で意図的に終了する。ダッシュボードのビルド・デプロイは一切行われないため、本番のGitHub Pagesサイトがシミュレーションデータで上書きされることはない。
+> モック実行 (`MOCK_MODE=true`) はステップ7で意図的に終了する。ダッシュボードのビルド・デプロイは一切行われないため、本番のGitHub Pagesサイトがシミュレーションデータで上書きされることはない。

@@ -7,7 +7,7 @@
 - **Document ID**: SPEC-COPILOT-001
 - **Status**: Approved / Active
 - **Target Version**: 2026.09-LTS
-- **Date**: 2026-09-10
+- **Date**: 2026-09-10 (revised 2026-10-01: FR-4, NFR-2 and the new NFR-7)
 
 ---
 
@@ -76,7 +76,7 @@ The aggregation engine and dashboard must support rapid switching between data s
    - **Custom Date Range Scope**: Trend curves, acceptance rates, and cumulative costs across 30-day or 1-year windows.
 
 ### FR-4: Cost Optimization & Idle Seat Detection
-- Identify seats with no activity for $N$ days (defaults: 14 / 30 days) as "Idle Seats", quantifying wasted monthly and annualized costs.
+- Identify seats with no activity for $N$ days (defaults: 14 / 30 days) as "Idle Seats", quantifying wasted monthly and annualized costs. The criteria are those of SDD-06 §3, are displayed wherever idle seats are mentioned, and a recently assigned unused seat is classified as *Onboarding* (default: assigned less than 7 days ago), not as idle.
 - Provide exportable recommendation lists for license reclamation and reassignment.
 
 ### FR-5: Auto-Updating GitHub Pages Dashboard
@@ -143,7 +143,8 @@ The aggregation engine and dashboard must support rapid switching between data s
 
 ### NFR-2: Security & Principle of Least Privilege
 - Restrict GitHub API credentials (Fine-grained PAT or GitHub App) to minimum required scopes (`copilot:read`, `enterprise_billing:read`, `org:read`).
-- Provide anonymization/masking options via environment variables to protect personal identities on public deployments.
+- Provide anonymization/masking options via environment variables to protect personal identities on public deployments. The option (`ANONYMIZE_USERS=true`) must use **keyed, non-reversible pseudonymization** (HMAC-SHA256 with `ANONYMIZE_SECRET`, at least 16 characters) and **fail closed** when the secret is missing; avatar URLs, numeric user IDs and the original CSV must not be published in that mode (SDD-04 §5).
+- Detect, before anything is collected or published, when a public repository or a public GitHub Pages site would expose real, non-anonymized user-level data (`npm run fork:verify`, SDD-04 §5.3). Public repositories publish the `copilot-data` branch as well; this requirement protects against the zero-leakage guarantee being limited to `main`.
 - Apply AES-256 symmetric GPG encryption for enterprise user mappings exceeding GitHub's 48KB secret limit, isolating encrypted blobs to `copilot-data` and decrypting strictly into ephemeral `$RUNNER_TEMP` (see [GPG Key Management & Operational Guide](../security/01_gpg_key_management_and_user_mapping_guide.md)).
 
 ### NFR-3: Offline & Mock Support
@@ -162,3 +163,9 @@ The aggregation engine and dashboard must support rapid switching between data s
 - Ensure frontend repositories (`HttpJsonMetricsRepository`) rely purely on browser-native `fetch` APIs without references to Node.js `fs` or `path` modules.
 - Guarantee 0 build warnings from Vite regarding Node.js module externalization (`Module "fs" has been externalized`).
 
+### NFR-7: Data Integrity & Transparency
+- **A failure must be distinguishable from "empty" and from "demo"**: each data source (usage metrics, seats, Cost Centers) is collected independently and its outcome (`ok` / `partial` / `failed` / `skipped`) is recorded and shown; a failed source never overwrites earlier good data with an empty result (the last successful values are carried over and labelled), and `is_mock_mode` is true only for explicitly generated simulation data (SDD-02 §2.6, SDD-05 §3.0).
+- **Missing values are missing, never invented**: an unmeasured value is `null` and displayed as "—" with its reason; no fixed constants, synthesized per-user profiles or proxy values are substituted, and diagnostic patterns that cannot be evaluated say so (SDD-06 §4.4, SDD-11 §6).
+- **Demo data is shown only when explicitly chosen or declared by the data itself**, never as a fallback for a failure (SDD-07 §2.13).
+- **One definition per concept**: prices (pricing catalog), budget utilization, seat classification, the "unassigned" filter value and the filter engine are each defined once and imported (SDD-06, SDD-15 §3.6).
+- **Delivery is an allow-list**: only the files the SPA needs are staged to Pages, and the built artifact is verified before upload (SDD-05 §2.2a).

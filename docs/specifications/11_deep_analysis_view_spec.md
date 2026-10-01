@@ -7,7 +7,7 @@
 - **Document ID**: SPEC-COPILOT-011
 - **Status**: Approved / Active
 - **Target Version**: 2026.09-LTS
-- **Date**: 2026-09-12
+- **Date**: 2026-09-12 (revised 2026-10-01: profile sources in §2.1 and the data-sufficiency rules in §6)
 
 ---
 
@@ -29,10 +29,10 @@ Standard dashboard views (Live Metrics, Monthly Report, Model Radar) focus on ma
 - Icon: `BrainCircuit`. One-click transition to the deep analytics hub.
 - **Active Data Source Integration**:
   - **Live Metrics**: Analyzes granular telemetry (prompt frequency, suggestions, acceptances, and daily history) for the currently selected scope.
-  - **Monthly Usage Report**: Prioritizes monthly deep-analysis archives (`data/processed/deep-analysis/{YYYY-MM}.json`) if available; otherwise dynamically adapts `MonthlyReportAggregatedData` (`ReportUserDetail` and `ReportDailyTrend`) into compliant `UserUsageProfile` records via `adaptReportToProfiles` for estimated behavioral diagnosis.
-  - **User Upload**: Dynamically parses and adapts user-dropped CSV/JSON datasets on-the-fly for immediate diagnostic analysis.
+  - **Monthly Usage Report**: Uses the stored monthly deep-analysis archive (`data/processed/deep-analysis/{YYYY-MM}.json`) when it exists (measured telemetry). A monthly CSV carries no per-user daily telemetry, so without an archive the view states "monthly aggregate only — daily diagnosis not available" and why; **no per-user profile is synthesized from the CSV** (the former `adaptReportToProfiles` was removed, see §6.4).
+  - **User Upload**: An uploaded CSV is a monthly aggregate as well and gets the same "monthly aggregate only" notice instead of an estimated diagnosis.
   - **Tag AND Filtering**: Synchronizes with global tag filters to restrict the diagnostic cohort to matching developers.
-  - Displays a persistent Active Source Status Indicator (Confirmed Telemetry vs. Pro-rated Diagnostic Mode).
+  - Displays a persistent Active Source Status Indicator (Confirmed Telemetry vs. monthly aggregate only / diagnosis unavailable) with the number of target users.
 
 ### 2.2 Contextual Deep-Links
 - **User Detail & Ranking Table (`UserDetailTable`)**: "Deep Analysis" action button in each user row opens the view with that user preselected.
@@ -69,6 +69,8 @@ Evaluates 5 prevalent AI coding anti-patterns:
 | `context_blind_chat_churn` | **Context-Blind Chat Churn** | Excessive chat turns (>15/day) with negligible code adoption. Excludes high-yield inline pair-programming ($\ge 20$ lines/prompt). | Prob $\ge 70\%$: High<br>40–69%: Medium |
 | `passive_seat_disengaged` | **Disengaged / Abandoned Seat Candidate** | Active days under 20% of the period, or nominal usage indicating lack of workflow onboarding. | Prob $\ge 70\%$: High<br>40–69%: Medium |
 | `off_hours_workload_spike` | **Off-Hours Overload / Smart Offload** | Cross-references weekend/holiday activity ($\ge 20\%$) with Autonomy Depth. Autonomous delegation to reasoning models qualifies as **"🌟 Smart Offload (Healthy)"**. Only repetitive manual bursts flag "Firefighting Struggle (High)". | Firefighting: $\ge 70\%$ (High)<br>Smart Offload: $\le 15\%$ (Healthy) |
+
+Four further patterns added after the initial specification — `credit_burn_overdrive`, `agent_abandonment`, `model_cost_mismatch`, `review_bypass` — are defined in `src/processor/inefficiency-rules.ts`. Those that depend on credit, Agent-session or PR measurements are subject to the evaluability rules of §6.
 
 ### 3.3 Autonomy Depth & the "Time Window $\times$ Autonomy" Matrix
 
@@ -119,7 +121,7 @@ On-Hours ───────────────────────�
 3. **Drill-Down Analytics Panels**:
    - **Daily Activity Trends**: Chronological suggestions, acceptances, inline completion rates, and chats.
    - **Model Balance & Cost Breakdown**: Consumption split and estimated costs.
-   - **Peer Benchmarking**: Variances from organization/department averages.
+   - **Peer Benchmarking**: Variances from the averages of the actual profiles in the selected scope (omitted when there are none, §6.5).
    - **Personalized Prescriptions**: Actionable engineering tips copyable in one click.
 
 ---
@@ -131,3 +133,33 @@ To register a new diagnostic method:
 2. Implement computational logic in `src/processor/`.
 3. Register the definition object in `ANALYSIS_METHODS_REGISTRY`.
 4. The UI selector automatically includes the new method, dynamically rendering its custom component.
+
+---
+
+## 6. Data Sufficiency & No-Fabrication Rules (P0-4)
+
+The diagnostic engine judges behaviour; a judgement made from invented inputs is worse than none, because "no sign of a problem" is read as reassurance. Every pattern is therefore evaluated **only from measured values**.
+
+### 6.1 Principle
+- A pattern whose required measurements are missing is returned as **not evaluable**: `evaluable: false`, `probabilityPercent: 0` (meaningless), `riskLevel: healthy` (neutral placeholder) and an `insufficientDataReason` that tells the user what is missing.
+- Missing inputs are **never replaced by constants**. Removed assumptions: a 3,900-credit default baseline, "25% of sessions are short / 70% are completed", "agent PRs = 10% of sessions", a 60-minute merge time and 0 unreviewed PRs.
+
+### 6.2 Conditions that make a pattern not evaluable
+| Pattern | Not evaluable when | Reason shown |
+|:--|:--|:--|
+| `credit_burn_overdrive` | the monthly credit baseline (individual limit or the plan's included credits) cannot be determined | "月間クレジットの基準値 (個人上限またはプラン別の包含量) を特定できません。" |
+| `agent_abandonment` | the total session count is missing, or both the completed and the short-session counts are missing | "Agent セッションの完了数・短時間中断数が取得できていません。" |
+| `review_bypass` | the number of agent-created PRs or of unreviewed PRs is missing | "Agent が作成した PR の件数・未レビュー件数が取得できていません。" |
+
+### 6.3 Health score and coverage
+- `healthScore` is computed from the **evaluated** patterns only (a not-evaluable pattern adds no penalty). `UserDiagnosticResult` carries `evaluatedPatternCount` and `patternCount`.
+- When `evaluatedPatternCount = 0` the score is **not shown** ("—", "判定に必要な実測値が揃っていないため、スコアを算出できません"): "all patterns unjudgeable" is never displayed as "healthy, 100". When coverage is partial the meter shows "評価できたパターン N / M (判定不能のパターンはスコアに含まれません)".
+- A not-evaluable pattern card shows "判定不能 (データ不足)" and the reason instead of a probability, and it is excluded from the "N 件 要注意" (patterns needing attention) counts in `HealthScoreCard` and the drill-down panel.
+
+### 6.4 Profiles come from measurements only
+- Per-user profiles (`UserUsageProfile`) come from Live Metrics `user_profiles` or from the stored `deep-analysis/{YYYY-MM}.json` archive. They are resolved by the pure function `resolveDeepAnalysisProfiles`.
+- A monthly report (CSV) and an uploaded CSV are aggregates without per-user daily telemetry. They yield **no profiles**; the source indicator reads "月次集計のみ・日次診断不可" with the explanation "月次レポート (CSV) にはユーザー別の日次利用実績が含まれないため…". The former synthesis of daily histories from a monthly total (and its estimated "pro-rated" mode) was removed.
+- When Live Metrics has seats but no collected per-user daily history yet, the view says so instead of showing an empty diagnosis.
+
+### 6.5 Peer benchmark
+Peer averages (acceptance rate, daily acceptances, heavy-model ratio) are computed from the actual profiles in the selected scope. With no comparable profile the benchmark is **omitted** (`peerBenchmarks` absent), never a fixed "typical" value.

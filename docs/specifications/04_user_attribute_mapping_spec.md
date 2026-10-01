@@ -15,6 +15,9 @@
 
 When associating GitHub Copilot users with internal "Departments", "Projects", "Cost Groups", or human-readable "Display Names", guaranteeing **Zero Leakage in Git History** of personal identities and internal org charts is an absolute requirement.
 
+> [!WARNING]
+> This guarantee covers the **`main` (source) branch only**. The `copilot-data` branch and the GitHub Pages artifact necessarily hold the *resolved* names, departments, tags and per-user usage. Whether those are publicly readable depends on the repository / Pages visibility. See Section 5 (public exposure, pseudonymization) before publishing real data from a public repository.
+
 ---
 
 ## 2. Runtime Injection Mechanism (GitHub Actions Variables / Secrets)
@@ -101,14 +104,49 @@ to avoid colliding with the comma used as the column delimiter (e.g., `Contracto
 
 ---
 
-## 5. Anonymization & Privacy Preservation Mode
+## 5. Public Exposure & Pseudonymization (E-05)
 
-For publicly deployed GitHub Pages or environments with broad viewer access, enabling `ANONYMIZE_USERS=true` triggers privacy-preserving transformations:
-- `github_user`: Salted hash (e.g., `user_a1b2c3`)
-- `display_name`: Initialized string (e.g., `T. T.`)
-- `department`: Retained as-is or replaced with group codes
+### 5.1 What is exposed where
 
-This prevents the identification of individual employees even if the dashboard is accidentally accessed beyond intended boundaries.
+| Location | Contents | Visibility |
+|---|---|---|
+| `main` branch | Source code only (no data, no mapping) | Repository visibility |
+| `copilot-data` branch (same repository) | `processed/*` (resolved display names, departments, tags, per-user usage and diagnostics), `raw/*` (seat assignments with GitHub login, numeric user ID, avatar URL), imported report CSVs | **Same as the repository.** A public repository publishes this branch. |
+| GitHub Pages artifact | `index.json`, `processed/*` flattened into the site root | **Public by default even when the repository is private**, unless access-controlled Pages (GitHub Enterprise Cloud) is used |
+
+Treat the repository **and** the Pages site as the publication boundary of the data.
+
+### 5.2 Pseudonymization mode (`ANONYMIZE_USERS=true`)
+
+Enable it when the dashboard data may be readable beyond the intended audience:
+
+- Variable `ANONYMIZE_USERS=true` and secret **`ANONYMIZE_SECRET`** (a random value of at least 16 characters, e.g. `openssl rand -hex 32`). **Without a sufficiently long secret the pipeline stops before writing anything** (fail closed): an anonymization without a secret key is reversible and must not be published.
+- Algorithm: **HMAC-SHA256** keyed with `ANONYMIZE_SECRET` over `<kind>\0<lower-cased, trimmed value>` (`kind` = `login` / `name` / `department` / `team` / `project`, which separates the domains). The previous implementation was a 32-bit unkeyed hash that anyone could invert with a dictionary of GitHub logins.
+- Output formats (deterministic for the same key, so month-over-month trends and joins keep working):
+
+| Field | Pseudonym |
+|---|---|
+| `github_user` / login | `dev_<16 hex>` (64 bits) |
+| `display_name` | `User-<8 hex>` |
+| `department` | `Group-<8 hex>` (the unassigned label is kept) |
+| team / project | `Team-<8 hex>` / `Project-<8 hex>` |
+
+- **Removed from every output**: `avatar_url` (it embeds the numeric GitHub user ID and resolves to the person through the public API), numeric user IDs and profile URLs in the raw seat partitions, and the free-text `notes` field. In the raw partitions, user resources of Cost Centers and team names are pseudonymized as well. The original CSV of an imported monthly report is **not saved or pushed** (only the pseudonymized aggregate is stored; `--push` is ignored).
+- **Not changed**: tags, Cost Center names, organization logins and `role` (they describe the organization structure, not a person). Keep the repository private if that structure is sensitive.
+- `index.json` declares `privacy: { anonymized, contains_user_level_data }` so that tools (and `fork:verify`) can tell whether published data identifies people. `contains_user_level_data` is `false` for demo data.
+- **Limits**: pseudonymization is not anonymization. Pseudonyms are stable identifiers; combined with department / Cost Center / activity dates, individuals in small groups can still be re-identified. Rotating `ANONYMIZE_SECRET` changes every pseudonym (old and new data can no longer be joined); losing the key makes re-linking impossible. Treat pseudonymized output as personal data under your privacy regulations. Previously published data (under the old hash) remains in the branch history until it is removed.
+
+### 5.3 Exposure check (`npm run fork:verify`)
+
+`fork:verify` asks, anonymously (no `Authorization` header), whether real user-level data is readable by anyone:
+
+1. `GET https://api.github.com/repos/{owner}/{repo}` → `200`: the repository is public.
+2. `GET https://raw.githubusercontent.com/{owner}/{repo}/copilot-data/data/index.json` → `200`: the data branch is readable.
+3. `GET {Pages URL}/data/index.json` → `200`: the deployed site serves the data (`COPILOT_PAGES_URL` overrides `https://{owner}.github.io/{repo}/` for custom domains).
+
+It **fails** when something is publicly readable (or the repository is public) **and** real, non-anonymized user-level data is published (`index.json` privacy attributes; legacy indexes: seats or daily data present) or is about to be collected (`COPILOT_READ_TOKEN` with `COPILOT_ENTERPRISE` / `COPILOT_ORGS` configured, or a local `data/index.json` with real data) without a complete pseudonymization setup. Demo-only and pseudonymized deployments pass. If the network is unreachable or rate-limited the result is a **warning** (never a failure), so offline runs keep working. `COPILOT_ALLOW_PUBLIC_DATA=true` downgrades the failure to a warning (an explicit, documented acceptance of the risk; not recommended). `--quick` skips the network check.
+
+The scheduled workflow runs `npm run fork:verify` **before** collecting data, so a public repository cannot start publishing non-anonymized data.
 
 ---
 
