@@ -3,8 +3,7 @@ import assert from 'node:assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import { InefficiencyDiagnosticEngine } from '../processor/inefficiency-diagnostic.js';
-import { MonthlyReportAggregatedData, UserUsageProfile } from '../types/copilot.js';
-import { adaptReportToProfiles } from '../../dashboard/src/utils/deepAnalysisAdapter.js';
+import { UserUsageProfile } from '../types/copilot.js';
 
 describe('User Detail Table Inline Drilldown Analysis Tests', () => {
   const panelPath = path.resolve(
@@ -103,11 +102,16 @@ describe('User Detail Table Inline Drilldown Analysis Tests', () => {
       'MonthlyReportUserTable must have handleToggleUserDrilldown'
     );
 
-    // Dynamic profile adaptation for monthly report data
+    // 月次レポートからユーザー別プロファイルを合成しない (実測のあるプロファイルだけをドリルダウンに使う)
+    assert.doesNotMatch(
+      content,
+      /adaptReportToProfiles/,
+      'MonthlyReportUserTable must not synthesize per-user profiles from the aggregated report'
+    );
     assert.match(
       content,
-      /adaptReportToProfiles\(reportData\)/,
-      'MonthlyReportUserTable must adapt report data to profiles for diagnostic drilldown'
+      /const effectiveProfiles = useMemo\(\(\) => userProfiles \?\? \[\], \[userProfiles\]\);/,
+      'MonthlyReportUserTable must use only the measured profiles passed in'
     );
 
     // Inline drilldown panel rendering
@@ -134,65 +138,15 @@ describe('User Detail Table Inline Drilldown Analysis Tests', () => {
     );
   });
 
-  it('verifies adaptReportToProfiles converts monthly report data and runs diagnostic drilldown', () => {
-    const mockReportData: MonthlyReportAggregatedData = {
-      report_month: '2026-08',
-      source_type: 'persisted',
-      file_name: 'test.csv',
-      parsed_at: '2026-08-31T23:59:59Z',
-      overview: {
-        total_net_spend_usd: 39.0,
-        total_gross_spend_usd: 39.0,
-        total_discount_usd: 0,
-        total_requests: 120,
-        total_active_users: 1,
-        top_model: 'Claude 3.7 Sonnet',
-        top_sku: 'Copilot Enterprise',
-      },
-      model_breakdown: [],
-      sku_breakdown: [],
-      daily_trends: [
-        { date: '2026-08-01', requests: 40, spend_usd: 13.0, active_users: 1 },
-        { date: '2026-08-02', requests: 40, spend_usd: 13.0, active_users: 1 },
-        { date: '2026-08-03', requests: 40, spend_usd: 13.0, active_users: 1 },
-      ],
-      by_department: {},
-      by_cost_center: {},
-      by_organization: {},
-      user_details: [
-        {
-          login: 'yamada-taro',
-          display_name: 'Yamada Taro',
-          department: 'Platform Engineering',
-          cost_center: 'CC-ENG-101',
-          organization: 'proud-org',
-          primary_model: 'Claude 3.7 Sonnet',
-          total_requests: 120,
-          total_spend_usd: 39.0,
-          net_spend_usd: 39.0,
-          last_activity_date: '2026-08-03',
-          surface: 'VS Code',
-        },
-      ],
-    };
-
-    const adaptedProfiles = adaptReportToProfiles(mockReportData);
-    assert.strictEqual(adaptedProfiles.length, 1);
-    assert.strictEqual(adaptedProfiles[0].login, 'yamada-taro');
-    assert.ok(adaptedProfiles[0].daily_history.length > 0);
-
-    const diagnostic = InefficiencyDiagnosticEngine.diagnoseUser(
-      adaptedProfiles[0],
-      '30d',
-      undefined,
-      adaptedProfiles
-    );
-    assert.ok(diagnostic);
-    assert.strictEqual(typeof diagnostic.healthScore, 'number');
-    assert.strictEqual(diagnostic.patterns.length, 9);
+  it('verifies the drilldown panel reports insufficient data instead of a score when no pattern could be evaluated', () => {
+    const content = fs.readFileSync(panelPath, 'utf-8');
+    // 全パターンが判定不能のときは「健全 100 点」ではなく「—」「判定不能」を表示する
+    assert.match(content, /evaluatedPatternCount > 0/, 'score availability must depend on evaluated pattern count');
+    assert.match(content, /判定不能/, 'must show a not-evaluable label');
+    assert.doesNotMatch(content, /github\.com\/ghost\.png/, 'must not fetch an external placeholder avatar');
   });
 
-  it('verifies InefficiencyDiagnosticEngine correctly computes metrics for an adapted profile', () => {
+  it('verifies InefficiencyDiagnosticEngine correctly computes metrics for a measured profile', () => {
     const mockProfile: UserUsageProfile = {
       login: 'yamada-taro',
       display_name: 'Yamada Taro',

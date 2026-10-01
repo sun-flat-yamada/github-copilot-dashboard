@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { Users, Search, Download, ArrowUpDown, ArrowUp, ArrowDown, BrainCircuit, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, LineChart } from 'lucide-react';
 import { GroupingDimension, MonthlyReportAggregatedData, UserUsageProfile } from '../../../../src/types/copilot';
-import { adaptReportToProfiles } from '../../utils/deepAnalysisAdapter';
 import { formatElapsedActivity } from '../../utils/dateFormatters';
 import { ActionColumnHeader } from '../common/ActionColumnHeader';
 import { UserDrilldownPanel } from '../UserDrilldownPanel';
@@ -127,11 +126,9 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
     }
   };
 
-  // 利用可能なプロファイル一覧 (渡されたプロファイルまたはレポートからの動的アダプト)
-  const effectiveProfiles = useMemo(() => {
-    if (userProfiles && userProfiles.length > 0) return userProfiles;
-    return adaptReportToProfiles(reportData);
-  }, [userProfiles, reportData]);
+  // 利用可能なプロファイル一覧 (実測のあるプロファイルのみ)。
+  // 月次レポート (CSV の集計) からユーザー別プロファイルを合成しない (旧: 全員同じ受諾率・日次形状で合成していた)。
+  const effectiveProfiles = useMemo(() => userProfiles ?? [], [userProfiles]);
 
   // プロファイルマップ
   const profileMap = useMemo(() => {

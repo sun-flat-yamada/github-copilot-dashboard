@@ -8,6 +8,9 @@ interface CostCenterBudgetCardsProps {
 }
 
 export const CostCenterBudgetCards: React.FC<CostCenterBudgetCardsProps> = ({ budgets = [] }) => {
+  // フックは早期 return より前に呼ぶ (予算の有無で呼び出し順が変わらないようにする)
+  const { formatMoney } = useCurrency();
+
   if (budgets.length === 0) {
     return (
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center text-slate-500">
@@ -25,7 +28,6 @@ export const CostCenterBudgetCards: React.FC<CostCenterBudgetCardsProps> = ({ bu
   const totalRemaining = budgets.reduce((sum, b) => sum + b.remaining_budget_usd, 0);
   const totalUtilization = totalLimit > 0 ? Number(((totalNetBillable / totalLimit) * 100).toFixed(1)) : 0;
 
-  const { formatMoney } = useCurrency();
   const formatMoneyRound = (val: number) => formatMoney(val, { precisionUSD: 0, precisionSub: 0 });
 
   const totalLimitDual = formatMoneyRound(totalLimit);

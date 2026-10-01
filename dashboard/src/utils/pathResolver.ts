@@ -59,14 +59,26 @@ export function getAlternateDataPath(primaryPath: string): string {
   return primaryPath;
 }
 
+export interface CandidateDataUrlOptions {
+  /**
+   * 反対モード (LIVE <=> DEMO) のパスも候補に含める。既定は false。
+   *
+   * 既定で含めないのは、実データの該当ファイルが無いときに黙って DEMO データへ切り替わり、
+   * 「確定テレメトリ」として表示されてしまう (過去月がデプロイ版で 404 となりデモ表示になる) のを防ぐため。
+   * デモ表示は ?demo=true / DEMO 切替などの明示的な操作だけで行う。
+   */
+  includeAlternateMode?: boolean;
+}
+
 /**
  * スコープデータやレポートファイルの解決候補 URL 一覧を生成
- * (直下パス -> processed/ 階層パス -> 反対モードの直下パス -> 反対モードの processed/ 階層パス)
+ * (直下パス -> processed/ 階層パス。includeAlternateMode 指定時のみ 反対モードの直下パス -> processed/ 階層パス)
  */
 export function getCandidateDataUrls(
   baseDir: string,
   subDir: string,
-  fileName: string
+  fileName: string,
+  options: CandidateDataUrlOptions = {}
 ): string[] {
   const isDemo = baseDir.includes('/demo') || baseDir.endsWith('demo');
   const altBaseDir = isDemo ? './data' : './data/demo';
@@ -76,11 +88,16 @@ export function getCandidateDataUrls(
     resolveDataPath(`${baseDir}/${subDir}/${fileName}`),
     // 2. 永続ストレージの processed/ サブディレクトリ配下 (copilot-data 同期時の後方互換)
     resolveDataPath(`${baseDir}/processed/${subDir}/${fileName}`),
-    // 3. 代替モードの直下パス (DEMO <=> LIVE 双方向フォールバック)
-    resolveDataPath(`${altBaseDir}/${subDir}/${fileName}`),
-    // 4. 代替モードの processed/ パス
-    resolveDataPath(`${altBaseDir}/processed/${subDir}/${fileName}`),
   ];
+
+  if (options.includeAlternateMode) {
+    candidates.push(
+      // 3. 代替モードの直下パス (DEMO <=> LIVE 双方向フォールバック)
+      resolveDataPath(`${altBaseDir}/${subDir}/${fileName}`),
+      // 4. 代替モードの processed/ パス
+      resolveDataPath(`${altBaseDir}/processed/${subDir}/${fileName}`)
+    );
+  }
 
   // 重複を除去して返す
   return Array.from(new Set(candidates));

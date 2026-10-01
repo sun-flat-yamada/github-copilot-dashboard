@@ -47,11 +47,42 @@ export const AdoptionMaturityView: React.FC<AdoptionMaturityViewProps> = ({ view
   const [sortKey, setSortKey] = useState<TeamBreakdownSortKey>('totalUsers');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
+  // フックは早期 return (データなし表示) より前に宣言する。データの有無でフック数が変わると React が例外を投げる
+  const sortedTeamBreakdown = useMemo(() => {
+    return [...viewModel.teamBreakdown].sort((a, b) => {
+      let diff = 0;
+      switch (sortKey) {
+        case 'teamName':
+          diff = a.teamName.localeCompare(b.teamName, 'ja');
+          break;
+        case 'totalUsers':
+          diff = a.totalUsers - b.totalUsers;
+          break;
+        case 'no_cohort':
+          diff = a.stages.no_cohort - b.stages.no_cohort;
+          break;
+        case 'code_first':
+          diff = a.stages.code_first - b.stages.code_first;
+          break;
+        case 'agent_first':
+          diff = a.stages.agent_first - b.stages.agent_first;
+          break;
+        case 'multi_agent':
+          diff = a.stages.multi_agent - b.stages.multi_agent;
+          break;
+      }
+      return sortDir === 'asc' ? diff : -diff;
+    });
+  }, [viewModel.teamBreakdown, sortKey, sortDir]);
+
   if (!viewModel.hasData) {
     return (
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center text-slate-500">
         <TrendingUp className="w-8 h-8 mx-auto text-slate-600 mb-2" />
         <p className="text-sm">採用成熟度データが利用できません。</p>
+        <p className="text-xs mt-1 text-slate-600">
+          採用成熟度の判定には、ユーザー別の実測 (チャット・エージェント利用) が必要です。実測のない値で推定表示は行いません。
+        </p>
       </div>
     );
   }
@@ -77,33 +108,6 @@ export const AdoptionMaturityView: React.FC<AdoptionMaturityViewProps> = ({ view
       <ArrowDown className="w-3 h-3 text-indigo-400" />
     );
   };
-
-  const sortedTeamBreakdown = useMemo(() => {
-    return [...teamBreakdown].sort((a, b) => {
-      let diff = 0;
-      switch (sortKey) {
-        case 'teamName':
-          diff = a.teamName.localeCompare(b.teamName, 'ja');
-          break;
-        case 'totalUsers':
-          diff = a.totalUsers - b.totalUsers;
-          break;
-        case 'no_cohort':
-          diff = a.stages.no_cohort - b.stages.no_cohort;
-          break;
-        case 'code_first':
-          diff = a.stages.code_first - b.stages.code_first;
-          break;
-        case 'agent_first':
-          diff = a.stages.agent_first - b.stages.agent_first;
-          break;
-        case 'multi_agent':
-          diff = a.stages.multi_agent - b.stages.multi_agent;
-          break;
-      }
-      return sortDir === 'asc' ? diff : -diff;
-    });
-  }, [teamBreakdown, sortKey, sortDir]);
 
   // Active adoption rate: code_first + agent_first + multi_agent
   const activeUsers = stages

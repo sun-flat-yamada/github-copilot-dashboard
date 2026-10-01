@@ -8,6 +8,19 @@ import {
   ScopeAggregatedData,
   UserUsageProfile,
 } from '../types/copilot.js';
+import { isActiveSeatStatus, isIdleSeatStatus } from '../domain/rules/SeatClassificationRule.js';
+import { seatCostForScope } from '../domain/rules/ScopeCostRule.js';
+
+/** 利用状況メトリクス (補完・チャット等) を 1 日分も取得できていないことを示す欠損マーカー */
+export const MISSING_USAGE_METRICS = 'copilot_usage_metrics';
+
+/** グループ別の利用指標をシート比で按分する際の合計値。メトリクスが無い場合は null を渡す */
+interface UsageTotals {
+  suggestions: number;
+  acceptances: number;
+  chats: number;
+  prSummaries: number;
+}
 
 export class MetricsAggregator {
   /**
@@ -106,7 +119,13 @@ export class MetricsAggregator {
       });
     }
 
-    const overallAcceptanceRate = totalSuggestions > 0 ? Number((totalAcceptances / totalSuggestions).toFixed(4)) : 0;
+    // メトリクスを 1 日分も取得できていない場合、利用指標は 0 ではなく欠損 (null) とする
+    const hasUsageMetrics = sortedMetrics.length > 0;
+    const overallAcceptanceRate =
+      totalSuggestions > 0 ? Number((totalAcceptances / totalSuggestions).toFixed(4)) : hasUsageMetrics ? 0 : null;
+    const usageTotals: UsageTotals | null = hasUsageMetrics
+      ? { suggestions: totalSuggestions, acceptances: totalAcceptances, chats: totalChats, prSummaries: totalPrSummaries }
+      : null;
 
     // 言語別ランキング
     const topLanguages = Array.from(languageMap.entries())
@@ -121,26 +140,16 @@ export class MetricsAggregator {
 
     // 2. ユーザーシート集計 (コスト・ステータス)
     const totalSeats = users.length;
-    const activeSeatsCount = users.filter((u) => u.status === 'active' || u.status === 'low_active').length;
-    const idleSeatsCount = users.filter((u) => u.status === 'idle' || u.status === 'never_used').length;
+    const activeSeatsCount = users.filter((u) => isActiveSeatStatus(u.status)).length;
+    const idleSeatsCount = users.filter((u) => isIdleSeatStatus(u.status)).length;
+    const onboardingSeatsCount = users.filter((u) => u.status === 'onboarding').length;
+    const costUnconfirmedSeats = users.filter((u) => u.cost_unconfirmed).length;
 
-    let totalSpend = 0;
-    let idleWaste = 0;
-
-    if (scopeType === 'daily') {
-      totalSpend = users.reduce((sum, u) => sum + u.prorated_daily_cost_usd, 0);
-      idleWaste = users.filter((u) => u.status === 'idle' || u.status === 'never_used')
-        .reduce((sum, u) => sum + u.prorated_daily_cost_usd, 0);
-    } else if (scopeType === 'monthly') {
-      totalSpend = users.reduce((sum, u) => sum + u.monthly_cost_usd, 0);
-      idleWaste = users.filter((u) => u.status === 'idle' || u.status === 'never_used')
-        .reduce((sum, u) => sum + u.monthly_cost_usd, 0);
-    } else {
-      // カスタム期間: 日数 × 日割りコスト
-      totalSpend = users.reduce((sum, u) => sum + u.prorated_daily_cost_usd * dateRange.days_count, 0);
-      idleWaste = users.filter((u) => u.status === 'idle' || u.status === 'never_used')
-        .reduce((sum, u) => sum + u.prorated_daily_cost_usd * dateRange.days_count, 0);
-    }
+    // スコープ種別に応じた費用 (daily=日割り / monthly=月額 / custom=日割り×日数)。
+    // フィルター再集計 (dashboard/src/utils/filterEngine.ts) も同じ関数を使い、単位がずれないようにする
+    const costOf = (u: EnrichedUserSeat) => seatCostForScope(u, scopeType, dateRange.days_count);
+    const totalSpend = users.reduce((sum, u) => sum + costOf(u), 0);
+    const idleWaste = users.filter((u) => isIdleSeatStatus(u.status)).reduce((sum, u) => sum + costOf(u), 0);
 
     // 3. 3軸グループ別集計の計算
     const byDepartment = this.calculateGroupSummaries(
@@ -148,10 +157,7 @@ export class MetricsAggregator {
       (u) => u.department,
       scopeType,
       dateRange.days_count,
-      totalSuggestions,
-      totalAcceptances,
-      totalChats,
-      totalPrSummaries
+      usageTotals
     );
 
     const byCostCenter = this.calculateGroupSummaries(
@@ -159,10 +165,7 @@ export class MetricsAggregator {
       (u) => u.cost_center,
       scopeType,
       dateRange.days_count,
-      totalSuggestions,
-      totalAcceptances,
-      totalChats,
-      totalPrSummaries,
+      usageTotals,
       costCenterBudgets
     );
 
@@ -171,10 +174,7 @@ export class MetricsAggregator {
       (u) => u.organization,
       scopeType,
       dateRange.days_count,
-      totalSuggestions,
-      totalAcceptances,
-      totalChats,
-      totalPrSummaries
+      usageTotals
     );
 
     // 欠損メトリクスの検出
@@ -183,6 +183,7 @@ export class MetricsAggregator {
     if (affectedFields.includes('copilot_ide_chat')) missingMetrics.push('copilot_ide_chat');
     if (affectedFields.includes('top_languages')) missingMetrics.push('top_languages');
     if (affectedFields.includes('copilot_ide_code_completions')) missingMetrics.push('copilot_ide_code_completions');
+    if (!hasUsageMetrics) missingMetrics.push(MISSING_USAGE_METRICS);
 
     // スコープに応じたプロファイルの調整
     const scopedUserProfiles = userProfiles.map((p) => {
@@ -227,10 +228,7 @@ export class MetricsAggregator {
       (u) => (u.teams && u.teams.length > 0 ? u.teams[0] : 'General'),
       scopeType,
       dateRange.days_count,
-      totalSuggestions,
-      totalAcceptances,
-      totalChats,
-      totalPrSummaries
+      usageTotals
     );
 
     // Adoption Phase 集計
@@ -258,19 +256,22 @@ export class MetricsAggregator {
         total_seats: totalSeats,
         active_users: activeSeatsCount,
         idle_seats: idleSeatsCount,
+        ...(onboardingSeatsCount > 0 ? { onboarding_seats: onboardingSeatsCount } : {}),
+        ...(costUnconfirmedSeats > 0 ? { cost_unconfirmed_seats: costUnconfirmedSeats } : {}),
         total_spend_usd: Number(totalSpend.toFixed(2)),
         total_net_billable_usd: totalNetBillable,
         total_spending_limit_usd: totalSpendingLimit,
         idle_waste_usd: Number(idleWaste.toFixed(2)),
         active_ratio: totalSeats > 0 ? Number((activeSeatsCount / totalSeats).toFixed(4)) : 0,
         overall_acceptance_rate: overallAcceptanceRate,
-        total_suggestions: totalSuggestions,
-        total_acceptances: totalAcceptances,
-        total_chats: totalChats,
-        total_pr_summaries: totalPrSummaries,
-        total_cli_commands: totalCliCommands,
+        total_suggestions: hasUsageMetrics ? totalSuggestions : null,
+        total_acceptances: hasUsageMetrics ? totalAcceptances : null,
+        total_chats: hasUsageMetrics ? totalChats : null,
+        total_pr_summaries: hasUsageMetrics ? totalPrSummaries : null,
+        total_cli_commands: hasUsageMetrics ? totalCliCommands : null,
         missing_metrics: missingMetrics.length > 0 ? missingMetrics : undefined,
       },
+      usage_metrics: { availability: hasUsageMetrics ? 'live' : 'unavailable' },
       by_department: byDepartment,
       by_cost_center: byCostCenter,
       by_organization: byOrganization,
@@ -295,26 +296,26 @@ export class MetricsAggregator {
         users_in_phase_28d: phaseCounts,
         total_evaluated_users: userProfiles.length,
       } : undefined,
+      // 実測のない AI PR マージ率 / コードチャーン率は、固定値で埋めず出力しない
       outcome_indicators: totalPrCount > 0 ? {
         median_pr_merge_hours: Number((totalPrMergeHours / totalPrCount).toFixed(1)),
-        ai_pr_merge_ratio: 0.85,
-        code_churn_ratio: 0.12,
       } : undefined,
     };
   }
 
   /**
    * 指定グループ軸による集計
+   *
+   * グループ別の利用指標 (提案・受諾・チャット・PR 要約) は、ユーザー別の実測が無いため
+   * 全体値をシート数の比率で按分した「推定値」であり、is_estimated / estimation_method を設定して
+   * 実測と区別できるようにする。メトリクスを取得できていない場合 (usage === null) は null とする。
    */
   private calculateGroupSummaries(
     users: EnrichedUserSeat[],
     groupKeyExtractor: (u: EnrichedUserSeat) => string,
     scopeType: AnalysisScopeType,
     daysCount: number,
-    globalSuggestions: number,
-    globalAcceptances: number,
-    globalChats: number,
-    globalPr: number,
+    usage: UsageTotals | null,
     costCenterBudgets?: CostCenterBudget[]
   ): Record<string, GroupSummary> {
     const map: Record<string, EnrichedUserSeat[]> = {};
@@ -330,30 +331,17 @@ export class MetricsAggregator {
 
     for (const [groupName, groupUsers] of Object.entries(map)) {
       const seatCount = groupUsers.length;
-      const activeCount = groupUsers.filter((u) => u.status === 'active' || u.status === 'low_active').length;
-      const idleCount = groupUsers.filter((u) => u.status === 'idle' || u.status === 'never_used').length;
+      const activeCount = groupUsers.filter((u) => isActiveSeatStatus(u.status)).length;
+      const idleCount = groupUsers.filter((u) => isIdleSeatStatus(u.status)).length;
 
-      let cost = 0;
-      let potentialSavings = 0;
+      const costOf = (u: EnrichedUserSeat) => seatCostForScope(u, scopeType, daysCount);
+      const cost = groupUsers.reduce((sum, u) => sum + costOf(u), 0);
+      const potentialSavings = groupUsers.filter((u) => isIdleSeatStatus(u.status)).reduce((sum, u) => sum + costOf(u), 0);
 
-      if (scopeType === 'daily') {
-        cost = groupUsers.reduce((sum, u) => sum + u.prorated_daily_cost_usd, 0);
-        potentialSavings = groupUsers.filter((u) => u.status === 'idle' || u.status === 'never_used')
-          .reduce((sum, u) => sum + u.prorated_daily_cost_usd, 0);
-      } else if (scopeType === 'monthly') {
-        cost = groupUsers.reduce((sum, u) => sum + u.monthly_cost_usd, 0);
-        potentialSavings = groupUsers.filter((u) => u.status === 'idle' || u.status === 'never_used')
-          .reduce((sum, u) => sum + u.monthly_cost_usd, 0);
-      } else {
-        cost = groupUsers.reduce((sum, u) => sum + u.prorated_daily_cost_usd * daysCount, 0);
-        potentialSavings = groupUsers.filter((u) => u.status === 'idle' || u.status === 'never_used')
-          .reduce((sum, u) => sum + u.prorated_daily_cost_usd * daysCount, 0);
-      }
-
-      // グループごとのシート比率でメトリクスを推定按分
+      // グループごとのシート比率でメトリクスを推定按分 (実測ではない)
       const ratio = seatCount / totalSeatsAll;
-      const estimatedSuggestions = Math.round(globalSuggestions * ratio);
-      const estimatedAcceptances = Math.round(globalAcceptances * ratio);
+      const estimatedSuggestions = usage ? Math.round(usage.suggestions * ratio) : null;
+      const estimatedAcceptances = usage ? Math.round(usage.acceptances * ratio) : null;
 
       const matchedBudget = costCenterBudgets?.find(
         (b) => b.cost_center_name.toLowerCase() === groupName.toLowerCase() || b.cost_center_id === groupName
@@ -369,11 +357,17 @@ export class MetricsAggregator {
         spending_limit_usd: matchedBudget ? matchedBudget.spending_limit_usd : undefined,
         potential_savings_usd: Number(potentialSavings.toFixed(2)),
         active_ratio: seatCount > 0 ? Number((activeCount / seatCount).toFixed(4)) : 0,
-        acceptance_rate: estimatedSuggestions > 0 ? Number((estimatedAcceptances / estimatedSuggestions).toFixed(4)) : 0,
+        acceptance_rate:
+          estimatedSuggestions !== null && estimatedAcceptances !== null
+            ? estimatedSuggestions > 0
+              ? Number((estimatedAcceptances / estimatedSuggestions).toFixed(4))
+              : 0
+            : null,
         total_suggestions: estimatedSuggestions,
         total_acceptances: estimatedAcceptances,
-        total_chats: Math.round(globalChats * ratio),
-        total_pr_summaries: Math.round(globalPr * ratio),
+        total_chats: usage ? Math.round(usage.chats * ratio) : null,
+        total_pr_summaries: usage ? Math.round(usage.prSummaries * ratio) : null,
+        ...(usage ? { is_estimated: true, estimation_method: 'proportional_seat_ratio' as const } : {}),
       };
     }
 

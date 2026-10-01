@@ -31,7 +31,9 @@ export interface AdoptionPresenterInput {
 export class AdoptionPresenter {
   public static present(input: AdoptionPresenterInput): AdoptionViewModel {
     const { currentData, agentAdoption } = input;
-    const hasData = Boolean(agentAdoption || currentData?.adoption_distribution || (currentData?.users && currentData.users.length > 0));
+    // 採用成熟度は、ユーザー別の実測 (チャット・エージェント利用) から導出した分布が無ければ判定できない。
+    // シート数だけがある状態 (旧: 全員が 0 件のステージ表示) では「データなし」とする。
+    const hasData = Boolean(agentAdoption || currentData?.adoption_distribution);
 
     const dist = agentAdoption?.adoptionDistribution ?? currentData?.adoption_distribution?.users_in_phase_28d ?? {
       no_cohort: 0,
@@ -87,21 +89,26 @@ export class AdoptionPresenter {
       },
     ];
 
+    // チーム別の内訳は、実際のユーザー別プロファイル (採用フェーズ) をチームごとに集計する。
+    // 旧実装は「全社の比率 × チーム人数」で按分しており、全チームが同じ分布になっていた。
     const teamBreakdown: AdoptionViewModel['teamBreakdown'] = [];
-    if (currentData?.by_department) {
-      for (const [dept, summary] of Object.entries(currentData.by_department)) {
-        const teamUsers = summary.total_seats || 1;
-        teamBreakdown.push({
-          teamName: dept,
-          totalUsers: teamUsers,
-          stages: {
-            no_cohort: Math.round(teamUsers * (dist.no_cohort / safeTotal)),
-            code_first: Math.round(teamUsers * (dist.code_first / safeTotal)),
-            agent_first: Math.round(teamUsers * (dist.agent_first / safeTotal)),
-            multi_agent: Math.round(teamUsers * (dist.multi_agent / safeTotal)),
-          },
-        });
+    const teamStages = new Map<string, Record<AdoptionPhase, number>>();
+    for (const profile of currentData?.user_profiles ?? []) {
+      const team = profile.department || '未設定';
+      let stagesForTeam = teamStages.get(team);
+      if (!stagesForTeam) {
+        stagesForTeam = { no_cohort: 0, code_first: 0, agent_first: 0, multi_agent: 0 };
+        teamStages.set(team, stagesForTeam);
       }
+      const phase: AdoptionPhase = profile.ai_adoption_phase ?? 'no_cohort';
+      stagesForTeam[phase] += 1;
+    }
+    for (const [teamName, stagesForTeam] of teamStages) {
+      teamBreakdown.push({
+        teamName,
+        totalUsers: Object.values(stagesForTeam).reduce((sum, n) => sum + n, 0),
+        stages: stagesForTeam,
+      });
     }
 
     return {

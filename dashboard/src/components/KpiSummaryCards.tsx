@@ -2,6 +2,8 @@ import React from 'react';
 import { ScopeAggregatedData } from '../../../src/types/copilot';
 import { DollarSign, Users, AlertTriangle, AlertCircle, CheckCircle2, MessageSquare, FileCode } from 'lucide-react';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { SEAT_IDLE_CRITERIA_TEXT } from '../../../src/domain/rules/SeatClassificationRule';
+import { UNFILTERED_SECTION_NOTICE } from '../../../src/domain/constants/filter-scope';
 
 interface KpiSummaryCardsProps {
   data: ScopeAggregatedData;
@@ -11,15 +13,22 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data }) => {
   const { overview, scope_type } = data;
   const { formatMoney } = useCurrency();
 
+  // スコープ種別ごとの費用の定義 (値は seatCostForScope と一致: 日次=日割り / 月次=月額満額 / 期間=日割り×日数)
   const costLabel =
     scope_type === 'daily'
       ? '当日 日割り費用'
       : scope_type === 'monthly'
-      ? '当月 累計費用'
-      : '期間 累計費用';
+      ? '当月 月額費用 (シート費)'
+      : '期間 費用 (日割り×日数)';
 
   const isChatMissing = overview.missing_metrics?.includes('copilot_ide_chat');
   const isLanguageMissing = overview.missing_metrics?.includes('copilot_ide_code_completions');
+
+  // 利用状況メトリクス (受諾率・チャット・PR) の出所。取得できていないものを 0 として描画しない
+  const usageAvailability = data.usage_metrics?.availability ?? 'live';
+  const isUsageUnavailable = usageAvailability === 'unavailable' || overview.overall_acceptance_rate === null;
+  const isUsageCarriedOver = usageAvailability === 'carried_over';
+  const isUsageUnfiltered = data.filter_notice?.unfiltered_sections.includes('usage_metrics') ?? false;
 
   const spendDual = formatMoney(overview.total_spend_usd);
   const netBillableDual = overview.total_net_billable_usd !== undefined ? formatMoney(overview.total_net_billable_usd) : null;
@@ -53,6 +62,16 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data }) => {
           <p className="text-xs text-slate-500 mt-1">
             契約シート数: <span className="text-slate-300 font-medium">{overview.total_seats} 席</span>
           </p>
+          {(overview.cost_unconfirmed_seats ?? 0) > 0 && (
+            <p
+              className="text-[11px] text-amber-400 mt-1 flex items-center space-x-1"
+              data-testid="cost-unconfirmed-note"
+              title="API が plan_type を返さない / 未知の値のシートは、料金を推測せず費用に含めていません"
+            >
+              <AlertTriangle className="w-3 h-3 shrink-0" />
+              <span>料金プラン未確定 {overview.cost_unconfirmed_seats} 席は費用に含まれません</span>
+            </p>
+          )}
 
           {/* 超過請求費用 & 上限Limit設定値の併記 */}
           {netBillableDual && (
@@ -93,6 +112,15 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data }) => {
           <p className="text-xs text-slate-500 mt-1">
             稼働ユーザー: <span className="text-blue-400 font-medium">{overview.active_users}</span> / {overview.total_seats} 名
           </p>
+          {(overview.onboarding_seats ?? 0) > 0 && (
+            <p
+              className="text-[11px] text-sky-400 mt-1"
+              data-testid="onboarding-note"
+              title="付与から間もなく、まだ利用がないシートです。遊休 (削減可能) には含めていません"
+            >
+              導入期間 {overview.onboarding_seats} 席 (遊休に含まない)
+            </p>
+          )}
         </div>
       </div>
 
@@ -115,13 +143,13 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data }) => {
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            30日以上未利用: <span className="text-amber-400 font-semibold">{overview.idle_seats} 席</span>
+          <p className="text-xs text-slate-500 mt-1" title={`遊休の判定基準: ${SEAT_IDLE_CRITERIA_TEXT}`}>
+            遊休 ({SEAT_IDLE_CRITERIA_TEXT}): <span className="text-amber-400 font-semibold">{overview.idle_seats} 席</span>
           </p>
         </div>
       </div>
 
-      {/* 4. Inline補完受諾率 & コード貢献 (欠損時はエラーアイコン表示) */}
+      {/* 4. Inline補完受諾率 & コード貢献 (欠損時は「—」と理由を表示) */}
       <div 
         className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg relative overflow-hidden group hover:border-slate-700 transition-all"
         title="IDEコード補完（Ghost Text）の受諾率です。Copilot CLIやAutopilot自律モードの作業は含まれません。"
@@ -131,6 +159,24 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data }) => {
             <span className="text-xs font-medium text-purple-400">Inline補完受諾率</span>
           </div>
           <div className="flex items-center space-x-1">
+            {isUsageCarriedOver && (
+              <span
+                className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800"
+                data-testid="usage-carried-over-badge"
+                title={`利用状況メトリクスの取得に失敗したため、前回成功時の値を表示しています${data.usage_metrics?.as_of ? ` (取得: ${data.usage_metrics.as_of})` : ''}`}
+              >
+                前回値
+              </span>
+            )}
+            {isUsageUnfiltered && (
+              <span
+                className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700"
+                data-testid="usage-unfiltered-badge"
+                title="利用状況メトリクスはユーザー別の実測を持たないため、フィルターで絞り込まれません (全社の値)"
+              >
+                {UNFILTERED_SECTION_NOTICE}
+              </span>
+            )}
             {(isChatMissing || isLanguageMissing) && (
               <span
                 className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-950 text-rose-300 border border-rose-800 flex items-center space-x-1"
@@ -146,28 +192,39 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data }) => {
           </div>
         </div>
         <div className="mt-3">
-          <div className="text-2xl font-bold text-purple-300 flex items-center space-x-2">
-            <span>{(overview.overall_acceptance_rate * 100).toFixed(1)}%</span>
-          </div>
-          <div className="flex items-center space-x-3 text-xs text-slate-500 mt-1">
-            <span className="flex items-center space-x-1">
-              {isChatMissing ? (
-                <span className="text-rose-400 flex items-center space-x-1 font-semibold" title="チャットAPI取得異常">
-                  <AlertCircle className="w-3 h-3 text-rose-400" />
-                  <span>不明 (API制限)</span>
+          {isUsageUnavailable ? (
+            <>
+              <div className="text-2xl font-bold text-slate-500" data-testid="usage-unavailable">—</div>
+              <p className="text-xs text-slate-500 mt-1">
+                取得不可: 利用状況メトリクス (補完・チャット等) を取得できていません
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="text-2xl font-bold text-purple-300 flex items-center space-x-2">
+                <span>{((overview.overall_acceptance_rate ?? 0) * 100).toFixed(1)}%</span>
+              </div>
+              <div className="flex items-center space-x-3 text-xs text-slate-500 mt-1">
+                <span className="flex items-center space-x-1">
+                  {isChatMissing ? (
+                    <span className="text-rose-400 flex items-center space-x-1 font-semibold" title="チャットAPI取得異常">
+                      <AlertCircle className="w-3 h-3 text-rose-400" />
+                      <span>不明 (API制限)</span>
+                    </span>
+                  ) : (
+                    <>
+                      <MessageSquare className="w-3 h-3 text-slate-400" />
+                      <span>{overview.total_chats === null ? '—' : overview.total_chats.toLocaleString()} chats</span>
+                    </>
+                  )}
                 </span>
-              ) : (
-                <>
-                  <MessageSquare className="w-3 h-3 text-slate-400" />
-                  <span>{overview.total_chats.toLocaleString()} chats</span>
-                </>
-              )}
-            </span>
-            <span className="flex items-center space-x-1">
-              <FileCode className="w-3 h-3 text-slate-400" />
-              <span>{overview.total_pr_summaries.toLocaleString()} PRs</span>
-            </span>
-          </div>
+                <span className="flex items-center space-x-1">
+                  <FileCode className="w-3 h-3 text-slate-400" />
+                  <span>{overview.total_pr_summaries === null ? '—' : overview.total_pr_summaries.toLocaleString()} PRs</span>
+                </span>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

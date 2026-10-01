@@ -78,8 +78,10 @@ export const CostAllocationCharts: React.FC<CostAllocationChartsProps> = ({
       seats: g.total_seats,
       activeSeats: g.active_seats,
       idleSeats: g.idle_seats,
+      onboardingSeats: Math.max(0, g.total_seats - g.active_seats - g.idle_seats),
       potentialSavings: g.potential_savings_usd,
-      acceptanceRate: Math.round(g.acceptance_rate * 100),
+      // グループ別の利用指標は推定 (シート比按分) または欠損 (null)。欠損は 0 にしない
+      acceptanceRate: g.acceptance_rate === null ? null : Math.round(g.acceptance_rate * 100),
     }))
     .sort((a, b) => b.cost - a.cost);
 
@@ -252,6 +254,7 @@ export const CostAllocationCharts: React.FC<CostAllocationChartsProps> = ({
               <Legend wrapperStyle={{ fontSize: '11px', color: '#8b949e' }} />
               <Bar dataKey="activeSeats" name="稼働シート" stackId="a" fill="#3fb950" />
               <Bar dataKey="idleSeats" name="遊休シート" stackId="a" fill="#d29922" />
+              <Bar dataKey="onboardingSeats" name="導入期間 (遊休に含まない)" stackId="a" fill="#38bdf8" />
             </BarChart>
           </ResponsiveContainer>
         </div>

@@ -12,6 +12,31 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ viewModel }) => {
   const [sortKey, setSortKey] = useState<CreditsConsumerSortKey>('credits');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
+  // フックは早期 return (データなし表示) より前に宣言する。データの有無でフック数が変わると React が例外を投げる
+  const sortedConsumers = useMemo(() => {
+    return [...viewModel.topConsumers].sort((a, b) => {
+      let diff = 0;
+      switch (sortKey) {
+        case 'login':
+          diff = a.login.localeCompare(b.login, 'ja');
+          break;
+        case 'department':
+          diff = (a.department || '').localeCompare(b.department || '', 'ja');
+          break;
+        case 'costCenter':
+          diff = (a.costCenter || '').localeCompare(b.costCenter || '', 'ja');
+          break;
+        case 'credits':
+          diff = a.credits - b.credits;
+          break;
+        case 'costUsd':
+          diff = a.costUsd - b.costUsd;
+          break;
+      }
+      return sortDir === 'asc' ? diff : -diff;
+    });
+  }, [viewModel.topConsumers, sortKey, sortDir]);
+
   if (!viewModel.hasData) {
     return (
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center text-slate-500">
@@ -28,6 +53,8 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ viewModel }) => {
     totalCombinedCostFormatted,
     poolUtilizationPercent,
     poolStatus,
+    poolIncludedCredits,
+    poolUnknownPlanSeats,
     byModel,
     byCostCenter,
     topConsumers,
@@ -52,30 +79,6 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ viewModel }) => {
       <ArrowDown className="w-3 h-3 text-cyan-400" />
     );
   };
-
-  const sortedConsumers = useMemo(() => {
-    return [...topConsumers].sort((a, b) => {
-      let diff = 0;
-      switch (sortKey) {
-        case 'login':
-          diff = a.login.localeCompare(b.login, 'ja');
-          break;
-        case 'department':
-          diff = (a.department || '').localeCompare(b.department || '', 'ja');
-          break;
-        case 'costCenter':
-          diff = (a.costCenter || '').localeCompare(b.costCenter || '', 'ja');
-          break;
-        case 'credits':
-          diff = a.credits - b.credits;
-          break;
-        case 'costUsd':
-          diff = a.costUsd - b.costUsd;
-          break;
-      }
-      return sortDir === 'asc' ? diff : -diff;
-    });
-  }, [topConsumers, sortKey, sortDir]);
 
   return (
     <div className="space-y-6">
@@ -143,19 +146,34 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ viewModel }) => {
                 </span>
               )}
             </span>
-            <span className="text-2xl font-black text-slate-100 font-mono">{poolUtilizationPercent}%</span>
-            <div className="w-full bg-slate-800 rounded-full h-1.5 mt-2 overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all ${
-                  poolStatus === 'exceeded'
-                    ? 'bg-rose-500'
-                    : poolStatus === 'warning'
-                    ? 'bg-amber-500'
-                    : 'bg-emerald-500'
-                }`}
-                style={{ width: `${Math.min(100, poolUtilizationPercent)}%` }}
-              />
-            </div>
+            {poolUtilizationPercent === null ? (
+              <>
+                <span className="text-2xl font-black text-slate-500 font-mono">—</span>
+                <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
+                  算出不能: プラン別の包含クレジット (プール) を特定できません。
+                </p>
+              </>
+            ) : (
+              <>
+                <span className="text-2xl font-black text-slate-100 font-mono">{poolUtilizationPercent}%</span>
+                <div className="w-full bg-slate-800 rounded-full h-1.5 mt-2 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      poolStatus === 'exceeded'
+                        ? 'bg-rose-500'
+                        : poolStatus === 'warning'
+                        ? 'bg-amber-500'
+                        : 'bg-emerald-500'
+                    }`}
+                    style={{ width: `${Math.min(100, poolUtilizationPercent)}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
+                  プール (包含クレジット) {poolIncludedCredits?.toLocaleString()} Credits
+                  {poolUnknownPlanSeats > 0 ? ` ・ プラン未確定 ${poolUnknownPlanSeats} 席は算入していません` : ''}
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>

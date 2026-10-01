@@ -47,12 +47,8 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
     if (initialSelectedLogin && profiles.some((p) => p.login === initialSelectedLogin)) {
       return initialSelectedLogin;
     }
-    // デフォルト: 兆候があるユーザーまたは最初のユーザー
-    const interestingUser =
-      profiles.find((p) => p.login === 'kenji-sato') ||
-      profiles.find((p) => p.login === 'yuki-takahashi') ||
-      profiles[0];
-    return interestingUser?.login || '';
+    // デフォルト: 最初のユーザー (特定のユーザー ID を決め打ちしない)
+    return profiles[0]?.login || '';
   });
 
   const prevInitialSelectedLoginRef = React.useRef<string | undefined>(initialSelectedLogin);
@@ -72,11 +68,7 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
   // プロファイル群（フィルター等）が更新され、現在選択中のユーザーが存在しなくなった場合のフォールバック
   useEffect(() => {
     if (profiles.length > 0 && !profiles.some((p) => p.login === selectedLogin)) {
-      const interestingUser =
-        profiles.find((p) => p.login === 'kenji-sato') ||
-        profiles.find((p) => p.login === 'yuki-takahashi') ||
-        profiles[0];
-      setSelectedLogin(interestingUser?.login || '');
+      setSelectedLogin(profiles[0]?.login || '');
     }
   }, [profiles, selectedLogin]);
 
@@ -99,7 +91,8 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
         end = allDates[allDates.length - 1];
       }
     }
-    if (!end) end = '2026-09-10';
+    // データから期間の終端を特定できないときは今日 (固定の日付を決め打ちしない)
+    if (!end) end = new Date().toISOString().split('T')[0];
     const d = new Date(end);
     d.setDate(d.getDate() - 14);
     const start = d.toISOString().split('T')[0];
@@ -138,6 +131,11 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
         <User className="w-12 h-12 mx-auto text-slate-600 mb-3" />
         <h3 className="text-lg font-bold text-white mb-1">ユーザーデータが見つかりません</h3>
         <p className="text-sm">プロファイル情報を読み込めませんでした。スコープを確認してください。</p>
+        {sourceInfo?.details && (
+          <p className="text-xs text-slate-300 mt-3 leading-relaxed" data-testid="deep-analysis-no-profile-reason">
+            {sourceInfo.details}
+          </p>
+        )}
       </div>
     );
   }
@@ -168,6 +166,11 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-950/70 text-emerald-300 border border-emerald-800/60 flex items-center space-x-1">
                 <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                 <span>確定テレメトリ</span>
+              </span>
+            )}
+            {sourceInfo.details && (
+              <span className="text-[11px] text-slate-400" data-testid="deep-analysis-source-details">
+                {sourceInfo.details}
               </span>
             )}
           </div>
@@ -238,17 +241,21 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
             <div className="flex items-center space-x-3 shrink-0">
               <div className="text-right">
                 <span className="text-[10px] text-slate-400 block">判定兆候確率</span>
-                <span
-                  className={`text-2xl font-black ${
-                    activePattern.probabilityPercent >= 70
-                      ? 'text-rose-400'
-                      : activePattern.probabilityPercent >= 40
-                      ? 'text-amber-400'
-                      : 'text-emerald-400'
-                  }`}
-                >
-                  {activePattern.probabilityPercent}%
-                </span>
+                {activePattern.evaluable === false ? (
+                  <span className="text-2xl font-black text-slate-500">—</span>
+                ) : (
+                  <span
+                    className={`text-2xl font-black ${
+                      activePattern.probabilityPercent >= 70
+                        ? 'text-rose-400'
+                        : activePattern.probabilityPercent >= 40
+                        ? 'text-amber-400'
+                        : 'text-emerald-400'
+                    }`}
+                  >
+                    {activePattern.probabilityPercent}%
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -258,6 +265,11 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
             <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2.5">
               判定根拠・要因指標 (Contributing Factors)
             </h4>
+            {activePattern.evaluable === false && (
+              <p className="text-xs text-slate-300 bg-slate-950/80 border border-slate-800 rounded-xl p-3.5" data-testid="pattern-insufficient-data">
+                判定不能 (データ不足): {activePattern.insufficientDataReason ?? '判定に必要な実測値が収集されていません'}
+              </p>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {activePattern.contributingFactors.map((factor, idx) => (
                 <div

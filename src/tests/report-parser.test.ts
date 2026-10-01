@@ -27,7 +27,10 @@ describe('ReportParser (Monthly Usage Report CSV)', () => {
     assert.strictEqual(aggregated.report_month, '2026-08');
     assert.strictEqual(aggregated.overview.total_active_users, 3);
     assert.strictEqual(aggregated.overview.total_net_spend_usd, 19.75); // 0.40 + 0.15 + 0.20 + 19.00
-    assert.strictEqual(aggregated.overview.total_requests, 20); // 10 + 5 + 4 + 1
+    // リクエスト数に数えるのは unit_type が requests の明細だけ (10 + 5 + 4)。
+    // シート行 (unit_type=seats, 数量 1) をリクエスト数に混ぜない (旧: 20)。単位別の数量は quantity_by_unit に残す。
+    assert.strictEqual(aggregated.overview.total_requests, 19);
+    assert.deepStrictEqual(aggregated.overview.quantity_by_unit, { requests: 19, seats: 1 });
 
     // 3軸集計の検証
     assert.ok(aggregated.by_department['Frontend Unit']);
