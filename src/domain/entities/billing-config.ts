@@ -6,6 +6,7 @@
  */
 
 import { PublicExchangeRatesService } from '../services/PublicExchangeRatesService.js';
+import { BASELINE_PRICING } from '../pricing/pricing-catalog.js';
 
 export interface CurrencyConfig {
   code: string;                // e.g. 'USD', 'JPY', 'EUR', 'GBP', 'EA-USD' (ISO 4217 or internal code)
@@ -52,7 +53,11 @@ export interface EnterpriseBillingConfig {
   };
   creditsPricing: {
     costPerCreditUSD: number;      // Default: 0.01 (GitHub Catalog Price USD)
-    includedCreditsPerSeat: number;// Default: 3900
+    /**
+     * 全プラン共通の包含クレジットを契約等で明示的に上書きする場合のみ指定する。
+     * 未指定のときは価格カタログ (pricing-catalog.ts) のプラン別・実効期間付きの値を使う。
+     */
+    includedCreditsPerSeat?: number;
   };
   discountPercent: number;         // EA volume discount percent: 0 to 100 (Default: 0)
 
@@ -114,13 +119,13 @@ export const DEFAULT_CURRENCY_EUR: CurrencyConfig = {
 export const DEFAULT_BILLING_CONFIG: EnterpriseBillingConfig = {
   currency: DEFAULT_CURRENCY_USD,
   subCurrency: null,
+  // 価格の既定値は価格カタログ (src/domain/pricing) が唯一のソース
   seatPricing: {
-    businessMonthlyUSD: 19,
-    enterpriseMonthlyUSD: 39,
+    businessMonthlyUSD: BASELINE_PRICING.seatPriceUsd.business,
+    enterpriseMonthlyUSD: BASELINE_PRICING.seatPriceUsd.enterprise,
   },
   creditsPricing: {
-    costPerCreditUSD: 0.01,
-    includedCreditsPerSeat: 3900,
+    costPerCreditUSD: BASELINE_PRICING.creditUnitPriceUsd,
   },
   discountPercent: 0,
 };

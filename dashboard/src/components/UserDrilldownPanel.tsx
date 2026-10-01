@@ -17,6 +17,7 @@ import {
   ChevronUp,
   Cpu,
   Zap,
+  User as UserIcon,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -48,6 +49,8 @@ export interface UserDrilldownPanelProps {
   monthlyCostUsd?: number;
   proratedCostUsd?: number;
   excessBillingUsd?: number;
+  /** plan_type が未確定で費用を算定できていない (0 と区別して「—」を表示する) */
+  costUnconfirmed?: boolean;
   // プロファイル情報（確定テレメトリまたは月次按分データ）
   profile?: UserUsageProfile | null;
   allProfiles?: UserUsageProfile[];
@@ -75,7 +78,7 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
   department,
   costCenter,
   organization,
-  planType = 'enterprise',
+  planType = 'unknown',
   statusBadge,
   lastActivity,
   editor,
@@ -83,6 +86,7 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
   monthlyCostUsd = 0,
   proratedCostUsd = 0,
   excessBillingUsd = 0,
+  costUnconfirmed = false,
   profile,
   allProfiles = [],
   primaryModel,
@@ -104,6 +108,10 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
       return null;
     }
   }, [profile, allProfiles]);
+
+  // 判定できたパターンが 1 つも無いときはスコアを出さない
+  // (全パターンが判定不能なのに「健全 100 点」と見せかけない)
+  const isScoreAvailable = diagnostic !== null && diagnostic.evaluatedPatternCount > 0;
 
   // 日次推移データの整形
   const dailyChartData = useMemo(() => {
@@ -147,7 +155,7 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
 
     const entries = Object.entries(counts).filter(([, val]) => val > 0);
     if (entries.length === 0) {
-      return [{ name: primaryModel || 'Claude 3.7 Sonnet', value: 1, color: '#a855f7' }];
+      return primaryModel ? [{ name: primaryModel, value: 1, color: '#a855f7' }] : [];
     }
 
     return entries.map(([model, val]) => ({
@@ -157,32 +165,41 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
     }));
   }, [profile, primaryModel, totalRequests]);
 
-  // 主要KPI指標
-  const suggestionsCount = profile?.total_suggestions ?? (totalRequests ? Math.round(totalRequests * 0.55) : 0);
-  const acceptancesCount = profile?.total_acceptances ?? (totalRequests ? Math.round(totalRequests * 0.20) : 0);
-  const acceptanceRateVal = profile?.acceptance_rate
-    ? Math.round(profile.acceptance_rate * 100)
-    : suggestionsCount > 0
-    ? Math.round((acceptancesCount / suggestionsCount) * 100)
-    : 0;
-  const chatsCount = profile?.total_chats ?? (totalRequests ? Math.max(1, totalRequests - suggestionsCount) : 0);
+  // 主要KPI指標。ユーザー別の実測 (プロファイル) が無い場合は、総リクエスト数を固定比率
+  // (旧: 提案 55%・受諾 20%・残りをチャット) で按分せず、欠損 (null) として「—」を表示する。
+  const suggestionsCount: number | null = profile ? profile.total_suggestions : null;
+  const acceptancesCount: number | null = profile ? profile.total_acceptances : null;
+  const acceptanceRateVal: number | null =
+    profile && profile.total_suggestions > 0 ? Math.round(profile.acceptance_rate * 100) : null;
+  const chatsCount: number | null = profile ? profile.total_chats : null;
+  const formatCount = (value: number | null) => (value === null ? '—' : value.toLocaleString());
 
   return (
     <div className="w-full bg-slate-950/90 border-y-2 border-indigo-500/80 p-5 sm:p-6 shadow-2xl animate-fadeIn space-y-5 rounded-b-xl">
       {/* 1. ヘッダー: ユーザー情報 & クイックアクション & 閉じるボタン */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
         <div className="flex items-center space-x-3.5">
-          <img
-            src={avatarUrl || 'https://github.com/ghost.png'}
-            alt={login}
-            className="w-12 h-12 rounded-full border-2 border-indigo-500/80 bg-slate-800 shrink-0 shadow-md"
-          />
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={login}
+              className="w-12 h-12 rounded-full border-2 border-indigo-500/80 bg-slate-800 shrink-0 shadow-md"
+            />
+          ) : (
+            // アバター URL が無い (匿名化時など) ときは外部画像を取得せず、アイコンで代替する
+            <div
+              className="w-12 h-12 rounded-full border-2 border-indigo-500/80 bg-slate-800 shrink-0 shadow-md flex items-center justify-center"
+              aria-hidden="true"
+            >
+              <UserIcon className="w-6 h-6 text-slate-500" />
+            </div>
+          )}
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h4 className="text-base font-bold text-white tracking-tight">{displayName}</h4>
               <span className="text-xs font-mono text-indigo-400">@{login}</span>
               <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-purple-950/80 text-purple-300 border border-purple-800/60">
-                {planType}
+                {planType === 'unknown' ? 'プラン未確定' : planType}
               </span>
               {statusBadge}
             </div>
@@ -284,7 +301,7 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
         >
           <BrainCircuit className="w-3.5 h-3.5" />
           <span>AI健全度 & 非効率診断</span>
-          {diagnostic && (
+          {diagnostic && isScoreAvailable && (
             <span
               className={`ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
                 diagnostic.healthScore >= 80
@@ -311,18 +328,22 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
             <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-xl">
               <span className="text-[11px] text-slate-400 block">コード提案数</span>
               <span className="text-lg font-bold font-mono text-slate-100 mt-1 block">
-                {suggestionsCount.toLocaleString()}
+                {formatCount(suggestionsCount)}
               </span>
-              <span className="text-[10px] text-slate-500">インライン補完</span>
+              <span className="text-[10px] text-slate-500">
+                {suggestionsCount === null ? '— (実測なし)' : 'インライン補完'}
+              </span>
             </div>
 
             {/* 受諾採用数 */}
             <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-xl">
               <span className="text-[11px] text-slate-400 block">受諾採用数</span>
               <span className="text-lg font-bold font-mono text-emerald-400 mt-1 block">
-                {acceptancesCount.toLocaleString()}
+                {formatCount(acceptancesCount)}
               </span>
-              <span className="text-[10px] text-emerald-500/80 font-medium">採用コード</span>
+              <span className="text-[10px] text-emerald-500/80 font-medium">
+                {acceptancesCount === null ? '— (実測なし)' : '採用コード'}
+              </span>
             </div>
 
             {/* 受諾率 */}
@@ -334,15 +355,17 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
                 <span className="text-[11px] text-slate-400 block">Inline補完受諾率</span>
               </div>
               <span className="text-lg font-bold font-mono text-purple-300 mt-1 block">
-                {acceptanceRateVal}%
+                {acceptanceRateVal === null ? '—' : `${acceptanceRateVal}%`}
               </span>
               <div className="w-full bg-slate-800 h-1.5 rounded-full mt-1.5 overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${
-                    acceptanceRateVal >= 30 ? 'bg-purple-500' : 'bg-amber-500'
-                  }`}
-                  style={{ width: `${Math.min(100, acceptanceRateVal)}%` }}
-                />
+                {acceptanceRateVal !== null && (
+                  <div
+                    className={`h-full rounded-full ${
+                      acceptanceRateVal >= 30 ? 'bg-purple-500' : 'bg-amber-500'
+                    }`}
+                    style={{ width: `${Math.min(100, acceptanceRateVal)}%` }}
+                  />
+                )}
               </div>
             </div>
 
@@ -350,29 +373,42 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
             <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-xl">
               <span className="text-[11px] text-slate-400 block">AI対話・チャット</span>
               <span className="text-lg font-bold font-mono text-indigo-300 mt-1 block">
-                {chatsCount.toLocaleString()}
+                {formatCount(chatsCount)}
               </span>
               <span className="text-[10px] text-slate-500">
-                {primaryModel ? `主: ${primaryModel}` : 'マルチモデル対話'}
+                {chatsCount === null ? '— (実測なし)' : primaryModel ? `主: ${primaryModel}` : 'マルチモデル対話'}
               </span>
             </div>
 
             {/* 月額費用 / 超過額 */}
             <div className="p-3 bg-slate-900/80 border border-slate-800 rounded-xl">
               <span className="text-[11px] text-slate-400 block">推計費用 (月額/日割り)</span>
-              <div className="flex items-baseline space-x-1.5 mt-1">
-                <span className="text-lg font-bold font-mono text-slate-100">
-                  ${monthlyCostUsd.toFixed(2)}
-                </span>
-                {proratedCostUsd > 0 && (
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    (日割: ${proratedCostUsd.toFixed(2)})
+              {costUnconfirmed ? (
+                <>
+                  <div className="flex items-baseline space-x-1.5 mt-1">
+                    <span className="text-lg font-bold font-mono text-slate-500" data-testid="drilldown-cost-unconfirmed">
+                      —
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-amber-400">料金プランが未確定のため算定できません</span>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-baseline space-x-1.5 mt-1">
+                    <span className="text-lg font-bold font-mono text-slate-100">
+                      ${monthlyCostUsd.toFixed(2)}
+                    </span>
+                    {proratedCostUsd > 0 && (
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        (日割: ${proratedCostUsd.toFixed(2)})
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-amber-400 font-mono">
+                    超過請求: ${excessBillingUsd.toFixed(2)}
                   </span>
-                )}
-              </div>
-              <span className="text-[10px] text-amber-400 font-mono">
-                超過請求: ${excessBillingUsd.toFixed(2)}
-              </span>
+                </>
+              )}
             </div>
 
             {/* 稼働状況 */}
@@ -402,26 +438,41 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
                     <span className="text-xs font-bold text-white">AI活用健全度スコア</span>
                   </div>
                   <p className="text-xs text-slate-400 mt-1">
-                    {diagnostic.healthScore >= 80
+                    {!isScoreAvailable
+                      ? '判定に必要な実測値が揃っていないため、スコアを算出できません'
+                      : diagnostic.healthScore >= 80
                       ? '高効率でバランスの取れた模範的なAI活用ができています'
                       : diagnostic.healthScore >= 60
                       ? '軽微な非効率兆候が見られます（生成ガチャや対話過多等）'
                       : '改善推奨: 非効率アンチパターンが検出されています'}
                   </p>
+                  {isScoreAvailable && diagnostic.evaluatedPatternCount < diagnostic.patternCount && (
+                    <p className="text-[10px] text-amber-400 mt-0.5">
+                      評価できたパターン {diagnostic.evaluatedPatternCount} / {diagnostic.patternCount} (判定不能のパターンはスコアに含まれません)
+                    </p>
+                  )}
                 </div>
                 <div className="text-right shrink-0 ml-4">
-                  <span
-                    className={`text-2xl font-black ${
-                      diagnostic.healthScore >= 80
-                        ? 'text-emerald-400'
-                        : diagnostic.healthScore >= 60
-                        ? 'text-amber-400'
-                        : 'text-rose-400'
-                    }`}
-                  >
-                    {diagnostic.healthScore}
-                  </span>
-                  <span className="text-xs text-slate-500"> / 100</span>
+                  {isScoreAvailable ? (
+                    <>
+                      <span
+                        className={`text-2xl font-black ${
+                          diagnostic.healthScore >= 80
+                            ? 'text-emerald-400'
+                            : diagnostic.healthScore >= 60
+                            ? 'text-amber-400'
+                            : 'text-rose-400'
+                        }`}
+                      >
+                        {diagnostic.healthScore}
+                      </span>
+                      <span className="text-xs text-slate-500"> / 100</span>
+                    </>
+                  ) : (
+                    <span className="text-2xl font-black text-slate-500" data-testid="drilldown-score-unavailable">
+                      —
+                    </span>
+                  )}
                 </div>
               </div>
             )}
@@ -433,7 +484,7 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
                   <span className="text-xs font-bold text-white">AIモデル構成 & ツール環境</span>
                 </div>
                 <p className="text-xs text-slate-400 mt-1">
-                  主利用モデル: <strong className="text-slate-200">{primaryModel || 'Claude 3.7 Sonnet'}</strong>
+                  主利用モデル: <strong className="text-slate-200">{primaryModel || '—'}</strong>
                   {surface && <span className="ml-2">({surface})</span>}
                 </p>
               </div>
@@ -594,30 +645,40 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
                   <div>
                     <span className="text-xs text-slate-400">総合AI健全度スコア</span>
                     <div className="flex items-baseline space-x-1 mt-1">
-                      <span
-                        className={`text-2xl font-black ${
-                          diagnostic.healthScore >= 80
-                            ? 'text-emerald-400'
-                            : diagnostic.healthScore >= 60
-                            ? 'text-amber-400'
-                            : 'text-rose-400'
-                        }`}
-                      >
-                        {diagnostic.healthScore}
-                      </span>
-                      <span className="text-xs text-slate-500">/ 100</span>
+                      {isScoreAvailable ? (
+                        <>
+                          <span
+                            className={`text-2xl font-black ${
+                              diagnostic.healthScore >= 80
+                                ? 'text-emerald-400'
+                                : diagnostic.healthScore >= 60
+                                ? 'text-amber-400'
+                                : 'text-rose-400'
+                            }`}
+                          >
+                            {diagnostic.healthScore}
+                          </span>
+                          <span className="text-xs text-slate-500">/ 100</span>
+                        </>
+                      ) : (
+                        <span className="text-2xl font-black text-slate-500">—</span>
+                      )}
                     </div>
                   </div>
                   <span
                     className={`px-2 py-0.5 rounded text-[11px] font-bold ${
-                      diagnostic.healthStatus === 'healthy'
+                      !isScoreAvailable
+                        ? 'bg-slate-800 text-slate-300 border border-slate-700'
+                        : diagnostic.healthStatus === 'healthy'
                         ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
                         : diagnostic.healthStatus === 'warning'
                         ? 'bg-amber-950 text-amber-300 border border-amber-800'
                         : 'bg-rose-950 text-rose-300 border border-rose-800'
                     }`}
                   >
-                    {diagnostic.healthStatus === 'healthy'
+                    {!isScoreAvailable
+                      ? '判定不能'
+                      : diagnostic.healthStatus === 'healthy'
                       ? '健全'
                       : diagnostic.healthStatus === 'warning'
                       ? '注意'
@@ -636,7 +697,10 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
                     </div>
                   </div>
                   <span className="text-[11px] text-purple-300 font-mono">
-                    Inline補完受諾率: {diagnostic.metricsSummary.acceptanceRatePercent}%
+                    Inline補完受諾率:{' '}
+                    {diagnostic.metricsSummary.totalSuggestions > 0
+                      ? `${diagnostic.metricsSummary.acceptanceRatePercent}%`
+                      : '—'}
                   </span>
                 </div>
 
@@ -644,10 +708,10 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
                   <div>
                     <span className="text-xs text-slate-400">検出アンチパターン</span>
                     <div className="text-lg font-bold text-slate-100 mt-1">
-                      {diagnostic.patterns.filter((p) => p.probabilityPercent >= 40).length} 件
+                      {diagnostic.patterns.filter((p) => p.evaluable !== false && p.probabilityPercent >= 40).length} 件
                     </div>
                   </div>
-                  <span className="text-[11px] text-slate-400">要警戒/注意</span>
+                  <span className="text-[11px] text-slate-400">要警戒/注意 (判定不能を除く)</span>
                 </div>
               </div>
 
@@ -655,7 +719,10 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
                   <h5 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-                    5つの典型非効率パターン兆候判定
+                    {diagnostic.patternCount}つの典型非効率パターン兆候判定
+                    <span className="ml-2 normal-case font-normal text-slate-500">
+                      (評価できたパターン {diagnostic.evaluatedPatternCount} / {diagnostic.patternCount})
+                    </span>
                   </h5>
                   <button
                     type="button"
@@ -670,7 +737,7 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                   {(showAllPatterns
                     ? diagnostic.patterns
-                    : diagnostic.patterns.filter((p) => p.probabilityPercent >= 30)
+                    : diagnostic.patterns.filter((p) => p.evaluable === false || p.probabilityPercent >= 30)
                   ).map((pat) => (
                     <div
                       key={pat.id}
@@ -678,7 +745,9 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-white flex items-center space-x-1.5">
-                          {pat.probabilityPercent >= 70 ? (
+                          {pat.evaluable === false ? (
+                            <AlertCircle className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          ) : pat.probabilityPercent >= 70 ? (
                             <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
                           ) : pat.probabilityPercent >= 40 ? (
                             <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
@@ -689,14 +758,16 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
                         </span>
                         <span
                           className={`text-xs font-mono font-bold ${
-                            pat.probabilityPercent >= 70
+                            pat.evaluable === false
+                              ? 'text-slate-400'
+                              : pat.probabilityPercent >= 70
                               ? 'text-rose-400'
                               : pat.probabilityPercent >= 40
                               ? 'text-amber-400'
                               : 'text-emerald-400'
                           }`}
                         >
-                          兆候: {pat.probabilityPercent}%
+                          {pat.evaluable === false ? '判定不能 (データ不足)' : `兆候: ${pat.probabilityPercent}%`}
                         </span>
                       </div>
                       <p className="text-[11px] text-slate-400 leading-relaxed">{pat.summary}</p>

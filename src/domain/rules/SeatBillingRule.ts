@@ -1,4 +1,5 @@
 import { Money } from '../value-objects/Money.js';
+import { CopilotPlanType } from '../entities/copilot.js';
 
 export interface SeatBillingEvaluation {
   billingEffectiveDate: string;
@@ -10,7 +11,7 @@ export interface SeatBillingEvaluation {
 
 export interface SeatBillingInput {
   createdAt: string;
-  planType: 'business' | 'enterprise';
+  planType: CopilotPlanType;
   monthlyPrice: Money;
   targetMonth: string; // 'YYYY-MM'
   daysInMonth: number;

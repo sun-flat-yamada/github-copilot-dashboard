@@ -4,6 +4,7 @@
  */
 
 import { UserModelDailyUsage, UserUsageProfile } from '../types/copilot.js';
+import { getIncludedCreditsPerSeat } from '../domain/pricing/pricing-catalog.js';
 import {
   AnalysisMethodDefinition,
   AnalysisPeriodScopeType,
@@ -241,10 +242,14 @@ export class InefficiencyDiagnosticEngine {
     // 組織全体の平均ベンチマーク計算
     const peerMetrics = this.calculatePeerBenchmark(allProfiles, scopeType, customRange);
 
-    const totalAgentSessions = profile.total_agent_sessions || 0;
+    // Agent 関連の指標は、プロファイルに実測値があるときだけ使う。無い値を固定の比率
+    // (旧: 短時間 25%・完了 70%・PR 10%・マージ 60 分) で補わず、判定不能 (データ不足) とする。
+    const totalAgentSessions: number | null = profile.total_agent_sessions ?? null;
+    // 相対評価 (受諾率パラドックスによる緩和) には「実測のセッション数」だけを使う。不明なら緩和しない
+    const knownAgentSessions = totalAgentSessions ?? 0;
 
     // 9つの非効率パターンの判定
-    const p1 = diagnoseTabSpamming(totalSuggestions, totalAcceptances, acceptanceRate, activeDays, totalAgentSessions, totalChats);
+    const p1 = diagnoseTabSpamming(totalSuggestions, totalAcceptances, acceptanceRate, activeDays, knownAgentSessions, totalChats);
     const p2 = diagnoseOverkillModel(totalChats, modelTotals);
     const p3 = diagnoseContextBlindChat(totalChats, totalAcceptances, activeDays, filteredHistory);
     const p4 = diagnosePassiveSeat(periodInfo.totalDays, activeDays, totalSuggestions, totalChats);
@@ -258,23 +263,27 @@ export class InefficiencyDiagnosticEngine {
     if (totalCreditsConsumed === 0 && profile.ai_credits_used_28d) {
       totalCreditsConsumed = profile.ai_credits_used_28d;
     }
-    const creditsLimit = (profile as any).ai_credits_limit_monthly || 3900;
-    const shortSessions = Math.round(totalAgentSessions * 0.25);
-    const completedSessions = (profile as any).completed_agent_sessions ?? Math.round(totalAgentSessions * 0.7);
+    // 月間クレジットの基準: 個人上限 (マッピング設定) が優先。無ければ価格カタログのプラン別の包含量。
+    // プランも不明なら特定できないため、固定値を仮定せず判定不能とする。
+    const creditsLimit =
+      profile.ai_credits_limit_monthly ?? getIncludedCreditsPerSeat(profile.plan_type, periodInfo.endDate.slice(0, 7));
     const heavyModelRequests = (modelTotals['o1'] || 0) + (modelTotals['claude-3-7-sonnet'] || 0);
-    const agentPrs = (profile as any).agent_prs_created ?? Math.floor(totalAgentSessions * 0.1);
-    const unreviewedPrs = (profile as any).agent_prs_unreviewed ?? 0;
-    const mergeMins = (profile as any).agent_pr_median_merge_mins ?? 60;
 
-    const p6 = diagnoseCreditBurnOverdrive(totalCreditsConsumed, creditsLimit, totalAcceptances, totalAgentSessions);
-    const p7 = diagnoseAgentAbandonment(totalAgentSessions, shortSessions, completedSessions);
-    const p8 = diagnoseModelCostMismatch(heavyModelRequests, totalChats, acceptanceRate, totalAgentSessions);
-    const p9 = diagnoseReviewBypass(agentPrs, unreviewedPrs, mergeMins);
+    const p6 = diagnoseCreditBurnOverdrive(totalCreditsConsumed, creditsLimit, totalAcceptances, knownAgentSessions);
+    // 短時間中断セッション数は収集していないため null (実測が得られるまで評価に使わない)
+    const p7 = diagnoseAgentAbandonment(totalAgentSessions, null, profile.completed_agent_sessions ?? null);
+    const p8 = diagnoseModelCostMismatch(heavyModelRequests, totalChats, acceptanceRate, knownAgentSessions);
+    const p9 = diagnoseReviewBypass(
+      profile.agent_prs_created ?? null,
+      profile.agent_prs_unreviewed ?? null,
+      profile.agent_pr_median_merge_mins ?? null
+    );
 
     const patterns = [p1, p2, p3, p4, p5, p6, p7, p8, p9];
 
     // 総合健全度スコアの計算 (100点満点からのペナルティ減算)
-    // 高リスクパターンが多いほどスコア低下
+    // 高リスクパターンが多いほどスコア低下。判定不能 (evaluable = false) のパターンは確率 0 でペナルティなし。
+    // 全パターンが判定不能のときのスコアは意味を持たないため、表示側は evaluatedPatternCount を見て判断する
     let penalty = 0;
     for (const p of patterns) {
       if (p.probabilityPercent >= 70) {
@@ -320,40 +329,43 @@ export class InefficiencyDiagnosticEngine {
           estimatedCostUsd: Number((count * ratePerChat).toFixed(2)),
         };
       }),
-      peerBenchmarks: [
-        {
-          metricName: 'Inline補完受諾率 (%)',
-          userValue: acceptanceRatePercent,
-          userFormatted: `${acceptanceRatePercent}%`,
-          peerAverageValue: peerMetrics.avgAcceptanceRate,
-          peerAverageFormatted: `${peerMetrics.avgAcceptanceRate}%`,
-          differenceFormatted: `${(acceptanceRatePercent - peerMetrics.avgAcceptanceRate).toFixed(1)}pt`,
-          isPositiveForEfficiency: acceptanceRatePercent >= peerMetrics.avgAcceptanceRate,
-        },
-        {
-          metricName: '1日平均 提案受託数',
-          userValue: activeDays > 0 ? Number((totalAcceptances / activeDays).toFixed(1)) : 0,
-          userFormatted: `${activeDays > 0 ? (totalAcceptances / activeDays).toFixed(1) : 0} 件/日`,
-          peerAverageValue: peerMetrics.avgDailyAcceptances,
-          peerAverageFormatted: `${peerMetrics.avgDailyAcceptances} 件/日`,
-          differenceFormatted: `${(
-            (activeDays > 0 ? totalAcceptances / activeDays : 0) - peerMetrics.avgDailyAcceptances
-          ).toFixed(1)} 件`,
-          isPositiveForEfficiency: (activeDays > 0 ? totalAcceptances / activeDays : 0) >= peerMetrics.avgDailyAcceptances,
-        },
-        {
-          metricName: '高コスト推論モデル比率 (o1)',
-          userValue: totalChats > 0 ? Number((((modelTotals['o1'] || 0) / totalChats) * 100).toFixed(1)) : 0,
-          userFormatted: `${totalChats > 0 ? (((modelTotals['o1'] || 0) / totalChats) * 100).toFixed(1) : 0}%`,
-          peerAverageValue: peerMetrics.avgO1Ratio,
-          peerAverageFormatted: `${peerMetrics.avgO1Ratio}%`,
-          differenceFormatted: `${(
-            (totalChats > 0 ? ((modelTotals['o1'] || 0) / totalChats) * 100 : 0) - peerMetrics.avgO1Ratio
-          ).toFixed(1)}pt`,
-          isPositiveForEfficiency:
-            (totalChats > 0 ? ((modelTotals['o1'] || 0) / totalChats) * 100 : 0) <= peerMetrics.avgO1Ratio,
-        },
-      ],
+      // 組織平均が算出できない (比較対象のデータが無い) 場合は、固定の平均値で埋めず比較行自体を出さない
+      peerBenchmarks: peerMetrics
+        ? [
+            {
+              metricName: 'Inline補完受諾率 (%)',
+              userValue: acceptanceRatePercent,
+              userFormatted: `${acceptanceRatePercent}%`,
+              peerAverageValue: peerMetrics.avgAcceptanceRate,
+              peerAverageFormatted: `${peerMetrics.avgAcceptanceRate}%`,
+              differenceFormatted: `${(acceptanceRatePercent - peerMetrics.avgAcceptanceRate).toFixed(1)}pt`,
+              isPositiveForEfficiency: acceptanceRatePercent >= peerMetrics.avgAcceptanceRate,
+            },
+            {
+              metricName: '1日平均 提案受託数',
+              userValue: activeDays > 0 ? Number((totalAcceptances / activeDays).toFixed(1)) : 0,
+              userFormatted: `${activeDays > 0 ? (totalAcceptances / activeDays).toFixed(1) : 0} 件/日`,
+              peerAverageValue: peerMetrics.avgDailyAcceptances,
+              peerAverageFormatted: `${peerMetrics.avgDailyAcceptances} 件/日`,
+              differenceFormatted: `${(
+                (activeDays > 0 ? totalAcceptances / activeDays : 0) - peerMetrics.avgDailyAcceptances
+              ).toFixed(1)} 件`,
+              isPositiveForEfficiency: (activeDays > 0 ? totalAcceptances / activeDays : 0) >= peerMetrics.avgDailyAcceptances,
+            },
+            {
+              metricName: '高コスト推論モデル比率 (o1)',
+              userValue: totalChats > 0 ? Number((((modelTotals['o1'] || 0) / totalChats) * 100).toFixed(1)) : 0,
+              userFormatted: `${totalChats > 0 ? (((modelTotals['o1'] || 0) / totalChats) * 100).toFixed(1) : 0}%`,
+              peerAverageValue: peerMetrics.avgO1Ratio,
+              peerAverageFormatted: `${peerMetrics.avgO1Ratio}%`,
+              differenceFormatted: `${(
+                (totalChats > 0 ? ((modelTotals['o1'] || 0) / totalChats) * 100 : 0) - peerMetrics.avgO1Ratio
+              ).toFixed(1)}pt`,
+              isPositiveForEfficiency:
+                (totalChats > 0 ? ((modelTotals['o1'] || 0) / totalChats) * 100 : 0) <= peerMetrics.avgO1Ratio,
+            },
+          ]
+        : [],
     };
 
     return {
@@ -371,6 +383,8 @@ export class InefficiencyDiagnosticEngine {
         dailyAvgSuggestions,
       },
       patterns,
+      evaluatedPatternCount: patterns.filter((p) => p.evaluable !== false).length,
+      patternCount: patterns.length,
       drilldown,
     };
   }
@@ -391,7 +405,8 @@ export class InefficiencyDiagnosticEngine {
   }
 
   /**
-   * 組織平均ベンチマーク指標の算出
+   * 組織平均ベンチマーク指標の算出。
+   * 比較対象のデータが無い場合は null を返す (旧: 受諾率 34.7% / 18.5 件/日 / o1 比率 12.0% の固定値を返していた)。
    */
   private static calculatePeerBenchmark(
     allProfiles: UserUsageProfile[],
@@ -401,13 +416,9 @@ export class InefficiencyDiagnosticEngine {
     avgAcceptanceRate: number;
     avgDailyAcceptances: number;
     avgO1Ratio: number;
-  } {
+  } | null {
     if (!allProfiles || allProfiles.length === 0) {
-      return {
-        avgAcceptanceRate: 34.7,
-        avgDailyAcceptances: 18.5,
-        avgO1Ratio: 12.0,
-      };
+      return null;
     }
 
     let sumRate = 0;
@@ -447,20 +458,14 @@ export class InefficiencyDiagnosticEngine {
       }
     }
 
-    if (countWithData === 0) {
-      return {
-        avgAcceptanceRate: 34.7,
-        avgDailyAcceptances: 18.5,
-        avgO1Ratio: 12.0,
-      };
+    if (countWithData === 0 || sumActiveDays === 0 || sumTotalChats === 0) {
+      return null;
     }
 
     return {
       avgAcceptanceRate: Number((sumRate / countWithData).toFixed(1)),
-      avgDailyAcceptances:
-        sumActiveDays > 0 ? Number((sumAcceptances / sumActiveDays).toFixed(1)) : 18.5,
-      avgO1Ratio:
-        sumTotalChats > 0 ? Number(((sumO1Chats / sumTotalChats) * 100).toFixed(1)) : 12.0,
+      avgDailyAcceptances: Number((sumAcceptances / sumActiveDays).toFixed(1)),
+      avgO1Ratio: Number(((sumO1Chats / sumTotalChats) * 100).toFixed(1)),
     };
   }
 }

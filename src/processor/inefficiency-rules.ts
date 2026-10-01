@@ -660,19 +660,58 @@ export function calculateAutonomyMetrics(
 export { calculateAutonomyMetrics as analyzeAutonomyDepth };
 
 /**
+ * 判定に必要な実測値が無いときの結果。固定値・推定値で埋めて「兆候なし」と見せかけず、
+ * 「判定不能 (データ不足)」として返す。確率は意味を持たないため 0 とし、UI は evaluable = false を見て表示を切り替える。
+ */
+function insufficientDataResult(
+  id: InefficiencyPatternResult['id'],
+  name: string,
+  nameEn: string,
+  tagline: string,
+  reason: string
+): InefficiencyPatternResult {
+  return {
+    id,
+    name,
+    nameEn,
+    probabilityPercent: 0,
+    riskLevel: 'healthy',
+    evaluable: false,
+    insufficientDataReason: reason,
+    tagline,
+    summary: `判定不能 (データ不足): ${reason}`,
+    contributingFactors: [],
+    recommendations: [],
+    isExpandedDefault: false,
+  };
+}
+
+/**
  * 6. クレジット過剰消費型 (Credit Burn Overdrive)
  */
 export function diagnoseCreditBurnOverdrive(
   creditsConsumed: number,
-  creditsLimit: number = 3900,
+  creditsLimit: number | null | undefined,
   acceptances: number = 0,
   agentSessions: number = 0
 ): InefficiencyPatternResult {
+  // 月間の基準クレジット (個人上限、またはプラン別の包含量) が特定できない場合は評価しない
+  // (旧: 不明なとき 3,900 を既定値として使っていた)
+  if (typeof creditsLimit !== 'number' || !(creditsLimit > 0)) {
+    return insufficientDataResult(
+      'credit_burn_overdrive',
+      'クレジット過剰消費型',
+      'Credit Burn Overdrive',
+      'AI Creditsの消費ペースが突出し費用対効果に見合わない過大消費が発生している兆候',
+      '月間クレジットの基準値 (個人上限またはプラン別の包含量) を特定できません。'
+    );
+  }
+
   let prob = 0;
   const factors: ContributingFactor[] = [];
   const recommendations: string[] = [];
 
-  const limit = creditsLimit > 0 ? creditsLimit : 3900;
+  const limit = creditsLimit;
   const ratio = creditsConsumed / limit;
   const totalOutcomes = acceptances + agentSessions;
 
@@ -752,17 +791,32 @@ export function diagnoseCreditBurnOverdrive(
  * 7. Agent セッション途中放棄型 (Agent Session Abandonment)
  */
 export function diagnoseAgentAbandonment(
-  totalSessions: number,
-  shortSessions: number = 0,
-  completedSessions: number = 0
+  totalSessions: number | null | undefined,
+  shortSessions?: number | null,
+  completedSessions?: number | null
 ): InefficiencyPatternResult {
+  // セッション数・完了数・短時間セッション数のいずれも実測が無い場合は評価しない
+  // (旧: 短時間 25% / 完了 70% を一律に仮定していた)
+  const hasCompleted = typeof completedSessions === 'number';
+  const hasShort = typeof shortSessions === 'number';
+  if (typeof totalSessions !== 'number' || (!hasCompleted && !hasShort)) {
+    return insufficientDataResult(
+      'agent_abandonment',
+      'Agent セッション途中放棄型',
+      'Agent Session Abandonment',
+      'Agentセッションを開始するものの途中で諦めて破棄または手動修正に切り替えている兆候',
+      'Agent セッションの完了数・短時間中断数が取得できていません。'
+    );
+  }
+
   let prob = 0;
   const factors: ContributingFactor[] = [];
   const recommendations: string[] = [];
 
-  const abandonedSessions = Math.max(0, totalSessions - completedSessions);
-  const abandonmentRate = totalSessions > 0 ? abandonedSessions / totalSessions : 0;
-  const shortRate = totalSessions > 0 ? shortSessions / totalSessions : 0;
+  // 取得できている指標だけで評価する (無い方の率は 0 とみなさず、表示は「—」)
+  const abandonedSessions = hasCompleted ? Math.max(0, totalSessions - (completedSessions as number)) : 0;
+  const abandonmentRate = hasCompleted && totalSessions > 0 ? abandonedSessions / totalSessions : 0;
+  const shortRate = hasShort && totalSessions > 0 ? (shortSessions as number) / totalSessions : 0;
 
   if (totalSessions >= 5) {
     if (abandonmentRate >= 0.6 || shortRate >= 0.5) {
@@ -781,7 +835,9 @@ export function diagnoseAgentAbandonment(
 
   factors.push({
     metricName: 'Agentセッション放棄率',
-    currentValueFormatted: `${(abandonmentRate * 100).toFixed(1)}% (${abandonedSessions}/${totalSessions} 件放棄)`,
+    currentValueFormatted: hasCompleted
+      ? `${(abandonmentRate * 100).toFixed(1)}% (${abandonedSessions}/${totalSessions} 件放棄)`
+      : '— (完了数が未取得)',
     recommendedThresholdFormatted: '< 30.0%',
     description:
       abandonmentRate >= 0.5
@@ -794,7 +850,9 @@ export function diagnoseAgentAbandonment(
 
   factors.push({
     metricName: '短時間中断セッション率',
-    currentValueFormatted: `${(shortRate * 100).toFixed(1)}% (${shortSessions} 件)`,
+    currentValueFormatted: hasShort
+      ? `${(shortRate * 100).toFixed(1)}% (${shortSessions} 件)`
+      : '— (短時間中断数が未取得)',
     recommendedThresholdFormatted: '< 20.0%',
     description:
       shortRate >= 0.4
@@ -930,20 +988,35 @@ export function diagnoseModelCostMismatch(
  * 9. レビュー迂回・ノーチェックマージ型 (Review Bypass / Unchecked Agent PR)
  */
 export function diagnoseReviewBypass(
-  agentPrs: number,
-  unreviewedPrs: number,
-  medianMergeMinutes: number = 60
+  agentPrs: number | null | undefined,
+  unreviewedPrs: number | null | undefined,
+  medianMergeMinutes?: number | null
 ): InefficiencyPatternResult {
+  // Agent PR 数・未レビュー数の実測が無い場合は評価しない
+  // (旧: PR 数をセッション数の 10% と仮定し、マージ時間 60 分・未レビュー 0 件を既定値としていた)
+  if (typeof agentPrs !== 'number' || typeof unreviewedPrs !== 'number') {
+    return insufficientDataResult(
+      'review_bypass',
+      'レビュー迂回・ノーチェックマージ型',
+      'Review Bypass / Unchecked Agent PR',
+      'AI/Agentが生成したPRを十分な人間レビューなしに即時マージしている品質リスクの兆候',
+      'Agent が作成した PR の件数・未レビュー件数が取得できていません。'
+    );
+  }
+
   let prob = 0;
   const factors: ContributingFactor[] = [];
   const recommendations: string[] = [];
 
   const unreviewedRatio = agentPrs > 0 ? unreviewedPrs / agentPrs : 0;
+  // マージ時間が不明な場合は、時間に基づく判定条件を無効にする
+  const hasMergeTime = typeof medianMergeMinutes === 'number';
+  const mergeMinutes = hasMergeTime ? (medianMergeMinutes as number) : Number.POSITIVE_INFINITY;
 
   if (agentPrs >= 3) {
-    if (unreviewedRatio >= 0.60 || medianMergeMinutes < 15) {
-      prob = Math.min(95, Math.round(70 + unreviewedRatio * 20 + Math.max(0, 15 - medianMergeMinutes)));
-    } else if (unreviewedRatio >= 0.35 || medianMergeMinutes < 30) {
+    if (unreviewedRatio >= 0.60 || mergeMinutes < 15) {
+      prob = Math.min(95, Math.round(70 + unreviewedRatio * 20 + Math.max(0, 15 - mergeMinutes)));
+    } else if (unreviewedRatio >= 0.35 || mergeMinutes < 30) {
       prob = Math.round(40 + unreviewedRatio * 30);
     } else {
       prob = Math.max(3, Math.round(15 * unreviewedRatio));
@@ -970,13 +1043,14 @@ export function diagnoseReviewBypass(
 
   factors.push({
     metricName: 'PRマージ時間の中央値',
-    currentValueFormatted: `${medianMergeMinutes.toFixed(0)} 分`,
+    currentValueFormatted: hasMergeTime ? `${mergeMinutes.toFixed(0)} 分` : '— (未取得)',
     recommendedThresholdFormatted: '≥ 30 分 (十分な検証時間)',
-    description:
-      medianMergeMinutes < 15
-        ? 'PR作成からマージまでの時間が極めて短く、コード差分やテスト結果の十分な精査が行われていない恐れがあります。'
-        : '十分な検証・レビュー時間を経てマージされています。',
-    severity: medianMergeMinutes < 15 ? 'warning' : 'good',
+    description: !hasMergeTime
+      ? 'PRマージ時間が取得できていないため、時間に基づく判定は行っていません。'
+      : mergeMinutes < 15
+      ? 'PR作成からマージまでの時間が極めて短く、コード差分やテスト結果の十分な精査が行われていない恐れがあります。'
+      : '十分な検証・レビュー時間を経てマージされています。',
+    severity: hasMergeTime && mergeMinutes < 15 ? 'warning' : hasMergeTime ? 'good' : 'neutral',
   });
 
   if (prob >= 60) {

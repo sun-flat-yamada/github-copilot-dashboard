@@ -3,6 +3,7 @@ import {
   GroupingDimension,
   MonthlyReportAggregatedData,
 } from '../../../../src/types/copilot';
+import { UNFILTERED_SECTION_NOTICE } from '../../../../src/domain/constants/filter-scope';
 import {
   PieChart as PieIcon,
   Cpu,
@@ -42,6 +43,13 @@ interface MonthlyReportChartsProps {
   onGroupingChange?: (grouping: GroupingDimension) => void;
   selectedGroup?: string;
 }
+
+/**
+ * グループのリクエスト数。月次レポートのグループ集計は total_requests に保持する。
+ * (旧形式の保存済みレポートは total_suggestions にリクエスト数を代入していたため、互換として参照する)
+ */
+const groupRequests = (g: { total_requests?: number; total_suggestions?: number | null }): number =>
+  g.total_requests ?? g.total_suggestions ?? 0;
 
 export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({
   reportData,
@@ -98,7 +106,7 @@ export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({
       name: g.group_name,
       value: g.total_cost_usd,
       netCost: g.net_cost_usd,
-      requests: g.total_suggestions,
+      requests: groupRequests(g),
       users: g.total_seats,
     }));
   }, [groupSummaries]);
@@ -115,7 +123,7 @@ export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({
           cmp = (a.total_seats || 0) - (b.total_seats || 0);
           break;
         case 'requests':
-          cmp = (a.total_suggestions || 0) - (b.total_suggestions || 0);
+          cmp = groupRequests(a) - groupRequests(b);
           break;
         case 'cost':
           cmp = (a.total_cost_usd || 0) - (b.total_cost_usd || 0);
@@ -290,10 +298,14 @@ export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({
               </thead>
               <tbody className="divide-y divide-slate-800/60">
                 {sortedTableSummaries.map((g: any, idx: number) => {
+                  // グループの費用 (total_cost_usd) は総額 (gross) なので、シェアも総額 (gross) を分母にする
+                  // (旧: 純額 (net) を分母にしており、割引・無料枠があるとシェアが 100% を超え得た)
+                  const shareBase =
+                    reportData.overview.total_gross_spend_usd > 0
+                      ? reportData.overview.total_gross_spend_usd
+                      : reportData.overview.total_net_spend_usd;
                   const percent =
-                    reportData.overview.total_net_spend_usd > 0
-                      ? ((g.total_cost_usd / reportData.overview.total_net_spend_usd) * 100).toFixed(1)
-                      : '0.0';
+                    shareBase > 0 ? ((g.total_cost_usd / shareBase) * 100).toFixed(1) : '0.0';
                   const isSelected = selectedGroup !== 'all' && selectedGroup === g.group_name;
                   return (
                     <tr
@@ -318,7 +330,7 @@ export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({
                       </td>
                       <td className="py-2.5 px-3 text-right text-slate-300">{g.total_seats}名</td>
                       <td className="py-2.5 px-3 text-right text-slate-300">
-                        {g.total_suggestions.toLocaleString()}
+                        {groupRequests(g).toLocaleString()}
                       </td>
                       <td className="py-2.5 px-3 text-right">
                         <span className="font-semibold text-slate-100 font-mono">${g.total_cost_usd.toFixed(2)}</span>
@@ -377,6 +389,15 @@ export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({
           <h3 className="text-sm font-bold text-white flex items-center space-x-2">
             <BarChart3 className="w-4 h-4 text-blue-400" />
             <span>日別利用トレンド (Daily Trend)</span>
+            {reportData.filter_notice?.unfiltered_sections.includes('daily_trends') && (
+              <span
+                className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-[10px] font-bold"
+                data-testid="daily-trend-unfiltered-note"
+                title="日別推移はユーザー別の明細を持たないため、フィルターで絞り込まれません (全体の値)"
+              >
+                {UNFILTERED_SECTION_NOTICE}
+              </span>
+            )}
           </h3>
           <div className="h-64 pt-2">
             <ResponsiveContainer width="100%" height="100%">
@@ -390,7 +411,7 @@ export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({
                 <Line
                   yAxisId="left"
                   type="monotone"
-                  dataKey="cost_usd"
+                  dataKey="spend_usd"
                   name="利用額 (USD)"
                   stroke="#10b981"
                   strokeWidth={2}

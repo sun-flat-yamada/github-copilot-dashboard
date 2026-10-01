@@ -5,22 +5,52 @@ import { IStorageWriter } from '../../domain/ports/IStorageWriter.js';
 import { BillingCalculator } from '../../processor/billing-calculator.js';
 import { MetricsAggregator } from '../../processor/metrics-aggregator.js';
 import { ReportParser } from '../../processor/report-parser.js';
-import { MockDataGenerator } from '../../collector/mock-generator.js';
+import { carryOverUsageSections } from '../../processor/scope-merge.js';
+import { buildRollingTrendEntry } from '../../processor/rolling-trend.js';
+import { MockDataGenerator, MOCK_DATA_UNAVAILABLE_ORGS } from '../../collector/mock-generator.js';
 import {
   CostCenterBudget,
+  DataFetchIssue,
+  EnrichedUserSeat,
   IndexMetadata,
+  RollingTrendEntry,
+  ScopeAggregatedData,
   UserUsageProfile,
 } from '../../domain/entities/copilot.js';
 import { AttributeResolver } from '../../collector/attribute-resolver.js';
 import { loadUserMappingFromFile } from '../../collector/mapping-file-loader.js';
 import { loadDemoUserMapping } from '../../collector/demo-mapping-loader.js';
 import { BillingConfigLoader } from '../../adapters/storage/BillingConfigLoader.js';
+import { isIdleSeatStatus } from '../../domain/rules/SeatClassificationRule.js';
+import {
+  computeCreditsPoolUtilizationPercent,
+  estimateIncludedCreditsPool,
+} from '../../domain/pricing/pricing-catalog.js';
+import { isSourceUsable, resolveSourceStatuses, statusOrInferred } from './source-status.js';
 
 export interface PipelineOrchestratorDependencies {
   dataSource: ICopilotDataSource;
   resolver: IAttributeResolver;
   storage: IStorageWriter;
   isMock?: boolean;
+  /**
+   * 匿名化 (仮名化) モード。省略時は環境変数 ANONYMIZE_USERS=true。
+   * 有効なときは秘密鍵 (ANONYMIZE_SECRET) が必須で、無い場合は run() が例外で停止する。
+   */
+  anonymize?: boolean;
+}
+
+/** 設定 (環境変数 / 設定ファイル) の不備を、画面から気付けるよう issue として表す */
+function makeConfigIssue(target: string, message: string, details?: string): DataFetchIssue {
+  return {
+    id: `issue_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    timestamp: new Date().toISOString(),
+    severity: 'error',
+    category: 'data_integrity',
+    target,
+    message,
+    details,
+  };
 }
 
 export class PipelineOrchestrator {
@@ -28,12 +58,14 @@ export class PipelineOrchestrator {
   private resolver: IAttributeResolver;
   private storage: IStorageWriter;
   private isMock: boolean;
+  private anonymize: boolean;
 
   constructor(deps: PipelineOrchestratorDependencies) {
     this.dataSource = deps.dataSource;
     this.resolver = deps.resolver;
     this.storage = deps.storage;
     this.isMock = deps.isMock ?? false;
+    this.anonymize = deps.anonymize ?? process.env.ANONYMIZE_USERS === 'true';
   }
 
   async run(): Promise<void> {
@@ -50,12 +82,34 @@ export class PipelineOrchestrator {
       }
     }
     const legacyResolver = new AttributeResolver(
-      mappingConfig || process.env.COPILOT_USER_MAPPING || process.env.COPILOT_USER_MAPPING_BASE64
+      mappingConfig || process.env.COPILOT_USER_MAPPING || process.env.COPILOT_USER_MAPPING_BASE64,
+      this.anonymize
     );
+    if (legacyResolver.isAnonymizing()) {
+      console.log('🕶️  Anonymization is enabled: logins, display names, departments and avatars are pseudonymized/removed in all outputs.');
+    }
     const aggregator = new MetricsAggregator();
     const reportParser = new ReportParser(legacyResolver);
 
     console.log(`📋 AttributeResolver: Loaded ${this.resolver.getMappingCount()} mapping(s).`);
+
+    const nowIso = new Date().toISOString();
+    // 前回の成果物 (取得に失敗したソースの Last-known-good を維持するために使う)
+    const previousIndex = this.storage.loadIndex();
+
+    // 設定の不備は黙ってフォールバックせず、issue として記録する
+    const configIssues: DataFetchIssue[] = [];
+    const billingLoad = BillingConfigLoader.loadWithDiagnostics();
+    if (billingLoad.error) {
+      configIssues.push(
+        makeConfigIssue(
+          'config:COPILOT_BILLING_CONFIG',
+          'Billing configuration is invalid; catalog list prices are being used instead.',
+          `Source: ${billingLoad.source}. ${billingLoad.error}`
+        )
+      );
+    }
+    const billingConfig = billingLoad.config;
 
     // 1. データ収集
     console.log('📡 Fetching Copilot Metrics, Seat assignments, and Cost Centers...');
@@ -69,35 +123,65 @@ export class PipelineOrchestrator {
       `✅ Data Fetched: ${metrics.length} daily metric records, ${seats.length} seats, ${costCenters.length} cost centers.`
     );
 
-    const hasLiveMetrics = metrics.length > 0;
+    // 「取得失敗」と「データなし」を区別する。失敗したソースは前回成功データ (Last-known-good) を
+    // 維持し、空データで成果物を上書きしない。
+    const reported = this.dataSource.getSourceStatuses();
+    const statuses = resolveSourceStatuses(
+      [
+        statusOrInferred(reported, 'metrics', metrics.length, nowIso),
+        statusOrInferred(reported, 'seats', seats.length, nowIso),
+        statusOrInferred(reported, 'cost_centers', costCenters.length, nowIso),
+      ],
+      previousIndex
+    );
+    const metricsStatus = statuses.find((s) => s.source === 'metrics');
+    const seatsUsable = isSourceUsable(statuses.find((s) => s.source === 'seats'));
+    const hasLiveMetrics = isSourceUsable(metricsStatus) && metrics.length > 0;
+
+    for (const s of statuses) {
+      if (s.status === 'failed') {
+        console.warn(
+          `⚠️  Source "${s.source}" failed (${s.error ?? 'unknown error'}). Keeping last-known-good data` +
+            (s.last_success_at ? ` from ${s.last_success_at}.` : ' (none available).')
+        );
+      }
+    }
     if (!hasLiveMetrics) {
       console.warn(
-        '⚠️  No Copilot metrics retrieved (COPILOT_READ_TOKEN / COPILOT_ENTERPRISE / COPILOT_ORGS may be unset, ' +
-          'or the credential lacks Enterprise Owner permission). Continuing without live metrics — ' +
-          'Monthly Usage Report (CSV) and other credential-independent features remain available.'
+        '⚠️  No Copilot usage metrics available this run (COPILOT_READ_TOKEN / COPILOT_ENTERPRISE / COPILOT_ORGS may be unset, ' +
+          'the API may have failed, or the credential lacks Enterprise Owner permission). Seat / cost analysis and ' +
+          'Monthly Usage Report (CSV) processing continue; usage metrics are reported as unavailable.'
       );
     }
 
-    // 2. 料金計算・エンリッチメント
-    const referenceDate = hasLiveMetrics ? metrics[metrics.length - 1].date : new Date().toISOString().slice(0, 10);
+    // 2. 料金計算・エンリッチメント (シート・費用の分析は利用状況メトリクスの有無に依存しない)
+    const sortedMetrics = [...metrics].sort((a, b) => a.date.localeCompare(b.date));
+    const referenceDate = hasLiveMetrics ? sortedMetrics[sortedMetrics.length - 1].date : nowIso.slice(0, 10);
     const [currentYear, currentMonth] = referenceDate.split('-').map(Number);
     const daysInCurrentMonth = BillingCalculator.getDaysInMonth(currentYear, currentMonth);
+    const monthKey = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
 
-    const billingCalc = new BillingCalculator(legacyResolver, costCenters, referenceDate);
-    const enrichedSeats = billingCalc.enrichAllSeats(seats, daysInCurrentMonth);
+    const billingCalc = new BillingCalculator(legacyResolver, costCenters, referenceDate, {
+      dataUnavailableOrgs: this.isMock ? MOCK_DATA_UNAVAILABLE_ORGS : [],
+    });
+    const enrichedSeats: EnrichedUserSeat[] = seatsUsable ? billingCalc.enrichAllSeats(seats, daysInCurrentMonth) : [];
 
-    console.log(`💡 Enriched ${enrichedSeats.length} user seats with cost calculation and idle analysis.`);
-
-    // 3. Rawパーティション保存
-    if (hasLiveMetrics) {
-      const latestMetric = metrics[metrics.length - 1];
-      this.storage.saveRawDailyData(latestMetric.date, latestMetric, seats, costCenters);
+    if (seatsUsable) {
+      console.log(`💡 Enriched ${enrichedSeats.length} user seats with cost calculation and idle analysis.`);
     }
 
-    // エラーログの保存
-    const issues = this.dataSource.getIssues();
-    console.log(`🔍 Detected ${issues.length} data fetch issue(s) during collection.`);
-    this.storage.saveErrorLog(issues);
+    // 3. Rawパーティション保存
+    if (hasLiveMetrics && seatsUsable) {
+      const latestMetric = sortedMetrics[sortedMetrics.length - 1];
+      // 匿名化モードでは、Raw パーティションにもログイン名・ユーザー ID・アバター URL を残さない
+      // (Raw は copilot-data ブランチに保存され、リポジトリが公開なら公開される)
+      this.storage.saveRawDailyData(
+        latestMetric.date,
+        latestMetric,
+        seats.map((s) => legacyResolver.redactSeatForStorage(s)),
+        costCenters.map((c) => legacyResolver.redactCostCenterForStorage(c))
+      );
+    }
 
     // 4. Budgets と Profiles
     let costCenterBudgets: CostCenterBudget[] = [];
@@ -108,21 +192,37 @@ export class PipelineOrchestrator {
         this.dataSource.fetchCostCenterBudgets(),
         this.dataSource.fetchUserProfiles(),
       ]);
-    } else {
-      const budgetConfig = BillingCalculator.parseBudgetConfig(process.env.COPILOT_COST_CENTER_BUDGETS);
+    } else if (seatsUsable) {
+      const rawBudgets = process.env.COPILOT_COST_CENTER_BUDGETS;
+      const budgetConfig = BillingCalculator.parseBudgetConfig(rawBudgets);
+      if (rawBudgets && rawBudgets.trim() && budgetConfig.length === 0) {
+        configIssues.push(
+          makeConfigIssue(
+            'config:COPILOT_COST_CENTER_BUDGETS',
+            'COPILOT_COST_CENTER_BUDGETS is set but could not be parsed; no Cost Center budget limits are applied.',
+            'Expected a JSON array (or object) of { cost_center_name | cost_center_id, spending_limit_usd, free_tier_budget_usd }.'
+          )
+        );
+      }
       costCenterBudgets = BillingCalculator.computeCostCenterBudgets(enrichedSeats, costCenters, budgetConfig);
     }
 
     console.log(`💰 Prepared ${costCenterBudgets.length} cost center budget(s) and ${userProfiles.length} user profile(s).`);
 
-    // 5. スコープ集計 & 保存
-    const availableDays: string[] = [];
-    let monthKey: string | undefined;
-    let startDate: string | undefined;
-    let endDate: string | undefined;
+    // エラーログの保存 (データソースの issue + 設定の不備)
+    const issues: DataFetchIssue[] = [...this.dataSource.getIssues(), ...configIssues];
+    console.log(`🔍 Detected ${issues.length} data fetch issue(s) during collection.`);
+    this.storage.saveErrorLog(issues);
 
-    if (hasLiveMetrics) {
-      const recentMetrics = metrics.slice(-30);
+    // 5. スコープ集計 & 保存
+    let availableDays: string[] = previousIndex?.available_days ?? [];
+    let startDate: string | undefined = previousIndex?.default_scopes?.latest_range?.start;
+    let endDate: string | undefined = previousIndex?.default_scopes?.latest_range?.end;
+    let monthlyGenerated = false;
+
+    if (seatsUsable && hasLiveMetrics) {
+      availableDays = [];
+      const recentMetrics = sortedMetrics.slice(-30);
       for (const m of recentMetrics) {
         const dailyData = aggregator.aggregateScope(
           'daily',
@@ -138,8 +238,7 @@ export class PipelineOrchestrator {
         availableDays.push(m.date);
       }
 
-      monthKey = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
-      const monthlyMetrics = metrics.filter((m) => m.date.startsWith(monthKey!));
+      const monthlyMetrics = sortedMetrics.filter((m) => m.date.startsWith(monthKey));
       const monthlyData = aggregator.aggregateScope(
         'monthly',
         monthKey,
@@ -155,34 +254,60 @@ export class PipelineOrchestrator {
         userProfiles
       );
       this.storage.saveScopeData('monthly', monthlyData.scope_key, monthlyData);
+      monthlyGenerated = true;
 
-      // Deep Analysis アーカイブ保存
-      this.storage.saveDeepAnalysisArchive(monthKey, userProfiles);
+      // Deep Analysis アーカイブ保存 (ユーザー別プロファイルがある場合のみ。空のアーカイブで上書きしない)
+      if (userProfiles.length > 0) {
+        this.storage.saveDeepAnalysisArchive(monthKey, userProfiles);
+      }
 
       // カスタム期間 (直近30日)
-      startDate = metrics[0].date;
+      startDate = sortedMetrics[0].date;
       endDate = referenceDate;
       const customData = aggregator.aggregateScope(
         'custom',
         'latest-30d',
-        metrics,
+        sortedMetrics,
         enrichedSeats,
         {
           start: startDate,
           end: endDate,
-          days_count: metrics.length,
+          days_count: sortedMetrics.length,
         },
         issues,
         costCenterBudgets,
         userProfiles
       );
       this.storage.saveScopeData('custom', 'latest-30d', customData);
+    } else if (seatsUsable) {
+      // 利用状況メトリクスを取得できなかった回: シート・費用の分析だけを当月スコープとして保存する。
+      // 前回成功時の利用状況 (受諾率・日次推移等) があれば引き継ぎ、前回値であることを明示する。
+      // 日次 (daily) / 期間 (custom) スコープはメトリクスの日付に基づくため、この回は更新せず前回成果物を維持する。
+      const seatsOnly = aggregator.aggregateScope(
+        'monthly',
+        monthKey,
+        [],
+        enrichedSeats,
+        { start: `${monthKey}-01`, end: referenceDate, days_count: daysInCurrentMonth },
+        issues,
+        costCenterBudgets,
+        userProfiles
+      );
+      const previousMonthly = this.storage.loadScopeData('monthly', monthKey);
+      const monthlyData = carryOverUsageSections(
+        seatsOnly,
+        previousMonthly,
+        metricsStatus?.last_success_at ?? previousIndex?.generated_at
+      );
+      this.storage.saveScopeData('monthly', monthlyData.scope_key, monthlyData);
+      monthlyGenerated = true;
     }
 
     // 6. Monthly Usage Report (CSV) の検出・集計・保存
     console.log('📑 Processing Monthly Usage Reports (CSV)...');
 
     if (this.isMock) {
+      // モックモード (デモデータ生成) のみ。実データ運用では固定の月を生成しない。
       const mockGen = new MockDataGenerator();
       const mockMonths = ['2026-08', '2026-09'];
       for (const m of mockMonths) {
@@ -198,80 +323,99 @@ export class PipelineOrchestrator {
     console.log(`📊 Found ${availableReportMonths.length} monthly usage report partition(s): ${availableReportMonths.join(', ')}`);
 
     for (const repMonth of availableReportMonths) {
+      // 同じ月に複数の CSV がある場合は、全ファイルを結合 (重複は 1 件に集約) してから 1 回だけ集計する。
+      // (旧実装はファイルごとに集計して保存しており、最後のファイルの集計が前のファイルを上書きしていた)
       const csvFiles = this.storage.getRawReportFiles(repMonth);
+      const recordSets: Array<{ fileName: string; records: ReturnType<ReportParser['parseRecords']> }> = [];
       for (const csvPath of csvFiles) {
         try {
           const csvContent = fs.readFileSync(csvPath, 'utf-8');
           const fileName = csvPath.split(/[\\/]/).pop() || `${repMonth}.csv`;
-          const rawRecords = reportParser.parseRecords(csvContent);
-          if (rawRecords.length > 0) {
-            const aggregatedReport = reportParser.aggregate(rawRecords, repMonth, fileName, 'persisted');
-            this.storage.saveReportData(repMonth, aggregatedReport);
-            console.log(`✅ Aggregated monthly report for ${repMonth}: ${rawRecords.length} records, $${aggregatedReport.overview.total_net_spend_usd} total net spend.`);
-          }
+          recordSets.push({ fileName, records: reportParser.parseRecords(csvContent) });
         } catch (err) {
           console.warn(`⚠️ Warning: Failed to parse report CSV at ${csvPath}:`, err);
         }
       }
+
+      const merged = reportParser.mergeRecordSets(recordSets);
+      if (merged.records.length > 0) {
+        const label =
+          merged.sourceFiles.length > 1
+            ? `${merged.sourceFiles[0]} (+${merged.sourceFiles.length - 1} files)`
+            : merged.sourceFiles[0] || `${repMonth}.csv`;
+        const aggregatedReport = reportParser.aggregate(merged.records, repMonth, label, 'persisted', {
+          source_files: merged.sourceFiles,
+          records_total: merged.records.length,
+          duplicates_skipped: merged.duplicatesSkipped,
+        });
+        this.storage.saveReportData(repMonth, aggregatedReport);
+        console.log(
+          `✅ Aggregated monthly report for ${repMonth}: ${merged.records.length} records from ${merged.sourceFiles.length} file(s)` +
+            (merged.duplicatesSkipped > 0 ? ` (${merged.duplicatesSkipped} duplicate row(s) skipped)` : '') +
+            `, $${aggregatedReport.overview.total_net_spend_usd} total net spend.`
+        );
+      }
     }
 
-    // 7. ローリング1年トレンド
+    // 7. ローリング1年トレンド (保存済みの月次集計から実値で構成する)
     const storedProcMonths = this.storage.getStoredProcessedMonths();
     const allMonthsSet = new Set<string>();
-    if (monthKey) allMonthsSet.add(monthKey);
+    if (monthlyGenerated) allMonthsSet.add(monthKey);
     for (const m of storedProcMonths) allMonthsSet.add(m);
     const allRecordedMonths = Array.from(allMonthsSet).sort().reverse();
     const rolling12Months = allRecordedMonths.slice(0, 12);
 
-    const totalAiCreditsUsed = enrichedSeats.reduce((sum, u) => sum + (u.ai_credits_used_28d || 0), 0);
-    const totalAiCreditsCostUsd = Number((totalAiCreditsUsed * 0.01).toFixed(2));
-    const totalMonthlySpend = enrichedSeats.reduce((sum, u) => sum + u.monthly_cost_usd, 0);
-    const totalCombinedCostUsd = Number((totalMonthlySpend + totalAiCreditsCostUsd).toFixed(2));
-    const idleSeats = enrichedSeats.filter((u) => u.status === 'idle' || u.status === 'never_used');
-    const idleWasteSpend = idleSeats.reduce((sum, u) => sum + u.monthly_cost_usd, 0);
-    const activeSeatsCount = enrichedSeats.length - idleSeats.length;
-
-    const totalAgentSessions = userProfiles.reduce((sum, p) => sum + (p.total_agent_sessions || 0), 0);
-    const engagedAgentUsers = userProfiles.filter((p) => (p.total_agent_sessions || 0) > 0).length;
-    const agentAdoptionRate = activeSeatsCount > 0 ? Number((engagedAgentUsers / activeSeatsCount).toFixed(4)) : 0;
-
-    const rollingTrendEntries = rolling12Months.map((m) => ({
-      month: m,
-      total_monthly_spend_usd: Number(totalMonthlySpend.toFixed(2)),
-      total_spend_usd: Number(totalMonthlySpend.toFixed(2)),
-      active_seats: activeSeatsCount,
-      idle_seats: idleSeats.length,
-      total_seats: enrichedSeats.length,
-      acceptance_rate: 0.35,
-      total_chats: userProfiles.reduce((sum, p) => sum + p.total_chats, 0),
-      total_ai_credits_used: totalAiCreditsUsed,
-      total_agent_sessions: totalAgentSessions,
-      agent_adoption_rate: agentAdoptionRate,
-    }));
+    const rollingTrendEntries: RollingTrendEntry[] = [];
+    for (const m of rolling12Months) {
+      const monthly: ScopeAggregatedData | null = this.storage.loadScopeData('monthly', m);
+      if (monthly) rollingTrendEntries.push(buildRollingTrendEntry(m, monthly));
+    }
 
     this.storage.saveRolling1YearTrend({
-      generated_at: new Date().toISOString(),
+      generated_at: nowIso,
       months: rolling12Months,
       trends: rollingTrendEntries,
     });
 
     // 8. IndexMetadata の保存
-    const billingConfig = BillingConfigLoader.load();
+    const summary = seatsUsable
+      ? this.buildSummary(enrichedSeats, userProfiles, monthKey, billingConfig.creditsPricing.includedCreditsPerSeat)
+      : previousIndex?.summary ?? this.buildSummary([], [], monthKey, undefined);
+
     const indexMeta: IndexMetadata = {
       repository: {
-        owner: process.env.GITHUB_REPOSITORY_OWNER || 'proud-corp',
-        name: process.env.GITHUB_REPOSITORY?.split('/')[1] || 'github-copilot-dashboard',
+        // 取得できないときはデモ用の既定値で埋めず、前回の値 (無ければ空) を使う
+        owner: process.env.GITHUB_REPOSITORY_OWNER || previousIndex?.repository?.owner || '',
+        name:
+          process.env.GITHUB_REPOSITORY?.split('/')[1] ||
+          previousIndex?.repository?.name ||
+          'github-copilot-dashboard',
         is_fork: process.env.IS_FORK === 'true',
       },
-      generated_at: new Date().toISOString(),
+      generated_at: nowIso,
       data_retention_days: 365,
       available_months: rolling12Months,
       all_recorded_months: allRecordedMonths,
-      available_days: availableDays.reverse(),
+      available_days: [...availableDays].sort().reverse(),
       available_reports: availableReportMonths,
       rolling_1year_trend_file: 'trends/rolling-1year.json',
       deep_analysis_months: this.storage.getStoredDeepAnalysisMonths(),
-      is_mock_mode: this.isMock || (!hasLiveMetrics && enrichedSeats.length === 0),
+      // MOCK_MODE (デモデータ生成) のときだけ true。取得失敗・データなしでデモ扱いに反転させない
+      is_mock_mode: this.isMock,
+      source_status: statuses,
+      // 公開範囲の検査 (fork:verify) 用。実データでユーザー単位の情報を含み、かつ仮名化されていなければ、
+      // リポジトリ / Pages の公開は個人情報の公開に直結する
+      privacy: {
+        anonymized: legacyResolver.isAnonymizing(),
+        // 前回までの成果物 (保存済みの月次集計など) が個人単位のデータを含むなら、今回の取得が失敗しても true のまま
+        contains_user_level_data:
+          !this.isMock &&
+          (enrichedSeats.length > 0 ||
+            availableReportMonths.length > 0 ||
+            userProfiles.length > 0 ||
+            previousIndex?.privacy?.contains_user_level_data === true ||
+            (previousIndex?.is_mock_mode !== true && (previousIndex?.summary?.total_seats ?? 0) > 0)),
+      },
       billing: {
         currency: billingConfig.currency,
         subCurrency: billingConfig.subCurrency,
@@ -279,23 +423,12 @@ export class PipelineOrchestrator {
         periods: billingConfig.periods,
       },
       default_scopes: {
-        latest_day: hasLiveMetrics ? referenceDate : undefined,
-        latest_month: monthKey || rolling12Months[0],
+        latest_day: hasLiveMetrics ? referenceDate : previousIndex?.default_scopes?.latest_day,
+        latest_month: monthlyGenerated ? monthKey : previousIndex?.default_scopes?.latest_month || rolling12Months[0],
         latest_report: availableReportMonths[0],
         latest_range: startDate && endDate ? { start: startDate, end: endDate } : undefined,
       },
-      summary: {
-        total_seats: enrichedSeats.length,
-        active_seats_30d: activeSeatsCount,
-        idle_seats_30d: idleSeats.length,
-        total_monthly_spend_usd: Number(totalMonthlySpend.toFixed(2)),
-        idle_waste_spend_usd: Number(idleWasteSpend.toFixed(2)),
-        total_ai_credits_used: totalAiCreditsUsed,
-        total_ai_credits_cost_usd: totalAiCreditsCostUsd,
-        total_combined_cost_usd: totalCombinedCostUsd,
-        credits_pool_utilization_percent: Number(Math.min(100, (totalAiCreditsUsed / Math.max(1, enrichedSeats.length * 3900)) * 100).toFixed(1)),
-        agent_adoption_rate: agentAdoptionRate,
-      },
+      summary,
       issues: issues,
     };
 
@@ -307,5 +440,60 @@ export class PipelineOrchestrator {
     console.log(`💰 Total Monthly Spend: $${indexMeta.summary.total_monthly_spend_usd}`);
     console.log(`⚠️ Idle Seats Detected: ${indexMeta.summary.idle_seats_30d} ($${indexMeta.summary.idle_waste_spend_usd} waste/month)`);
     console.log('=====================================================');
+  }
+
+  /**
+   * シート・費用から index.json の要約を構成する。
+   * AI クレジットの単価・包含量は価格カタログ / 請求設定が唯一のソースで、
+   * 固定値 (0.01 / 3,900) を直接持たない。
+   */
+  private buildSummary(
+    enrichedSeats: EnrichedUserSeat[],
+    userProfiles: UserUsageProfile[],
+    month: string,
+    includedCreditsOverridePerSeat: number | undefined
+  ): IndexMetadata['summary'] {
+    const totalAiCreditsUsed = enrichedSeats.reduce((sum, u) => sum + (u.ai_credits_used_28d || 0), 0);
+    // 席ごとの金額 (CreditsBillingService 経由) の合計。単価の解決経路を 1 つにする
+    const totalAiCreditsCostUsd = Number(
+      enrichedSeats.reduce((sum, u) => sum + (u.ai_credits_cost_usd || 0), 0).toFixed(2)
+    );
+    const totalMonthlySpend = enrichedSeats.reduce((sum, u) => sum + u.monthly_cost_usd, 0);
+    const totalCombinedCostUsd = Number((totalMonthlySpend + totalAiCreditsCostUsd).toFixed(2));
+    const idleSeats = enrichedSeats.filter((u) => isIdleSeatStatus(u.status));
+    const idleWasteSpend = idleSeats.reduce((sum, u) => sum + u.monthly_cost_usd, 0);
+    const onboardingSeats = enrichedSeats.filter((u) => u.status === 'onboarding').length;
+    const costUnconfirmedSeats = enrichedSeats.filter((u) => u.cost_unconfirmed).length;
+    const activeSeatsCount = enrichedSeats.length - idleSeats.length - onboardingSeats;
+
+    // ユーザー別プロファイルが無い (実測がない) 場合、エージェント採用率は算出しない
+    const engagedAgentUsers = userProfiles.filter((p) => (p.total_agent_sessions || 0) > 0).length;
+    const agentAdoptionRate =
+      userProfiles.length > 0 && activeSeatsCount > 0
+        ? Number((engagedAgentUsers / activeSeatsCount).toFixed(4))
+        : undefined;
+
+    // プール = 全シートのプラン別の包含クレジット合計 (プラン未確定のシートは算入しない)
+    const pool = estimateIncludedCreditsPool(
+      enrichedSeats.map((u) => u.plan_type),
+      month,
+      includedCreditsOverridePerSeat
+    );
+    const poolUtilization = computeCreditsPoolUtilizationPercent(totalAiCreditsUsed, pool.includedCredits);
+
+    return {
+      total_seats: enrichedSeats.length,
+      active_seats_30d: activeSeatsCount,
+      idle_seats_30d: idleSeats.length,
+      ...(onboardingSeats > 0 ? { onboarding_seats: onboardingSeats } : {}),
+      ...(costUnconfirmedSeats > 0 ? { cost_unconfirmed_seats: costUnconfirmedSeats } : {}),
+      total_monthly_spend_usd: Number(totalMonthlySpend.toFixed(2)),
+      idle_waste_spend_usd: Number(idleWasteSpend.toFixed(2)),
+      total_ai_credits_used: totalAiCreditsUsed,
+      total_ai_credits_cost_usd: totalAiCreditsCostUsd,
+      total_combined_cost_usd: totalCombinedCostUsd,
+      ...(poolUtilization !== null ? { credits_pool_utilization_percent: poolUtilization } : {}),
+      ...(agentAdoptionRate !== undefined ? { agent_adoption_rate: agentAdoptionRate } : {}),
+    };
   }
 }

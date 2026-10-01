@@ -13,12 +13,16 @@ export class DomainMapper {
     return normalized;
   }
 
-  static toEnterpriseCostCenter(raw: any): EnterpriseCostCenter {
+  /**
+   * 正規化済み (normalizers/cost-centers-*.ts) の Cost Center をドメイン型へ写像する。
+   * API の表記ゆれ (costCenters / cost_centers, Repo / Repository 等) は正規化層で吸収済み。
+   */
+  static toEnterpriseCostCenter(normalized: EnterpriseCostCenter): EnterpriseCostCenter {
     return {
-      id: raw.id,
-      name: raw.name,
-      cost_center_code: raw.cost_center_code,
-      resources: raw.resources || [],
+      id: normalized.id,
+      name: normalized.name,
+      cost_center_code: normalized.cost_center_code,
+      resources: normalized.resources ?? [],
     };
   }
 }

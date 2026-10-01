@@ -1,12 +1,15 @@
 import { ScopeAggregatedData, DataSourceType, MonthlyReportAggregatedData } from '../../domain/entities/copilot.js';
+import { isIdleSeatStatus } from '../../domain/rules/SeatClassificationRule.js';
+import { monthlyIdleSavingsUsd } from '../../domain/rules/ScopeCostRule.js';
 
 export interface OverviewKpiViewModel {
   totalCostFormatted: string;
   totalCostRaw: number;
   activeUsersCount: number;
   totalUsersCount: number;
+  /** 取得できていない (null) ときは '—'。0% と区別する */
   acceptanceRateFormatted: string;
-  acceptanceRateRaw: number;
+  acceptanceRateRaw: number | null;
   idleWasteFormatted: string;
   idleWasteRaw: number;
   idleCount: number;
@@ -47,9 +50,10 @@ export class OverviewPresenter {
       const deptCount = Object.keys(currentData.by_department || {}).length;
       const budgetCount = currentData.cost_center_budgets?.length || 0;
       const userCount = currentData.users?.length || 0;
-      const idleCount = (currentData.users || []).filter(
-        (u: any) => u.status === 'dormant' || u.status === 'inactive'
-      ).length;
+      const idleCount = (currentData.users || []).filter((u) => isIdleSeatStatus(u.status)).length;
+      // 削減可能額は遊休シートの月額費用の合計 (スコープが日次でも「/月」の値になる)
+      const idleSavings = monthlyIdleSavingsUsd(currentData.users || []);
+      const acceptanceRate = overview.overall_acceptance_rate;
 
       return {
         hasData: true,
@@ -61,10 +65,10 @@ export class OverviewPresenter {
           totalCostRaw: overview.total_spend_usd || 0,
           activeUsersCount: overview.active_users || 0,
           totalUsersCount: overview.total_seats || 0,
-          acceptanceRateFormatted: `${Math.round((overview.overall_acceptance_rate || 0) * 100)}%`,
-          acceptanceRateRaw: overview.overall_acceptance_rate || 0,
-          idleWasteFormatted: `$${(overview.idle_waste_usd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/月`,
-          idleWasteRaw: overview.idle_waste_usd || 0,
+          acceptanceRateFormatted: acceptanceRate === null ? '—' : `${Math.round(acceptanceRate * 100)}%`,
+          acceptanceRateRaw: acceptanceRate,
+          idleWasteFormatted: `$${idleSavings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/月`,
+          idleWasteRaw: idleSavings,
           idleCount,
         },
         chips: {
@@ -73,7 +77,7 @@ export class OverviewPresenter {
           modelCountText: `Live Models`,
           userCountText: `${userCount} 名`,
         },
-        canShowAdvisor: (overview.idle_waste_usd || 0) > 0 || idleCount > 0,
+        canShowAdvisor: idleSavings > 0 || idleCount > 0,
         canShowBudgets: budgetCount > 0,
       };
     }
@@ -95,9 +99,10 @@ export class OverviewPresenter {
           totalCostRaw: totalCost,
           activeUsersCount: overview.total_active_users || 0,
           totalUsersCount: userCount,
-          acceptanceRateFormatted: `N/A`,
-          acceptanceRateRaw: 0,
-          idleWasteFormatted: `$0.00/月`,
+          acceptanceRateFormatted: '—',
+          acceptanceRateRaw: null,
+          // 月次レポートにはシートの稼働状況が無く、遊休は算出できない ($0.00 とは表示しない)
+          idleWasteFormatted: '—',
           idleWasteRaw: 0,
           idleCount: 0,
         },
@@ -122,8 +127,8 @@ export class OverviewPresenter {
         totalCostRaw: 0,
         activeUsersCount: 0,
         totalUsersCount: 0,
-        acceptanceRateFormatted: '0%',
-        acceptanceRateRaw: 0,
+        acceptanceRateFormatted: '—',
+        acceptanceRateRaw: null,
         idleWasteFormatted: '$0.00/月',
         idleWasteRaw: 0,
         idleCount: 0,

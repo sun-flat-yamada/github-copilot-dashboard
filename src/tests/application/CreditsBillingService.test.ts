@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import * as assert from 'node:assert/strict';
 import { CreditsBillingService } from '../../application/services/CreditsBillingService.js';
 import { Money } from '../../domain/value-objects/Money.js';
+import { getCreditUnitPriceUsd } from '../../domain/pricing/pricing-catalog.js';
 
 describe('CreditsBillingService Tests (P6-A-9)', () => {
   describe('calculateCreditsCost', () => {
@@ -10,10 +11,16 @@ describe('CreditsBillingService Tests (P6-A-9)', () => {
       assert.equal(CreditsBillingService.calculateCreditsCost(-10).amount, 0);
     });
 
-    it('calculates cost using default rate of $0.05 per credit', () => {
+    it('calculates cost using the catalog unit price of $0.01 per credit', () => {
       const cost = CreditsBillingService.calculateCreditsCost(100);
-      assert.equal(cost.amount, 5.0);
-      assert.equal(cost.format(), '$5.00');
+      assert.equal(cost.amount, 1.0);
+      assert.equal(cost.format(), '$1.00');
+    });
+
+    it('uses the same unit price as the pricing catalog (no service-specific default rate)', () => {
+      // 以前はこのサービスだけ固定の $0.05 を持ち、パイプライン集計 ($0.01) と同じ消費量で 5 倍ずれていた
+      const cost = CreditsBillingService.calculateCreditsCost(1000, undefined, undefined, '2026-09');
+      assert.equal(cost.amount, Number((1000 * getCreditUnitPriceUsd('2026-09')).toFixed(2)));
     });
 
     it('supports custom credit rates', () => {
@@ -55,43 +62,43 @@ describe('CreditsBillingService Tests (P6-A-9)', () => {
       });
 
       assert.equal(summary.totalCredits, 350);
-      // claude: 200 * 0.06 = 12.00
-      // gpt-4o: 100 * 0.05 = 5.00
-      // o1: 50 * 0.05 = 2.50
-      // total = 19.50
-      assert.equal(summary.totalCostUsd.amount, 19.5);
+      // claude: 200 * 0.06 (モデル別の上書き単価) = 12.00
+      // gpt-4o: 100 * 0.01 (カタログ単価) = 1.00
+      // o1: 50 * 0.01 (カタログ単価) = 0.50
+      // total = 13.50
+      assert.equal(summary.totalCostUsd.amount, 13.5);
       assert.equal(summary.byModel['claude-3-7-sonnet'].costUsd.amount, 12.0);
-      assert.equal(summary.byModel['gpt-4o'].costUsd.amount, 5.0);
-      assert.equal(summary.byModel['o1'].costUsd.amount, 2.5);
+      assert.equal(summary.byModel['gpt-4o'].costUsd.amount, 1.0);
+      assert.equal(summary.byModel['o1'].costUsd.amount, 0.5);
     });
   });
 
   describe('evaluateBudget', () => {
     it('returns under_budget when utilization is below 80%', () => {
       const budget = { cost_center: 'FinTech-Division', monthly_budget_usd: 1000, credits_limit: 500 };
-      const evalResult = CreditsBillingService.evaluateBudget(budget, 500, 100); // 500 + 5 = 505 / 1000 = 50.5%
+      const evalResult = CreditsBillingService.evaluateBudget(budget, 500, 100); // 500 + 1 = 501 / 1000 = 50.1%
       assert.equal(evalResult.status, 'under_budget');
-      assert.equal(evalResult.totalCombinedSpendUsd, 505);
-      assert.equal(evalResult.budgetUtilizationPct, 50.5);
+      assert.equal(evalResult.totalCombinedSpendUsd, 501);
+      assert.equal(evalResult.budgetUtilizationPct, 50.1);
     });
 
     it('returns warning when utilization is between 80% and 100%', () => {
       const budget = { cost_center: 'Cloud-Platform', monthly_budget_usd: 1000, credits_limit: 500 };
-      const evalResult = CreditsBillingService.evaluateBudget(budget, 800, 100); // 800 + 5 = 805 / 1000 = 80.5%
+      const evalResult = CreditsBillingService.evaluateBudget(budget, 800, 100); // 800 + 1 = 801 / 1000 = 80.1%
       assert.equal(evalResult.status, 'warning');
-      assert.equal(evalResult.budgetUtilizationPct, 80.5);
+      assert.equal(evalResult.budgetUtilizationPct, 80.1);
     });
 
     it('returns exceeded when combined spend exceeds budget', () => {
       const budget = { cost_center: 'Research-and-AI', monthly_budget_usd: 1000 };
-      const evalResult = CreditsBillingService.evaluateBudget(budget, 950, 1200); // 950 + 60 = 1010 / 1000 = 101%
+      const evalResult = CreditsBillingService.evaluateBudget(budget, 950, 6000); // 950 + 60 = 1010 / 1000 = 101%
       assert.equal(evalResult.status, 'exceeded');
       assert.equal(evalResult.budgetUtilizationPct, 101);
     });
 
     it('returns exceeded when credits_limit is strictly exceeded', () => {
       const budget = { cost_center: 'Research-and-AI', monthly_budget_usd: 5000, credits_limit: 100 };
-      const evalResult = CreditsBillingService.evaluateBudget(budget, 100, 150); // spend 107.5/5000 (2%), but credits 150 > 100
+      const evalResult = CreditsBillingService.evaluateBudget(budget, 100, 150); // spend 101.5/5000 (2%), but credits 150 > 100
       assert.equal(evalResult.status, 'exceeded');
     });
   });

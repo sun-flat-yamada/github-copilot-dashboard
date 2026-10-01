@@ -88,4 +88,57 @@ describe('BillingConfigLoader & EA Pricing Tests', () => {
     const config2 = BillingConfigLoader.load(invalidDiscount);
     assert.deepEqual(config2, DEFAULT_BILLING_CONFIG);
   });
+
+  describe('loadWithDiagnostics: configuration errors are reported, not swallowed (P0-8)', () => {
+    it('reports the source and no error for a valid argument config', () => {
+      const result = BillingConfigLoader.loadWithDiagnostics(JSON.stringify({ discountPercent: 10 }));
+      assert.equal(result.source, 'argument');
+      assert.equal(result.error, undefined);
+      assert.equal(result.config.discountPercent, 10);
+    });
+
+    it('returns defaults plus an error summary for malformed JSON, without echoing the value', () => {
+      const result = BillingConfigLoader.loadWithDiagnostics('{"customPricePerCredit": 1.273, "oops"');
+      assert.equal(result.source, 'argument');
+      assert.equal(result.config, DEFAULT_BILLING_CONFIG);
+      assert.match(result.error ?? '', /not valid JSON/);
+      assert.ok(!(result.error ?? '').includes('1.273'), 'a contract unit price must not leak into the error summary');
+    });
+
+    it('returns defaults plus a path-level summary for schema violations, without echoing values', () => {
+      const result = BillingConfigLoader.loadWithDiagnostics(
+        JSON.stringify({ discountPercent: 250, currency: { code: 'JPY', symbol: '¥', exchangeRateFromUSD: -1, displayDecimals: 0 } })
+      );
+      assert.equal(result.config, DEFAULT_BILLING_CONFIG);
+      assert.match(result.error ?? '', /discountPercent/);
+      assert.ok(!(result.error ?? '').includes('250'));
+    });
+
+    it('treats a missing configuration as "default" (not an error)', () => {
+      const saved = process.env.COPILOT_BILLING_CONFIG;
+      delete process.env.COPILOT_BILLING_CONFIG;
+      try {
+        const result = BillingConfigLoader.loadWithDiagnostics();
+        if (result.source === 'default') {
+          assert.equal(result.error, undefined);
+          assert.equal(result.config, DEFAULT_BILLING_CONFIG);
+        }
+      } finally {
+        if (saved !== undefined) process.env.COPILOT_BILLING_CONFIG = saved;
+      }
+    });
+
+    it('prefers COPILOT_BILLING_CONFIG from the environment when no argument is given', () => {
+      const saved = process.env.COPILOT_BILLING_CONFIG;
+      process.env.COPILOT_BILLING_CONFIG = JSON.stringify({ discountPercent: 12 });
+      try {
+        const result = BillingConfigLoader.loadWithDiagnostics();
+        assert.equal(result.source, 'env');
+        assert.equal(result.config.discountPercent, 12);
+      } finally {
+        if (saved === undefined) delete process.env.COPILOT_BILLING_CONFIG;
+        else process.env.COPILOT_BILLING_CONFIG = saved;
+      }
+    });
+  });
 });

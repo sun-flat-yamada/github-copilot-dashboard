@@ -326,7 +326,248 @@ export function checkEnvironmentConfig(): HealthCheckResult[] {
 }
 
 /**
- * Execute all health checks and aggregate results
+ * 6. Public Exposure (Repository / copilot-data branch / GitHub Pages)
+ *
+ * SDD-04 の Zero Leakage は `main` ブランチ (ソース) の保護だけを扱う。しかし実データ運用では、
+ * `copilot-data` ブランチ (processed / raw / 取り込み CSV) と GitHub Pages の配信物に、解決済みの
+ * 氏名・部署・タグ・個人別利用が含まれる。リポジトリが公開なら `copilot-data` も公開され、
+ * Pages は (Enterprise Cloud のアクセス制御を使わない限り) リポジトリが非公開でも公開される。
+ *
+ * この検査は「匿名のクライアントから実データが読めるか」を直接確かめる (認証ヘッダーは送らない)。
+ *   1. GET api.github.com/repos/{owner}/{repo}                         → 200 ならリポジトリは公開
+ *   2. GET raw.githubusercontent.com/{owner}/{repo}/copilot-data/data/index.json → 200 ならデータブランチが公開
+ *   3. GET {Pages}/data/index.json                                      → 200 なら配信物がデータを公開している
+ * そのうえで、仮名化されていない実データ (index.json の privacy 属性) を公開しようとしている場合に失敗とする。
+ * デモデータのみ・仮名化済みの運用は通る。ネットワークに到達できない場合は検証不能 (warn) とし、失敗にはしない。
+ */
+export interface ExposureProbeResponse {
+  status: number;
+  body?: unknown;
+}
+
+/** 匿名の GET。ネットワーク到達不能・タイムアウトは null */
+export type ExposureProbe = (url: string) => Promise<ExposureProbeResponse | null>;
+
+export const EXPOSURE_PROBE_TIMEOUT_MS = 8000;
+
+export const defaultExposureProbe: ExposureProbe = async (url) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), EXPOSURE_PROBE_TIMEOUT_MS);
+  try {
+    // 認証情報は送らない (「誰でも読めるか」を確かめるため)
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { Accept: 'application/json', 'User-Agent': 'github-copilot-dashboard-fork-verify' },
+    });
+    let body: unknown;
+    if (res.ok) {
+      try {
+        body = await res.json();
+      } catch {
+        body = undefined;
+      }
+    }
+    return { status: res.status, body };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
+/** git remote の URL から `owner/repo` を取り出す (github.com のみ。資格情報付き URL でも資格情報は返さない) */
+export function parseGitHubRepoSlug(remoteUrl: string | null | undefined): string | null {
+  if (!remoteUrl) return null;
+  const match = remoteUrl
+    .trim()
+    .match(/^(?:https?:\/\/(?:[^@/]+@)?|ssh:\/\/(?:[^@/]+@)?|git@)github\.com[/:]([^/\s]+)\/([^/\s]+?)(?:\.git)?\/?$/i);
+  return match ? `${match[1]}/${match[2]}` : null;
+}
+
+interface PrivacyIndexLike {
+  is_mock_mode?: boolean;
+  privacy?: { anonymized?: boolean; contains_user_level_data?: boolean };
+  summary?: { total_seats?: number };
+  available_days?: unknown[];
+}
+
+function asIndex(body: unknown): PrivacyIndexLike | null {
+  return body && typeof body === 'object' && !Array.isArray(body) ? (body as PrivacyIndexLike) : null;
+}
+
+/** index.json が、ユーザー単位 (氏名・部署・個人別利用) のデータを含む実データか。デモデータは含まない */
+export function indexHasUserLevelData(index: PrivacyIndexLike | null | undefined): boolean {
+  if (!index) return false;
+  if (index.is_mock_mode === true) return false;
+  if (typeof index.privacy?.contains_user_level_data === 'boolean') {
+    return index.privacy.contains_user_level_data;
+  }
+  // privacy 属性のない旧形式: シートまたは日次実績があれば個人単位のデータを含むとみなす
+  return (index.summary?.total_seats ?? 0) > 0 || (index.available_days?.length ?? 0) > 0;
+}
+
+export function indexIsAnonymized(index: PrivacyIndexLike | null | undefined): boolean {
+  return index?.privacy?.anonymized === true;
+}
+
+export interface PublicExposureOptions {
+  env?: NodeJS.ProcessEnv;
+  /** `owner/repo`。省略時は GITHUB_REPOSITORY、無ければ origin remote から求める */
+  repository?: string | null;
+  probe?: ExposureProbe;
+  /** ローカルの data/index.json (省略時は読み込みを試みる)。null は「無い」 */
+  localIndex?: PrivacyIndexLike | null;
+}
+
+function readLocalIndex(): PrivacyIndexLike | null {
+  try {
+    const file = path.resolve(process.cwd(), 'data/index.json');
+    return fs.existsSync(file) ? asIndex(JSON.parse(fs.readFileSync(file, 'utf-8'))) : null;
+  } catch {
+    return null;
+  }
+}
+
+function normalizePagesBase(raw: string | undefined, owner: string, name: string): string {
+  const base = raw?.trim() || `https://${owner.toLowerCase()}.github.io/${name}/`;
+  return base.endsWith('/') ? base : `${base}/`;
+}
+
+export async function checkPublicExposure(options: PublicExposureOptions = {}): Promise<HealthCheckResult[]> {
+  const env = options.env ?? process.env;
+  const probe = options.probe ?? defaultExposureProbe;
+  const category = 'Public Exposure';
+  const name = 'Repository / Pages Visibility (E-05)';
+
+  const slug =
+    options.repository !== undefined
+      ? options.repository
+      : env.GITHUB_REPOSITORY || parseGitHubRepoSlug(runGit('remote get-url origin'));
+
+  if (!slug || !slug.includes('/')) {
+    return [
+      {
+        category,
+        name,
+        status: 'warn',
+        message: 'Could not determine the GitHub repository (GITHUB_REPOSITORY / origin remote). Public exposure was not verified.',
+        remediation:
+          "Verify manually that the repository and GitHub Pages are private (or that ANONYMIZE_USERS is enabled) before publishing real data. See SECURITY.md 'Public Repositories & Pages'.",
+      },
+    ];
+  }
+
+  const [owner, repo] = slug.split('/');
+  const pagesBase = normalizePagesBase(env.COPILOT_PAGES_URL, owner, repo);
+  const [repoRes, branchRes, pagesRes] = await Promise.all([
+    probe(`https://api.github.com/repos/${slug}`),
+    probe(`https://raw.githubusercontent.com/${slug}/copilot-data/data/index.json`),
+    probe(`${pagesBase}data/index.json`),
+  ]);
+
+  const repoPublic = repoRes ? (repoRes.status === 200 ? true : repoRes.status === 404 ? false : null) : null;
+  const branchIndex = branchRes?.status === 200 ? asIndex(branchRes.body) : null;
+  const pagesIndex = pagesRes?.status === 200 ? asIndex(pagesRes.body) : null;
+  const branchReadable = branchRes?.status === 200;
+  const pagesReadable = pagesRes?.status === 200;
+  const anyUnknown = [repoRes, branchRes, pagesRes].some((r) => r === null || (r.status !== 200 && r.status !== 404));
+
+  const exposures: string[] = [];
+  if (repoPublic === true) exposures.push('the repository is public');
+  if (branchReadable) exposures.push("the 'copilot-data' branch is readable without authentication");
+  if (pagesReadable) exposures.push(`GitHub Pages serves ${pagesBase}data/index.json`);
+  const exposed = exposures.length > 0;
+
+  // 実データ (ユーザー単位) を、仮名化せずに公開 / 公開しようとしているか
+  const publishedUnanonymized = [branchIndex, pagesIndex].some((i) => indexHasUserLevelData(i) && !indexIsAnonymized(i));
+  const localIndex = options.localIndex !== undefined ? options.localIndex : readLocalIndex();
+  const localUnanonymized = indexHasUserLevelData(localIndex) && !indexIsAnonymized(localIndex);
+  const liveCollectionConfigured = Boolean(env.COPILOT_READ_TOKEN) && Boolean(env.COPILOT_ENTERPRISE || env.COPILOT_ORGS);
+  const anonymizeConfigured = env.ANONYMIZE_USERS === 'true' && (env.ANONYMIZE_SECRET ?? '').trim().length >= 16;
+  const atRisk = publishedUnanonymized || ((liveCollectionConfigured || localUnanonymized) && !anonymizeConfigured);
+  const acknowledged = env.COPILOT_ALLOW_PUBLIC_DATA === 'true';
+
+  const remediation =
+    'Make the repository private (or use a separate private repository for data) and disable public Pages / use Enterprise Cloud access-controlled Pages; ' +
+    'or enable pseudonymization (ANONYMIZE_USERS=true + ANONYMIZE_SECRET). ' +
+    "To accept the risk explicitly, set COPILOT_ALLOW_PUBLIC_DATA=true (not recommended). See SECURITY.md 'Public Repositories & Pages'.";
+
+  if (exposed && atRisk && !acknowledged) {
+    return [
+      {
+        category,
+        name,
+        status: 'fail',
+        message:
+          `Real, non-anonymized Copilot usage data would be publicly readable: ${exposures.join('; ')}. ` +
+          'The data branch and Pages contain resolved names, departments and per-user usage.',
+        remediation,
+      },
+    ];
+  }
+  if (exposed && atRisk) {
+    return [
+      {
+        category,
+        name,
+        status: 'warn',
+        message: `Public exposure of real, non-anonymized data was explicitly acknowledged (COPILOT_ALLOW_PUBLIC_DATA=true): ${exposures.join('; ')}.`,
+        remediation,
+      },
+    ];
+  }
+  if (exposed) {
+    return [
+      {
+        category,
+        name,
+        status: 'pass',
+        message: `Publicly readable (${exposures.join('; ')}), but no real non-anonymized user-level data is involved (demo or pseudonymized data only).`,
+      },
+    ];
+  }
+  if (anyUnknown) {
+    return [
+      {
+        category,
+        name,
+        status: 'warn',
+        message: atRisk
+          ? 'Could not verify public exposure (network unreachable or rate limited) while real non-anonymized data is configured.'
+          : 'Could not verify public exposure (network unreachable or rate limited).',
+        remediation: 'Re-run with network access, or verify the repository / Pages visibility manually in Settings.',
+      },
+    ];
+  }
+  return [
+    {
+      category,
+      name,
+      status: 'pass',
+      message: 'The repository, the copilot-data branch and the Pages data are not readable without authentication.',
+    },
+  ];
+}
+
+/** 同期の健全性 (git / 作業ツリー / データ分離 ...) に加え、公開範囲の検査 (ネットワークを使う) まで実行する */
+export async function runAllHealthChecksWithExposure(options: PublicExposureOptions = {}): Promise<ForkHealthSummary> {
+  const base = runAllHealthChecks();
+  const checks = [...base.checks, ...(await checkPublicExposure(options))];
+  return summarizeChecks(checks);
+}
+
+function summarizeChecks(checks: HealthCheckResult[]): ForkHealthSummary {
+  return {
+    passed: checks.filter((c) => c.status === 'pass').length,
+    warnings: checks.filter((c) => c.status === 'warn').length,
+    failures: checks.filter((c) => c.status === 'fail').length,
+    checks,
+  };
+}
+
+/**
+ * Execute all (offline) health checks and aggregate results.
+ * 公開範囲の検査はネットワークを使うため、非同期の runAllHealthChecksWithExposure() に分けている。
  */
 export function runAllHealthChecks(): ForkHealthSummary {
   const allChecks: HealthCheckResult[] = [
@@ -337,11 +578,7 @@ export function runAllHealthChecks(): ForkHealthSummary {
     ...checkEnvironmentConfig(),
   ];
 
-  const passed = allChecks.filter(c => c.status === 'pass').length;
-  const warnings = allChecks.filter(c => c.status === 'warn').length;
-  const failures = allChecks.filter(c => c.status === 'fail').length;
-
-  return { passed, warnings, failures, checks: allChecks };
+  return summarizeChecks(allChecks);
 }
 
 /**
@@ -386,9 +623,10 @@ export function printHealthReport(summary: ForkHealthSummary): void {
 }
 
 // CLI entry point
-if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename)) {
+async function main(): Promise<number> {
   const isQuick = process.argv.includes('--quick');
-  const summary = runAllHealthChecks();
+  // --quick はネットワークを使わない (公開範囲の検査を行わない)
+  const summary = isQuick ? runAllHealthChecks() : await runAllHealthChecksWithExposure();
   printHealthReport(summary);
 
   if (!isQuick && summary.failures === 0) {
@@ -399,5 +637,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename
     console.log('   4. git push origin main\n');
   }
 
-  process.exit(summary.failures > 0 ? 1 : 0);
+  return summary.failures > 0 ? 1 : 0;
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename)) {
+  main().then((code) => process.exit(code));
 }

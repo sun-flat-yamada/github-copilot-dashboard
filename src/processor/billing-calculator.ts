@@ -9,14 +9,17 @@ import { AttributeResolver } from '../collector/attribute-resolver.js';
 import { getSeatPricing, Money } from '../domain/value-objects/Money.js';
 import { SeatClassificationRule } from '../domain/rules/SeatClassificationRule.js';
 import { SeatBillingRule } from '../domain/rules/SeatBillingRule.js';
+import { BudgetUtilizationRule } from '../domain/rules/BudgetUtilizationRule.js';
 import { CreditsBillingService } from '../application/services/CreditsBillingService.js';
-import { AdoptionPhaseRule } from '../domain/rules/AdoptionPhaseRule.js';
 import { AdoptionPhase } from '../domain/entities/agent-metrics.js';
+import { UNASSIGNED_LABELS } from '../domain/constants/unassigned.js';
+import { BASELINE_PRICING, isPricedPlan, PricedPlanType } from '../domain/pricing/pricing-catalog.js';
 
 import { BillingConfigLoader } from '../adapters/storage/BillingConfigLoader.js';
 import { calculateEffectiveSeatPrice } from '../domain/entities/billing-config.js';
 
-export const getCopilotPricing = (targetMonth?: string): Record<CopilotPlanType, number> => {
+/** 料金が確定しているプランのシート単価。'unknown' (未確定) は含めない */
+export const getCopilotPricing = (targetMonth?: string): Record<PricedPlanType, number> => {
   if (targetMonth) {
     const config = BillingConfigLoader.loadForMonth(targetMonth);
     const biz = calculateEffectiveSeatPrice(config, 'business');
@@ -33,9 +36,10 @@ export const getCopilotPricing = (targetMonth?: string): Record<CopilotPlanType,
   };
 };
 
-export const COPILOT_PRICING: Record<CopilotPlanType, number> = {
-  business: 19.0,
-  enterprise: 39.0,
+/** 価格カタログの通常時シート単価 (単一ソースは src/domain/pricing) */
+export const COPILOT_PRICING: Record<PricedPlanType, number> = {
+  business: BASELINE_PRICING.seatPriceUsd.business,
+  enterprise: BASELINE_PRICING.seatPriceUsd.enterprise,
 };
 
 /**
@@ -50,18 +54,30 @@ export interface CostCenterBudgetConfigEntry {
   free_tier_budget_usd: number;
 }
 
+export interface BillingCalculatorOptions {
+  /**
+   * 「データ取得不可」として扱う Organization 名。
+   * 本番のロジックにデモ用の Org 名を埋め込まないよう、モックデータの運用 (デモ表示用) でのみ
+   * Composition Root / オーケストレーターから明示的に注入する。
+   */
+  dataUnavailableOrgs?: readonly string[];
+}
+
 export class BillingCalculator {
   private resolver: AttributeResolver;
   private costCenterMap: Map<string, string> = new Map(); // login or org -> cost_center_name
   private referenceDate: Date;
+  private dataUnavailableOrgs: ReadonlySet<string>;
 
   constructor(
     resolver: AttributeResolver,
     costCenters: EnterpriseCostCenter[] = [],
-    referenceDateStr: string = '2026-09-10'
+    referenceDateStr: string = '2026-09-10',
+    options: BillingCalculatorOptions = {}
   ) {
     this.resolver = resolver;
     this.referenceDate = new Date(referenceDateStr);
+    this.dataUnavailableOrgs = new Set(options.dataUnavailableOrgs ?? []);
     this.buildCostCenterIndex(costCenters);
   }
 
@@ -78,13 +94,12 @@ export class BillingCalculator {
    */
   public enrichSeat(seat: CopilotSeatAssignment, daysInMonth: number = 30): EnrichedUserSeat {
     const login = seat.assignee.login;
-    const orgName = seat.organization?.login || 'Default-Org';
+    const orgName = seat.organization?.login || UNASSIGNED_LABELS.organization;
     const attr = this.resolver.resolve(login);
 
     // Cost Centerの決定 (優先度: 1. 属性Override, 2. User紐付け, 3. Org紐付け, 4. デフォルト)
     let costCenter = attr.costCenterOverride;
     let costCenterError = false;
-    let isDataUnavailable = false;
 
     if (!costCenter) {
       const found = this.costCenterMap.get(login.toLowerCase()) ||
@@ -92,23 +107,25 @@ export class BillingCalculator {
       if (found) {
         costCenter = found;
       } else {
-        costCenter = 'Default-CostCenter';
-        // 未割り当て・未解決の検出
-        if (orgName === 'proud-internal-sys' || orgName === 'Default-Org') {
+        costCenter = UNASSIGNED_LABELS.costCenter;
+        // 未割り当て・未解決の検出 (Organization も特定できない場合は要確認)
+        if (orgName === UNASSIGNED_LABELS.organization || this.dataUnavailableOrgs.has(orgName)) {
           costCenterError = true;
         }
       }
     }
 
-    // 異常Orgまたは特定ステータスでデータ取得エラーのフラグ
-    if (orgName === 'proud-internal-sys') {
-      isDataUnavailable = true;
-    }
+    // 取得エラー扱いの Organization (デモ用の模擬障害など。明示的に注入されたものだけ)
+    const isDataUnavailable = this.dataUnavailableOrgs.has(orgName);
 
     const targetMonth = this.referenceDate.toISOString().slice(0, 7);
     const pricing = getCopilotPricing(targetMonth);
-    const planType: CopilotPlanType = seat.plan_type === 'business' ? 'business' : 'enterprise';
-    const monthlyCost = pricing[planType];
+
+    // plan_type が未確定 (unknown / 欠損) のシートは料金を推測しない (旧: enterprise=$39 と見なしていた)。
+    // 費用は 0 として集計に含め、cost_unconfirmed で「未確定」を明示する。
+    const planType: CopilotPlanType = seat.plan_type ?? 'unknown';
+    const costUnconfirmed = !isPricedPlan(planType);
+    const monthlyCost = isPricedPlan(planType) ? pricing[planType] : 0;
     const proratedDailyCost = Number((monthlyCost / daysInMonth).toFixed(4));
 
     // 非アクティブ日数とステータス判定
@@ -130,6 +147,7 @@ export class BillingCalculator {
       daysInactive,
       daysSinceCreation,
       aiCreditsUsed28d: seat.ai_credits_used,
+      hasActivity: Boolean(seat.last_activity_at),
     });
 
     const aiCreditsUsed28d = seat.ai_credits_used ?? 0;
@@ -149,24 +167,23 @@ export class BillingCalculator {
       isPrepaid: seat.prepaid ?? false,
     });
 
-    const adoptionPhase = AdoptionPhaseRule.classify({
-      totalSuggestions: status === 'active' ? 100 : 0,
-      totalChats: status === 'active' ? 10 : 0,
-      totalAgentSessions: aiCreditsUsed28d > 300 ? 12 : aiCreditsUsed28d > 100 ? 5 : 0,
-      distinctAgentsUsed: aiCreditsUsed28d > 300 ? 3 : 1,
-      overridePhase: attr.targetAdoptionPhase as AdoptionPhase | undefined,
-    });
+    // 採用成熟度は、実測 (チャット数・エージェントセッション数等) が無い段階では算出しない。
+    // 旧実装は active なら「提案 100・チャット 10」といった代理値を与えており、active なユーザーが
+    // 全員 agent_first 以上に分類されていた。管理者がマッピングで明示した値のみを採用する。
+    const adoptionPhase = attr.targetAdoptionPhase as AdoptionPhase | undefined;
 
     return {
       login: attr.login,
       display_name: attr.displayName,
-      avatar_url: seat.assignee.avatar_url,
+      // 匿名化モードでは avatar_url (数値ユーザー ID を含み、公開 API で本人に解決できる) を出力しない
+      avatar_url: this.resolver.isAnonymizing() ? '' : seat.assignee.avatar_url,
       department: attr.department,
       cost_center: costCenter,
       organization: orgName,
       plan_type: planType,
       monthly_cost_usd: monthlyCost,
       prorated_daily_cost_usd: proratedDailyCost,
+      ...(costUnconfirmed ? { cost_unconfirmed: true } : {}),
       created_at: seat.created_at,
       last_activity_at: seat.last_activity_at,
       last_activity_editor: seat.last_activity_editor,
@@ -221,6 +238,7 @@ export class BillingCalculator {
    * - 上限額(spending_limit_usd) / 無料枠(free_tier_budget_usd) は管理者が宣言した budgetConfig からのみ取得（未宣言時は 0）
    * - 現在使用額(current_spend_usd) は実際の EnrichedUserSeat.monthly_cost_usd をCost Center単位で集計した実値
    * を用いる。モックデータやランダム値は一切生成しない。
+   * 使用率・残余・ステータスの評価は BudgetUtilizationRule (唯一の実装) に委譲する。
    */
   public static computeCostCenterBudgets(
     enrichedSeats: EnrichedUserSeat[],
@@ -251,16 +269,7 @@ export class BillingCalculator {
       const limit = cfg?.spending_limit_usd ?? 0;
       const free = cfg?.free_tier_budget_usd ?? 0;
 
-      const netBillable = Math.max(0, spend - free);
-      const remaining = Math.max(0, limit - netBillable);
-      const utilPercent = limit > 0 ? Number(((netBillable / limit) * 100).toFixed(1)) : 0;
-
-      let status: CostCenterBudget['status'] = 'normal';
-      if (utilPercent >= 100) {
-        status = 'exceeded';
-      } else if (utilPercent >= 80) {
-        status = 'warning';
-      }
+      const evaluation = BudgetUtilizationRule.evaluateUsd(limit, free, spend);
 
       results.push({
         cost_center_id: ccId,
@@ -269,10 +278,7 @@ export class BillingCalculator {
         spending_limit_usd: limit,
         free_tier_budget_usd: free,
         current_spend_usd: Number(spend.toFixed(2)),
-        net_billable_spend_usd: Number(netBillable.toFixed(2)),
-        remaining_budget_usd: Number(remaining.toFixed(2)),
-        budget_utilization_percent: utilPercent,
-        status,
+        ...evaluation,
       });
     }
 

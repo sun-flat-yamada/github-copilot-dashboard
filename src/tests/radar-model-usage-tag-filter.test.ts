@@ -2,8 +2,9 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
-import { ReportUserDetail } from '../types/copilot.js';
+import { DEFAULT_FILTER_CRITERIA, MonthlyReportAggregatedData, ReportUserDetail } from '../types/copilot.js';
 import { buildFilteredModelBreakdown } from '../../dashboard/src/utils/reportModelBreakdown.js';
+import { applyFilterCriteriaToMonthlyReport } from '../../dashboard/src/utils/filterEngine.js';
 
 describe('モデル特性レーダー: Tag選択によるモデル利用割合(%)の再集計', () => {
   const baseUsers: ReportUserDetail[] = [
@@ -81,45 +82,74 @@ describe('モデル特性レーダー: Tag選択によるモデル利用割合(%
     assert.deepStrictEqual(result, []);
   });
 
-  it('verifies useDashboardData.ts recomputes model_breakdown/top_model via buildFilteredModelBreakdown when tags are applied', () => {
-    const hookFilePath = path.resolve(process.cwd(), 'dashboard/src/hooks/useDashboardData.ts');
-    const hookContent = fs.readFileSync(hookFilePath, 'utf-8');
+  describe('フィルター適用後のレポート再集計 (applyFilterCriteriaToMonthlyReport)', () => {
+    // 全社の (絞り込み前の) モデル内訳は、フィルター後に残ってはならない値として 'STALE' を使う
+    const baseReport = {
+      report_month: '2026-09',
+      overview: {
+        total_net_spend_usd: 25,
+        total_gross_spend_usd: 25,
+        total_discount_usd: 0,
+        total_requests: 500,
+        total_active_users: 3,
+        top_model: 'STALE',
+        top_sku: 'copilot',
+      },
+      by_department: {},
+      by_cost_center: {},
+      by_organization: {},
+      model_breakdown: [
+        { model_name: 'STALE', total_requests: 500, total_spend_usd: 25, percentage: 100, active_users: 3 },
+      ],
+      sku_breakdown: [],
+      daily_trends: [],
+      user_details: baseUsers,
+    } as unknown as MonthlyReportAggregatedData;
 
-    assert.ok(
-      hookContent.includes("import { buildFilteredModelBreakdown } from '../utils/reportModelBreakdown';"),
-      'useDashboardData.ts must import buildFilteredModelBreakdown'
-    );
+    it('recomputes model_breakdown and overview.top_model from the tag-filtered user subset', () => {
+      const filtered = applyFilterCriteriaToMonthlyReport(baseReport, { ...DEFAULT_FILTER_CRITERIA, tags: ['Frontend'] });
 
-    const memoMatch = hookContent.match(
-      /const filteredActiveReportData = useMemo<MonthlyReportAggregatedData \| null>\(\(\) => \{([\s\S]*?)\n {2}\}, \[activeReportData, selectedTags\]\);/
-    );
-    assert.ok(memoMatch, 'filteredActiveReportData useMemo must exist with [activeReportData, selectedTags] deps');
-    const memoBody = memoMatch![1];
+      assert.strictEqual(filtered.user_details.length, 2);
+      assert.strictEqual(filtered.overview.top_model, 'Claude 3.7 Sonnet');
+      const claude = filtered.model_breakdown.find((m) => m.model_name === 'Claude 3.7 Sonnet');
+      assert.ok(claude);
+      assert.strictEqual(claude!.percentage, 75.0);
+      assert.ok(!filtered.model_breakdown.some((m) => m.model_name === 'STALE'), 'stale org-wide breakdown must not remain');
+    });
 
-    assert.match(
-      memoBody,
-      /const filteredModelBreakdown = buildFilteredModelBreakdown\(filteredDetails\);/,
-      'filteredActiveReportData must recompute model_breakdown from the tag-filtered user subset'
-    );
-    assert.match(
-      memoBody,
-      /model_breakdown: filteredModelBreakdown,/,
-      'filteredActiveReportData must return the recomputed model_breakdown (not the stale unfiltered org-wide one)'
-    );
-    assert.match(
-      memoBody,
-      /top_model: filteredModelBreakdown\[0\]\?\.model_name \|\| 'N\/A',/,
-      'filteredActiveReportData must also refresh overview.top_model from the recomputed breakdown'
-    );
+    it('recomputes for non-tag conditions too (cost center only) — the hook used to depend on tags only', () => {
+      const filtered = applyFilterCriteriaToMonthlyReport(baseReport, { ...DEFAULT_FILTER_CRITERIA, costCenter: 'CC-INFRA-202' });
+
+      assert.deepStrictEqual(filtered.user_details.map((u) => u.login), ['dev-bob']);
+      assert.strictEqual(filtered.overview.total_requests, 100);
+      assert.strictEqual(filtered.overview.top_model, 'o1');
+    });
+
+    it('returns the original (parse-time accurate) report unmodified when no filter is active', () => {
+      assert.strictEqual(applyFilterCriteriaToMonthlyReport(baseReport, DEFAULT_FILTER_CRITERIA), baseReport);
+    });
+
+    it('marks the sections that cannot be re-aggregated per user (daily trend / SKU) as unfiltered', () => {
+      const filtered = applyFilterCriteriaToMonthlyReport(baseReport, { ...DEFAULT_FILTER_CRITERIA, tags: ['Frontend'] });
+      assert.ok(filtered.filter_notice, 'filter_notice must be set while a filter is applied');
+      assert.ok(filtered.filter_notice!.unfiltered_sections.length > 0);
+    });
   });
 
-  it('verifies the untouched (no tag selected) branch still returns the original precise model_breakdown', () => {
+  it('verifies useDashboardData.ts delegates the report re-aggregation to filterEngine and depends on the whole filterCriteria', () => {
     const hookFilePath = path.resolve(process.cwd(), 'dashboard/src/hooks/useDashboardData.ts');
     const hookContent = fs.readFileSync(hookFilePath, 'utf-8');
 
+    // 以前は依存配列が [activeReportData, selectedTags] (タグだけ) で、Cost Center / Org / 部署 / ユーザー条件を
+    // 変えてもレポートの KPI・明細が再計算されなかった
+    assert.match(
+      hookContent,
+      /const filteredActiveReportData = useMemo<MonthlyReportAggregatedData \| null>\(\(\) => \{[\s\S]*?applyFilterCriteriaToMonthlyReport\(activeReportData, filterCriteria\);[\s\S]*?\}, \[activeReportData, filterCriteria\]\);/,
+      'filteredActiveReportData must call the shared filterEngine function and list the whole filterCriteria as a dependency'
+    );
     assert.ok(
-      hookContent.includes('if (selectedTags.length === 0) return activeReportData;'),
-      'When no tags are selected, the original (parse-time accurate) activeReportData must be returned unmodified'
+      !hookContent.includes('[activeReportData, selectedTags]'),
+      'the report filter memo must not depend on tags only'
     );
   });
 });

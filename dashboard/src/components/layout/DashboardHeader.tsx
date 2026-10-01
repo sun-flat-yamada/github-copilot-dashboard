@@ -11,6 +11,7 @@ import {
 import { ActiveDataSelector } from './ActiveDataSelector';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { RepoInfo } from '../../hooks/useDashboardData';
+import { isMockModeData } from '../../utils/dataStatus';
 import {
   Sparkles,
   Info,
@@ -61,69 +62,18 @@ interface DashboardHeaderProps {
    * 表示目的では参照しない (onToggleDemoMode 経由の手動切替のみに使用される呼び出し元の状態)。
    */
   isDemoMode?: boolean;
-  onToggleDemoMode?: () => void;
+  /** 表示モードを明示的に切り替える。true=デモ / false=実データ (バッジのクリック時に現在の逆を渡す) */
+  onToggleDemoMode?: (forcedMode?: boolean) => void;
   /**
    * 現在アクティブに選択されているデータソース (Live Metrics / Monthly Report / User Upload) が
-   * 実際に DEMO データを表示しているかどうか。isDemoMode (グローバルな既定ディレクトリ選好) とは
-   * 独立しており、他ソースが DEMO フォールバックしていてもアクティブソースが実データであれば
-   * false になる。未取得時は undefined (静的ヒューリスティックにフォールバック)。
+   * 実際に DEMO データを表示しているかどうか (取得元がデモパス、または index.json が is_mock_mode を宣言)。
+   * isDemoMode (グローバルな既定ディレクトリ選好) とは独立しており、他ソースが DEMO であっても
+   * アクティブソースが実データであれば false になる。未取得時は undefined
+   * (index.json の宣言 = isMockModeData にフォールバック)。
    */
   activeDataIsDemoSourced?: boolean;
   theme?: Theme;
   onToggleTheme?: () => void;
-}
-
-/**
- * データが DEMO (モック・シミュレーション) 用か LIVE (実データ) かを判定する。
- * 1. 明示的な is_mock_mode フラグを最優先。
- * 2. 環境変数 VITE_MOCK_MODE === 'true' を考慮。
- * 3. is_mock_mode が未指定 (古いデータやキャッシュ) の場合：
- *    - repository.owner が 'proud-corp' (2026仕様シミュレーションモックの組織名)
- *    - repoInfo.owner が 'proud-corp'
- *    - issues に 'proud-' 関連のモック検証イシューが含まれる
- *    これらを検知して確実に DEMO (Mock) として扱う。
- */
-export function isMockModeData(
-  indexMeta: IndexMetadata | null,
-  repoInfo?: { owner: string; name: string }
-): boolean {
-  // 1. 明示的な is_mock_mode: true
-  if (indexMeta?.is_mock_mode === true) {
-    return true;
-  }
-
-  // 2. 環境変数の設定
-  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_MOCK_MODE === 'true') {
-    return true;
-  }
-
-  // 3. proud-corp はシミュレーションモック組織名
-  if (indexMeta?.repository?.owner === 'proud-corp' || repoInfo?.owner === 'proud-corp') {
-    return true;
-  }
-
-  // 4. 実稼働メトリクス (管理シート数 > 0 または 日次データ日数 > 0) の有無を検証
-  //    実エンタープライズの認証情報が存在せず、ライブメトリクスが0件の場合は実稼働 (LIVE) ではなく
-  //    デモ用・空シミュレーション状態であるため確実に DEMO (Mock) として扱う
-  const totalSeats = indexMeta?.summary?.total_seats ?? 0;
-  const availableDaysCount = indexMeta?.available_days?.length ?? 0;
-  const hasRealLiveMetrics = totalSeats > 0 || availableDaysCount > 0;
-
-  if (!hasRealLiveMetrics) {
-    return true;
-  }
-
-  // 5. モック専用イシューのシグネチャ
-  if (indexMeta?.issues?.some((i) => i.target?.includes('proud-') || i.details?.includes('proud-corp'))) {
-    return true;
-  }
-
-  // 6. 明示的な is_mock_mode: false かつ 実際にライブデータが存在する場合のみ LIVE
-  if (indexMeta?.is_mock_mode === false && hasRealLiveMetrics) {
-    return false;
-  }
-
-  return !hasRealLiveMetrics;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -160,9 +110,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   theme = 'dark',
   onToggleTheme,
 }) => {
-  const isMockMode = isMockModeData(indexMeta, repoInfo);
+  const isMockMode = isMockModeData(indexMeta);
   // バッジは「アクティブに選択中のデータソースが実際にDEMOかどうか」を最優先で反映する。
-  // 未取得 (undefined) の場合のみ、静的ヒューリスティック (isMockMode) にフォールバックする。
+  // 未取得 (undefined) の場合のみ、index.json の宣言 (isMockMode) にフォールバックする。
+  // リポジトリ名やシート数からの推測は行わない。
   const showDemoBadge = activeDataIsDemoSourced !== undefined ? activeDataIsDemoSourced : isMockMode;
 
   // 通貨および表示設定メニュー状態 (スリードットメニュー用)
@@ -219,7 +170,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 <span
                   data-testid="mock-mode-badge"
                   data-demo-mode={showDemoBadge}
-                  onClick={onToggleDemoMode}
+                  onClick={onToggleDemoMode ? () => onToggleDemoMode(false) : undefined}
                   className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-amber-500/15 border border-amber-500/40 text-amber-300 shadow-sm whitespace-nowrap select-none ${
                     onToggleDemoMode ? 'cursor-pointer hover:bg-amber-500/25 transition-colors' : 'cursor-help'
                   }`}
@@ -235,7 +186,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 <span
                   data-testid="live-mode-badge"
                   data-demo-mode={showDemoBadge}
-                  onClick={onToggleDemoMode}
+                  onClick={onToggleDemoMode ? () => onToggleDemoMode(true) : undefined}
                   className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 whitespace-nowrap select-none ${
                     onToggleDemoMode ? 'cursor-pointer hover:bg-emerald-500/20 transition-colors' : 'cursor-help'
                   }`}

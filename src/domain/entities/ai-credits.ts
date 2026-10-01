@@ -15,23 +15,29 @@ export interface AiCreditsUsage {
   by_model?: Record<string, number>;
 }
 
+import { BASELINE_PRICING } from '../pricing/pricing-catalog.js';
+
 export interface AiCreditsPlanAllowance {
   monthly_included_credits: number;
   effective_date: string;
 }
 
+/**
+ * 通常時のプラン別包含クレジット。値は価格カタログ (src/domain/pricing) が唯一のソースで、
+ * 期間別 (移行プロモーション等) の値は resolvePricingEntry(month) で取得する。
+ */
 export const AI_CREDITS_ALLOWANCE: Record<'business' | 'enterprise', AiCreditsPlanAllowance> = {
   business: {
-    monthly_included_credits: 1900,
+    monthly_included_credits: BASELINE_PRICING.includedCreditsPerSeat.business,
     effective_date: '2026-06-01',
   },
   enterprise: {
-    monthly_included_credits: 3900,
+    monthly_included_credits: BASELINE_PRICING.includedCreditsPerSeat.enterprise,
     effective_date: '2026-06-01',
   },
 };
 
-export const AI_CREDIT_UNIT_PRICE_USD = 0.01; // 1 Credit = $0.01
+export const AI_CREDIT_UNIT_PRICE_USD = BASELINE_PRICING.creditUnitPriceUsd; // 1 Credit = $0.01
 
 export interface OrganizationCreditsPool {
   total_included_credits: number; // シート数 × プラン付帯クレジット

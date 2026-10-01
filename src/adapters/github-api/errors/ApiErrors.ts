@@ -21,10 +21,13 @@ export class RateLimitError extends ApiError {
 }
 
 export class AuthorizationError extends ApiError {
-  constructor(endpoint: string, details?: string) {
+  /**
+   * @param status 実際の HTTP ステータス (401 | 403)。トークン未設定など送信前の失敗は 401 とする。
+   */
+  constructor(endpoint: string, details?: string, status: number = 401) {
     super(
       `GitHub API authorization failed on ${endpoint}${details ? `: ${details}` : ''}`,
-      401,
+      status,
       endpoint
     );
     this.name = 'AuthorizationError';
