@@ -84,6 +84,7 @@ flowchart TB
 - **Authentication**: The token is resolved in the order explicit value → `COPILOT_READ_TOKEN` → `GITHUB_TOKEN` → `GH_TOKEN`. Without a token the source is recorded as failed with an explicit reason (§2.6) instead of sending an unauthenticated request.
 - **Resilience**: Exponential backoff and retry for rate limits (429/403), automatic pagination (`per_page=100` + `Link` header, so seats beyond the first page are no longer dropped).
 - **Record-level validation (ACL)**: Responses are validated per record (Zod schemas in `src/adapters/github-api/schemas/`). An unknown enum value or a malformed record is **quarantined** (excluded and counted) instead of failing the whole response; an unknown `plan_type` is preserved as `unknown`. Cost Centers use their own normalizer for the 2026-03-10 response shape (`costCenters` key). The API version is taken from `GITHUB_API_VERSION` (SDD-03 §1.1).
+- **Usage metrics**: from the Usage Metrics Reports API (`users-1-day`, signed URL → NDJSON) for the Enterprise **and** each configured Organization, de-duplicated by user; per-user profiles are built from the same rows (SDD-03 §2.1). The legacy `/copilot/metrics` endpoints are not called. Seats are likewise the union of the Enterprise and Organization seats, one seat per login.
 - **Mock Mode**: When `MOCK_MODE=true`, generates realistic 2026-spec simulation data without calling external APIs (for local development, CI testing, and demos). Output is flagged `is_mock_mode: true` and is the **only** way `is_mock_mode` becomes true.
 
 ### 2.2 Attribute Resolver

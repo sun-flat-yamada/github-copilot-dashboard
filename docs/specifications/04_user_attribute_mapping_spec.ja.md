@@ -146,7 +146,7 @@ suzuki-ken,鈴木 健 (パートナー),フロントエンド基盤G,Platform-En
 2. `GET https://raw.githubusercontent.com/{owner}/{repo}/copilot-data/data/index.json` → `200`: データブランチが読める
 3. `GET {Pages の URL}/data/index.json` → `200`: 配信物がデータを公開している（カスタムドメインは `COPILOT_PAGES_URL` で `https://{owner}.github.io/{repo}/` を上書き）
 
-公開されているもの（またはリポジトリが公開）があり、**かつ** 仮名化されていない実際のユーザー単位のデータが公開済み（`index.json` の privacy 属性。旧形式はシート / 日次実績の有無で判定）、または収集しようとしている（`COPILOT_READ_TOKEN` と `COPILOT_ENTERPRISE` / `COPILOT_ORGS` が設定済み、またはローカルの `data/index.json` に実データがある）のに、仮名化の設定が揃っていない場合は **失敗** とする。デモデータのみ・仮名化済みの運用は通る。ネットワークに到達できない場合・レート制限の場合は **警告** とし、失敗にはしない（オフラインでも動作する）。`COPILOT_ALLOW_PUBLIC_DATA=true` で失敗を警告へ下げられる（リスクの明示的な受容。非推奨）。`--quick` はネットワークを使う検査を行わない。
+公開されているもの（またはリポジトリが公開）があり、**かつ** 仮名化されていない実際のユーザー単位のデータが公開済み（`index.json` の privacy 属性。旧形式はシート / 日次実績の有無で判定）、または収集しようとしている（`COPILOT_READ_TOKEN` と `COPILOT_ENTERPRISE` / `COPILOT_ORGS` が設定済み、またはローカルの `data/index.json` に実データがある）のに、仮名化の設定が揃っていない場合は **失敗** とする。デモデータのみ・仮名化済みの運用は通る。**取り込んだ月次レポート (CSV) だけの場合は警告にとどめる**: index は `privacy.contains_imported_reports` を宣言する。レポートは (本家リポジトリのような) 架空の見本にも実データにもなり得るため、公開で読める index に `available_reports` があれば、見本であることの確認を求める警告とし、失敗にするのはライブ収集したデータ (シート・日次実績・ユーザー別プロファイル) の場合だけである。ネットワークに到達できない場合・レート制限の場合は **警告** とし、失敗にはしない（オフラインでも動作する）。`COPILOT_ALLOW_PUBLIC_DATA=true` で失敗を警告へ下げられる（リスクの明示的な受容。非推奨）。`--quick` はネットワークを使う検査を行わない。
 
 定期実行ワークフローは、データを収集する **前** に `npm run fork:verify` を実行する。公開リポジトリが仮名化なしの実データの公開を始めることはできない。
 
