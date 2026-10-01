@@ -1,4 +1,4 @@
-# 🤖 Change Workflow & Worktree Lifecycle Agent (`change-workflow-agent`)
+# 🤖 Change Dev & Worktree Lifecycle Agent (`change-dev`)
 
 Specialized autonomous agent responsible for managing the end-to-end development lifecycle: Issue creation, sibling worktree provisioning for concurrent AI agents, local quality gate enforcement, rebase synchronization, PR authoring, and rebase merge cleanups.
 
@@ -10,9 +10,10 @@ Specialized autonomous agent responsible for managing the end-to-end development
    - Translate user requirements into structured GitHub Issues with explicit Acceptance Criteria.
    - Assign conventional branch identifiers (`feat/<issue-id>-<slug>`, `fix/...`).
 2. **Antigravity Implementation Plan & Task Orchestration**:
-   - Formulate `implementation_plan.md` in `<appDataDir>\brain\<conversation-id>\` with `ArtifactMetadata` (`RequestFeedback: true`, `UserFacing: true`).
+   - Formulate `implementation_plan.md` in the original repository root's `.devs/changes/yyyy-mm-dd_<ChangeTitle>/` (not under `<appDataDir>`) with `ArtifactMetadata` (`RequestFeedback: true`, `UserFacing: true`).
    - Initialize and dynamically update `task.md` (`RequestFeedback: false`, `UserFacing: true`).
    - Gate execution on explicit user sign-off via the interactive "Proceed" button.
+   - When running on Google Antigravity, place a finished copy of all artifacts (`implementation_plan.md`, `task.md`, `walkthrough.md`) in the repository's `.devs/changes/yyyy-mm-dd_<ChangeTitle>/` directory upon completion.
 3. **Worktree Isolation (Sibling Placement)**:
    - Provision isolated worktrees in the sibling directory (`../<repo>-worktrees/<slug>`) to prevent multi-agent collisions and file locking.
    - Maintain the pristine state of the primary root repository.
@@ -20,7 +21,7 @@ Specialized autonomous agent responsible for managing the end-to-end development
    - Enforce the 5-stage validation suite within the worktree (`npm run fork:verify && npm run typecheck && npm test && npm run secret-scan && npm run build`).
    - Synchronize SDD specifications under `docs/specifications/`.
 5. **Walkthrough Artifact & Evidence Sealing**:
-   - Formulate `walkthrough.md` in `<appDataDir>\brain\<conversation-id>\` with `ArtifactMetadata` (`RequestFeedback: false`, `UserFacing: true`), sealing git diffs, file lists, and quality gate test outputs.
+   - Formulate `walkthrough.md` in `.devs/changes/yyyy-mm-dd_<ChangeTitle>/` with `ArtifactMetadata` (`RequestFeedback: false`, `UserFacing: true`), sealing git diffs, file lists, and quality gate test outputs.
 6. **Rebase & Linear History Assurance**:
    - Rebase feature branches cleanly onto the latest `origin/main` before submission.
    - Draft PRs with explicit `Closes #<id>` linking and completeness checklists.
@@ -35,7 +36,7 @@ Specialized autonomous agent responsible for managing the end-to-end development
 
 ## 🛠️ Bound Skill & Specifications
 
-- **Bound Skill**: [.agents/skills/change-workflow/SKILL.md](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/.agents/skills/change-workflow/SKILL.md)
+- **Bound Skill**: [.agents/skills/change-dev/SKILL.md](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/.agents/skills/change-dev/SKILL.md)
 - **Related Specifications & Rules**:
   - [SDD-14: 開発運用ワークフロー & Git Ops 仕様書](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/docs/specifications/14_development_workflow_and_git_ops_spec.ja.md) ([English](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/docs/specifications/14_development_workflow_and_git_ops_spec.md))
   - [SDD-05: データ永続化 & Fork非競合ストレージ仕様書](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/docs/specifications/05_data_storage_and_fork_isolation_spec.ja.md) ([English](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/docs/specifications/05_data_storage_and_fork_isolation_spec.md))
