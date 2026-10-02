@@ -121,6 +121,22 @@ A report mixes requests, AI credits and seat (user-month) rows. Adding their `qu
 
 `overview.quantity_by_unit` keeps the per-unit totals (e.g. `{ "requests": 120, "ai-credits": 3400, "seats": 85 }`) so nothing is lost, and `sku_breakdown` has one row per SKU **and unit** (quantities of different units are never summed into one row).
 
+### 3.5 AI usage report (token columns) and `usage_insight`
+Official field reference: GitHub Docs "Billing reports reference" (`billing/reference/billing-reports`). The **AI usage report** is a per-user breakdown of AI credits for at most 31 days, summed over `date × model × username`, and adds the token fields `input`, `output`, `cache_read`, `cache_write` per model.
+
+| Header (normalised) | Record field |
+|:--|:--|
+| `input` / `input_tokens` | `input_tokens` |
+| `output` / `output_tokens` | `output_tokens` |
+| `cache_read` / `cache_read_tokens` | `cache_read_tokens` |
+| `cache_write` / `cache_write_tokens` | `cache_write_tokens` |
+| `token_count` / `tokens` / `total_tokens` | `token_count` (total only) |
+
+- A row that carries token columns but **no `unit_type`** is classified as the `other` family: its `quantity` is not added to the request count (the legacy "no `unit_type` = requests" rule applies to rows without token columns only). Credits then come from `ai_credits_consumed` or from rows whose `unit_type` mentions credits.
+- Rows differing only in token values are distinct rows for duplicate detection.
+- `aggregate()` attaches `usage_insight` (SDD-06 §5) to every user row; it is computed before any display filter, and the filter engine keeps it untouched.
+- **To verify against a real export**: the docs describe the fields but not the unit of `quantity` in the AI usage report; this implementation assumes it is credits and relies on `unit_type`/`ai_credits_consumed` for it.
+
 ---
 
 ## 4. Aggregated Data Structure (`MonthlyReportAggregatedData`)

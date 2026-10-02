@@ -169,3 +169,45 @@ Organizations must not rely on Inline Completion Acceptance Rate as a solitary K
 3. **Per-group usage metrics**: for live data, group figures are an *estimate* (the company-wide totals apportioned by seat ratio) and are flagged `is_estimated` / `estimation_method`; they are not measurements. For a monthly report (CSV), which contains no suggestions / acceptances / chats, these fields are `null` (the former fixed 35% acceptance rate and `requests × 0.35` / `× 0.2` derivations were removed).
 4. **Not fabricated**: the 1-year trend is built month by month from the stored monthly aggregates (a month without stored data is simply absent; usage fields are `null` for months without measured usage); per-user profiles are never synthesized from an aggregated CSV; the adoption cohort is not derived from proxy values; agent / PR based diagnostics use measured fields only; peer averages are computed from the actual profiles or omitted; the surface of a CSV row stays empty when absent (no default "VS Code"); a missing included-credits basis is "unknown", not 3,900.
 5. **Filters**: sections without per-user measurements (usage metrics, daily trend, languages, SKU breakdown) cannot be re-aggregated. While a filter is active they keep the company-wide values and are labelled "company-wide (not filterable)" (`filter_notice`).
+
+---
+
+## 5. Usage Insights per User (usage, tokens, unit cost, session-bloat signals)
+
+Computed by the pure functions in `src/processor/usage-insight.ts`; thresholds and wording live in `src/processor/usage-insight-definitions.ts`. Attached to each monthly-report user row as `ReportUserDetail.usage_insight` (SDD-09 §3.5).
+
+### 5.1 What can and cannot be measured
+- **Measured**: requests, AI credits, cost, and — only when the report carries them — tokens (`input` / `output` / `cache_read` / `cache_write` of the GitHub *AI usage report*, which is grouped by `date × model × username`).
+- **Not available from any source**: session ID, session length, number of turns, conversation content. The finest granularity is one day per user and model. The Reports API (SDD-03 §2.2) has no token fields.
+- Therefore "a session is unusually long" or "several topics are mixed" is **never asserted**. Signals are estimates from daily aggregates and only suggest that a review of usage may be worthwhile. Conversation content is never read or stored (zero PII).
+
+### 5.2 Indicators (measured, `null` when unavailable)
+| Indicator | Definition |
+|:--|:--|
+| Usage | requests (requests-family rows only), credits (`ai_credits_consumed`, else `quantity` of credit rows), active days, per-active-day amount (requests, else credits), peak day |
+| Tokens | sum of `input`, `output`, `cache_read`, `cache_write` (a legacy `token_count` is a total only, no breakdown); `coverage` = share of rows that carry tokens |
+| Cost per 1M tokens | gross cost of rows that carry tokens ÷ their tokens × 10⁶. A blended figure (cache reads are cheaper per token) |
+| Cost per request / per credit | gross cost of the requests rows ÷ requests / gross cost of the credit rows ÷ credits. **Seat (licence) rows are never included** |
+
+Costs use the gross (list-price) amount: the net amount is 0 while included credits cover the usage, which would make every unit cost 0.
+
+### 5.3 Signals (estimates)
+Each signal has a level: `none` (特記なし), `watch` (参考), `review` (確認を推奨), or `insufficient` (データ不足). No score and no ranking. A user with fewer than **5 active days** — or without the required columns — is `insufficient`, never "healthy".
+
+| ID | Signal | Definition | watch / review |
+|:--|:--|:--|:--|
+| S1 | Context carry-over | (input + cache_read) ÷ output, against the organisation median | ≥ 2× / ≥ 3× |
+| S2 | High-token days | days whose total tokens ≥ 3× the organisation median day | ≥ 2 days / ≥ 3 days and ≥ 30 % of days |
+| S3 | Per-active-day amount | requests (else credits) per active day, against the organisation median | ≥ 2× / ≥ 3× |
+| S4 | Model switching | average number of distinct models used per day (a weak clue: using several models is normal) | avg ≥ 2.5 → watch only |
+| S5 | Expensive model + carry-over | ≥ 50 % of tokens on models whose cost per 1M tokens is ≥ 2× the all-model median, while S1 ≥ watch | inherits S1's level |
+
+Overall level: `review` if any valid signal is `review`; `watch` if two or more are `watch`, or one non-S4 signal is `watch`; `none` otherwise; `insufficient` if no signal could be evaluated. S4 alone never raises the overall level.
+
+The organisation baseline (medians, model costs) is computed from **all users of the month before any display filter**, so applying a filter never changes a user's level.
+
+### 5.4 Presentation rules
+- Wording is a recommendation, never an accusation: "確認を推奨" / "参考", never "不当", "違反" or "問題".
+- The screen always states that the signals are estimates from daily aggregates, that conversation content is not read, and that they are not a personal evaluation (`USAGE_INSIGHT_DISCLAIMER`).
+- Advice for `review` stays tentative ("starting a new session per topic may reduce the context sent each time").
+

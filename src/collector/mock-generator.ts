@@ -688,5 +688,54 @@ export class MockDataGenerator {
 
     return lines.join('\n');
   }
-}
 
+  /**
+   * AI usage report (date × model × username、token 内訳つき) の決定的なデモ CSV。
+   * 典型パターン (通常 / 文脈の持ち越しが大きい / 高トークン日が多い / モデル切替が多い / 利用が少ない) を含む。
+   */
+  public generateAiUsageReportCSV(monthStr: string = '2026-08'): string {
+    const lines: string[] = [
+      'date,product,sku,quantity,unit_type,applied_cost_per_quantity,gross_amount,discount_amount,net_amount,username,organization,cost_center_name,model,input,output,cache_read,cache_write',
+    ];
+    type Pattern = { login: string; days: number; models: string[]; input: number; output: number; cacheRead: number; spikes?: number };
+    const patterns: Pattern[] = [
+      { login: 'demo-user-01', days: 14, models: ['claude-sonnet-4'], input: 40000, output: 6000, cacheRead: 60000 },
+      { login: 'demo-user-02', days: 14, models: ['claude-sonnet-4'], input: 38000, output: 5500, cacheRead: 58000 },
+      { login: 'demo-user-03', days: 14, models: ['gpt-5'], input: 42000, output: 6500, cacheRead: 64000 },
+      { login: 'demo-user-04', days: 14, models: ['claude-sonnet-4'], input: 36000, output: 6000, cacheRead: 55000 },
+      // 文脈の持ち越しが大きい (出力に対する入力・キャッシュ読取が多い)
+      { login: 'demo-long-context', days: 12, models: ['claude-opus-4'], input: 150000, output: 5000, cacheRead: 600000 },
+      // 高トークン日が多い
+      { login: 'demo-spiky', days: 12, models: ['claude-sonnet-4'], input: 40000, output: 6000, cacheRead: 60000, spikes: 6 },
+      // 日内のモデル切替が多い
+      { login: 'demo-switcher', days: 12, models: ['claude-sonnet-4', 'gpt-5', 'gemini-2-5-pro'], input: 30000, output: 5000, cacheRead: 40000 },
+      // 利用が少ない (判定しない)
+      { login: 'demo-light', days: 2, models: ['gpt-5'], input: 20000, output: 3000, cacheRead: 10000 },
+    ];
+    const [y, m] = monthStr.split('-').map(Number);
+    const daysInMonth = new Date(y, m, 0).getDate();
+
+    for (const p of patterns) {
+      let used = 0;
+      for (let day = 1; day <= daysInMonth && used < p.days; day++) {
+        const dateStr = `${monthStr}-${String(day).padStart(2, '0')}`;
+        const dow = new Date(`${dateStr}T00:00:00Z`).getUTCDay();
+        if (dow === 0 || dow === 6) continue;
+        used++;
+        const spike = p.spikes !== undefined && used <= p.spikes ? 6 : 1;
+        for (const model of p.models) {
+          const input = Math.round((p.input * spike) / p.models.length);
+          const output = Math.round((p.output * spike) / p.models.length);
+          const cacheRead = Math.round((p.cacheRead * spike) / p.models.length);
+          const cacheWrite = Math.round(input * 0.1);
+          const credits = Number(((input + output * 5 + cacheRead * 0.1) / 20000).toFixed(2));
+          const gross = Number((credits * 0.01).toFixed(4));
+          lines.push(
+            `${dateStr},copilot,copilot_ai_credit,${credits},ai-credits,0.0100,${gross.toFixed(4)},${gross.toFixed(4)},0.0000,${p.login},demo-org,Demo-Cost-Center,${model},${input},${output},${cacheRead},${cacheWrite}`
+          );
+        }
+      }
+    }
+    return lines.join('\n');
+  }
+}
