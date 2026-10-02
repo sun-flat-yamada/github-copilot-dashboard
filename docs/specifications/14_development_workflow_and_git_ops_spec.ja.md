@@ -186,10 +186,9 @@ npm ci
 
 ### 3.7. ステップ 7: Rebaseマージ & クリーンアップ
 
-#### オートパイロットモード (`CHG-DEV-AUTO-PILOT`)
-- `CHG-DEV-AUTO-PILOT=true` の場合、エージェントはPR作成後からRebase & Mergeまでを自動実行する: `gh pr checks <id> --watch` → 失敗時は修正して品質ゲートを再実行のうえ再push → 承認（許可される場合のみ。自己承認は不可） → `gh pr merge <id> --rebase --delete-branch` → Worktreeクリーンアップ。
-- 解決順序: プロセス環境変数 → `.env` → `.env.example`。本リポジトリは `CHG-DEV-AUTO-PILOT=true` を既定で有効化している。未設定またはその他の値は手動運用とする。
-- キー名にハイフンを含むためPOSIXシェルでは `export` できない。`.env`、エージェント実行環境の設定、または `env 'CHG-DEV-AUTO-PILOT=true' <cmd>` で指定する。
+#### オートパイロットモード (`CHG_DEV_AUTO_PILOT`)
+- `CHG_DEV_AUTO_PILOT=true` の場合、エージェントはPR作成後からRebase & Mergeまでを自動実行する: `gh pr checks <id> --watch` → 失敗時は修正して品質ゲートを再実行のうえ再push → 承認（許可される場合のみ。自己承認は不可） → `gh pr merge <id> --rebase --delete-branch` → Worktreeクリーンアップ。
+- 解決順序: プロセス環境変数 → `.env` → `.env.example`。本リポジトリは `CHG_DEV_AUTO_PILOT=true` を既定で有効化している。未設定またはその他の値は手動運用とする。
 - ガードレール: ステップ2の「Proceed」ゲートは引き続き有効。`--admin` やブランチ保護の回避は禁止。他者の承認が必須で得られない場合、自明でないコンフリクト、修正後もCIが失敗し続ける場合は停止して報告する。
 
 #### マージ方式の選定基準: なぜRebaseマージなのか？

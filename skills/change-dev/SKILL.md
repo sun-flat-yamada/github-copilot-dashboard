@@ -144,7 +144,7 @@ npm run worktree:list
 
 ---
 
-## 🚀 Auto-Pilot Mode (`CHG-DEV-AUTO-PILOT`)
+## 🚀 Auto-Pilot Mode (`CHG_DEV_AUTO_PILOT`)
 
 Opt-in mode that carries a change from **PR creation to Rebase & Merge completion** without manual intervention.
 
@@ -152,14 +152,11 @@ Opt-in mode that carries a change from **PR creation to Rebase & Merge completio
 
 | Item | Value |
 | :--- | :--- |
-| Key | `CHG-DEV-AUTO-PILOT` |
+| Key | `CHG_DEV_AUTO_PILOT` |
 | Enabled when | value is `true` (case-insensitive) or `1` |
 | Disabled when | unset or any other value (default: manual) |
 | Resolution order | process environment → `.env` → `.env.example` (repository default) |
-| This repository | **enabled** (`CHG-DEV-AUTO-PILOT=true` in `.env.example`) |
-
-> [!NOTE]
-> The key contains hyphens, so POSIX shells cannot `export` it. Provide it via `.env` / the agent runtime's environment settings, or per command: `env 'CHG-DEV-AUTO-PILOT=true' <cmd>`.
+| This repository | **enabled** (`CHG_DEV_AUTO_PILOT=true` in `.env.example`) |
 
 ### Behavior (after Phase 6 PR creation)
 
