@@ -9,7 +9,6 @@ import { CostCenterBudgetCards } from '../../../dashboard/src/components/CostCen
 import { UsageMetricsCharts } from '../../../dashboard/src/components/UsageMetricsCharts.js';
 import { UserDetailTable } from '../../../dashboard/src/components/UserDetailTable.js';
 import { MonthlyReportCharts } from '../../../dashboard/src/components/monthly-report/MonthlyReportCharts.js';
-import { MonthlyReportUserTable } from '../../../dashboard/src/components/monthly-report/MonthlyReportUserTable.js';
 import { CollapsibleSection } from '../../../dashboard/src/components/common/CollapsibleSection.js';
 import {
   AlertTriangle,
@@ -182,7 +181,7 @@ export const OverviewViewComponent: React.FC<ViewPluginProps<OverviewViewModel>>
             isExpanded={isExpanded('report_users')}
             onToggle={() => toggleSection('report_users')}
           >
-            <MonthlyReportUserTable
+            <UserDetailTable
               reportData={currentReportData}
               userProfiles={deepAnalysisProfiles}
               initialSelectedLogin={focusedUserLogin}

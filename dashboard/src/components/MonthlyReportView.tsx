@@ -2,8 +2,8 @@ import React from 'react';
 import { MonthlyReportAggregatedData } from '../../../src/types/copilot';
 import { MonthlyReportToolbar } from './monthly-report/MonthlyReportToolbar';
 import { MonthlyReportKpis } from './monthly-report/MonthlyReportKpis';
+import { UserDetailTable } from './UserDetailTable';
 import { MonthlyReportCharts } from './monthly-report/MonthlyReportCharts';
-import { MonthlyReportUserTable } from './monthly-report/MonthlyReportUserTable';
 
 interface MonthlyReportViewProps {
   reportData: MonthlyReportAggregatedData;
@@ -38,7 +38,7 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
       <MonthlyReportCharts reportData={reportData} />
 
       {/* 4. ユーザー別利用明細テーブル */}
-      <MonthlyReportUserTable reportData={reportData} />
+      <UserDetailTable reportData={reportData} />
     </div>
   );
 };

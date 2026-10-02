@@ -8,9 +8,9 @@ import {
   median,
   UsageRow,
 } from '../../processor/usage-insight.js';
-import { USAGE_INSIGHT_THRESHOLDS as T } from '../../processor/usage-insight-definitions.js';
+import { USAGE_INSIGHT_THRESHOLDS as T, describeInsightTooltip } from '../../processor/usage-insight-definitions.js';
 import { ReportParser, classifyRecordUnit } from '../../processor/report-parser.js';
-import { MockDataGenerator } from '../../collector/mock-generator.js';
+import { AI_CREDIT_USD, COPILOT_MODEL_TOKEN_PRICES, MockDataGenerator } from '../../collector/mock-generator.js';
 
 const row = (over: Partial<UsageRow>): UsageRow => ({
   date: '2026-08-03',
@@ -73,6 +73,17 @@ describe('usage-insight: 指標', () => {
     assert.deepEqual(i.usage.peak_day, { date: date(3), value: 30, unit: 'requests' });
     const c = userWith(5, (d) => [aiRow(date(d), 'm1', 1, 1, 1)]);
     assert.equal(computeUsageInsight(c, computeOrgBaseline([c])).usage.per_active_day_unit, 'credits');
+  });
+
+  it('requests 系の明細が無いユーザーの requests は 0 ではなく null', () => {
+    const a = userWith(6, (d) => [aiRow(date(d), 'm1', 1, 1, 1)]);
+    assert.equal(computeUsageInsight(a, computeOrgBaseline([a])).usage.requests, null);
+  });
+
+  it('ツールチップは、評価できていない指標を示し、「特記なし」が全確認済みと読まれないようにする', () => {
+    const a = userWith(6, (d) => [row({ date: date(d), requests: 10, isRequestRow: true })]);
+    const tip = describeInsightTooltip(computeUsageInsight(a, computeOrgBaseline([a])).signals);
+    assert.match(tip ?? '', /評価できていない指標 \(データ不足\): .*文脈の持ち越し/);
   });
 
   it('日付なしの行は合計に含み、日別には載せない', () => {
@@ -203,5 +214,58 @@ describe('usage-insight: 取り込み (ReportParser)', () => {
     assert.equal(find('demo-switcher').signals[3].level, 'watch');
     assert.equal(find('demo-light').level, 'insufficient');
     assert.equal(find('demo-user-01').level, 'none');
+  });
+});
+
+describe('AI usage report ダミーデータ: 公式仕様 (GitHub Docs, 2026-10-02) との整合', () => {
+  /** billing-reports の「Usage report fields」(AI usage report に出る項目) */
+  const OFFICIAL_FIELDS = new Set([
+    'date', 'product', 'sku', 'quantity', 'unit_type', 'applied_cost_per_quantity', 'gross_amount',
+    'discount_amount', 'net_amount', 'username', 'organization', 'repository', 'workflow_path',
+    'cost_center_name', 'model', 'input', 'output', 'cache_read', 'cache_write',
+  ]);
+  const csv = new MockDataGenerator().generateAiUsageReportCSV('2026-08');
+  const rows = csv.split('\n').map((l) => l.split(','));
+  const header = rows[0];
+  const col = (r: string[], name: string) => r[header.indexOf(name)];
+
+  it('列はすべて公式の項目で、集計キー (date, model, username) と token 4 列を含む', () => {
+    for (const h of header) assert.ok(OFFICIAL_FIELDS.has(h), `${h} は公式の項目ではない`);
+    for (const h of ['date', 'model', 'username', 'input', 'output', 'cache_read', 'cache_write']) {
+      assert.ok(header.includes(h), `${h} が無い`);
+    }
+    assert.ok(!header.includes('workflow_path'), 'workflow_path は Detailed usage report のみ');
+  });
+
+  it('date × model × username の組は 1 行だけ (公式の集計単位)', () => {
+    const keys = rows.slice(1).map((r) => [col(r, 'date'), col(r, 'model'), col(r, 'username')].join('|'));
+    assert.equal(new Set(keys).size, keys.length);
+  });
+
+  it('quantity は AI クレジットで、トークン × 公式単価 ÷ $0.01 と一致し、net = gross − discount', () => {
+    for (const r of rows.slice(1)) {
+      const p = COPILOT_MODEL_TOKEN_PRICES[col(r, 'model')];
+      assert.ok(p, `未知のモデル ${col(r, 'model')}`);
+      const usd =
+        (Number(col(r, 'input')) * p.input +
+          Number(col(r, 'cache_read')) * p.cachedInput +
+          Number(col(r, 'cache_write')) * p.cacheWrite +
+          Number(col(r, 'output')) * p.output) / 1e6;
+      assert.ok(Math.abs(Number(col(r, 'quantity')) - usd / AI_CREDIT_USD) < 0.0002);
+      assert.equal(col(r, 'unit_type'), 'credits');
+      assert.equal(col(r, 'sku'), 'copilot_ai_credit');
+      assert.equal(Number(col(r, 'applied_cost_per_quantity')), AI_CREDIT_USD);
+      assert.ok(Math.abs(Number(col(r, 'gross_amount')) - Number(col(r, 'discount_amount')) - Number(col(r, 'net_amount'))) < 0.00011);
+    }
+  });
+
+  it('取り込むと quantity はクレジットとして扱われ、リクエスト数には混ざらない', () => {
+    const parser = new ReportParser();
+    const data = parser.aggregate(parser.parseRecords(csv), '2026-08', 'demo.csv');
+    assert.equal(data.overview.total_requests, 0);
+    assert.ok((data.overview.quantity_by_unit?.['credits'] ?? 0) > 0);
+    const u = data.user_details.find((x) => x.login === 'demo-long-context')!;
+    assert.ok((u.usage_insight?.usage.credits ?? 0) > 0);
+    assert.ok((u.net_spend_usd ?? 0) > 0, '付与を超えた分は net に残る');
   });
 });

@@ -135,7 +135,14 @@ Official field reference: GitHub Docs "Billing reports reference" (`billing/refe
 - A row that carries token columns but **no `unit_type`** is classified as the `other` family: its `quantity` is not added to the request count (the legacy "no `unit_type` = requests" rule applies to rows without token columns only). Credits then come from `ai_credits_consumed` or from rows whose `unit_type` mentions credits.
 - Rows differing only in token values are distinct rows for duplicate detection.
 - `aggregate()` attaches `usage_insight` (SDD-06 §5) to every user row; it is computed before any display filter, and the filter engine keeps it untouched.
-- **To verify against a real export**: the docs describe the fields but not the unit of `quantity` in the AI usage report; this implementation assumes it is credits and relies on `unit_type`/`ai_credits_consumed` for it.
+- **Verified against GitHub Docs (latest `main` of `github/docs`, 2026-10-02)** — still **not** against a real export file:
+  - Unit: the REST AI-credit usage example (`GET /enterprises/{enterprise}/settings/billing/ai_credit/usage`) returns `unitType: "credits"`, `pricePerUnit: 0.01`; 1 AI credit = $0.01 USD. So `quantity` is AI credits.
+  - SKU: `copilot_ai_credit` (also `coding_agent_ai_credit`, `code_quality_ai_credit`, `spark_ai_credits`).
+  - Credits = tokens × the per-model price (USD per 1M tokens; input / cached input / cache write / output) ÷ $0.01. The price table is `data/tables/copilot/models-and-pricing.yml`; the demo generator (`generateAiUsageReportCSV`) embeds the rates it uses (`COPILOT_MODEL_TOKEN_PRICES`).
+  - The `model` example is the slug `claude-sonnet-4`; the REST example uses a display name (`GPT-5`). Model names are matched as written, so the same model can appear under two spellings across sources.
+  - **Not published**: the column order of the CSV and the exact `unit_type` string in the CSV. The parser matches columns by header name, and `unit_type` by the substring `credit`.
+  - Collection paths that exist but are not implemented here: the REST endpoint above (enterprise; also org/user levels) and the asynchronous export API (`POST /enterprises/{enterprise}/settings/billing/reports` with `report_type: ai_credit`; completed exports are downloadable for 31 days). Org owners cannot filter AI usage by user in the UI and must download the report.
+- **Demo data**: `MockDataGenerator.generateAiUsageReportCSV()` follows the fields and pricing above (columns limited to the official fields; one row per `date × model × username`; discounts use a dummy included-credit amount). A test checks the conformance.
 
 ---
 
@@ -218,7 +225,7 @@ export interface MonthlyReportAggregatedData {
      - Bi-directionally synchronized with the top control bar for active group filtering.
    - 3. **Model & SKU Breakdown**: Request shares and expenditure percentages.
    - 4. **Daily Trends Chart**: Spending cadence and peak consumption days across the month.
-   - 5. **Per-User Usage Details Table (`MonthlyReportUserTable`)**:
+   - 5. **Per-User Usage Details Table (`UserDetailTable`, the same component as live metrics — SDD-07 §2.16)**:
      - Explicit `Organization` column alongside Cost Center and Department.
      - Group filter dropdown dynamically adapts options based on the active grouping axis (Department / Cost Center / Organization).
      - Row-click interaction triggers inline deep analysis drilldown (`UserDrilldownPanel`).
@@ -227,6 +234,6 @@ export interface MonthlyReportAggregatedData {
    - 7. **Per-User Model Trend Viewer (View 3: Trend & Model Usage)**:
      - Uses the stored monthly archive (`deep-analysis/{YYYY-MM}.json`, measured telemetry) when one exists. A monthly CSV or an uploaded CSV is an aggregate without per-user daily telemetry, so **no per-user profile is synthesized from it**: the viewer shows the data source badge "月次集計のみ・日次診断不可" and the reason instead of an estimated trend (SDD-11 §6.4).
      - When profiles exist, all active AI models are detected dynamically for the stacked bar charts and an explicit data source badge is shown in the header.
-     - Connects with the "トレンド" button in `MonthlyReportUserTable`.
+     - Connects with the "トレンド" button in `UserDetailTable`.
    - 8. **Filters**: `daily_trends` and `sku_breakdown` cannot be re-aggregated per user and are labelled "全社値 (フィルター非対応)" while a filter is active (SDD-07 §2.14).
 

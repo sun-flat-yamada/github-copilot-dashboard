@@ -135,7 +135,14 @@ npm run report:import -- ./path/to/copilot-report.csv 2026-08
 - token 列があり、かつ **`unit_type` が無い**行は `other` 系に分類し、その `quantity` はリクエスト数に足さない（「`unit_type` が無ければ requests」という従来の規則は、token 列の無い行にだけ適用する）。クレジットは `ai_credits_consumed`、または `unit_type` に credit を含む行から得る。
 - token の値だけが違う行は、重複検知では別の行として扱う。
 - `aggregate()` は全ユーザー行に `usage_insight`（SDD-06 §5）を付与する。表示フィルターの適用前に算出し、フィルターエンジンはそのまま保持する。
-- **実際のエクスポートでの確認が必要**: 公式ドキュメントはフィールドを説明しているが、AI usage report の `quantity` の単位は記載していない。本実装は「クレジット」と仮定し、`unit_type` と `ai_credits_consumed` を根拠にしている。
+- **GitHub Docs（`github/docs` の最新 `main`、2026-10-02 時点）で確認済み**。ただし実際のエクスポートファイルでの確認はまだ:
+  - 単位: REST の AI クレジット使用量の例（`GET /enterprises/{enterprise}/settings/billing/ai_credit/usage`）は `unitType: "credits"`、`pricePerUnit: 0.01`。1 AI クレジット = $0.01。したがって `quantity` は AI クレジット。
+  - SKU: `copilot_ai_credit`（ほかに `coding_agent_ai_credit`、`code_quality_ai_credit`、`spark_ai_credits`）。
+  - クレジット = トークン × モデル別単価（100 万トークンあたりの USD。入力 / キャッシュ入力 / キャッシュ書込 / 出力）÷ $0.01。単価表は `data/tables/copilot/models-and-pricing.yml`。デモ生成器（`generateAiUsageReportCSV`）は使った単価を `COPILOT_MODEL_TOKEN_PRICES` として持つ。
+  - `model` の例はスラッグ（`claude-sonnet-4`）、REST の例は表示名（`GPT-5`）。モデル名は書かれたとおりに照合するため、ソースによって同じモデルが 2 通りの表記で現れうる。
+  - **公開されていない**: CSV の列順と、CSV の `unit_type` の正確な文字列。パーサーは列をヘッダー名で、`unit_type` は部分文字列 `credit` で判定する。
+  - 存在するが本リポジトリでは未実装の取得経路: 上記の REST エンドポイント（enterprise のほか org / user でも）と、非同期のエクスポート API（`POST /enterprises/{enterprise}/settings/billing/reports`、`report_type: ai_credit`。完成したエクスポートは 31 日間ダウンロードできる）。Organization のオーナーは UI でユーザー別に絞り込めず、レポートをダウンロードする必要がある。
+- **デモデータ**: `MockDataGenerator.generateAiUsageReportCSV()` は上記の項目と単価に従う（列は公式の項目のみ、`date × model × username` ごとに 1 行、割引はダミーの付与クレジット額）。整合はテストで確認する。
 
 ---
 
@@ -220,7 +227,7 @@ export interface MonthlyReportAggregatedData {
      - 選択された軸および個別グループ（例: 特定のCostCenterやOrganization）と親画面コントロールバーが双方向連動。
    - ③ **モデル別 & SKU別分析**: モデルごとのリクエストシェア・費用比率
    - ④ **日別推移チャート**: 月内の消費ペースとピーク日
-   - ⑤ **ユーザー別利用明細テーブル (`MonthlyReportUserTable`)**:
+   - ⑤ **ユーザー別利用明細テーブル (`UserDetailTable`。ライブ指標と同じコンポーネント。SDD-07 §2.16)**:
      - `Organization` 列を明示表示し、所属組織と Cost Center を一目で確認可能。
      - フィルタードロップダウンがアクティブな集計軸（部署 / Cost Center / 組織）に連動して候補を切り替え。
      - 行クリックによるインライン・ディープ分析ドリルダウン (`UserDrilldownPanel`) に対応。
@@ -229,6 +236,6 @@ export interface MonthlyReportAggregatedData {
    - ⑦ **ユーザー別モデル推移 (View 3: Trend & Model Usage)**:
      - 保存済みの月次アーカイブ (`deep-analysis/{YYYY-MM}.json`、実測のテレメトリ) がある月はそれを使う。月次 CSV とアップロード CSV は、ユーザー別の日次実績を持たない集計であるため、**そこから個人別プロファイルを合成しない**: 推定のトレンドを出す代わりに、データソース情報バッジ「月次集計のみ・日次診断不可」と理由を表示する (SDD-11 §6.4)。
      - プロファイルがある場合は、全AIモデルを動的に検出して積上グラフを描画し、分析データソース情報バッジをヘッダーに明示。
-     - 月次明細テーブルの「トレンド」ボタンから遷移できる。
+     - ユーザー明細テーブル (`UserDetailTable`) の「トレンド」ボタンから遷移できる。
    - ⑧ **フィルター**: `daily_trends` と `sku_breakdown` はユーザー別に再集計できないため、フィルター適用中は「全社値 (フィルター非対応)」と明示する (SDD-07 §2.13)。
 

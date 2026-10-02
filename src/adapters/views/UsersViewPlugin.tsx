@@ -2,7 +2,6 @@ import React from 'react';
 import { ViewPlugin, ViewPluginProps } from './ViewPlugin.js';
 import { UsersPresenter, UsersViewModel } from '../presenters/UsersPresenter.js';
 import { UserDetailTable } from '../../../dashboard/src/components/UserDetailTable.js';
-import { MonthlyReportUserTable } from '../../../dashboard/src/components/monthly-report/MonthlyReportUserTable.js';
 
 export const UsersViewComponent: React.FC<ViewPluginProps<UsersViewModel>> = (props) => {
   const {
@@ -36,7 +35,7 @@ export const UsersViewComponent: React.FC<ViewPluginProps<UsersViewModel>> = (pr
       )}
 
       {isReport && currentReportData && (
-        <MonthlyReportUserTable
+        <UserDetailTable
           reportData={currentReportData}
           userProfiles={deepAnalysisProfiles}
           initialSelectedLogin={focusedUserLogin}

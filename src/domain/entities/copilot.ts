@@ -622,7 +622,8 @@ export interface UsageInsightModel {
 
 export interface UsageInsight {
   usage: {
-    requests: number;
+    /** requests 系の明細が無い (例: AI usage report のみ) ときは 0 ではなく null */
+    requests: number | null;
     credits: number | null;
     active_days: number;
     /** 1 利用日あたりの量。requests があれば requests、無ければ credits */

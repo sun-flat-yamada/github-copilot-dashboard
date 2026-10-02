@@ -25,7 +25,6 @@ import { CostCenterBudgetCards } from './components/CostCenterBudgetCards';
 import { UserTrendViewer } from './components/UserTrendViewer';
 import { MonthlyReportKpis } from './components/monthly-report/MonthlyReportKpis';
 import { MonthlyReportCharts } from './components/monthly-report/MonthlyReportCharts';
-import { MonthlyReportUserTable } from './components/monthly-report/MonthlyReportUserTable';
 import { ViewSkeleton } from './components/common/ViewSkeleton';
 import { DataStatusBanner } from './components/common/DataStatusBanner';
 import { buildDataStatusItems } from './utils/dataStatus';
@@ -582,7 +581,7 @@ export const App: React.FC = () => {
                   isExpanded={isExpanded('report_users')}
                   onToggle={() => toggle('report_users')}
                 >
-                  <MonthlyReportUserTable
+                  <UserDetailTable
                     reportData={currentReportData}
                     userProfiles={deepAnalysisProfiles}
                     initialSelectedLogin={focusedUserLogin}
@@ -613,7 +612,7 @@ export const App: React.FC = () => {
             )}
 
             {isReportSource && currentReportData && (
-              <MonthlyReportUserTable
+              <UserDetailTable
                 reportData={currentReportData}
                 userProfiles={deepAnalysisProfiles}
                 initialSelectedLogin={focusedUserLogin}
@@ -659,7 +658,7 @@ export const App: React.FC = () => {
                   onGroupingChange={handleGroupingChange}
                   selectedGroup={selectedGroup}
                 />
-                <MonthlyReportUserTable
+                <UserDetailTable
                   reportData={currentReportData}
                   userProfiles={deepAnalysisProfiles}
                   initialSelectedLogin={focusedUserLogin}

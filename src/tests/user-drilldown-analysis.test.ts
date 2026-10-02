@@ -14,10 +14,6 @@ describe('User Detail Table Inline Drilldown Analysis Tests', () => {
     process.cwd(),
     'dashboard/src/components/UserDetailTable.tsx'
   );
-  const monthlyReportTablePath = path.resolve(
-    process.cwd(),
-    'dashboard/src/components/monthly-report/MonthlyReportUserTable.tsx'
-  );
   const appPath = path.resolve(
     process.cwd(),
     'dashboard/src/App.tsx'
@@ -81,45 +77,27 @@ describe('User Detail Table Inline Drilldown Analysis Tests', () => {
     );
     assert.match(
       content,
-      /colSpan=\{hasUsageMetrics \? 16 : 12\}/,
+      /colSpan=\{USER_DETAIL_COLUMN_COUNT\}/,
       'Drilldown row must span full table columns'
     );
   });
 
-  it('verifies MonthlyReportUserTable integrates row click selection and inline UserDrilldownPanel', () => {
-    assert.ok(fs.existsSync(monthlyReportTablePath), 'MonthlyReportUserTable.tsx must exist');
-    const content = fs.readFileSync(monthlyReportTablePath, 'utf-8');
-
-    // Selection state & handler
-    assert.match(
-      content,
-      /const \[selectedUserLogin, setSelectedUserLogin\] = useState<string \| null>/,
-      'MonthlyReportUserTable must maintain selectedUserLogin state'
-    );
-    assert.match(
-      content,
-      /handleToggleUserDrilldown/,
-      'MonthlyReportUserTable must have handleToggleUserDrilldown'
-    );
+  it('verifies the unified UserDetailTable serves the monthly report path too, without synthesizing profiles', () => {
+    const content = fs.readFileSync(userDetailTablePath, 'utf-8');
 
     // 月次レポートからユーザー別プロファイルを合成しない (実測のあるプロファイルだけをドリルダウンに使う)
     assert.doesNotMatch(
       content,
       /adaptReportToProfiles/,
-      'MonthlyReportUserTable must not synthesize per-user profiles from the aggregated report'
+      'UserDetailTable must not synthesize per-user profiles from the aggregated report'
     );
     assert.match(
       content,
-      /const effectiveProfiles = useMemo\(\(\) => userProfiles \?\? \[\], \[userProfiles\]\);/,
-      'MonthlyReportUserTable must use only the measured profiles passed in'
+      /if \(userProfiles && userProfiles\.length > 0\) return userProfiles;\s*return data\?\.user_profiles \|\| \[\];/,
+      'UserDetailTable must use only the measured profiles passed in (or the live scope data)'
     );
-
-    // Inline drilldown panel rendering
-    assert.match(
-      content,
-      /<UserDrilldownPanel/,
-      'MonthlyReportUserTable must render UserDrilldownPanel on selection'
-    );
+    // 月次レポートの経路でも、兆候 (使用量と効率) をドリルダウンの上に出す
+    assert.match(content, /<UsageInsightPanel insight=\{u\.usage_insight\} \/>/);
   });
 
   it('verifies App.tsx passes deepAnalysisProfiles to user tables for unified multi-source diagnostics', () => {
@@ -133,8 +111,8 @@ describe('User Detail Table Inline Drilldown Analysis Tests', () => {
     );
     assert.match(
       content,
-      /<MonthlyReportUserTable[\s\S]*?userProfiles=\{deepAnalysisProfiles\}/,
-      'App.tsx must pass deepAnalysisProfiles to MonthlyReportUserTable'
+      /<UserDetailTable[\s\S]*?reportData=\{currentReportData\}[\s\S]*?userProfiles=\{deepAnalysisProfiles\}/,
+      'App.tsx must pass deepAnalysisProfiles to UserDetailTable for the monthly report path'
     );
   });
 

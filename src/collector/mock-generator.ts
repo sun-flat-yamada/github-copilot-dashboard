@@ -25,6 +25,28 @@ export interface MockDataBundle {
   userProfiles: UserUsageProfile[];
 }
 
+/** 1 AI クレジットの額 (USD)。GitHub Docs `prodname_ai_credits_value` = $0.01 */
+export const AI_CREDIT_USD = 0.01;
+
+/** ダミーの付与クレジット (ユーザー月あたり)。実際の付与量はプラン・契約による */
+export const DUMMY_INCLUDED_CREDITS = 150;
+
+/**
+ * モデル別のトークン単価 (USD / 100 万トークン)。
+ * 出典: GitHub Docs `data/tables/copilot/models-and-pricing.yml` (2026-10-02 時点)。
+ * `model` 列の表記はドキュメントの例 (`claude-sonnet-4`) に合わせたスラッグ。
+ * 実際のエクスポートの表記は実ファイルで要確認。
+ */
+export const COPILOT_MODEL_TOKEN_PRICES: Record<
+  string,
+  { input: number; cachedInput: number; cacheWrite: number; output: number }
+> = {
+  'claude-sonnet-4': { input: 3.0, cachedInput: 0.3, cacheWrite: 3.75, output: 15.0 },
+  'claude-opus-4-8': { input: 5.0, cachedInput: 0.5, cacheWrite: 6.25, output: 25.0 },
+  'gpt-5-4': { input: 2.5, cachedInput: 0.25, cacheWrite: 0, output: 15.0 },
+  'gpt-5-mini': { input: 0.25, cachedInput: 0.025, cacheWrite: 0, output: 2.0 },
+};
+
 export class MockDataGenerator {
   private baseDate: Date;
 
@@ -690,8 +712,19 @@ export class MockDataGenerator {
   }
 
   /**
-   * AI usage report (date × model × username、token 内訳つき) の決定的なデモ CSV。
+   * AI usage report (date × model × username、token 内訳つき) の決定的なダミー CSV。
+   *
+   * 項目・単位・換算は GitHub Docs の公式情報 (2026-10-02 時点) に従う:
+   * - 項目: `billing/reference/billing-reports` の AI usage report
+   *   (`date, product, sku, quantity, unit_type, applied_cost_per_quantity, gross_amount, discount_amount,
+   *   net_amount, username, organization, cost_center_name, model, input, output, cache_read, cache_write`)。
+   *   `repository` / `workflow_path` は AI usage report の集計キー (date, model, username) に無いため出さない。
+   * - `quantity` は AI クレジット (REST の `ai_credit/usage` 例: `unitType: "credits"`, `pricePerUnit: 0.01`)。
+   *   1 クレジット = $0.01 (`prodname_ai_credits_value`)、SKU は `copilot_ai_credit`。
+   * - クレジット = トークン × モデル別単価 (`copilot/reference/copilot-billing/models-and-pricing`、100 万トークンあたり) ÷ $0.01。
+   *
    * 典型パターン (通常 / 文脈の持ち越しが大きい / 高トークン日が多い / モデル切替が多い / 利用が少ない) を含む。
+   * 付与クレジットの額は不明なため、`discount_amount` はダミーの額 (ユーザー月あたり {@link DUMMY_INCLUDED_CREDITS} クレジット) で表す。
    */
   public generateAiUsageReportCSV(monthStr: string = '2026-08'): string {
     const lines: string[] = [
@@ -701,22 +734,23 @@ export class MockDataGenerator {
     const patterns: Pattern[] = [
       { login: 'demo-user-01', days: 14, models: ['claude-sonnet-4'], input: 40000, output: 6000, cacheRead: 60000 },
       { login: 'demo-user-02', days: 14, models: ['claude-sonnet-4'], input: 38000, output: 5500, cacheRead: 58000 },
-      { login: 'demo-user-03', days: 14, models: ['gpt-5'], input: 42000, output: 6500, cacheRead: 64000 },
+      { login: 'demo-user-03', days: 14, models: ['gpt-5-4'], input: 42000, output: 6500, cacheRead: 64000 },
       { login: 'demo-user-04', days: 14, models: ['claude-sonnet-4'], input: 36000, output: 6000, cacheRead: 55000 },
       // 文脈の持ち越しが大きい (出力に対する入力・キャッシュ読取が多い)
-      { login: 'demo-long-context', days: 12, models: ['claude-opus-4'], input: 150000, output: 5000, cacheRead: 600000 },
+      { login: 'demo-long-context', days: 12, models: ['claude-opus-4-8'], input: 150000, output: 5000, cacheRead: 600000 },
       // 高トークン日が多い
       { login: 'demo-spiky', days: 12, models: ['claude-sonnet-4'], input: 40000, output: 6000, cacheRead: 60000, spikes: 6 },
       // 日内のモデル切替が多い
-      { login: 'demo-switcher', days: 12, models: ['claude-sonnet-4', 'gpt-5', 'gemini-2-5-pro'], input: 30000, output: 5000, cacheRead: 40000 },
+      { login: 'demo-switcher', days: 12, models: ['claude-sonnet-4', 'gpt-5-4', 'gpt-5-mini'], input: 30000, output: 5000, cacheRead: 40000 },
       // 利用が少ない (判定しない)
-      { login: 'demo-light', days: 2, models: ['gpt-5'], input: 20000, output: 3000, cacheRead: 10000 },
+      { login: 'demo-light', days: 2, models: ['gpt-5-mini'], input: 20000, output: 3000, cacheRead: 10000 },
     ];
     const [y, m] = monthStr.split('-').map(Number);
     const daysInMonth = new Date(y, m, 0).getDate();
 
     for (const p of patterns) {
       let used = 0;
+      let remainingIncluded = DUMMY_INCLUDED_CREDITS;
       for (let day = 1; day <= daysInMonth && used < p.days; day++) {
         const dateStr = `${monthStr}-${String(day).padStart(2, '0')}`;
         const dow = new Date(`${dateStr}T00:00:00Z`).getUTCDay();
@@ -724,14 +758,21 @@ export class MockDataGenerator {
         used++;
         const spike = p.spikes !== undefined && used <= p.spikes ? 6 : 1;
         for (const model of p.models) {
+          const price = COPILOT_MODEL_TOKEN_PRICES[model];
           const input = Math.round((p.input * spike) / p.models.length);
           const output = Math.round((p.output * spike) / p.models.length);
           const cacheRead = Math.round((p.cacheRead * spike) / p.models.length);
           const cacheWrite = Math.round(input * 0.1);
-          const credits = Number(((input + output * 5 + cacheRead * 0.1) / 20000).toFixed(2));
-          const gross = Number((credits * 0.01).toFixed(4));
+          const usd =
+            (input * price.input + cacheRead * price.cachedInput + cacheWrite * price.cacheWrite + output * price.output) / 1e6;
+          const credits = Number((usd / AI_CREDIT_USD).toFixed(4));
+          const gross = Number((credits * AI_CREDIT_USD).toFixed(4));
+          const discountCredits = Math.min(credits, remainingIncluded);
+          remainingIncluded -= discountCredits;
+          const discount = Number((discountCredits * AI_CREDIT_USD).toFixed(4));
+          const net = Number((gross - discount).toFixed(4));
           lines.push(
-            `${dateStr},copilot,copilot_ai_credit,${credits},ai-credits,0.0100,${gross.toFixed(4)},${gross.toFixed(4)},0.0000,${p.login},demo-org,Demo-Cost-Center,${model},${input},${output},${cacheRead},${cacheWrite}`
+            `${dateStr},copilot,copilot_ai_credit,${credits.toFixed(4)},credits,${AI_CREDIT_USD.toFixed(2)},${gross.toFixed(4)},${discount.toFixed(4)},${net.toFixed(4)},${p.login},demo-org,Demo-Cost-Center,${model},${input},${output},${cacheRead},${cacheWrite}`
           );
         }
       }

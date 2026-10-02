@@ -8,6 +8,7 @@
  */
 import type {
   SignalLevel,
+  UserModelDailyUsage,
   UsageInsight,
   UsageInsightDaily,
   UsageInsightModel,
@@ -53,6 +54,8 @@ interface ModelAcc {
 export interface UserUsageAccumulator {
   rows: number;
   tokenRows: number;
+  /** requests 系の明細行の数 (0 なら「リクエスト数は不明」で、0 件ではない) */
+  requestRows: number;
   requests: number;
   requestGross: number;
   credits: number;
@@ -74,6 +77,7 @@ export function createUserUsageAccumulator(): UserUsageAccumulator {
   return {
     rows: 0,
     tokenRows: 0,
+    requestRows: 0,
     requests: 0,
     requestGross: 0,
     credits: 0,
@@ -100,7 +104,10 @@ const rowTokens = (r: UsageRow): number | undefined => {
 export function addUsageRow(acc: UserUsageAccumulator, r: UsageRow): void {
   acc.rows++;
   acc.requests += r.requests;
-  if (r.isRequestRow) acc.requestGross += r.gross;
+  if (r.isRequestRow) {
+    acc.requestGross += r.gross;
+    acc.requestRows++;
+  }
   if (r.credits !== undefined) {
     acc.credits += r.credits;
     acc.hasCredits = true;
@@ -141,6 +148,38 @@ export function addUsageRow(acc: UserUsageAccumulator, r: UsageRow): void {
     if (model) d.models.add(model);
     acc.days.set(r.date, d);
   }
+}
+
+/**
+ * ライブ経路 (Reports API) の日別履歴から累積器を作る。月次レポート (CSV) と同じ算出関数に渡すための変換。
+ *
+ * 履歴は日別・モデル別のリクエスト数 (`model_breakdown`) と、日別のクレジット・トークン・費用だけを持つ。
+ * 日別の値は、その日のモデル別リクエスト数の比で按分して行に載せる (合計は保存される)。
+ * トークンは合計だけで内訳 (入力/出力/キャッシュ) は無いため、S1 は判定しない。
+ */
+export function accumulatorFromDailyHistory(history: UserModelDailyUsage[]): UserUsageAccumulator {
+  const acc = createUserUsageAccumulator();
+  for (const h of history) {
+    const models = Object.entries(h.model_breakdown ?? {}).filter(([, n]) => n > 0);
+    const total = models.reduce((sum, [, n]) => sum + n, 0);
+    const parts: Array<{ model?: string; share: number; requests: number }> =
+      total > 0
+        ? models.map(([model, n]) => ({ model, share: n / total, requests: n }))
+        : [{ share: 1, requests: h.total_chats ?? 0 }];
+    for (const part of parts) {
+      addUsageRow(acc, {
+        date: h.date,
+        model: part.model,
+        requests: part.requests,
+        isRequestRow: part.requests > 0,
+        credits: h.ai_credits_consumed === undefined ? undefined : h.ai_credits_consumed * part.share,
+        isCreditRow: h.ai_credits_consumed !== undefined,
+        gross: (h.daily_cost_usd ?? 0) * part.share,
+        tokenTotal: h.token_count === undefined ? undefined : h.token_count * part.share,
+      });
+    }
+  }
+  return acc;
 }
 
 export function median(values: number[]): number | null {
@@ -345,7 +384,7 @@ export function computeUsageInsight(a: UserUsageAccumulator, base: OrgBaseline):
 
   return {
     usage: {
-      requests: round(a.requests, 2),
+      requests: a.requestRows > 0 ? round(a.requests, 2) : null,
       credits: a.hasCredits ? round(a.credits, 2) : null,
       active_days: activeDays,
       per_active_day: perActiveDay === null ? null : round(perActiveDay, 2),

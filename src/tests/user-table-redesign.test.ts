@@ -6,10 +6,6 @@ import { formatElapsedActivity } from '../../dashboard/src/utils/dateFormatters.
 import { ANALYSIS_VIEW_REGISTRY } from '../types/views.js';
 
 describe('User Table Redesign & Ranking Phasing-out Tests', () => {
-  const monthlyTablePath = path.resolve(
-    process.cwd(),
-    'dashboard/src/components/monthly-report/MonthlyReportUserTable.tsx'
-  );
   const userDetailTablePath = path.resolve(
     process.cwd(),
     'dashboard/src/components/UserDetailTable.tsx'
@@ -69,47 +65,6 @@ describe('User Table Redesign & Ranking Phasing-out Tests', () => {
     });
   });
 
-  describe('MonthlyReportUserTable component structure', () => {
-    it('verifies MonthlyReportUserTable has removed ranking terminology and podium medals', () => {
-      assert.ok(fs.existsSync(monthlyTablePath), 'MonthlyReportUserTable.tsx must exist');
-      const content = fs.readFileSync(monthlyTablePath, 'utf-8');
-
-      // Title must NOT contain "ランキング"
-      assert.match(content, /ユーザー別 利用・費用明細 \(\{filteredUsers\.length\}名\)/);
-      assert.doesNotMatch(content, /ユーザー別 利用・費用明細 & ランキング/);
-
-      // Table header must use '#' instead of '順位'
-      assert.match(content, /<th[^>]*text-center[^>]*>#<\/th>/);
-      assert.doesNotMatch(content, /<th[^>]*text-center[^>]*>順位<\/th>/);
-
-      // CSV export header must use '#'
-      assert.match(content, /const headers = \[\s*'#'/);
-
-      // Must NOT contain medal emojis
-      assert.doesNotMatch(content, /🥇/);
-      assert.doesNotMatch(content, /🥈/);
-      assert.doesNotMatch(content, /🥉/);
-
-      // Must render record ID {index + 1}
-      assert.match(content, /\{index \+ 1\}/);
-
-      // Must format and display elapsed activity time
-      assert.match(content, /formatElapsedActivity\(u\.last_activity_date\)/);
-
-      // Action column header must use ActionColumnHeader
-      assert.match(content, /<ActionColumnHeader \/>/);
-
-      // Action column row must use icon-only buttons (no inline text labels)
-      assert.doesNotMatch(content, /<span>詳細分析<\/span>/);
-      assert.doesNotMatch(content, /<span>トレンド<\/span>/);
-      assert.doesNotMatch(content, /<span>診断<\/span>/);
-
-      // Must have scrollable container and sticky header
-      assert.match(content, /overflow-auto[^>]*max-h-\[600px\]/);
-      assert.match(content, /<th[^>]*sticky top-0/);
-    });
-  });
-
   describe('UserDetailTable component structure', () => {
     it('verifies UserDetailTable has removed ranking terminology and uses record ID #', () => {
       assert.ok(fs.existsSync(userDetailTablePath), 'UserDetailTable.tsx must exist');
@@ -137,6 +92,9 @@ describe('User Table Redesign & Ranking Phasing-out Tests', () => {
 
       // Must render record ID {index + 1}
       assert.match(content, /\{index \+ 1\}/);
+
+      // Must format and display elapsed activity time (both live and monthly report rows)
+      assert.match(content, /formatElapsedActivity\(u\.last_activity\)/);
 
       // Action column header must use ActionColumnHeader
       assert.match(content, /<ActionColumnHeader \/>/);

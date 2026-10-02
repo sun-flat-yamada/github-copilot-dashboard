@@ -109,7 +109,7 @@ Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint 
    - Total chat turns overlaid as a line graph.
 - **Productivity Indicators**: Daily suggestions, acceptances, and Inline Completion Acceptance Rate (%) trends.
 
-### 2.7 User Details & Utilization Breakdown (`UserDetailTable` / `MonthlyReportUserTable`)
+### 2.7 User Details & Utilization Breakdown (`UserDetailTable`)
 - **Neutral Record List & Ranking Phasing-out**: In alignment with FinOps principles where raw volume does not inherently signify contribution, rankings and podium badges have been phased out in favor of neutral record IDs (`#`).
 - **Separated User and Display Name Columns with Tag Column Addition**: GitHub account handle (`User`) and employee real name (`Display Name`) are isolated into distinct sortable columns. Furthermore, a dedicated `Tags` column is positioned directly before the `Cost Center` column to surface organizational/employment attributes.
 - **Compact Style Padding & Non-Wrapping Horizontal Scroll**: Cell padding across headers and rows is refined to a compact design (`py-2 px-2.5`), preventing automatic line breaks (`whitespace-nowrap min-w-max`) when viewing on narrow viewports. Horizontal overflow scrolling (`overflow-x-auto`) preserves table geometry across any resolution.
@@ -164,10 +164,10 @@ Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint 
 
 ### 2.11 Separate Cost/Overage Columns & Universal Table Sorting Specification
 1. **Independent Columns for Usage Cost and Excess Billing**:
-   - In `MonthlyReportUserTable`, `MonthlyReportCharts` (3-Axis Allocation Table), `UserDetailTable`, and `GroupUsageRanking`, usage cost (`利用費用` / `利用料金 (USD)`) and excess billing (`超過請求 (USD)`) are displayed in dedicated, separate columns rather than merged.
+   - In `MonthlyReportCharts` (3-Axis Allocation Table), `UserDetailTable`, and `GroupUsageRanking`, usage cost (`利用費用` / `利用料金 (USD)`) and excess billing (`超過請求 (USD)`) are displayed in dedicated, separate columns rather than merged.
    - The excess billing (Net Billable Overage) column is rendered with amber accents (`text-amber-400`) and monospace font (`font-mono`) to clearly distinguish billable overages after free-tier budget deductions.
 2. **Universal Multi-Column Sorting Across All Tables**:
-   - All table components throughout the dashboard (`MonthlyReportUserTable`, `MonthlyReportCharts`, `UserDetailTable`, `GroupUsageRanking`, `AdoptionMaturityView`, `AgentActivityView`, `CreditsView`, `ModelRadarView`) provide interactive bidirectional sorting on every sortable column header.
+   - All table components throughout the dashboard (`MonthlyReportCharts`, `UserDetailTable`, `GroupUsageRanking`, `AdoptionMaturityView`, `AgentActivityView`, `CreditsView`, `ModelRadarView`) provide interactive bidirectional sorting on every sortable column header.
    - **Sort Indicators**: Subdued `ArrowUpDown` for inactive columns, dynamic `ArrowUp` (ascending) / `ArrowDown` (descending) for active columns with alternating sort order on consecutive clicks.
    - **Accessibility & UX**: All sortable headers include `cursor-pointer select-none` and hover highlight feedback for intuitive data inspection.
 
@@ -213,10 +213,21 @@ Missing data is **`null`, shown as "—" with its reason — never `0`, never a 
 
 Hooks in these components obey the SDD-15 §6 rules (no hook after an early return); this is enforced by ESLint (`npm run lint`, also part of `npm test`).
 
-### 2.15 Usage Insights in the User Detail Table (`MonthlyReportUserTable`)
+### 2.15 Usage Insights in the User Detail Table (`UserDetailTable`)
 - Columns after "Total Requests": **Tokens**, **Cost per 1M Tokens**, **Signal** (badge). All three are sortable and included in the CSV export (tokens split into input / output / cache read / cache write). A cell without data shows "—" with the reason in the tooltip (e.g. the CSV has no token columns).
 - The **Signal** badge shows the level with a text label (never colour alone): 特記なし / 参考 / **確認を推奨** / データ不足. The tooltip lists the evidence of every signal that is `watch` or `review`. The checkbox **「確認を推奨のみ」** narrows the list to users whose overall level is `review`.
 - Opening a row shows **使用量と効率** (`UsageInsightPanel`) above the drilldown: usage, tokens and coverage, unit costs, the evidence sentence per signal (S1–S5, SDD-06 §5.3), a tentative suggestion when the level is `review`, a daily bar chart, and the standing disclaimer (estimates from daily aggregates; conversation content is not read; not a personal evaluation).
 - Wording rule: recommend, never accuse (no "不当" / "違反" / "問題").
-- Live-metrics rows (Reports API) carry no token data; they are not covered by this section yet.
+- Live-metrics rows (Reports API) carry no token data, so the token columns show "—" with the reason; the signals are still computed from the daily history (S3 / S4 and, where available, others) with the same functions (§2.16).
+
+### 2.16 One User Detail Format for Every Data Source and View
+The user detail table has **one format**, whatever the data source (live metrics, monthly report, uploaded CSV) and whatever view hosts it (Overview, Users, Budget, monthly report view).
+
+- **One component**: `UserDetailTable` is the only user detail table (`MonthlyReportUserTable` was removed). Call sites pass `data` (live) or `reportData` (monthly report); they differ only in the filter axis (`grouping`) and the callbacks.
+- **One row model**: `buildLiveRows` / `buildReportRows` (`src/adapters/presenters/UserDetailRows.ts`) turn each source into `UserDetailRow`. Both produce **exactly the same keys**; a value the source does not have is `null` (or `false`), never 0.
+- **Same columns, same order, same meaning**: `#`, User, Display Name, ユーザー定義Gr, Tag, Cost Center, Organization, Plan, Status, Primary Model, Requests, Suggestions, Acceptances, Inline Acceptance Rate, AI Chats, Tokens, Cost per 1M Tokens, Signal, Usage Cost, Excess Billing, Last Activity, Actions (22 columns, `USER_DETAIL_COLUMN_COUNT`). The CSV export has the same columns for every source.
+- **Unavailable cells**: shown as "—" with the reason in the tooltip (e.g. "シート情報は月次レポートに含まれません", "トークン列のないデータです"). Columns are never hidden per source, so the table does not change shape when the source changes. The status filter is the one exception: it is shown only when the data has seat status.
+- **Cost columns**: live shows the seat cost for the scope (daily / monthly / period); the monthly report shows the usage amount (gross) and the billable amount (net). The header states the unit (`利用費用 (月額)` / `利用費用 (月次)`). Live still shows the same value in both cost columns (pre-existing behaviour; the Reports API has no per-user billable amount).
+- **Signals for live data**: computed by the same functions (SDD-06 §5) from the daily history of the measured profile; tokens are absent there, so S1 / S2 / S5 are "データ不足". The badge tooltip lists the signals that could not be evaluated, so "特記なし" is not read as "everything was checked".
+- **Behavioural test**: `src/tests/user-detail-table-unified.test.ts` renders both sources and asserts identical headers and cell counts.
 

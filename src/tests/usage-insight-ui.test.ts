@@ -4,7 +4,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ReportParser } from '../processor/report-parser.js';
 import { MockDataGenerator } from '../collector/mock-generator.js';
-import { UsageInsightPanel } from '../../dashboard/src/components/monthly-report/UsageInsightPanel.js';
+import { UsageInsightPanel } from '../../dashboard/src/components/UsageInsightPanel.js';
 import { UsageSignalBadge } from '../../dashboard/src/components/common/UsageSignalBadge.js';
 import { USAGE_INSIGHT_DISCLAIMER } from '../processor/usage-insight-definitions.js';
 
