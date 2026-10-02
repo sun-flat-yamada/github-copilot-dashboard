@@ -28,7 +28,10 @@ Specialized autonomous agent responsible for managing the end-to-end development
 7. **Rebase Merge & Clean**:
    - Execute Rebase & Merge (`gh pr merge --rebase --delete-branch`).
    - Prune obsolete worktrees and local branches.
-8. **Repository Permission Awareness**:
+8. **Auto-Pilot Mode (`CHG-DEV-AUTO-PILOT`)**:
+   - When the environment key `CHG-DEV-AUTO-PILOT` is `true` (resolution: process env → `.env` → `.env.example`; enabled in this repository), automatically proceed after PR creation: watch CI, self-heal failures, approve when permitted (never self-approve), Rebase & Merge, and clean up.
+   - Never bypass branch protection (`--admin`) or the Phase 2 "Proceed" gate; stop and report when human approval is required but unavailable.
+9. **Repository Permission Awareness**:
    - In upstream (`sun-flat-yamada/github-copilot-dashboard`), strictly forbid direct pushes to `main`.
    - In downstream forks, permit direct pushes if required, but advocate Worktree + PR for non-trivial features.
 
