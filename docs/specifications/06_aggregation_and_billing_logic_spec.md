@@ -60,11 +60,12 @@ To adapt to corporate fiscal years and contract cycles, parameters can be custom
 **Default Fallback Rule**:
 - Any month outside the configured `startMonth` to `endMonth` intervals automatically falls back to default baseline values (GitHub catalog price and global configuration).
 
-#### 1.3.3 Public Exchange Rate Auto-Calculation for Unconfigured Periods
-- For periods or months where explicit exchange rates are omitted, conversion rates from USD to target currencies are automatically computed from reliable, publicly available official data sources:
-  - **European Central Bank (ECB)**: Euro foreign exchange reference rates.
-  - **Bank of Japan (BOJ)**: Published foreign exchange statistics.
-- This ensures accurate, grounded currency conversions even across unconfigured historical months or air-gapped evaluation environments.
+#### 1.3.3 Exchange Rates for Unconfigured Months (Exchange-Rate Catalog)
+- Months without an explicit exchange rate are converted with the **exchange-rate catalog** (`data/catalog/exchange-rates.json`) monthly averages.
+- `npm run catalog:fx` (one step of the collection workflow) fetches the **ECB monthly averages** (`EXR/M.<currency>.EUR.SP00.A`), converts them to a USD base (1 USD = N units) and stores them with `source` / `source_url` / `fetched_at`.
+- **Only completed months** are stored and a stored month is never overwritten, so a past month's conversion depends on neither the viewing date nor the update date (the browser no longer fetches live rates).
+- A month missing from the catalog uses the **nearest earlier month's rate** (never a later month or a constant). With no earlier month either, there is no rate and the conversion options (EA-JPY / EA-EUR) are not offered. **The code holds no table of exchange rates.**
+- A failed fetch leaves the existing catalog untouched and collection continues with a warning. Demo data has no catalog, so conversion is USD only.
 
 ### 1.4 Scope-Dependent Cost Units
 

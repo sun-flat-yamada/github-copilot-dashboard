@@ -9,7 +9,12 @@
     - [x] マッパー（日次メトリクス・ユーザー別プロファイル）、`enrichUserProfiles`、オーケストレーターへの結線
     - [x] 旧 `/copilot/metrics` の呼び出しを削除、シートを Enterprise + Org の和集合に
     - [x] テスト（`UsageReports.test.ts`、`pipeline-degradation.test.ts` の追加分）
-  - [ ] PR B: P1-6 価格カタログ v1 と為替カタログ
+  - [x] PR B: P1-6 価格カタログ v1 と為替カタログ
+    - [x] `PublicExchangeRatesService` をカタログ専用に (固定値表・ブラウザ取得を撤去、直前月の引き継ぎ、レート無しは換算を出さない)
+    - [x] `ExchangeRateCatalogUpdater` / `npm run catalog:fx` (ECB 月次平均、確定月のみ、上書きなし、失敗時は既存を保持)
+    - [x] 保存 (`saveCatalog` / `loadCatalog`)、`pages:stage` 許可リスト、`CurrencyContext` のカタログ読み込み
+    - [x] 価格カタログのバージョンに一次情報未照合を明記
+    - 未実施: ECB への実接続 (作業環境から到達不可。パーサーはフィクスチャのみで検証)、価格の GitHub 公式ドキュメントとの照合
   - [ ] PR C 以降: P1-2 / P1-3 / P1-4 / P1-5 / P1-7
 - [x] Phase 4: Local Quality Gate & Specification Sync（PR A 分: SDD-02 / 03 / 08、セットアップガイド）
 - [/] Phase 5: Walkthrough（PR A 分は `walkthrough.md`）

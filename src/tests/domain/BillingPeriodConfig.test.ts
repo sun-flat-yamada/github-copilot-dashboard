@@ -104,19 +104,26 @@ describe('Period-based EA Billing Configuration & Public Exchange Rates Tests (#
       ],
     };
 
-    // PublicExchangeRatesService should provide the official rate for 2025-04 (150.5 JPY/USD)
-    const resolved = resolveBillingConfigForMonth(configWithoutExplicitRate, '2025-04');
-    assert.ok(resolved.subCurrency);
-    assert.strictEqual(resolved.subCurrency.code, 'JPY');
-    assert.strictEqual(resolved.subCurrency.exchangeRateFromUSD, 150.5);
+    PublicExchangeRatesService.setCatalog({
+      schema_version: 1,
+      source: 'test fixture',
+      fetched_at: '2026-01-01T00:00:00Z',
+      base: 'USD',
+      rates: { '2024-09': { JPY: 143.1 }, '2025-01': { JPY: 150, EUR: 0.96 }, '2025-04': { JPY: 150.5 } },
+    });
+    try {
+      const resolved = resolveBillingConfigForMonth(configWithoutExplicitRate, '2025-04');
+      assert.ok(resolved.subCurrency);
+      assert.strictEqual(resolved.subCurrency.code, 'JPY');
+      assert.strictEqual(resolved.subCurrency.exchangeRateFromUSD, 150.5);
 
-    // Non-period month 2024-09 should resolve to official public rate for 2024-09 (143.1 JPY/USD)
-    const resolved202409 = resolveBillingConfigForMonth(configWithoutExplicitRate, '2024-09');
-    assert.strictEqual(resolved202409.subCurrency?.exchangeRateFromUSD, 143.1);
+      const resolved202409 = resolveBillingConfigForMonth(configWithoutExplicitRate, '2024-09');
+      assert.strictEqual(resolved202409.subCurrency?.exchangeRateFromUSD, 143.1);
 
-    // Public EUR test for 2025-01 (0.962 EUR/USD)
-    const eurRate = PublicExchangeRatesService.getExchangeRate('EUR', '2025-01');
-    assert.strictEqual(eurRate, 0.962);
+      assert.strictEqual(PublicExchangeRatesService.getExchangeRate('EUR', '2025-01'), 0.96);
+    } finally {
+      PublicExchangeRatesService.setCatalog(null);
+    }
   });
 
   it('parses and validates periods in BillingConfigLoader', () => {
@@ -272,7 +279,17 @@ describe('Period-based EA Billing Configuration & Public Exchange Rates Tests (#
     });
     assert.strictEqual(periodResolved.subCurrency?.exchangeRateFromUSD, 155.0);
 
-    // Verify fallback month (2025-02: out-of-period month auto-calculates public rate 154.2)
+    // Without a catalog, the configured root rate is kept (no fabricated public rate)
+    assert.strictEqual(BillingConfigLoader.loadForMonth('2025-02', rawJsonWithAliases).subCurrency?.exchangeRateFromUSD, 150.0);
+
+    // With a catalog, an out-of-period month uses the cataloged monthly rate
+    PublicExchangeRatesService.setCatalog({
+      schema_version: 1,
+      source: 'test fixture',
+      fetched_at: '2026-01-01T00:00:00Z',
+      base: 'USD',
+      rates: { '2025-02': { JPY: 154.2 } },
+    });
     const rootResolved = BillingConfigLoader.loadForMonth('2025-02', rawJsonWithAliases);
     assert.strictEqual(rootResolved.discountPercent, 10);
     assert.strictEqual(rootResolved.customPricePerCredit, 1.273);
@@ -282,5 +299,6 @@ describe('Period-based EA Billing Configuration & Public Exchange Rates Tests (#
       currency: 'JPY',
     });
     assert.strictEqual(rootResolved.subCurrency?.exchangeRateFromUSD, 154.2);
+    PublicExchangeRatesService.setCatalog(null);
   });
 });

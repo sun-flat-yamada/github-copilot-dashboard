@@ -63,6 +63,12 @@ export function planStaging(dataDir: string): StagingEntry[] {
     }
   }
 
+  // 参照カタログ (為替)。個人情報を含まない
+  if (fs.existsSync(path.join(dataDir, 'catalog', 'exchange-rates.json'))) {
+    const rel = path.join('catalog', 'exchange-rates.json');
+    plan.push({ from: rel, to: rel });
+  }
+
   for (const dir of STAGED_PROCESSED_DIRS) {
     for (const file of listJsonFiles(path.join(dataDir, 'processed', dir))) {
       plan.push({ from: path.join('processed', dir, file), to: path.join(dir, file) });

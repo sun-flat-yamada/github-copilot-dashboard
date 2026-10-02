@@ -305,3 +305,5 @@ git push origin main
 - **The dashboard shows an amber "demo" banner**: demo (fictional) data is displayed because it was selected explicitly, or the data declares `is_mock_mode`. Use "実データを表示" or open the dashboard without `?demo=true`.
 - **Secret Scan Failure**: Run `npm run secret-scan` locally to locate high-entropy strings or hardcoded tokens before committing.
 - **Upstream Contribution Leak Check**: Run `npm run upstream:audit` before opening a pull request to upstream to guarantee that no local usage CSV or customer data is included.
+
+> **Exchange rates**: Months without an explicit `exchangeRateFromUSD` use the exchange-rate catalog (`data/catalog/exchange-rates.json`), filled by `npm run catalog:fx` from ECB monthly averages (completed months only, never rewritten). If no rate exists, EA-JPY / EA-EUR are not offered; no placeholder rate is used.

@@ -35,6 +35,8 @@ export interface IStorageWriter {
   loadIndex(): IndexMetadata | null;
   /** 保存済みのスコープ集計 (daily / monthly / custom)。未保存・破損時は null */
   loadScopeData(scopeType: AnalysisScopeType, key: string): ScopeAggregatedData | null;
+  /** 参照カタログ (為替など)。未保存・破損時は null */
+  loadCatalog?<T = unknown>(name: string): T | null;
   saveErrorLog(issues: DataFetchIssue[]): void;
   getRawReportFiles(month: string): string[];
   getStoredReportMonths(): string[];

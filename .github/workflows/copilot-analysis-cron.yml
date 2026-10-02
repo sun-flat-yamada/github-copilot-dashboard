@@ -163,6 +163,10 @@ jobs:
           IS_FORK: ${{ github.event.repository.fork }}
         run: npm run pipeline:run
 
+      - name: Update exchange-rate catalog (ECB monthly averages)
+        # 失敗しても既存カタログを保ったまま続行する (換算は表示の補助)
+        run: npm run catalog:fx
+
       - name: Commit and Push to data branch (Fork-Safe Storage)
         run: |
           # コードブランチには一切触れず、独立した一時リポジトリディレクトリで data ブランチを操作

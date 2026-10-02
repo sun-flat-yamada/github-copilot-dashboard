@@ -25,6 +25,7 @@ describe('Pages staging: real processed data (past months included) reaches the 
     // 永続ストレージ (copilot-data ブランチから復元した data/) の想定
     write(path.join(dataDir, 'index.json'), JSON.stringify({ available_days: ['2026-09-10', '2026-09-09'] }));
     write(path.join(dataDir, 'error-log.json'));
+    write(path.join(dataDir, 'catalog/exchange-rates.json'));
     write(path.join(dataDir, 'processed/monthly/2026-09.json'));
     write(path.join(dataDir, 'processed/monthly/2026-08.json')); // 過去月
     write(path.join(dataDir, 'processed/monthly/2026-07.json')); // 過去月
@@ -49,6 +50,7 @@ describe('Pages staging: real processed data (past months included) reaches the 
   it('plans exactly the allow-listed files: index, error-log, processed/* and only the indexed daily files', () => {
     const targets = planStaging(dataDir).map((e) => e.to.split(path.sep).join('/')).sort();
     assert.deepEqual(targets, [
+      'catalog/exchange-rates.json',
       'custom/latest-30d.json',
       'daily/2026-09-09.json',
       'daily/2026-09-10.json',
@@ -65,7 +67,7 @@ describe('Pages staging: real processed data (past months included) reaches the 
 
   it('copies past months and never copies raw data, original CSVs, the encrypted mapping or demo', () => {
     const { copied } = stageData(dataDir, publicDir);
-    assert.equal(copied, 11);
+    assert.equal(copied, 12);
 
     assert.ok(fs.existsSync(path.join(publicDir, 'monthly/2026-08.json')), 'a past month must be staged (it used to 404 on Pages)');
     assert.ok(fs.existsSync(path.join(publicDir, 'deep-analysis/2026-08.json')));

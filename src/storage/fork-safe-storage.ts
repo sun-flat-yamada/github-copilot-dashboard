@@ -141,6 +141,26 @@ export class ForkSafeStorage {
     return this.readJson<ScopeAggregatedData>(path.join(this.baseDir, 'processed', subDir, fileName));
   }
 
+  /**
+   * 参照カタログ (為替など。`catalog/<name>.json`) を保存する。SPA 配信用にも複製する。
+   */
+  public saveCatalog(name: string, data: unknown): void {
+    const body = JSON.stringify(data, null, 2);
+    const dir = path.join(this.baseDir, 'catalog');
+    this.ensureDirectory(dir);
+    fs.writeFileSync(path.join(dir, `${name}.json`), body, 'utf-8');
+    if (this.publicDir) {
+      const pub = path.join(this.publicDir, 'catalog');
+      this.ensureDirectory(pub);
+      fs.writeFileSync(path.join(pub, `${name}.json`), body, 'utf-8');
+    }
+  }
+
+  /** 保存済みの参照カタログ。未保存・破損時は null */
+  public loadCatalog<T = unknown>(name: string): T | null {
+    return this.readJson<T>(path.join(this.baseDir, 'catalog', `${name}.json`));
+  }
+
   private readJson<T>(filePath: string): T | null {
     try {
       if (!fs.existsSync(filePath)) return null;
