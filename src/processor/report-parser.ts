@@ -14,6 +14,13 @@ import {
   UserUsageProfile,
 } from '../types/copilot.js';
 import { UNASSIGNED_LABELS } from '../domain/constants/unassigned.js';
+import {
+  addUsageRow,
+  computeOrgBaseline,
+  computeUsageInsight,
+  createUserUsageAccumulator,
+  UserUsageAccumulator,
+} from './usage-insight.js';
 
 /**
  * 数量 (quantity) の単位の系統。レポートにはリクエスト数・AI クレジット・シート (ユーザー月) 等が
@@ -33,6 +40,20 @@ export function classifyUnit(unitType?: string): UnitFamily {
   if (/seat|licen[sc]e|user|member|month/.test(u)) return 'seats';
   if (/token/.test(u)) return 'tokens';
   return 'other';
+}
+
+const hasTokenColumns = (rec: MonthlyUsageReportRawRecord): boolean =>
+  [rec.input_tokens, rec.output_tokens, rec.cache_read_tokens, rec.cache_write_tokens, rec.token_count].some(
+    (v) => v !== undefined
+  );
+
+/**
+ * 明細行の単位の系統。unit_type が無い行は従来どおり requests 扱いだが、AI usage report の行
+ * (token 列がある) は quantity がリクエスト数とは限らないため 'other' とし、リクエスト数に混ぜない。
+ */
+export function classifyRecordUnit(rec: MonthlyUsageReportRawRecord): UnitFamily {
+  if (!rec.unit_type?.trim() && hasTokenColumns(rec)) return 'other';
+  return classifyUnit(rec.unit_type);
 }
 
 /** 数値マップの値を丸める (0 の項目は落とす) */
@@ -126,6 +147,12 @@ export class ReportParser {
       // AI Credits & Tokens (2026.09 仕様)
       if (['ai_credits_consumed', 'credits_consumed', 'credits', 'ai_credits'].includes(h)) map.ai_credits_consumed = idx;
       if (['token_count', 'tokens', 'total_tokens'].includes(h)) map.token_count = idx;
+
+      // AI usage report の token 内訳 (date × model × username)
+      if (['input', 'input_tokens'].includes(h)) map.input_tokens = idx;
+      if (['output', 'output_tokens'].includes(h)) map.output_tokens = idx;
+      if (['cache_read', 'cache_read_tokens'].includes(h)) map.cache_read_tokens = idx;
+      if (['cache_write', 'cache_write_tokens'].includes(h)) map.cache_write_tokens = idx;
     });
 
     return map;
@@ -257,6 +284,10 @@ export class ReportParser {
         last_surface_used: headerMap.last_surface_used !== undefined ? row[headerMap.last_surface_used] : undefined,
         ai_credits_consumed: parseNum(headerMap.ai_credits_consumed),
         token_count: parseNum(headerMap.token_count),
+        input_tokens: parseNum(headerMap.input_tokens),
+        output_tokens: parseNum(headerMap.output_tokens),
+        cache_read_tokens: parseNum(headerMap.cache_read_tokens),
+        cache_write_tokens: parseNum(headerMap.cache_write_tokens),
       });
     }
 
@@ -306,7 +337,7 @@ export class ReportParser {
       };
 
       // リクエスト数として数えるのは単位が requests 系の明細だけ (シート行・クレジット行は費用にのみ反映)
-      const qty = classifyUnit(rec.unit_type) === 'requests' ? (rec.quantity ?? 0) : 0;
+      const qty = classifyRecordUnit(rec) === 'requests' ? (rec.quantity ?? 0) : 0;
       const modelKey = slugifyModelName(rec.model || 'unknown-model');
       day.total_chats += qty;
       day.model_breakdown[modelKey] = (day.model_breakdown[modelKey] || 0) + qty;
@@ -314,8 +345,15 @@ export class ReportParser {
       if (rec.ai_credits_consumed) {
         day.ai_credits_consumed = (day.ai_credits_consumed ?? 0) + rec.ai_credits_consumed;
       }
-      if (rec.token_count) {
-        day.token_count = (day.token_count ?? 0) + rec.token_count;
+      const rowTokenTotal = hasTokenColumns(rec)
+        ? (rec.input_tokens ?? 0) +
+          (rec.output_tokens ?? 0) +
+          (rec.cache_read_tokens ?? 0) +
+          (rec.cache_write_tokens ?? 0) +
+          (rec.token_count ?? 0)
+        : 0;
+      if (rowTokenTotal) {
+        day.token_count = (day.token_count ?? 0) + rowTokenTotal;
       }
       dayMap.set(rec.date, day);
 
@@ -424,6 +462,10 @@ export class ReportParser {
       rec.last_surface_used,
       rec.ai_credits_consumed,
       rec.token_count,
+      rec.input_tokens,
+      rec.output_tokens,
+      rec.cache_read_tokens,
+      rec.cache_write_tokens,
     ]);
   }
 
@@ -470,6 +512,7 @@ export class ReportParser {
         modelSpend: Record<string, number>;
         lastActivityDate?: string;
         surface?: string;
+        usage: UserUsageAccumulator;
       }
     >();
 
@@ -510,7 +553,8 @@ export class ReportParser {
       if (rec.quantity !== undefined) {
         quantityByUnit[unitKey] = (quantityByUnit[unitKey] || 0) + quantity;
       }
-      const reqCount = classifyUnit(rec.unit_type) === 'requests' ? quantity : 0;
+      const unitFamily = classifyRecordUnit(rec);
+      const reqCount = unitFamily === 'requests' ? quantity : 0;
 
       totalNetSpend += netSpend;
       totalGrossSpend += grossSpend;
@@ -543,9 +587,26 @@ export class ReportParser {
           modelSpend: {},
           lastActivityDate: rec.date || rec.last_activity_at?.substring(0, 10),
           surface: rec.last_surface_used,
+          usage: createUserUsageAccumulator(),
         };
         userSummaryMap.set(login, userStat);
       }
+      // 使用量・トークン・単価の算出用 (シート行など requests でも credits でもない行は費用にのみ含まれる)
+      const rowCredits = rec.ai_credits_consumed ?? (unitFamily === 'credits' ? rec.quantity : undefined);
+      addUsageRow(userStat.usage, {
+        date: rec.date,
+        model: rec.model,
+        requests: reqCount,
+        isRequestRow: unitFamily === 'requests' && rec.quantity !== undefined,
+        credits: rowCredits,
+        isCreditRow: rowCredits !== undefined,
+        gross: grossSpend,
+        input: rec.input_tokens,
+        output: rec.output_tokens,
+        cacheRead: rec.cache_read_tokens,
+        cacheWrite: rec.cache_write_tokens,
+        tokenTotal: rec.token_count,
+      });
       userStat.requests += reqCount;
       userStat.spendUsd += grossSpend;
       userStat.grossSpendUsd += grossSpend;
@@ -678,6 +739,9 @@ export class ReportParser {
       }))
       .sort((a, b) => this.compareDateStrings(a.date, b.date));
 
+    // 使用量・兆候の組織基準は全ユーザーから作る (表示のフィルターで基準が動かないようにする)
+    const orgBaseline = computeOrgBaseline(Array.from(userSummaryMap.values(), (u) => u.usage));
+
     // ユーザー別明細リストの生成
     const userDetails: ReportUserDetail[] = Array.from(userSummaryMap.values())
       .map((u) => {
@@ -708,6 +772,7 @@ export class ReportParser {
           // 実データが無い場合に既定のサーフェス (VS Code) を捏造しない
           surface: u.surface,
           tags: this.resolver.resolve(u.login).tags,
+          usage_insight: computeUsageInsight(u.usage, orgBaseline),
         };
       })
       .sort((a, b) => b.total_spend_usd - a.total_spend_usd);

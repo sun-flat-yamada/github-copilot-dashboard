@@ -212,3 +212,11 @@ Missing data is **`null`, shown as "—" with its reason — never `0`, never a 
 | A diagnostic pattern cannot be evaluated from the data source | See SDD-11 §6: shown as "判定不可" and excluded from the score, never "healthy". |
 
 Hooks in these components obey the SDD-15 §6 rules (no hook after an early return); this is enforced by ESLint (`npm run lint`, also part of `npm test`).
+
+### 2.15 Usage Insights in the User Detail Table (`MonthlyReportUserTable`)
+- Columns after "Total Requests": **Tokens**, **Cost per 1M Tokens**, **Signal** (badge). All three are sortable and included in the CSV export (tokens split into input / output / cache read / cache write). A cell without data shows "—" with the reason in the tooltip (e.g. the CSV has no token columns).
+- The **Signal** badge shows the level with a text label (never colour alone): 特記なし / 参考 / **確認を推奨** / データ不足. The tooltip lists the evidence of every signal that is `watch` or `review`. The checkbox **「確認を推奨のみ」** narrows the list to users whose overall level is `review`.
+- Opening a row shows **使用量と効率** (`UsageInsightPanel`) above the drilldown: usage, tokens and coverage, unit costs, the evidence sentence per signal (S1–S5, SDD-06 §5.3), a tentative suggestion when the level is `review`, a daily bar chart, and the standing disclaimer (estimates from daily aggregates; conversation content is not read; not a personal evaluation).
+- Wording rule: recommend, never accuse (no "不当" / "違反" / "問題").
+- Live-metrics rows (Reports API) carry no token data; they are not covered by this section yet.
+

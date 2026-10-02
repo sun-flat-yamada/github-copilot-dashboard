@@ -64,7 +64,7 @@ Row fields (official names): `day`, `user_id`, `user_login`, `enterprise_id`, `o
 | AI credits | `ai_credits_used` (per user and day) |
 | Lines added / deleted | row-level `loc_added_sum` / `loc_deleted_sum`; by mode from `totals_by_feature` |
 | Active users | number of de-duplicated rows of the day |
-| **Not provided** | PR summaries created (stored as `null`, shown "—"), chat copy / insertion events, agent session counts (the agent block is omitted rather than invented) |
+| **Not provided** | PR summaries created (stored as `null`, shown "—"), chat copy / insertion events, agent session counts (the agent block is omitted rather than invented), and **tokens and session length** (token counts exist only in the billing *AI usage report*, see SDD-09 §3.5; no source carries session IDs or turn counts) |
 
 Per-user profiles (daily history, totals, model use, 28-day credits) are built from the same rows; display name, department, Cost Center, organization and plan come from the seats and the attribute mapping (`enrichUserProfiles`).
 

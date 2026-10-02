@@ -524,7 +524,13 @@ export interface MonthlyUsageReportRawRecord {
   last_activity_at?: string;
   last_surface_used?: string;
   ai_credits_consumed?: number;
+  /** トークンの合計のみを持つ CSV 向け (入力/出力の内訳が無い場合) */
   token_count?: number;
+  /** AI usage report (date × model × username) の token 列。`input` / `output` / `cache_read` / `cache_write` */
+  input_tokens?: number;
+  output_tokens?: number;
+  cache_read_tokens?: number;
+  cache_write_tokens?: number;
 }
 
 export interface ReportModelBreakdown {
@@ -569,6 +575,82 @@ export interface ReportUserDetail {
   last_activity_date?: string;
   surface?: string;
   tags?: string[];
+  /** 使用量・トークン・単価・長大化の兆候 (SDD-06 §5)。算出に必要なデータが無いユーザーでは省略 */
+  usage_insight?: UsageInsight;
+}
+
+/**
+ * 兆候の段階。点数化はしない。
+ * - 'none': 特記事項なし
+ * - 'watch': 参考 (傾向として見ておく程度)
+ * - 'review': 確認を推奨 (利用方法を一度見直す価値がある)
+ * - 'insufficient': サンプル不足またはデータなしで判定しない
+ */
+export type SignalLevel = 'none' | 'watch' | 'review' | 'insufficient';
+
+export type UsageSignalId = 'S1' | 'S2' | 'S3' | 'S4' | 'S5';
+
+export interface UsageSignal {
+  id: UsageSignalId;
+  level: SignalLevel;
+  /** ユーザーの値 (単位は定義による)。算出できなければ null */
+  value: number | null;
+  /** 比較基準 (組織内の中央値など)。無ければ null */
+  baseline: number | null;
+  /** value / baseline。基準が無ければ null */
+  ratio: number | null;
+  /** 判定に使ったサンプル数 (日数など) */
+  samples: number;
+  /** 補足 (S2: 該当日数、S3: 単位など) */
+  detail?: Record<string, number | string>;
+}
+
+export interface UsageInsightDaily {
+  date: string;
+  requests: number;
+  credits: number;
+  tokens: number | null;
+  models: number;
+}
+
+export interface UsageInsightModel {
+  model: string;
+  tokens: number;
+  gross_usd: number;
+  per_million_tokens_usd: number | null;
+}
+
+export interface UsageInsight {
+  usage: {
+    requests: number;
+    credits: number | null;
+    active_days: number;
+    /** 1 利用日あたりの量。requests があれば requests、無ければ credits */
+    per_active_day: number | null;
+    per_active_day_unit: 'requests' | 'credits' | null;
+    peak_day: { date: string; value: number; unit: 'requests' | 'credits' } | null;
+  };
+  /** トークン列が一切無いユーザーは null */
+  tokens: {
+    input: number | null;
+    output: number | null;
+    cache_read: number | null;
+    cache_write: number | null;
+    total: number;
+    /** トークンを持つ明細行の割合 (0〜1)。低いと他の指標の信頼度が下がる */
+    coverage: number;
+  } | null;
+  /** 費用は利用額 (gross)。単価ごとに分母と同じ種類の明細の費用だけを使う */
+  unit_cost: {
+    per_million_tokens_usd: number | null;
+    per_request_usd: number | null;
+    per_credit_usd: number | null;
+  };
+  by_model: UsageInsightModel[];
+  signals: UsageSignal[];
+  /** 判定の総合 (有効なシグナルから決定) */
+  level: SignalLevel;
+  daily: UsageInsightDaily[];
 }
 
 /**
