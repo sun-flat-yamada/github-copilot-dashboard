@@ -123,7 +123,7 @@ When calling `write_to_file` to create or update artifact files in the change ar
 - [ ] Phase 4: Local Quality Gate & Specification Sync <!-- id: 3 -->
 - [ ] Phase 5: Walkthrough Artifact Generation & Evidence Sealing <!-- id: 4 -->
 - [ ] Phase 6: Rebase onto Base & Create PR <!-- id: 5 -->
-- [ ] Phase 7: Rebase & Merge and Worktree Cleanup <!-- id: 6 -->
+- [ ] Phase 7: Rebase & Merge and Worktree Cleanup (auto when `CHG-DEV-AUTO-PILOT=true`) <!-- id: 6 -->
 ```
 
 #### C. `walkthrough.md` Structure
@@ -272,6 +272,9 @@ Once all checks pass cleanly:
 
 ### Phase 7: Rebase & Merge and Workspace Cleanup
 
+> [!NOTE]
+> When Auto-Pilot is enabled (`CHG-DEV-AUTO-PILOT=true`, see below), Phase 7 runs automatically right after Phase 6 without waiting for a manual approval/merge instruction.
+
 1. Merge using **Rebase & Merge** to preserve a clean linear history:
    ```bash
    gh pr checks 42
@@ -289,6 +292,39 @@ Once all checks pass cleanly:
    git worktree remove ../github-copilot-dashboard-worktrees/feat-42-new-feature
    git branch -d feat/42-new-feature
    ```
+
+---
+
+## 🚀 Auto-Pilot Mode (`CHG-DEV-AUTO-PILOT`)
+
+Opt-in mode that carries a change from **PR creation to Rebase & Merge completion** without manual intervention.
+
+### Activation
+
+| Item | Value |
+| :--- | :--- |
+| Key | `CHG-DEV-AUTO-PILOT` |
+| Enabled when | value is `true` (case-insensitive) or `1` |
+| Disabled when | unset or any other value (default: manual) |
+| Resolution order | process environment → `.env` → `.env.example` (repository default) |
+| This repository | **enabled** (`CHG-DEV-AUTO-PILOT=true` in `.env.example`) |
+
+> [!NOTE]
+> The key contains hyphens, so POSIX shells cannot `export` it. Provide it via `.env` / the agent runtime's environment settings, or per command: `env 'CHG-DEV-AUTO-PILOT=true' <cmd>`.
+
+### Behavior (after Phase 6 PR creation)
+
+1. **Wait for CI**: `gh pr checks <id> --watch` until all required checks complete.
+2. **Self-heal**: if a check fails, fix in the worktree, re-run the 5-stage quality gate, push, and watch again. Never skip/disable tests.
+3. **Approval**: when a review approval is required, request it; approve with `gh pr review <id> --approve` only when the authenticated account is not the PR author (GitHub forbids self-approval).
+4. **Rebase & Merge**: once CI is green, there are no conflicts and no unresolved review threads, run `gh pr merge <id> --rebase --delete-branch` (or `--auto --rebase` while required checks are still pending).
+5. **Cleanup**: remove the worktree and local branch (Phase 7 step 2).
+
+### Guardrails (never relaxed by Auto-Pilot)
+
+- The Phase 2 implementation plan **Proceed** gate still applies.
+- Never use `--admin`, never bypass branch protection or required reviews, never push to `main` directly.
+- Stop and report to the user when: approval by another person is required and unavailable, a rebase conflict is non-trivial, or checks stay red after fixes.
 
 ---
 

@@ -185,6 +185,12 @@ Once all local quality gates pass cleanly (Exit Code 0), seal the implementation
 
 ### 3.7. Step 7: Rebase Merge & Cleanup
 
+#### Auto-Pilot Mode (`CHG-DEV-AUTO-PILOT`)
+- Setting `CHG-DEV-AUTO-PILOT=true` makes the agent carry the PR from creation to Rebase & Merge automatically: `gh pr checks <id> --watch` → fix and re-push on failures (re-running the quality gate) → approve when permitted (never self-approve) → `gh pr merge <id> --rebase --delete-branch` → worktree cleanup.
+- Resolution order: process environment → `.env` → `.env.example`. This repository ships `CHG-DEV-AUTO-PILOT=true`. Any other value or unset means manual operation.
+- The key contains hyphens and cannot be `export`ed in POSIX shells; set it via `.env`, the agent runtime settings, or `env 'CHG-DEV-AUTO-PILOT=true' <cmd>`.
+- Guardrails: the Step 2 "Proceed" gate still applies; never use `--admin` or bypass branch protection; stop and report when approval by another person is required and unavailable, on non-trivial conflicts, or when checks stay red after fixes.
+
 #### Why Rebase & Merge?
 - **Linear History**: Eliminates noisy `Merge branch 'main' into ...` commits, creating a clean chronological progression.
 - **Reliable `git bisect`**: Zero merge bubbles guarantee quick and accurate root-cause regression hunting.
