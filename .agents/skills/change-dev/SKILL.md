@@ -123,7 +123,7 @@ When calling `write_to_file` to create or update artifact files in the change ar
 - [ ] Phase 4: Local Quality Gate & Specification Sync <!-- id: 3 -->
 - [ ] Phase 5: Walkthrough Artifact Generation & Evidence Sealing <!-- id: 4 -->
 - [ ] Phase 6: Rebase onto Base & Create PR <!-- id: 5 -->
-- [ ] Phase 7: Rebase & Merge and Worktree Cleanup (auto when `CHG-DEV-AUTO-PILOT=true`) <!-- id: 6 -->
+- [ ] Phase 7: Rebase & Merge and Worktree Cleanup (auto when `CHG_DEV_AUTO_PILOT=true`) <!-- id: 6 -->
 ```
 
 #### C. `walkthrough.md` Structure
@@ -273,7 +273,7 @@ Once all checks pass cleanly:
 ### Phase 7: Rebase & Merge and Workspace Cleanup
 
 > [!NOTE]
-> When Auto-Pilot is enabled (`CHG-DEV-AUTO-PILOT=true`, see below), Phase 7 runs automatically right after Phase 6 without waiting for a manual approval/merge instruction.
+> When Auto-Pilot is enabled (`CHG_DEV_AUTO_PILOT=true`, see below), Phase 7 runs automatically right after Phase 6 without waiting for a manual approval/merge instruction.
 
 1. Merge using **Rebase & Merge** to preserve a clean linear history:
    ```bash
@@ -295,7 +295,7 @@ Once all checks pass cleanly:
 
 ---
 
-## 🚀 Auto-Pilot Mode (`CHG-DEV-AUTO-PILOT`)
+## 🚀 Auto-Pilot Mode (`CHG_DEV_AUTO_PILOT`)
 
 Opt-in mode that carries a change from **PR creation to Rebase & Merge completion** without manual intervention.
 
@@ -303,14 +303,11 @@ Opt-in mode that carries a change from **PR creation to Rebase & Merge completio
 
 | Item | Value |
 | :--- | :--- |
-| Key | `CHG-DEV-AUTO-PILOT` |
+| Key | `CHG_DEV_AUTO_PILOT` |
 | Enabled when | value is `true` (case-insensitive) or `1` |
 | Disabled when | unset or any other value (default: manual) |
 | Resolution order | process environment → `.env` → `.env.example` (repository default) |
-| This repository | **enabled** (`CHG-DEV-AUTO-PILOT=true` in `.env.example`) |
-
-> [!NOTE]
-> The key contains hyphens, so POSIX shells cannot `export` it. Provide it via `.env` / the agent runtime's environment settings, or per command: `env 'CHG-DEV-AUTO-PILOT=true' <cmd>`.
+| This repository | **enabled** (`CHG_DEV_AUTO_PILOT=true` in `.env.example`) |
 
 ### Behavior (after Phase 6 PR creation)
 

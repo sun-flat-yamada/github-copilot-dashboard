@@ -85,7 +85,7 @@ When multiple AI agents work concurrently on the codebase:
   ```
 
 ### Step 7: Rebase Merge & Pruning
-- **Auto-Pilot (`CHG-DEV-AUTO-PILOT=true`)**: runs automatically right after PR creation (watch CI → fix failures → approve if permitted, never self-approve → rebase merge → prune). Resolution order: process env → `.env` → `.env.example` (enabled in this repository). Never use `--admin` or bypass branch protection; stop and report if human approval is unavailable. See the `change-dev` skill.
+- **Auto-Pilot (`CHG_DEV_AUTO_PILOT=true`)**: runs automatically right after PR creation (watch CI → fix failures → approve if permitted, never self-approve → rebase merge → prune). Resolution order: process env → `.env` → `.env.example` (enabled in this repository). Never use `--admin` or bypass branch protection; stop and report if human approval is unavailable. See the `change-dev` skill.
 - Merge using **Rebase & Merge** to maintain a linear commit history:
   ```bash
   gh pr merge <id> --rebase --delete-branch
