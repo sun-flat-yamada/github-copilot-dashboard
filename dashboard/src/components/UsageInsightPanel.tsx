@@ -1,13 +1,13 @@
 import React from 'react';
-import { UsageInsight } from '../../../../src/types/copilot';
+import { UsageInsight } from '../../../src/types/copilot';
 import {
   describeSignal,
   SIGNAL_DEFINITIONS,
   USAGE_INSIGHT_ADVICE,
   USAGE_INSIGHT_DISCLAIMER,
-} from '../../../../src/processor/usage-insight-definitions';
-import { UsageSignalBadge } from '../common/UsageSignalBadge';
-import { useCurrency } from '../../contexts/CurrencyContext';
+} from '../../../src/processor/usage-insight-definitions';
+import { UsageSignalBadge } from './common/UsageSignalBadge';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 const num = (n: number | null | undefined, d = 0): string =>
   n === null || n === undefined ? '—' : n.toLocaleString('en-US', { maximumFractionDigits: d });
@@ -30,7 +30,7 @@ export const UsageInsightPanel: React.FC<UsageInsightPanelProps> = ({ insight })
 
   return (
     <div className="bg-slate-900/70 border-b border-slate-800 px-4 py-3 space-y-3 text-xs whitespace-normal" data-testid="usage-insight-panel">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center gap-2">
         <h4 className="text-xs font-bold text-white">使用量と効率</h4>
         <UsageSignalBadge level={insight.level} />
       </div>

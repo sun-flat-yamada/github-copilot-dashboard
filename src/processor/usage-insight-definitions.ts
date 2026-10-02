@@ -97,6 +97,21 @@ export function describeSignal(s: UsageSignal): string {
     case 'S4':
       return `1 日に平均 ${fmt(s.value ?? 0)} 種類のモデルを使っています (最大 ${s.detail?.max_models_in_day ?? '-'} 種類)。`;
     case 'S5':
-      return `単価の高いモデルにトークンの ${fmt((s.value ?? 0) * 100, 0)}% が集まっており、文脈の持ち越しも大きめです。`;
+      return `単価の高いモデルへのトークンの集中は ${fmt((s.value ?? 0) * 100, 0)}% です${s.level === 'none' ? '' : '。文脈の持ち越しも大きめです'}。`;
   }
+}
+
+/**
+ * 兆候バッジのツールチップ。「参考」「確認を推奨」のシグナルの根拠に加え、評価できていない指標を示す
+ * (「特記なし」が「全部確認済み」と読まれないようにする)。
+ */
+export function describeInsightTooltip(signals: UsageSignal[]): string | undefined {
+  const lines = signals
+    .filter((s) => s.level === 'review' || s.level === 'watch')
+    .map((s) => `${SIGNAL_DEFINITIONS[s.id].name}: ${describeSignal(s)}`);
+  const skipped = signals.filter((s) => s.level === 'insufficient').map((s) => SIGNAL_DEFINITIONS[s.id].name);
+  if (skipped.length > 0 && skipped.length < signals.length) {
+    lines.push(`評価できていない指標 (データ不足): ${skipped.join('、')}`);
+  }
+  return lines.length > 0 ? lines.join('\n') : undefined;
 }

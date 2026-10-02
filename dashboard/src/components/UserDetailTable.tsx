@@ -1,5 +1,11 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import { ScopeAggregatedData, UserSeatStatus, UserUsageProfile } from '../../../src/types/copilot';
+import {
+  GroupingDimension,
+  MonthlyReportAggregatedData,
+  ScopeAggregatedData,
+  UserSeatStatus,
+  UserUsageProfile,
+} from '../../../src/types/copilot';
 import {
   Search,
   Download,
@@ -22,10 +28,19 @@ import {
   User,
 } from 'lucide-react';
 import { ActionColumnHeader } from './common/ActionColumnHeader';
-import { seatCostForScope } from '../../../src/domain/rules/ScopeCostRule';
 import { SEAT_IDLE_DAYS, SEAT_LOW_ACTIVE_DAYS, SEAT_ONBOARDING_DAYS } from '../../../src/domain/rules/SeatClassificationRule';
 import { UserDrilldownPanel } from './UserDrilldownPanel';
+import { UsageInsightPanel } from './UsageInsightPanel';
+import { UsageSignalBadge } from './common/UsageSignalBadge';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { formatElapsedActivity } from '../utils/dateFormatters';
+import {
+  buildLiveRows,
+  buildReportRows,
+  UserDetailRow,
+  UserDetailRowSet,
+} from '../../../src/adapters/presenters/UserDetailRows';
+import { describeInsightTooltip } from '../../../src/processor/usage-insight-definitions';
 
 export type UserSortMetric =
   | 'default'
@@ -37,47 +52,105 @@ export type UserSortMetric =
   | 'organization'
   | 'plan'
   | 'status'
-  | 'acceptances'
+  | 'primary_model'
+  | 'requests'
   | 'suggestions'
+  | 'acceptances'
   | 'acceptance_rate'
   | 'chats'
+  | 'tokens'
+  | 'token_cost'
+  | 'signal'
   | 'cost'
   | 'excess'
-  | 'days_inactive';
+  | 'last_activity';
+
+/** 表のデータ列の数。ドリルダウン行や空行の colSpan に使う (列を足したら更新する) */
+export const USER_DETAIL_COLUMN_COUNT = 22;
+
+const SIGNAL_RANK = { insufficient: -1, none: 0, watch: 1, review: 2 } as const;
+
+/** ソースに値が無いセルの理由 (「—」のツールチップ)。0 と区別して欠損を示す */
+const UNAVAILABLE_REASON = {
+  seat: 'シート情報は月次レポートに含まれません',
+  usage: 'このデータソースには含まれない項目です',
+  noProfile: '利用実績 (メトリクス) を取得できていないユーザーです',
+  noTokens: 'トークン列のないデータです (AI usage report が必要です)',
+  noInsight: 'このデータソースには使用量の内訳がありません',
+} as const;
 
 interface UserDetailTableProps {
-  data: ScopeAggregatedData;
+  /** ライブ (シート + Reports API) */
+  data?: ScopeAggregatedData | null;
+  /** 月次レポート (CSV)。data と reportData のどちらか一方を渡す */
+  reportData?: MonthlyReportAggregatedData | null;
   userProfiles?: UserUsageProfile[];
   initialSelectedLogin?: string;
   filterStatus?: UserSeatStatus | 'all';
+  /** 絞り込みに使うグループの軸 (既定は部署=ユーザー定義Gr) */
+  grouping?: GroupingDimension;
+  /** 外部から制御するグループ選択 (未指定なら内部状態) */
+  selectedGroup?: string;
+  onGroupChange?: (group: string) => void;
   onSelectUserForTrend?: (login: string) => void;
   onSelectUserForDeepAnalysis?: (login: string) => void;
 }
 
+const EMPTY_SET: UserDetailRowSet = { source: 'live', rows: [], costUnitLabel: '', scopeKey: 'none' };
+
+/** null を常に末尾にして比較する (昇順・降順どちらでも欠損が先頭に来ない) */
+const compareNullable = (a: number | null, b: number | null, order: 'asc' | 'desc'): number => {
+  if (a === null && b === null) return 0;
+  if (a === null) return 1;
+  if (b === null) return -1;
+  return order === 'asc' ? a - b : b - a;
+};
+
+const compareText = (a: string | null | undefined, b: string | null | undefined, order: 'asc' | 'desc'): number => {
+  const cmp = (a || '').localeCompare(b || '');
+  return order === 'asc' ? cmp : -cmp;
+};
+
 export const UserDetailTable: React.FC<UserDetailTableProps> = ({
   data,
+  reportData,
   userProfiles,
   initialSelectedLogin,
   filterStatus: initialStatus = 'all',
+  grouping = 'department',
+  selectedGroup,
+  onGroupChange,
   onSelectUserForTrend,
   onSelectUserForDeepAnalysis,
 }) => {
+  // 表示経路 (ライブ / 月次) ごとの違いは行モデルへの変換で吸収し、以降は同じ列・同じ意味で描画する
+  const rowSet = useMemo<UserDetailRowSet>(() => {
+    if (data) return buildLiveRows(data, userProfiles);
+    if (reportData) return buildReportRows(reportData);
+    return EMPTY_SET;
+  }, [data, reportData, userProfiles]);
+  const users = rowSet.rows;
+  const { costUnitLabel } = rowSet;
+  const hasSeatInfo = users.some((u) => u.status !== null);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<UserSeatStatus | 'all'>(initialStatus);
-  const [selectedDept, setSelectedDept] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<UserSortMetric>('default');
+  const [localGroup, setLocalGroup] = useState<string>('all');
+  const [onlyReview, setOnlyReview] = useState<boolean>(false);
+  const defaultSortFor = (source: UserDetailRowSet['source']): UserSortMetric => (source === 'report' ? 'cost' : 'default');
+  const [sortBy, setSortBy] = useState<UserSortMetric>(defaultSortFor(rowSet.source));
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const { users, scope_type } = data;
   const { formatMoney } = useCurrency();
-  // 費用はスコープ種別に応じた単位 (日次=日割り / 月次=月額 / 期間=日割り×日数) で表示する。
-  // パイプラインやフィルター再集計と同じ共通ルール (seatCostForScope) を使う。
-  const scopeDaysCount = data.date_range?.days_count ?? 1;
-  const costOf = useCallback(
-    (u: (typeof users)[number]) => seatCostForScope(u, scope_type, scopeDaysCount),
-    [scope_type, scopeDaysCount]
-  );
-  const costUnitLabel = scope_type === 'daily' ? '日割り' : scope_type === 'monthly' ? '月額' : `期間 (日割り×${scopeDaysCount}日)`;
   const [selectedUserLogin, setSelectedUserLogin] = useState<string | null>(initialSelectedLogin || null);
+
+  // データソースが切り替わったら、そのソースの既定の並びに戻す
+  useEffect(() => {
+    setSortBy(defaultSortFor(rowSet.source));
+    setSortOrder('desc');
+    setStatusFilter('all');
+  }, [rowSet.source]);
+
+  const activeGroup = selectedGroup !== undefined ? selectedGroup : localGroup;
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const [scrollState, setScrollState] = useState({
@@ -131,19 +204,32 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
     el.scrollLeft = (pct / 100) * maxScroll;
   };
 
-  // 部署一覧の抽出
-  const departments = useMemo(() => {
-    const set = new Set(users.map((u) => u.department));
+  const groupOf = useCallback(
+    (u: UserDetailRow): string => (grouping === 'cost_center' ? u.cost_center : grouping === 'organization' ? u.organization : u.department),
+    [grouping]
+  );
+
+  // 絞り込み用のグループ一覧
+  const groups = useMemo(() => {
+    const set = new Set<string>();
+    users.forEach((u) => {
+      const g = groupOf(u);
+      if (g) set.add(g);
+    });
     return Array.from(set).sort();
-  }, [users]);
+  }, [users, groupOf]);
 
-  // 利用可能なプロファイル一覧 (明示指定またはデータ内包)
-  const effectiveProfiles = useMemo(() => {
+  const handleGroupFilterChange = (val: string) => {
+    setLocalGroup(val);
+    if (onGroupChange) onGroupChange(val);
+  };
+
+  // ドリルダウン用のプロファイル (実測のあるものだけ。月次レポートの集計から合成しない)
+  const effectiveProfiles = useMemo<UserUsageProfile[]>(() => {
     if (userProfiles && userProfiles.length > 0) return userProfiles;
-    return data.user_profiles || [];
-  }, [userProfiles, data.user_profiles]);
+    return data?.user_profiles || [];
+  }, [userProfiles, data?.user_profiles]);
 
-  // 利用実績プロファイルのマップ作成
   const profileMap = useMemo(() => {
     const map = new Map<string, UserUsageProfile>();
     for (const p of effectiveProfiles) {
@@ -151,8 +237,6 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
     }
     return map;
   }, [effectiveProfiles]);
-
-  const hasUsageMetrics = effectiveProfiles.length > 0;
 
   const handleToggleUserDrilldown = (login: string) => {
     setSelectedUserLogin((prev) => (prev === login ? null : login));
@@ -164,13 +248,17 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
     } else {
       setSortBy(metric);
       const isDescDefault =
+        metric === 'requests' ||
         metric === 'acceptances' ||
         metric === 'suggestions' ||
         metric === 'acceptance_rate' ||
         metric === 'chats' ||
+        metric === 'tokens' ||
+        metric === 'token_cost' ||
+        metric === 'signal' ||
         metric === 'cost' ||
         metric === 'excess' ||
-        metric === 'days_inactive';
+        metric === 'last_activity';
       setSortOrder(isDescDefault ? 'desc' : 'asc');
     }
   };
@@ -190,22 +278,19 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
 
   // フィルタリング & ソート
   const filteredUsers = useMemo(() => {
+    const q = searchTerm.toLowerCase();
     const list = users.filter((u) => {
-      // 検索一致
       const matchesSearch =
-        u.login.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.display_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.cost_center.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (u.tags && u.tags.some((t) => t.toLowerCase().includes(searchTerm.toLowerCase())));
-
-      // ステータス一致
+        u.login.toLowerCase().includes(q) ||
+        u.display_name.toLowerCase().includes(q) ||
+        u.department.toLowerCase().includes(q) ||
+        u.cost_center.toLowerCase().includes(q) ||
+        u.organization.toLowerCase().includes(q) ||
+        u.tags.some((t) => t.toLowerCase().includes(q));
       const matchesStatus = statusFilter === 'all' || u.status === statusFilter;
-
-      // 部署一致
-      const matchesDept = selectedDept === 'all' || u.department === selectedDept;
-
-      return matchesSearch && matchesStatus && matchesDept;
+      const matchesGroup = !activeGroup || activeGroup === 'all' || groupOf(u) === activeGroup;
+      const matchesReview = !onlyReview || u.usage_insight?.level === 'review';
+      return matchesSearch && matchesStatus && matchesGroup && matchesReview;
     });
 
     if (sortBy === 'default') {
@@ -213,63 +298,62 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
     }
 
     return list.sort((a, b) => {
-      const profA = profileMap.get(a.login.toLowerCase());
-      const profB = profileMap.get(b.login.toLowerCase());
-
-      let cmp = 0;
       switch (sortBy) {
         case 'user':
-          cmp = a.login.localeCompare(b.login);
-          break;
+          return compareText(a.login, b.login, sortOrder);
         case 'display_name':
-          cmp = (a.display_name || '').localeCompare(b.display_name || '');
-          break;
+          return compareText(a.display_name, b.display_name, sortOrder);
         case 'department':
-          cmp = (a.department || '').localeCompare(b.department || '');
-          break;
+          return compareText(a.department, b.department, sortOrder);
         case 'tags':
-          cmp = (a.tags?.join(', ') || '').localeCompare(b.tags?.join(', ') || '');
-          break;
+          return compareText(a.tags.join(', '), b.tags.join(', '), sortOrder);
         case 'cost_center':
-          cmp = (a.cost_center || '').localeCompare(b.cost_center || '');
-          break;
+          return compareText(a.cost_center, b.cost_center, sortOrder);
         case 'organization':
-          cmp = (a.organization || '').localeCompare(b.organization || '');
-          break;
+          return compareText(a.organization, b.organization, sortOrder);
         case 'plan':
-          cmp = (a.plan_type || '').localeCompare(b.plan_type || '');
-          break;
+          return compareText(a.plan, b.plan, sortOrder);
         case 'status':
-          cmp = a.days_inactive - b.days_inactive;
-          break;
-        case 'acceptances':
-          cmp = (profA?.total_acceptances ?? 0) - (profB?.total_acceptances ?? 0);
-          break;
+          return compareNullable(a.days_inactive, b.days_inactive, sortOrder);
+        case 'primary_model':
+          return compareText(a.primary_model, b.primary_model, sortOrder);
+        case 'requests':
+          return compareNullable(a.requests, b.requests, sortOrder);
         case 'suggestions':
-          cmp = (profA?.total_suggestions ?? 0) - (profB?.total_suggestions ?? 0);
-          break;
+          return compareNullable(a.suggestions, b.suggestions, sortOrder);
+        case 'acceptances':
+          return compareNullable(a.acceptances, b.acceptances, sortOrder);
         case 'acceptance_rate':
-          cmp = (profA?.acceptance_rate ?? 0) - (profB?.acceptance_rate ?? 0);
-          break;
+          return compareNullable(a.acceptance_rate, b.acceptance_rate, sortOrder);
         case 'chats':
-          cmp = (profA?.total_chats ?? 0) - (profB?.total_chats ?? 0);
-          break;
+          return compareNullable(a.chats, b.chats, sortOrder);
+        case 'tokens':
+          return compareNullable(a.usage_insight?.tokens?.total ?? null, b.usage_insight?.tokens?.total ?? null, sortOrder);
+        case 'token_cost':
+          return compareNullable(
+            a.usage_insight?.unit_cost.per_million_tokens_usd ?? null,
+            b.usage_insight?.unit_cost.per_million_tokens_usd ?? null,
+            sortOrder
+          );
+        case 'signal':
+          return compareNullable(
+            a.usage_insight ? SIGNAL_RANK[a.usage_insight.level] : null,
+            b.usage_insight ? SIGNAL_RANK[b.usage_insight.level] : null,
+            sortOrder
+          );
         case 'cost':
-        case 'excess': {
-          cmp = costOf(a) - costOf(b);
-          break;
-        }
-        case 'days_inactive':
-          cmp = a.days_inactive - b.days_inactive;
-          break;
+          return compareNullable(a.usage_cost_usd, b.usage_cost_usd, sortOrder);
+        case 'excess':
+          return compareNullable(a.excess_usd, b.excess_usd, sortOrder);
+        case 'last_activity':
+          return compareText(a.last_activity, b.last_activity, sortOrder);
         default:
           return 0;
       }
-      return sortOrder === 'asc' ? cmp : -cmp;
     });
-  }, [users, searchTerm, statusFilter, selectedDept, sortBy, sortOrder, profileMap, costOf]);
+  }, [users, searchTerm, statusFilter, activeGroup, onlyReview, groupOf, sortBy, sortOrder]);
 
-  // CSVエクスポート
+  // CSVエクスポート (表示経路によらず同じ列。そのソースに無い値は空欄)
   const handleExportCsv = () => {
     const headers = [
       '#',
@@ -281,58 +365,78 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
       'Organization',
       'プラン',
       'ステータス',
-      '最終アクティビティ日',
-      'エディタ',
       '非アクティブ日数',
-      '月額費用 (USD)',
-      '日割り費用 (USD)',
-      ...(hasUsageMetrics ? ['提案数', '受諾採用数', 'Inline補完受諾率(%)', 'AIチャット数'] : []),
+      '主利用モデル',
+      'リクエスト数',
+      '提案数',
+      '受諾採用数',
+      'Inline補完受諾率(%)',
+      'AIチャット数',
+      'トークン合計',
+      'トークン 入力',
+      'トークン 出力',
+      'トークン キャッシュ読取',
+      'トークン キャッシュ書込',
+      'コスト/100万トークン (USD)',
+      'コスト/リクエスト (USD)',
+      '兆候',
+      `利用費用 (${costUnitLabel})`,
+      '超過請求 (USD)',
+      '最終利用日',
+      'エディタ/サーフェス',
       '備考',
     ];
+    const q = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const n = (v: number | null | undefined, d?: number) => (v === null || v === undefined ? '' : d === undefined ? v : v.toFixed(d));
 
     const rows = filteredUsers.map((u, idx) => {
-      const prof = profileMap.get(u.login.toLowerCase());
+      const ins = u.usage_insight;
       return [
         idx + 1,
         u.login,
-        `"${u.display_name.replace(/"/g, '""')}"`,
-        `"${u.department.replace(/"/g, '""')}"`,
-        `"${(u.tags || []).join(';').replace(/"/g, '""')}"`,
-        `"${u.cost_center.replace(/"/g, '""')}"`,
+        q(u.display_name),
+        q(u.department),
+        q(u.tags.join(';')),
+        q(u.cost_center),
         u.organization,
-        u.plan_type,
-        u.status,
-        u.last_activity_at || '未利用',
-        u.last_activity_editor || '-',
-        u.days_inactive === 999 ? 'N/A' : u.days_inactive,
+        u.plan ?? '',
+        u.status ?? '',
+        u.days_inactive === null ? '' : u.days_inactive === 999 ? 'N/A' : u.days_inactive,
+        q(u.primary_model ?? ''),
+        n(u.requests),
+        n(u.suggestions),
+        n(u.acceptances),
+        u.acceptance_rate === null ? '' : (u.acceptance_rate * 100).toFixed(1),
+        n(u.chats),
+        n(ins?.tokens?.total),
+        n(ins?.tokens?.input),
+        n(ins?.tokens?.output),
+        n(ins?.tokens?.cache_read),
+        n(ins?.tokens?.cache_write),
+        n(ins?.unit_cost.per_million_tokens_usd),
+        n(ins?.unit_cost.per_request_usd),
+        ins?.level ?? '',
         // プラン未確定のシートは費用を算定していない。0 と区別するため空欄にする
-        u.cost_unconfirmed ? '' : u.monthly_cost_usd.toFixed(2),
-        u.cost_unconfirmed ? '' : u.prorated_daily_cost_usd.toFixed(4),
-        // 利用実績が無いユーザーは 0 ではなく空欄 (欠損) にする
-        ...(hasUsageMetrics
-          ? [
-              prof?.total_suggestions ?? '',
-              prof?.total_acceptances ?? '',
-              prof && prof.total_suggestions > 0 ? (prof.acceptance_rate * 100).toFixed(1) : '',
-              prof?.total_chats ?? '',
-            ]
-          : []),
-        `"${(u.notes || '').replace(/"/g, '""')}"`,
+        n(u.usage_cost_usd, 2),
+        n(u.excess_usd, 2),
+        u.last_activity ?? '',
+        q(u.surface ?? ''),
+        q(u.notes ?? ''),
       ];
     });
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n');
+    const csvContent = '﻿' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `copilot_users_${data.scope_key}.csv`);
+    link.setAttribute('download', `copilot_users_${rowSet.scopeKey}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  const getStatusBadge = (status: UserSeatStatus, daysInactive: number) => {
+  const getStatusBadge = (status: UserSeatStatus, daysInactive: number | null) => {
     switch (status) {
       case 'active':
         return (
@@ -375,6 +479,15 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
     }
   };
 
+  /** そのソースに無い値のセル。0 ではなく「—」と理由を示す */
+  const unavailable = (reason: string, align: 'left' | 'right' = 'right') => (
+    <td className={`px-2.5 py-2 ${align === 'right' ? 'text-right' : ''} font-mono text-slate-500`} title={reason}>
+      —
+    </td>
+  );
+
+  const money = (usd: number) => formatMoney(usd);
+
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col space-y-4">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -382,7 +495,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
           <div className="flex items-center space-x-2">
             <UsersIcon className="w-4 h-4 text-indigo-400" />
             <h3 className="text-sm font-bold text-slate-200">ユーザー別 利用・活用明細</h3>
-            {sortBy !== 'default' && (
+            {sortBy !== 'default' && sortBy !== defaultSortFor(rowSet.source) && (
               <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
                 <ArrowUpDown className="w-3 h-3 text-slate-400" />
                 <span>並び替え適用中</span>
@@ -407,33 +520,46 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
             />
           </div>
 
-          {/* ステータス絞り込み */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-300 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            <option value="all">全ステータス</option>
-            <option value="active">Active ({SEAT_LOW_ACTIVE_DAYS}日以内)</option>
-            <option value="low_active">Low Active ({SEAT_LOW_ACTIVE_DAYS + 1}-{SEAT_IDLE_DAYS}日)</option>
-            <option value="idle">Idle ({SEAT_IDLE_DAYS}日超 未利用 / AIクレジット消費0は{SEAT_LOW_ACTIVE_DAYS}日超)</option>
-            <option value="never_used">Never Used (付与から{SEAT_ONBOARDING_DAYS}日以上 未利用)</option>
-            <option value="onboarding">導入期間 (付与から{SEAT_ONBOARDING_DAYS}日未満・未利用)</option>
-          </select>
+          {/* ステータス絞り込み (シート情報があるデータのみ) */}
+          {hasSeatInfo && (
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as UserSeatStatus | 'all')}
+              className="bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-300 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="all">全ステータス</option>
+              <option value="active">Active ({SEAT_LOW_ACTIVE_DAYS}日以内)</option>
+              <option value="low_active">Low Active ({SEAT_LOW_ACTIVE_DAYS + 1}-{SEAT_IDLE_DAYS}日)</option>
+              <option value="idle">Idle ({SEAT_IDLE_DAYS}日超 未利用 / AIクレジット消費0は{SEAT_LOW_ACTIVE_DAYS}日超)</option>
+              <option value="never_used">Never Used (付与から{SEAT_ONBOARDING_DAYS}日以上 未利用)</option>
+              <option value="onboarding">導入期間 (付与から{SEAT_ONBOARDING_DAYS}日未満・未利用)</option>
+            </select>
+          )}
 
-          {/* 部署絞り込み */}
+          {/* グループ絞り込み (軸は grouping で決まる) */}
           <select
-            value={selectedDept}
-            onChange={(e) => setSelectedDept(e.target.value)}
+            value={activeGroup}
+            onChange={(e) => handleGroupFilterChange(e.target.value)}
             className="bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-300 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 max-w-xs"
           >
-            <option value="all">すべてのユーザー定義Gr</option>
-            {departments.map((d) => (
-              <option key={d} value={d}>
-                {d}
+            <option value="all">
+              {grouping === 'cost_center' ? 'すべてのCost Center' : grouping === 'organization' ? 'すべてのOrganization' : 'すべてのユーザー定義Gr'}
+            </option>
+            {groups.map((g) => (
+              <option key={g} value={g}>
+                {g}
               </option>
             ))}
           </select>
+
+          {/* 兆候の絞り込み */}
+          <label
+            className="flex items-center space-x-1.5 text-xs text-slate-300 cursor-pointer select-none"
+            title="利用方法の確認を推奨する兆候のあるユーザーだけを表示します"
+          >
+            <input type="checkbox" checked={onlyReview} onChange={(e) => setOnlyReview(e.target.checked)} className="accent-amber-500" />
+            <span>確認を推奨のみ</span>
+          </label>
 
           {/* 並び替え基準 */}
           <div className="flex items-center space-x-1.5 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1">
@@ -441,16 +567,22 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
             <span className="text-xs text-slate-400">並び順:</span>
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as UserSortMetric)}
+              onChange={(e) => {
+                setSortBy(e.target.value as UserSortMetric);
+                setSortOrder('desc');
+              }}
               className="bg-transparent text-xs text-slate-200 focus:outline-none"
             >
-              <option value="default" className="bg-slate-900">標準 (シート順)</option>
+              <option value="default" className="bg-slate-900">標準 (データ順)</option>
+              <option value="cost" className="bg-slate-900">利用費用 降順</option>
+              <option value="requests" className="bg-slate-900">リクエスト数 降順</option>
+              <option value="tokens" className="bg-slate-900">トークン 降順</option>
+              <option value="signal" className="bg-slate-900">兆候 (確認を推奨が先)</option>
               <option value="acceptances" className="bg-slate-900">受諾数 降順</option>
               <option value="suggestions" className="bg-slate-900">提案数 降順</option>
               <option value="acceptance_rate" className="bg-slate-900">Inline補完受諾率 降順</option>
               <option value="chats" className="bg-slate-900">AIチャット数 降順</option>
-              <option value="cost" className="bg-slate-900">費用 降順</option>
-              <option value="days_inactive" className="bg-slate-900">非アクティブ日数 降順</option>
+              <option value="status" className="bg-slate-900">非アクティブ日数</option>
             </select>
           </div>
 
@@ -566,47 +698,91 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                   {renderSortIcon('status')}
                 </div>
               </th>
-              {hasUsageMetrics && (
-                <>
-                  <th
-                    className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
-                    onClick={() => handleSort('suggestions')}
-                  >
-                    <div className="flex items-center justify-end space-x-1">
-                      <span>提案数</span>
-                      {renderSortIcon('suggestions')}
-                    </div>
-                  </th>
-                  <th
-                    className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
-                    onClick={() => handleSort('acceptances')}
-                  >
-                    <div className="flex items-center justify-end space-x-1">
-                      <span>受諾採用数</span>
-                      {renderSortIcon('acceptances')}
-                    </div>
-                  </th>
-                  <th
-                    className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
-                    onClick={() => handleSort('acceptance_rate')}
-                    title="IDEコード補完（Ghost Text）の受諾率です。Copilot CLIやAutopilot等の自律エージェント作業は含まれないため、CLI活用度の高いユーザーでは低く表示されることがあります。"
-                  >
-                    <div className="flex items-center justify-end space-x-1">
-                      <span>Inline補完受諾率</span>
-                      {renderSortIcon('acceptance_rate')}
-                    </div>
-                  </th>
-                  <th
-                    className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
-                    onClick={() => handleSort('chats')}
-                  >
-                    <div className="flex items-center justify-end space-x-1">
-                      <span>AIチャット</span>
-                      {renderSortIcon('chats')}
-                    </div>
-                  </th>
-                </>
-              )}
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('primary_model')}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>主利用モデル</span>
+                  {renderSortIcon('primary_model')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('requests')}
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>総リクエスト</span>
+                  {renderSortIcon('requests')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('suggestions')}
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>提案数</span>
+                  {renderSortIcon('suggestions')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('acceptances')}
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>受諾採用数</span>
+                  {renderSortIcon('acceptances')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('acceptance_rate')}
+                title="IDEコード補完（Ghost Text）の受諾率です。Copilot CLIやAutopilot等の自律エージェント作業は含まれないため、CLI活用度の高いユーザーでは低く表示されることがあります。"
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>Inline補完受諾率</span>
+                  {renderSortIcon('acceptance_rate')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('chats')}
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>AIチャット</span>
+                  {renderSortIcon('chats')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('tokens')}
+                title="入力・出力・キャッシュのトークン合計 (AI usage report のトークン列がある場合)"
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>トークン</span>
+                  {renderSortIcon('tokens')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('token_cost')}
+                title="利用額 ÷ トークン合計 × 100 万 (キャッシュを含む混合単価)"
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>コスト/100万トークン</span>
+                  {renderSortIcon('token_cost')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('signal')}
+                title="長大化・混在の兆候 (1 日単位の集計からの推定。会話の内容は見ていません)"
+              >
+                <div className="flex items-center space-x-1">
+                  <span>兆候</span>
+                  {renderSortIcon('signal')}
+                </div>
+              </th>
               <th
                 className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('cost')}
@@ -627,6 +803,15 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                   {renderSortIcon('excess')}
                 </div>
               </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('last_activity')}
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>最終利用日</span>
+                  {renderSortIcon('last_activity')}
+                </div>
+              </th>
               <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-center w-24">
                 <ActionColumnHeader />
               </th>
@@ -635,7 +820,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
           <tbody className="divide-y divide-slate-800/60 bg-slate-900/40">
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan={hasUsageMetrics ? 16 : 12} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={USER_DETAIL_COLUMN_COUNT} className="px-4 py-8 text-center text-slate-500">
                   一致するユーザーが見つかりませんでした。
                 </td>
               </tr>
@@ -643,6 +828,9 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
               filteredUsers.map((u, index) => {
                 const prof = profileMap.get(u.login.toLowerCase());
                 const isSelected = selectedUserLogin === u.login;
+                const ins = u.usage_insight;
+                const elapsed = u.last_activity ? formatElapsedActivity(u.last_activity) : '';
+                const na = (reason: string) => unavailable(reason);
 
                 return (
                   <React.Fragment key={u.login}>
@@ -671,7 +859,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                               className="w-5 h-5 rounded-full border border-slate-700 bg-slate-800 shrink-0"
                             />
                           ) : (
-                            // アバター URL が無い (匿名化時など) ときは外部画像を取得せず、アイコンで代替する
+                            // アバター URL が無い (匿名化時・月次レポートなど) ときは外部画像を取得せず、アイコンで代替する
                             <span
                               className="w-5 h-5 rounded-full border border-slate-700 bg-slate-800 shrink-0 flex items-center justify-center"
                               aria-hidden="true"
@@ -703,7 +891,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                       </td>
 
                       <td className="px-2.5 py-2">
-                        {u.tags && u.tags.length > 0 ? (
+                        {u.tags.length > 0 ? (
                           <div className="flex items-center space-x-1">
                             {u.tags.map((tag) => (
                               <span
@@ -747,77 +935,138 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                         )}
                       </td>
 
+                      {u.plan === null ? (
+                        unavailable(UNAVAILABLE_REASON.seat, 'left')
+                      ) : (
+                        <td className="px-2.5 py-2">
+                          {u.plan === 'unknown' ? (
+                            <span
+                              className="text-[11px] font-bold text-amber-400"
+                              title="API が plan_type を返さない / 未知の値のため、料金を推測せず費用を算定していません"
+                            >
+                              未確定
+                            </span>
+                          ) : (
+                            <span
+                              className={`text-[11px] font-bold uppercase ${
+                                u.plan === 'enterprise' ? 'text-indigo-400' : 'text-slate-400'
+                              }`}
+                            >
+                              {u.plan}
+                            </span>
+                          )}
+                        </td>
+                      )}
+
+                      {u.status === null ? (
+                        unavailable(UNAVAILABLE_REASON.seat, 'left')
+                      ) : (
+                        <td className="px-2.5 py-2">{getStatusBadge(u.status, u.days_inactive)}</td>
+                      )}
+
+                      {u.primary_model === null ? (
+                        unavailable(UNAVAILABLE_REASON.noProfile, 'left')
+                      ) : (
+                        <td className="px-2.5 py-2">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-950/60 text-purple-300 border border-purple-800/50">
+                            {u.primary_model}
+                          </span>
+                        </td>
+                      )}
+
+                      {u.requests === null ? (
+                        na(UNAVAILABLE_REASON.usage)
+                      ) : (
+                        <td className="px-2.5 py-2 text-right font-medium text-slate-200">{u.requests.toLocaleString()}</td>
+                      )}
+
+                      {u.suggestions === null ? (
+                        na(u.source === 'live' ? UNAVAILABLE_REASON.noProfile : UNAVAILABLE_REASON.usage)
+                      ) : (
+                        <td className="px-2.5 py-2 text-right font-mono text-slate-300">{u.suggestions.toLocaleString()}</td>
+                      )}
+                      {u.acceptances === null ? (
+                        na(u.source === 'live' ? UNAVAILABLE_REASON.noProfile : UNAVAILABLE_REASON.usage)
+                      ) : (
+                        <td className="px-2.5 py-2 text-right font-mono font-bold text-emerald-400">{u.acceptances.toLocaleString()}</td>
+                      )}
+                      {u.acceptance_rate === null ? (
+                        na(u.source === 'live' ? '提案が無いため算出できません' : UNAVAILABLE_REASON.usage)
+                      ) : (
+                        <td className="px-2.5 py-2 text-right font-mono font-semibold text-purple-300">
+                          {`${(u.acceptance_rate * 100).toFixed(1)}%`}
+                        </td>
+                      )}
+                      {u.chats === null ? (
+                        na(u.source === 'live' ? UNAVAILABLE_REASON.noProfile : UNAVAILABLE_REASON.usage)
+                      ) : (
+                        <td className="px-2.5 py-2 text-right font-mono text-indigo-300">{u.chats.toLocaleString()}</td>
+                      )}
+
+                      {ins?.tokens ? (
+                        <td className="px-2.5 py-2 text-right font-mono text-slate-200">{ins.tokens.total.toLocaleString()}</td>
+                      ) : (
+                        na(ins ? UNAVAILABLE_REASON.noTokens : UNAVAILABLE_REASON.noInsight)
+                      )}
+                      {ins?.unit_cost.per_million_tokens_usd !== null && ins?.unit_cost.per_million_tokens_usd !== undefined ? (
+                        <td className="px-2.5 py-2 text-right font-mono text-slate-200">
+                          {money(ins.unit_cost.per_million_tokens_usd).usd}
+                        </td>
+                      ) : (
+                        na(ins ? UNAVAILABLE_REASON.noTokens : UNAVAILABLE_REASON.noInsight)
+                      )}
                       <td className="px-2.5 py-2">
-                        {u.plan_type === 'unknown' ? (
-                          <span
-                            className="text-[11px] font-bold text-amber-400"
-                            title="API が plan_type を返さない / 未知の値のため、料金を推測せず費用を算定していません"
-                          >
-                            未確定
-                          </span>
+                        {ins ? (
+                          <UsageSignalBadge level={ins.level} title={describeInsightTooltip(ins.signals)} />
                         ) : (
-                          <span
-                            className={`text-[11px] font-bold uppercase ${
-                              u.plan_type === 'enterprise' ? 'text-indigo-400' : 'text-slate-400'
-                            }`}
-                          >
-                            {u.plan_type}
-                          </span>
+                          <span className="text-slate-500" title={UNAVAILABLE_REASON.noInsight}>—</span>
                         )}
                       </td>
 
-                      <td className="px-2.5 py-2">{getStatusBadge(u.status, u.days_inactive)}</td>
-
-                      {hasUsageMetrics && (
-                        <>
-                          <td className="px-2.5 py-2 text-right font-mono text-slate-300">
-                            {prof ? prof.total_suggestions.toLocaleString() : '-'}
-                          </td>
-                          <td className="px-2.5 py-2 text-right font-mono font-bold text-emerald-400">
-                            {prof ? prof.total_acceptances.toLocaleString() : '-'}
-                          </td>
-                          <td className="px-2.5 py-2 text-right font-mono font-semibold text-purple-300">
-                            {prof && prof.total_suggestions > 0 ? `${(prof.acceptance_rate * 100).toFixed(1)}%` : '-'}
-                          </td>
-                          <td className="px-2.5 py-2 text-right font-mono text-indigo-300">
-                            {prof ? prof.total_chats.toLocaleString() : '-'}
-                          </td>
-                        </>
-                      )}
-
                       <td className="px-2.5 py-2 text-right">
-                        {(() => {
-                          if (u.cost_unconfirmed) {
+                        {u.cost_unconfirmed || u.usage_cost_usd === null ? (
+                          <div
+                            className="font-mono text-slate-500"
+                            title="料金プランが未確定のため費用を算定していません (集計にも含まれません)"
+                            data-testid="user-cost-unconfirmed"
+                          >
+                            —
+                          </div>
+                        ) : (
+                          (() => {
+                            const costDual = money(u.usage_cost_usd);
                             return (
-                              <div
-                                className="font-mono text-slate-500"
-                                title="料金プランが未確定のため費用を算定していません (集計にも含まれません)"
-                                data-testid="user-cost-unconfirmed"
-                              >
-                                —
+                              <div className="font-mono font-semibold text-slate-200">
+                                {costDual.usd} {costDual.sub && <span className="text-[11px] text-slate-400">({costDual.sub})</span>}
                               </div>
                             );
-                          }
-                          const costDual = formatMoney(costOf(u));
-                          return (
-                            <div className="font-mono font-semibold text-slate-200">
-                              {costDual.usd} {costDual.sub && <span className="text-[11px] text-slate-400">({costDual.sub})</span>}
-                            </div>
-                          );
-                        })()}
+                          })()
+                        )}
                       </td>
                       <td className="px-2.5 py-2 text-right font-mono">
-                        {(() => {
-                          if (u.cost_unconfirmed) {
-                            return <div className="text-[11px] text-slate-500">—</div>;
-                          }
-                          const costDual = formatMoney(costOf(u));
-                          return (
-                            <div className="text-[11px] font-semibold text-amber-400">
-                              {costDual.usd} {costDual.sub && <span className="text-[10px] text-amber-300/80">({costDual.sub})</span>}
-                            </div>
-                          );
-                        })()}
+                        {u.cost_unconfirmed || u.excess_usd === null ? (
+                          <div className="text-[11px] text-slate-500">—</div>
+                        ) : (
+                          (() => {
+                            const costDual = money(u.excess_usd);
+                            return (
+                              <div className="text-[11px] font-semibold text-amber-400">
+                                {costDual.usd} {costDual.sub && <span className="text-[10px] text-amber-300/80">({costDual.sub})</span>}
+                              </div>
+                            );
+                          })()
+                        )}
+                      </td>
+
+                      <td className="px-2.5 py-2 text-right font-mono text-[11px]" title={u.surface ?? undefined}>
+                        {u.last_activity ? (
+                          <div className="flex items-center justify-end space-x-1.5 whitespace-nowrap">
+                            <span className="text-slate-200">{u.last_activity.substring(0, 10)}</span>
+                            {elapsed && <span className="text-[10px] text-slate-400 font-sans">({elapsed})</span>}
+                          </div>
+                        ) : (
+                          <span className="text-slate-500">未利用</span>
+                        )}
                       </td>
 
                       <td className="px-2.5 py-2 text-center">
@@ -871,26 +1120,30 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                     </tr>
                     {isSelected && (
                       <tr key={`${u.login}-drilldown`} className="bg-slate-950">
-                        <td colSpan={hasUsageMetrics ? 16 : 12} className="p-0 border-b-2 border-indigo-500/60 whitespace-normal">
+                        <td colSpan={USER_DETAIL_COLUMN_COUNT} className="p-0 border-b-2 border-indigo-500/60 whitespace-normal">
                           <div className="sticky left-0 max-w-[calc(100vw-3.5rem)]">
+                            {u.usage_insight && <UsageInsightPanel insight={u.usage_insight} />}
                             <UserDrilldownPanel
                               login={u.login}
                               displayName={u.display_name}
-                              avatarUrl={u.avatar_url}
+                              avatarUrl={u.avatar_url ?? undefined}
                               department={u.department}
                               costCenter={u.cost_center}
                               organization={u.organization}
-                              planType={u.plan_type}
-                              statusBadge={getStatusBadge(u.status, u.days_inactive)}
-                              lastActivity={u.last_activity_at}
-                              editor={u.last_activity_editor}
-                              daysInactive={u.days_inactive}
-                              monthlyCostUsd={u.monthly_cost_usd}
-                              proratedCostUsd={u.prorated_daily_cost_usd}
-                              excessBillingUsd={costOf(u)}
+                              planType={u.plan ?? undefined}
+                              statusBadge={u.status ? getStatusBadge(u.status, u.days_inactive) : undefined}
+                              lastActivity={u.last_activity}
+                              editor={u.source === 'live' ? u.surface : undefined}
+                              daysInactive={u.days_inactive ?? undefined}
+                              monthlyCostUsd={u.source === 'live' ? (u.monthly_cost_usd ?? undefined) : (u.usage_cost_usd ?? undefined)}
+                              proratedCostUsd={u.prorated_daily_cost_usd ?? undefined}
+                              excessBillingUsd={u.excess_usd ?? undefined}
                               costUnconfirmed={u.cost_unconfirmed}
                               profile={prof}
                               allProfiles={effectiveProfiles}
+                              primaryModel={u.primary_model ?? undefined}
+                              totalRequests={u.requests ?? undefined}
+                              surface={u.source === 'report' ? (u.surface ?? undefined) : undefined}
                               onSelectUserForTrend={onSelectUserForTrend}
                               onSelectUserForDeepAnalysis={onSelectUserForDeepAnalysis}
                               onClose={() => setSelectedUserLogin(null)}
