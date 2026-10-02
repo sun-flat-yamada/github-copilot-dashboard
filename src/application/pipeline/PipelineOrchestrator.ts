@@ -27,6 +27,7 @@ import {
   computeCreditsPoolUtilizationPercent,
   estimateIncludedCreditsPool,
 } from '../../domain/pricing/pricing-catalog.js';
+import { PublicExchangeRatesService, type ExchangeRateCatalog } from '../../domain/services/PublicExchangeRatesService.js';
 import { isSourceUsable, resolveSourceStatuses, statusOrInferred } from './source-status.js';
 
 export interface PipelineOrchestratorDependencies {
@@ -97,6 +98,8 @@ export class PipelineOrchestrator {
     const nowIso = new Date().toISOString();
     // 前回の成果物 (取得に失敗したソースの Last-known-good を維持するために使う)
     const previousIndex = this.storage.loadIndex();
+    // 為替カタログ (保存済み。無ければ換算は出さない)
+    PublicExchangeRatesService.setCatalog(this.storage.loadCatalog?.<ExchangeRateCatalog>('exchange-rates') ?? null);
 
     // 設定の不備は黙ってフォールバックせず、issue として記録する
     const configIssues: DataFetchIssue[] = [];
