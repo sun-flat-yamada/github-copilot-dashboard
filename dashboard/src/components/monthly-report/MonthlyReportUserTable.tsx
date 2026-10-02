@@ -5,6 +5,13 @@ import { formatElapsedActivity } from '../../utils/dateFormatters';
 import { ActionColumnHeader } from '../common/ActionColumnHeader';
 import { UserDrilldownPanel } from '../UserDrilldownPanel';
 import { useCurrency } from '../../contexts/CurrencyContext';
+import { UsageSignalBadge } from '../common/UsageSignalBadge';
+import { UsageInsightPanel } from './UsageInsightPanel';
+import { describeSignal, SIGNAL_DEFINITIONS } from '../../../../src/processor/usage-insight-definitions';
+import type { SignalLevel } from '../../../../src/types/copilot';
+
+const SIGNAL_LABEL_FOR_CSV: Record<SignalLevel, string> = { none: 'none', watch: 'watch', review: 'review', insufficient: 'insufficient' };
+const SIGNAL_RANK: Record<SignalLevel, number> = { insufficient: -1, none: 0, watch: 1, review: 2 };
 
 export type MonthlyUserSortKey =
   | 'index'
@@ -16,6 +23,9 @@ export type MonthlyUserSortKey =
   | 'organization'
   | 'primary_model'
   | 'requests'
+  | 'tokens'
+  | 'token_cost'
+  | 'signal'
   | 'spend'
   | 'excess'
   | 'last_activity';
@@ -47,6 +57,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
   const [localGroupFilter, setLocalGroupFilter] = useState<string>('all');
   const [sortKey, setSortKey] = useState<MonthlyUserSortKey>('spend');
   const [sortOrder, setSortOrder] = useState<MonthlyUserSortOrder>('desc');
+  const [onlyReview, setOnlyReview] = useState<boolean>(false);
   const [selectedUserLogin, setSelectedUserLogin] = useState<string | null>(initialSelectedLogin || null);
   const { formatMoney } = useCurrency();
 
@@ -148,7 +159,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
       setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortKey(key);
-      const isDescDefault = key === 'requests' || key === 'spend' || key === 'excess' || key === 'last_activity';
+      const isDescDefault = key === 'requests' || key === 'tokens' || key === 'token_cost' || key === 'signal' || key === 'spend' || key === 'excess' || key === 'last_activity';
       setSortOrder(isDescDefault ? 'desc' : 'asc');
     }
   };
@@ -193,7 +204,8 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
             matchesGroup = u.department === activeGroup;
           }
         }
-        return matchesSearch && matchesGroup;
+        const matchesReview = !onlyReview || u.usage_insight?.level === 'review';
+        return matchesSearch && matchesGroup && matchesReview;
       })
       .sort((a, b) => {
         let cmp = 0;
@@ -222,6 +234,15 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
           case 'requests':
             cmp = a.total_requests - b.total_requests;
             break;
+          case 'tokens':
+            cmp = (a.usage_insight?.tokens?.total ?? -1) - (b.usage_insight?.tokens?.total ?? -1);
+            break;
+          case 'token_cost':
+            cmp = (a.usage_insight?.unit_cost.per_million_tokens_usd ?? -1) - (b.usage_insight?.unit_cost.per_million_tokens_usd ?? -1);
+            break;
+          case 'signal':
+            cmp = SIGNAL_RANK[a.usage_insight?.level ?? 'insufficient'] - SIGNAL_RANK[b.usage_insight?.level ?? 'insufficient'];
+            break;
           case 'spend': {
             const costA = a.gross_spend_usd ?? a.total_spend_usd;
             const costB = b.gross_spend_usd ?? b.total_spend_usd;
@@ -244,7 +265,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
         }
         return sortOrder === 'asc' ? cmp : -cmp;
       });
-  }, [reportData, userSearchQuery, activeGroup, grouping, sortKey, sortOrder]);
+  }, [reportData, userSearchQuery, activeGroup, grouping, sortKey, sortOrder, onlyReview]);
 
   // CSV エクスポート
   const handleExportCsv = () => {
@@ -258,6 +279,14 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
       'Organization',
       'Primary Model',
       'Total Requests',
+      'Tokens Total',
+      'Tokens Input',
+      'Tokens Output',
+      'Tokens Cache Read',
+      'Tokens Cache Write',
+      'Cost per 1M Tokens (USD)',
+      'Cost per Request (USD)',
+      'Usage Signal',
       'Usage Cost Gross (USD)',
       'Excess Billable Cost Net (USD)',
       'Last Activity',
@@ -273,6 +302,14 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
       u.organization,
       `"${u.primary_model}"`,
       u.total_requests,
+      u.usage_insight?.tokens?.total ?? '',
+      u.usage_insight?.tokens?.input ?? '',
+      u.usage_insight?.tokens?.output ?? '',
+      u.usage_insight?.tokens?.cache_read ?? '',
+      u.usage_insight?.tokens?.cache_write ?? '',
+      u.usage_insight?.unit_cost.per_million_tokens_usd ?? '',
+      u.usage_insight?.unit_cost.per_request_usd ?? '',
+      u.usage_insight ? SIGNAL_LABEL_FOR_CSV[u.usage_insight.level] : '',
       (u.gross_spend_usd ?? u.total_spend_usd).toFixed(2),
       (u.net_spend_usd ?? u.total_spend_usd).toFixed(2),
       u.last_activity_date || '',
@@ -371,6 +408,11 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
             </button>
           </div>
 
+          <label className="flex items-center space-x-1.5 text-xs text-slate-300 cursor-pointer select-none" title="利用方法の確認を推奨する兆候のあるユーザーだけを表示します">
+            <input type="checkbox" checked={onlyReview} onChange={(e) => setOnlyReview(e.target.checked)} className="accent-amber-500" />
+            <span>確認を推奨のみ</span>
+          </label>
+
           <button
             onClick={handleExportCsv}
             className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition"
@@ -465,6 +507,36 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
               </th>
               <th
                 className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2 px-2.5 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('tokens')}
+                title="入力・出力・キャッシュのトークン合計 (AI usage report のトークン列がある場合)"
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>トークン</span>
+                  {renderSortIcon('tokens')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2 px-2.5 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('token_cost')}
+                title="利用額 ÷ トークン合計 × 100 万 (キャッシュを含む混合単価)"
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>コスト/100万トークン</span>
+                  {renderSortIcon('token_cost')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2 px-2.5 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('signal')}
+                title="長大化・混在の兆候 (1 日単位の集計からの推定。会話の内容は見ていません)"
+              >
+                <div className="flex items-center space-x-1">
+                  <span>兆候</span>
+                  {renderSortIcon('signal')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-2 px-2.5 text-right cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('spend')}
                 title="利用費用 (GitHubのカタログ価格(USD)基準)"
               >
@@ -500,7 +572,7 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
           <tbody className="divide-y divide-slate-800/60">
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan={13} className="text-center py-8 text-slate-500">
+                <td colSpan={16} className="text-center py-8 text-slate-500">
                   該当するユーザーレコードがありません。
                 </td>
               </tr>
@@ -575,6 +647,30 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                       </td>
                       <td className="py-2 px-2.5 text-right font-medium text-slate-200">
                         {u.total_requests.toLocaleString()}
+                      </td>
+                      <td className="py-2 px-2.5 text-right font-mono text-slate-200" title={u.usage_insight?.tokens ? undefined : 'トークン列のないデータです'}>
+                        {u.usage_insight?.tokens ? u.usage_insight.tokens.total.toLocaleString() : <span className="text-slate-500">—</span>}
+                      </td>
+                      <td className="py-2 px-2.5 text-right font-mono text-slate-200">
+                        {(() => {
+                          const c = u.usage_insight?.unit_cost.per_million_tokens_usd;
+                          if (c === null || c === undefined) return <span className="text-slate-500">—</span>;
+                          const m = formatMoney(c);
+                          return m.usd;
+                        })()}
+                      </td>
+                      <td className="py-2 px-2.5">
+                        {u.usage_insight ? (
+                          <UsageSignalBadge
+                            level={u.usage_insight.level}
+                            title={u.usage_insight.signals
+                              .filter((s) => s.level === 'review' || s.level === 'watch')
+                              .map((s) => `${SIGNAL_DEFINITIONS[s.id].name}: ${describeSignal(s)}`)
+                              .join('\n') || undefined}
+                          />
+                        ) : (
+                          <span className="text-slate-500">—</span>
+                        )}
                       </td>
                       <td className="py-2 px-2.5 text-right">
                         {(() => {
@@ -663,8 +759,9 @@ export const MonthlyReportUserTable: React.FC<MonthlyReportUserTableProps> = ({
                     </tr>
                     {isSelected && (
                       <tr key={`${u.login}-drilldown`} className="bg-slate-950">
-                        <td colSpan={13} className="p-0 border-b-2 border-indigo-500/60 whitespace-normal">
+                        <td colSpan={16} className="p-0 border-b-2 border-indigo-500/60 whitespace-normal">
                           <div className="sticky left-0 max-w-[calc(100vw-3.5rem)]">
+                            {u.usage_insight && <UsageInsightPanel insight={u.usage_insight} />}
                             <UserDrilldownPanel
                               login={u.login}
                               displayName={u.display_name}

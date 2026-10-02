@@ -121,6 +121,22 @@ npm run report:import -- ./path/to/copilot-report.csv 2026-08
 
 `overview.quantity_by_unit` に単位別の合計 (例: `{ "requests": 120, "ai-credits": 3400, "seats": 85 }`) を残して情報を失わない。`sku_breakdown` は SKU **と単位** ごとに 1 行とする (単位の異なる数量を 1 行に合算しない)。
 
+### 3.5 AI usage report（token 列）と `usage_insight`
+公式のフィールド仕様: GitHub Docs「Billing reports reference」（`billing/reference/billing-reports`）。**AI usage report** は、最長 31 日分の、ユーザー別の AI クレジットの内訳で、`date × model × username` ごとに合算する。モデルごとに token の項目 `input`、`output`、`cache_read`、`cache_write` が加わる。
+
+| ヘッダー（正規化後） | レコードの項目 |
+|:--|:--|
+| `input` / `input_tokens` | `input_tokens` |
+| `output` / `output_tokens` | `output_tokens` |
+| `cache_read` / `cache_read_tokens` | `cache_read_tokens` |
+| `cache_write` / `cache_write_tokens` | `cache_write_tokens` |
+| `token_count` / `tokens` / `total_tokens` | `token_count`（合計のみ） |
+
+- token 列があり、かつ **`unit_type` が無い**行は `other` 系に分類し、その `quantity` はリクエスト数に足さない（「`unit_type` が無ければ requests」という従来の規則は、token 列の無い行にだけ適用する）。クレジットは `ai_credits_consumed`、または `unit_type` に credit を含む行から得る。
+- token の値だけが違う行は、重複検知では別の行として扱う。
+- `aggregate()` は全ユーザー行に `usage_insight`（SDD-06 §5）を付与する。表示フィルターの適用前に算出し、フィルターエンジンはそのまま保持する。
+- **実際のエクスポートでの確認が必要**: 公式ドキュメントはフィールドを説明しているが、AI usage report の `quantity` の単位は記載していない。本実装は「クレジット」と仮定し、`unit_type` と `ai_credits_consumed` を根拠にしている。
+
 ---
 
 ## 4. 集計データ構造 (`MonthlyReportAggregatedData`)
