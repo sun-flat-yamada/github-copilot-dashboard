@@ -5,8 +5,9 @@ import {
   EnterpriseBillingConfig,
   DEFAULT_BILLING_CONFIG,
 } from '../../../src/domain/entities/billing-config.js';
-import { PublicExchangeRatesService } from '../../../src/domain/services/PublicExchangeRatesService.js';
+import { PublicExchangeRatesService, type ExchangeRateCatalog } from '../../../src/domain/services/PublicExchangeRatesService.js';
 import { Money } from '../../../src/domain/value-objects/Money.js';
+import { resolveDataPath } from '../utils/pathResolver';
 import { IndexMetadata } from '../../../src/domain/entities/copilot.js';
 
 export interface CurrencyContextType {
@@ -42,15 +43,38 @@ export interface CurrencyProviderProps {
   children: ReactNode;
   indexMeta?: IndexMetadata | null;
   activeMonth?: string;
+  /** 為替カタログの取得元ディレクトリ (例: './data' / './data/demo') */
+  dataBaseDir?: string;
 }
 
-export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children, indexMeta, activeMonth }) => {
+export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children, indexMeta, activeMonth, dataBaseDir }) => {
   const targetMonth = activeMonth || indexMeta?.default_scopes?.latest_month;
 
-  // Try refreshing live rates in the background (non-blocking)
+  // 為替カタログ (パイプラインが ECB から取得し保存した月次平均レート) を読み込む。
+  // 取得できなければ換算は出さない (仮のレートは使わない)。
+  const [catalogVersion, setCatalogVersion] = useState(0);
+  const catalogDir = dataBaseDir ?? './data';
   useEffect(() => {
-    PublicExchangeRatesService.refreshLiveRates(targetMonth).catch(() => {});
-  }, [targetMonth]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(resolveDataPath(`${catalogDir}/catalog/exchange-rates.json`));
+        const json = res.ok ? await res.json() : null;
+        if (!cancelled) {
+          PublicExchangeRatesService.setCatalog(json && json.schema_version === 1 ? (json as ExchangeRateCatalog) : null);
+          setCatalogVersion((v) => v + 1);
+        }
+      } catch {
+        if (!cancelled) {
+          PublicExchangeRatesService.setCatalog(null);
+          setCatalogVersion((v) => v + 1);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [catalogDir]);
 
   // Resolve effective billing config for the currently active target month
   const effectiveConfig = useMemo<EnterpriseBillingConfig>(() => {
@@ -68,6 +92,7 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children, in
   const configuredSub = effectiveConfig.subCurrency;
 
   const availableSubCurrencies = useMemo(() => {
+    void catalogVersion; // 為替カタログの読み込み完了で再計算する (カタログはモジュール内の状態)
     const list: Array<{ code: string; label: string; config: CurrencyConfig | null }> = [
       { code: 'none', label: 'USD Only ($)', config: null },
     ];
@@ -106,11 +131,9 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children, in
       exchangeRateFromUSD: Math.round(jpyBaseRate * eaDiscountRate * 10000) / 10000,
       displayDecimals: 0,
     };
-    list.push({
-      code: 'EA-JPY',
-      label: 'USD + EA-JPY (¥)',
-      config: eaJpyConfig,
-    });
+    if (jpyBaseRate > 0) {
+      list.push({ code: 'EA-JPY', label: 'USD + EA-JPY (¥)', config: eaJpyConfig });
+    }
 
     // 3. EA-EUR (€)
     const eaEurConfig: CurrencyConfig = {
@@ -119,11 +142,9 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children, in
       exchangeRateFromUSD: Math.round(eurBaseRate * eaDiscountRate * 10000) / 10000,
       displayDecimals: 2,
     };
-    list.push({
-      code: 'EA-EUR',
-      label: 'USD + EA-EUR (€)',
-      config: eaEurConfig,
-    });
+    if (eurBaseRate > 0) {
+      list.push({ code: 'EA-EUR', label: 'USD + EA-EUR (€)', config: eaEurConfig });
+    }
 
     // If custom non-standard subCurrency was defined in billingConfig
     if (
@@ -143,7 +164,7 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children, in
     }
 
     return list;
-  }, [configuredSub, effectiveConfig, targetMonth]);
+  }, [configuredSub, effectiveConfig, targetMonth, catalogVersion]);
 
   // Determine initial code from localStorage or configured subCurrency (normalizing JPY/EUR to EA-JPY/EA-EUR)
   const [subCurrencyCode, setSubCurrencyCodeState] = useState<string>(() => {

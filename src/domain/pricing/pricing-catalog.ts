@@ -5,8 +5,9 @@
  * 金額が 5 倍ずれていた (AI クレジット単価 $0.05 と $0.01 の混在)。値はこのモジュールに集約し、
  * 他のモジュールはここ (または billing-config 経由) からだけ価格を取得する。
  *
- * 値の根拠 (GitHub 公開情報。ネットワーク制限のため本文は直接確認できず、検索結果の要約に基づく。
- * Phase 1 の価格カタログ v1 で一次情報と照合して確定する):
+ * 値の根拠 (GitHub 公開情報。出典は 2026-10-02 時点で複数の二次情報が一致したもの。
+ * GitHub 公式ドキュメント本文は作業環境のネットワーク制限で直接確認できていないため、
+ * **一次情報との照合は未実施** (バージョン名の `unverified`)。照合したらバージョンから外し、`verifiedAt` を記録する):
  * - Copilot Business $19 / Enterprise $39 (1 ユーザー・月)
  * - 1 GitHub AI Credit = $0.01 (2026-06-01 から使用量ベース課金)
  * - 通常時の包含量: Business 1,900 / Enterprise 3,900 クレジット (ユーザー・月)。請求エンティティ単位のプール
@@ -38,7 +39,7 @@ export interface PricingCatalogEntry {
   note: string;
 }
 
-export const PRICING_CATALOG_VERSION = '2026-10-01-provisional';
+export const PRICING_CATALOG_VERSION = '2026-10-02-v1-unverified';
 
 /** 通常時 (期間指定のないエントリ)。resolvePricingEntry の既定 */
 const BASELINE_ENTRY: PricingCatalogEntry = {

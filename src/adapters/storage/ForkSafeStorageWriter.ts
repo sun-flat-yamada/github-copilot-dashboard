@@ -61,6 +61,10 @@ export class ForkSafeStorageWriter implements IStorageWriter {
     return this.storage.loadScopeData(scopeType, key);
   }
 
+  loadCatalog<T = unknown>(name: string): T | null {
+    return this.storage.loadCatalog<T>(name);
+  }
+
   saveErrorLog(issues: DataFetchIssue[]): void {
     this.storage.saveErrorLog(issues);
   }
