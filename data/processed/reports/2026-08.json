@@ -2,7 +2,7 @@
   "report_month": "2026-08",
   "source_type": "persisted",
   "file_name": "copilot_monthly_usage_2026-08.csv",
-  "parsed_at": "2026-10-02T21:20:26.891Z",
+  "parsed_at": "2026-10-02T21:55:52.990Z",
   "overview": {
     "total_net_spend_usd": 333.3,
     "total_gross_spend_usd": 335.22,
@@ -363,7 +363,198 @@
         "Claude 3.7 Sonnet": 3.68,
         "GPT-4o": 1.26
       },
-      "last_activity_date": "2026-08-28"
+      "last_activity_date": "2026-08-28",
+      "usage_insight": {
+        "usage": {
+          "requests": 267,
+          "credits": null,
+          "active_days": 17,
+          "per_active_day": 15.71,
+          "per_active_day_unit": "requests",
+          "peak_day": {
+            "date": "2026-08-18",
+            "value": 29,
+            "unit": "requests"
+          }
+        },
+        "tokens": null,
+        "unit_cost": {
+          "per_million_tokens_usd": null,
+          "per_request_usd": 0.0345,
+          "per_credit_usd": null
+        },
+        "by_model": [],
+        "signals": [
+          {
+            "id": "S1",
+            "level": "insufficient",
+            "value": null,
+            "baseline": null,
+            "ratio": null,
+            "samples": 17
+          },
+          {
+            "id": "S2",
+            "level": "insufficient",
+            "value": null,
+            "baseline": null,
+            "ratio": null,
+            "samples": 0
+          },
+          {
+            "id": "S3",
+            "level": "none",
+            "value": 15.7059,
+            "baseline": 14.1333,
+            "ratio": 1.11,
+            "samples": 17,
+            "detail": {
+              "unit": "requests"
+            }
+          },
+          {
+            "id": "S4",
+            "level": "none",
+            "value": 1,
+            "baseline": 2.5,
+            "ratio": 0.4,
+            "samples": 16,
+            "detail": {
+              "max_models_in_day": 1
+            }
+          },
+          {
+            "id": "S5",
+            "level": "insufficient",
+            "value": null,
+            "baseline": 0.5,
+            "ratio": null,
+            "samples": 17
+          }
+        ],
+        "level": "none",
+        "daily": [
+          {
+            "date": "2026-08-01",
+            "requests": 0,
+            "credits": 0,
+            "tokens": null,
+            "models": 0
+          },
+          {
+            "date": "2026-08-04",
+            "requests": 12,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-05",
+            "requests": 15,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-06",
+            "requests": 18,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-07",
+            "requests": 21,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-11",
+            "requests": 8,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-12",
+            "requests": 11,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-14",
+            "requests": 17,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-17",
+            "requests": 26,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-18",
+            "requests": 29,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-19",
+            "requests": 7,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-21",
+            "requests": 13,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-24",
+            "requests": 22,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-25",
+            "requests": 25,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-26",
+            "requests": 28,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-27",
+            "requests": 6,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-28",
+            "requests": 9,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          }
+        ]
+      }
     },
     {
       "login": "ren-takahashi",
@@ -389,7 +580,191 @@
         "Gemini 2.0 Flash": 1.058,
         "GPT-4o": 1.392
       },
-      "last_activity_date": "2026-08-28"
+      "last_activity_date": "2026-08-28",
+      "usage_insight": {
+        "usage": {
+          "requests": 223,
+          "credits": null,
+          "active_days": 16,
+          "per_active_day": 13.94,
+          "per_active_day_unit": "requests",
+          "peak_day": {
+            "date": "2026-08-07",
+            "value": 27,
+            "unit": "requests"
+          }
+        },
+        "tokens": null,
+        "unit_cost": {
+          "per_million_tokens_usd": null,
+          "per_request_usd": 0.0354,
+          "per_credit_usd": null
+        },
+        "by_model": [],
+        "signals": [
+          {
+            "id": "S1",
+            "level": "insufficient",
+            "value": null,
+            "baseline": null,
+            "ratio": null,
+            "samples": 16
+          },
+          {
+            "id": "S2",
+            "level": "insufficient",
+            "value": null,
+            "baseline": null,
+            "ratio": null,
+            "samples": 0
+          },
+          {
+            "id": "S3",
+            "level": "none",
+            "value": 13.9375,
+            "baseline": 14.1333,
+            "ratio": 0.99,
+            "samples": 16,
+            "detail": {
+              "unit": "requests"
+            }
+          },
+          {
+            "id": "S4",
+            "level": "none",
+            "value": 1,
+            "baseline": 2.5,
+            "ratio": 0.4,
+            "samples": 15,
+            "detail": {
+              "max_models_in_day": 1
+            }
+          },
+          {
+            "id": "S5",
+            "level": "insufficient",
+            "value": null,
+            "baseline": 0.5,
+            "ratio": null,
+            "samples": 16
+          }
+        ],
+        "level": "none",
+        "daily": [
+          {
+            "date": "2026-08-01",
+            "requests": 0,
+            "credits": 0,
+            "tokens": null,
+            "models": 0
+          },
+          {
+            "date": "2026-08-03",
+            "requests": 15,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-05",
+            "requests": 21,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-06",
+            "requests": 24,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-07",
+            "requests": 27,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-10",
+            "requests": 11,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-12",
+            "requests": 17,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-13",
+            "requests": 20,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-17",
+            "requests": 7,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-18",
+            "requests": 10,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-19",
+            "requests": 13,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-20",
+            "requests": 16,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-25",
+            "requests": 6,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-26",
+            "requests": 9,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-27",
+            "requests": 12,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-28",
+            "requests": 15,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          }
+        ]
+      }
     },
     {
       "login": "daiki-suzuki",
@@ -415,7 +790,184 @@
         "o1": 2.255,
         "Claude 3.7 Sonnet": 1.624
       },
-      "last_activity_date": "2026-08-28"
+      "last_activity_date": "2026-08-28",
+      "usage_insight": {
+        "usage": {
+          "requests": 207,
+          "credits": null,
+          "active_days": 15,
+          "per_active_day": 13.8,
+          "per_active_day_unit": "requests",
+          "peak_day": {
+            "date": "2026-08-25",
+            "value": 29,
+            "unit": "requests"
+          }
+        },
+        "tokens": null,
+        "unit_cost": {
+          "per_million_tokens_usd": null,
+          "per_request_usd": 0.0347,
+          "per_credit_usd": null
+        },
+        "by_model": [],
+        "signals": [
+          {
+            "id": "S1",
+            "level": "insufficient",
+            "value": null,
+            "baseline": null,
+            "ratio": null,
+            "samples": 15
+          },
+          {
+            "id": "S2",
+            "level": "insufficient",
+            "value": null,
+            "baseline": null,
+            "ratio": null,
+            "samples": 0
+          },
+          {
+            "id": "S3",
+            "level": "none",
+            "value": 13.8,
+            "baseline": 14.1333,
+            "ratio": 0.98,
+            "samples": 15,
+            "detail": {
+              "unit": "requests"
+            }
+          },
+          {
+            "id": "S4",
+            "level": "none",
+            "value": 1,
+            "baseline": 2.5,
+            "ratio": 0.4,
+            "samples": 14,
+            "detail": {
+              "max_models_in_day": 1
+            }
+          },
+          {
+            "id": "S5",
+            "level": "insufficient",
+            "value": null,
+            "baseline": 0.5,
+            "ratio": null,
+            "samples": 15
+          }
+        ],
+        "level": "none",
+        "daily": [
+          {
+            "date": "2026-08-01",
+            "requests": 0,
+            "credits": 0,
+            "tokens": null,
+            "models": 0
+          },
+          {
+            "date": "2026-08-03",
+            "requests": 13,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-05",
+            "requests": 19,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-06",
+            "requests": 22,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-10",
+            "requests": 9,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-11",
+            "requests": 12,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-12",
+            "requests": 15,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-13",
+            "requests": 18,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-18",
+            "requests": 8,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-19",
+            "requests": 11,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-20",
+            "requests": 14,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-21",
+            "requests": 17,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-25",
+            "requests": 29,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-26",
+            "requests": 7,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-28",
+            "requests": 13,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          }
+        ]
+      }
     },
     {
       "login": "mei-ito",
@@ -441,7 +993,212 @@
         "Claude 3.7 Sonnet": 2.408,
         "GPT-4o": 2.688
       },
-      "last_activity_date": "2026-08-28"
+      "last_activity_date": "2026-08-28",
+      "usage_insight": {
+        "usage": {
+          "requests": 329,
+          "credits": null,
+          "active_days": 19,
+          "per_active_day": 17.32,
+          "per_active_day_unit": "requests",
+          "peak_day": {
+            "date": "2026-08-20",
+            "value": 29,
+            "unit": "requests"
+          }
+        },
+        "tokens": null,
+        "unit_cost": {
+          "per_million_tokens_usd": null,
+          "per_request_usd": 0.0353,
+          "per_credit_usd": null
+        },
+        "by_model": [],
+        "signals": [
+          {
+            "id": "S1",
+            "level": "insufficient",
+            "value": null,
+            "baseline": null,
+            "ratio": null,
+            "samples": 19
+          },
+          {
+            "id": "S2",
+            "level": "insufficient",
+            "value": null,
+            "baseline": null,
+            "ratio": null,
+            "samples": 0
+          },
+          {
+            "id": "S3",
+            "level": "none",
+            "value": 17.3158,
+            "baseline": 14.1333,
+            "ratio": 1.23,
+            "samples": 19,
+            "detail": {
+              "unit": "requests"
+            }
+          },
+          {
+            "id": "S4",
+            "level": "none",
+            "value": 1,
+            "baseline": 2.5,
+            "ratio": 0.4,
+            "samples": 18,
+            "detail": {
+              "max_models_in_day": 1
+            }
+          },
+          {
+            "id": "S5",
+            "level": "insufficient",
+            "value": null,
+            "baseline": 0.5,
+            "ratio": null,
+            "samples": 19
+          }
+        ],
+        "level": "none",
+        "daily": [
+          {
+            "date": "2026-08-01",
+            "requests": 0,
+            "credits": 0,
+            "tokens": null,
+            "models": 0
+          },
+          {
+            "date": "2026-08-03",
+            "requests": 28,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-04",
+            "requests": 6,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-05",
+            "requests": 9,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-06",
+            "requests": 12,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-07",
+            "requests": 15,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-10",
+            "requests": 24,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-11",
+            "requests": 27,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-13",
+            "requests": 8,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-14",
+            "requests": 11,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-17",
+            "requests": 20,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-18",
+            "requests": 23,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-20",
+            "requests": 29,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-21",
+            "requests": 7,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-24",
+            "requests": 16,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-25",
+            "requests": 19,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-26",
+            "requests": 22,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-27",
+            "requests": 25,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-28",
+            "requests": 28,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          }
+        ]
+      }
     },
     {
       "login": "sakura-watanabe",
@@ -467,7 +1224,198 @@
         "GPT-4o": 2.445,
         "Claude 3.7 Sonnet": 2.32
       },
-      "last_activity_date": "2026-08-27"
+      "last_activity_date": "2026-08-27",
+      "usage_insight": {
+        "usage": {
+          "requests": 287,
+          "credits": null,
+          "active_days": 17,
+          "per_active_day": 16.88,
+          "per_active_day_unit": "requests",
+          "peak_day": {
+            "date": "2026-08-06",
+            "value": 28,
+            "unit": "requests"
+          }
+        },
+        "tokens": null,
+        "unit_cost": {
+          "per_million_tokens_usd": null,
+          "per_request_usd": 0.0349,
+          "per_credit_usd": null
+        },
+        "by_model": [],
+        "signals": [
+          {
+            "id": "S1",
+            "level": "insufficient",
+            "value": null,
+            "baseline": null,
+            "ratio": null,
+            "samples": 17
+          },
+          {
+            "id": "S2",
+            "level": "insufficient",
+            "value": null,
+            "baseline": null,
+            "ratio": null,
+            "samples": 0
+          },
+          {
+            "id": "S3",
+            "level": "none",
+            "value": 16.8824,
+            "baseline": 14.1333,
+            "ratio": 1.19,
+            "samples": 17,
+            "detail": {
+              "unit": "requests"
+            }
+          },
+          {
+            "id": "S4",
+            "level": "none",
+            "value": 1,
+            "baseline": 2.5,
+            "ratio": 0.4,
+            "samples": 16,
+            "detail": {
+              "max_models_in_day": 1
+            }
+          },
+          {
+            "id": "S5",
+            "level": "insufficient",
+            "value": null,
+            "baseline": 0.5,
+            "ratio": null,
+            "samples": 17
+          }
+        ],
+        "level": "none",
+        "daily": [
+          {
+            "date": "2026-08-01",
+            "requests": 0,
+            "credits": 0,
+            "tokens": null,
+            "models": 0
+          },
+          {
+            "date": "2026-08-03",
+            "requests": 19,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-04",
+            "requests": 22,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-06",
+            "requests": 28,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-07",
+            "requests": 6,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-10",
+            "requests": 15,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-11",
+            "requests": 18,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-12",
+            "requests": 21,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-13",
+            "requests": 24,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-14",
+            "requests": 27,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-17",
+            "requests": 11,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-19",
+            "requests": 17,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-20",
+            "requests": 20,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-21",
+            "requests": 23,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-24",
+            "requests": 7,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-26",
+            "requests": 13,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-27",
+            "requests": 16,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          }
+        ]
+      }
     },
     {
       "login": "kaito-nakamura",
@@ -493,7 +1441,198 @@
         "Gemini 2.0 Flash": 1.178,
         "Claude 3.7 Sonnet": 2.948
       },
-      "last_activity_date": "2026-08-27"
+      "last_activity_date": "2026-08-27",
+      "usage_insight": {
+        "usage": {
+          "requests": 274,
+          "credits": null,
+          "active_days": 17,
+          "per_active_day": 16.12,
+          "per_active_day_unit": "requests",
+          "peak_day": {
+            "date": "2026-08-07",
+            "value": 29,
+            "unit": "requests"
+          }
+        },
+        "tokens": null,
+        "unit_cost": {
+          "per_million_tokens_usd": null,
+          "per_request_usd": 0.035,
+          "per_credit_usd": null
+        },
+        "by_model": [],
+        "signals": [
+          {
+            "id": "S1",
+            "level": "insufficient",
+            "value": null,
+            "baseline": null,
+            "ratio": null,
+            "samples": 17
+          },
+          {
+            "id": "S2",
+            "level": "insufficient",
+            "value": null,
+            "baseline": null,
+            "ratio": null,
+            "samples": 0
+          },
+          {
+            "id": "S3",
+            "level": "none",
+            "value": 16.1176,
+            "baseline": 14.1333,
+            "ratio": 1.14,
+            "samples": 17,
+            "detail": {
+              "unit": "requests"
+            }
+          },
+          {
+            "id": "S4",
+            "level": "none",
+            "value": 1,
+            "baseline": 2.5,
+            "ratio": 0.4,
+            "samples": 16,
+            "detail": {
+              "max_models_in_day": 1
+            }
+          },
+          {
+            "id": "S5",
+            "level": "insufficient",
+            "value": null,
+            "baseline": 0.5,
+            "ratio": null,
+            "samples": 17
+          }
+        ],
+        "level": "none",
+        "daily": [
+          {
+            "date": "2026-08-01",
+            "requests": 0,
+            "credits": 0,
+            "tokens": null,
+            "models": 0
+          },
+          {
+            "date": "2026-08-03",
+            "requests": 17,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-04",
+            "requests": 20,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-05",
+            "requests": 23,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-06",
+            "requests": 26,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-07",
+            "requests": 29,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-10",
+            "requests": 13,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-12",
+            "requests": 19,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-13",
+            "requests": 22,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-14",
+            "requests": 25,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-17",
+            "requests": 9,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-19",
+            "requests": 15,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-20",
+            "requests": 18,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-24",
+            "requests": 5,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-25",
+            "requests": 8,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-26",
+            "requests": 11,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-27",
+            "requests": 14,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          }
+        ]
+      }
     },
     {
       "login": "aoi-kobayashi",
@@ -519,7 +1658,191 @@
         "Gemini 2.0 Flash": 1.058,
         "GPT-4o": 1.392
       },
-      "last_activity_date": "2026-08-28"
+      "last_activity_date": "2026-08-28",
+      "usage_insight": {
+        "usage": {
+          "requests": 223,
+          "credits": null,
+          "active_days": 16,
+          "per_active_day": 13.94,
+          "per_active_day_unit": "requests",
+          "peak_day": {
+            "date": "2026-08-07",
+            "value": 27,
+            "unit": "requests"
+          }
+        },
+        "tokens": null,
+        "unit_cost": {
+          "per_million_tokens_usd": null,
+          "per_request_usd": 0.0354,
+          "per_credit_usd": null
+        },
+        "by_model": [],
+        "signals": [
+          {
+            "id": "S1",
+            "level": "insufficient",
+            "value": null,
+            "baseline": null,
+            "ratio": null,
+            "samples": 16
+          },
+          {
+            "id": "S2",
+            "level": "insufficient",
+            "value": null,
+            "baseline": null,
+            "ratio": null,
+            "samples": 0
+          },
+          {
+            "id": "S3",
+            "level": "none",
+            "value": 13.9375,
+            "baseline": 14.1333,
+            "ratio": 0.99,
+            "samples": 16,
+            "detail": {
+              "unit": "requests"
+            }
+          },
+          {
+            "id": "S4",
+            "level": "none",
+            "value": 1,
+            "baseline": 2.5,
+            "ratio": 0.4,
+            "samples": 15,
+            "detail": {
+              "max_models_in_day": 1
+            }
+          },
+          {
+            "id": "S5",
+            "level": "insufficient",
+            "value": null,
+            "baseline": 0.5,
+            "ratio": null,
+            "samples": 16
+          }
+        ],
+        "level": "none",
+        "daily": [
+          {
+            "date": "2026-08-01",
+            "requests": 0,
+            "credits": 0,
+            "tokens": null,
+            "models": 0
+          },
+          {
+            "date": "2026-08-03",
+            "requests": 15,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-05",
+            "requests": 21,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-06",
+            "requests": 24,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-07",
+            "requests": 27,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-10",
+            "requests": 11,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-12",
+            "requests": 17,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-13",
+            "requests": 20,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-17",
+            "requests": 7,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-18",
+            "requests": 10,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-19",
+            "requests": 13,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-20",
+            "requests": 16,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-25",
+            "requests": 6,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-26",
+            "requests": 9,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-27",
+            "requests": 12,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-28",
+            "requests": 15,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          }
+        ]
+      }
     },
     {
       "login": "external-contractor-01",
@@ -545,7 +1868,184 @@
         "Claude 3.7 Sonnet": 3.924,
         "o1": 1.305
       },
-      "last_activity_date": "2026-08-28"
+      "last_activity_date": "2026-08-28",
+      "usage_insight": {
+        "usage": {
+          "requests": 212,
+          "credits": null,
+          "active_days": 15,
+          "per_active_day": 14.13,
+          "per_active_day_unit": "requests",
+          "peak_day": {
+            "date": "2026-08-10",
+            "value": 29,
+            "unit": "requests"
+          }
+        },
+        "tokens": null,
+        "unit_cost": {
+          "per_million_tokens_usd": null,
+          "per_request_usd": 0.0343,
+          "per_credit_usd": null
+        },
+        "by_model": [],
+        "signals": [
+          {
+            "id": "S1",
+            "level": "insufficient",
+            "value": null,
+            "baseline": null,
+            "ratio": null,
+            "samples": 15
+          },
+          {
+            "id": "S2",
+            "level": "insufficient",
+            "value": null,
+            "baseline": null,
+            "ratio": null,
+            "samples": 0
+          },
+          {
+            "id": "S3",
+            "level": "none",
+            "value": 14.1333,
+            "baseline": 14.1333,
+            "ratio": 1,
+            "samples": 15,
+            "detail": {
+              "unit": "requests"
+            }
+          },
+          {
+            "id": "S4",
+            "level": "none",
+            "value": 1,
+            "baseline": 2.5,
+            "ratio": 0.4,
+            "samples": 14,
+            "detail": {
+              "max_models_in_day": 1
+            }
+          },
+          {
+            "id": "S5",
+            "level": "insufficient",
+            "value": null,
+            "baseline": 0.5,
+            "ratio": null,
+            "samples": 15
+          }
+        ],
+        "level": "none",
+        "daily": [
+          {
+            "date": "2026-08-01",
+            "requests": 0,
+            "credits": 0,
+            "tokens": null,
+            "models": 0
+          },
+          {
+            "date": "2026-08-03",
+            "requests": 8,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-05",
+            "requests": 14,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-06",
+            "requests": 17,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-10",
+            "requests": 29,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-11",
+            "requests": 7,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-12",
+            "requests": 10,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-13",
+            "requests": 13,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-18",
+            "requests": 28,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-19",
+            "requests": 6,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-20",
+            "requests": 9,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-21",
+            "requests": 12,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-25",
+            "requests": 24,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-26",
+            "requests": 27,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-28",
+            "requests": 8,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          }
+        ]
+      }
     },
     {
       "login": "external-contractor-02",
@@ -571,7 +2071,184 @@
         "Claude 3.7 Sonnet": 3.924,
         "o1": 1.305
       },
-      "last_activity_date": "2026-08-28"
+      "last_activity_date": "2026-08-28",
+      "usage_insight": {
+        "usage": {
+          "requests": 212,
+          "credits": null,
+          "active_days": 15,
+          "per_active_day": 14.13,
+          "per_active_day_unit": "requests",
+          "peak_day": {
+            "date": "2026-08-10",
+            "value": 29,
+            "unit": "requests"
+          }
+        },
+        "tokens": null,
+        "unit_cost": {
+          "per_million_tokens_usd": null,
+          "per_request_usd": 0.0343,
+          "per_credit_usd": null
+        },
+        "by_model": [],
+        "signals": [
+          {
+            "id": "S1",
+            "level": "insufficient",
+            "value": null,
+            "baseline": null,
+            "ratio": null,
+            "samples": 15
+          },
+          {
+            "id": "S2",
+            "level": "insufficient",
+            "value": null,
+            "baseline": null,
+            "ratio": null,
+            "samples": 0
+          },
+          {
+            "id": "S3",
+            "level": "none",
+            "value": 14.1333,
+            "baseline": 14.1333,
+            "ratio": 1,
+            "samples": 15,
+            "detail": {
+              "unit": "requests"
+            }
+          },
+          {
+            "id": "S4",
+            "level": "none",
+            "value": 1,
+            "baseline": 2.5,
+            "ratio": 0.4,
+            "samples": 14,
+            "detail": {
+              "max_models_in_day": 1
+            }
+          },
+          {
+            "id": "S5",
+            "level": "insufficient",
+            "value": null,
+            "baseline": 0.5,
+            "ratio": null,
+            "samples": 15
+          }
+        ],
+        "level": "none",
+        "daily": [
+          {
+            "date": "2026-08-01",
+            "requests": 0,
+            "credits": 0,
+            "tokens": null,
+            "models": 0
+          },
+          {
+            "date": "2026-08-03",
+            "requests": 8,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-05",
+            "requests": 14,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-06",
+            "requests": 17,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-10",
+            "requests": 29,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-11",
+            "requests": 7,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-12",
+            "requests": 10,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-13",
+            "requests": 13,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-18",
+            "requests": 28,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-19",
+            "requests": 6,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-20",
+            "requests": 9,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-21",
+            "requests": 12,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-25",
+            "requests": 24,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-26",
+            "requests": 27,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-28",
+            "requests": 8,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          }
+        ]
+      }
     },
     {
       "login": "yuki-tanaka",
@@ -597,7 +2274,191 @@
         "Claude 3.7 Sonnet": 2.824,
         "GPT-4o": 1.5
       },
-      "last_activity_date": "2026-08-28"
+      "last_activity_date": "2026-08-28",
+      "usage_insight": {
+        "usage": {
+          "requests": 217,
+          "credits": null,
+          "active_days": 16,
+          "per_active_day": 13.56,
+          "per_active_day_unit": "requests",
+          "peak_day": {
+            "date": "2026-08-25",
+            "value": 27,
+            "unit": "requests"
+          }
+        },
+        "tokens": null,
+        "unit_cost": {
+          "per_million_tokens_usd": null,
+          "per_request_usd": 0.0334,
+          "per_credit_usd": null
+        },
+        "by_model": [],
+        "signals": [
+          {
+            "id": "S1",
+            "level": "insufficient",
+            "value": null,
+            "baseline": null,
+            "ratio": null,
+            "samples": 16
+          },
+          {
+            "id": "S2",
+            "level": "insufficient",
+            "value": null,
+            "baseline": null,
+            "ratio": null,
+            "samples": 0
+          },
+          {
+            "id": "S3",
+            "level": "none",
+            "value": 13.5625,
+            "baseline": 14.1333,
+            "ratio": 0.96,
+            "samples": 16,
+            "detail": {
+              "unit": "requests"
+            }
+          },
+          {
+            "id": "S4",
+            "level": "none",
+            "value": 1,
+            "baseline": 2.5,
+            "ratio": 0.4,
+            "samples": 15,
+            "detail": {
+              "max_models_in_day": 1
+            }
+          },
+          {
+            "id": "S5",
+            "level": "insufficient",
+            "value": null,
+            "baseline": 0.5,
+            "ratio": null,
+            "samples": 16
+          }
+        ],
+        "level": "none",
+        "daily": [
+          {
+            "date": "2026-08-01",
+            "requests": 0,
+            "credits": 0,
+            "tokens": null,
+            "models": 0
+          },
+          {
+            "date": "2026-08-03",
+            "requests": 11,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-04",
+            "requests": 14,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-05",
+            "requests": 17,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-06",
+            "requests": 20,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-11",
+            "requests": 10,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-12",
+            "requests": 13,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-13",
+            "requests": 16,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-14",
+            "requests": 19,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-18",
+            "requests": 6,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-19",
+            "requests": 9,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-21",
+            "requests": 15,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-24",
+            "requests": 24,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-25",
+            "requests": 27,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-26",
+            "requests": 5,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          },
+          {
+            "date": "2026-08-28",
+            "requests": 11,
+            "credits": 0,
+            "tokens": null,
+            "models": 1
+          }
+        ]
+      }
     }
   ],
   "import_summary": {
