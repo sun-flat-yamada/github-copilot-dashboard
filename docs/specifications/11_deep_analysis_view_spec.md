@@ -36,7 +36,7 @@ Standard dashboard views (Live Metrics, Monthly Report, Model Radar) focus on ma
 
 ### 2.2 Contextual Deep-Links
 - **User Detail & Ranking Table (`UserDetailTable`)**: "Deep Analysis" action button in each user row opens the view with that user preselected.
-- **Monthly Report User Table (`MonthlyReportUserTable`)**: Action button in each user row allows direct navigation to Deep Analysis from monthly usage report tables.
+- **User Detail Table (`UserDetailTable`, monthly report source)**: Action button in each user row allows direct navigation to Deep Analysis from monthly usage report tables.
 - **User Trend Viewer (`UserTrendViewer`)**: "Deep Analyze this User" button in the profile header.
 
 ### 2.3 Analysis Method Selector

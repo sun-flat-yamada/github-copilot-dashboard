@@ -9,26 +9,6 @@ describe('Table Sorting & Separate Cost/Overage Columns Contract Tests', () => {
     return fs.readFileSync(fullPath, 'utf-8');
   };
 
-  describe('MonthlyReportUserTable', () => {
-    const content = readComponent('dashboard/src/components/monthly-report/MonthlyReportUserTable.tsx');
-
-    it('separates usage cost and excess billing into two distinct columns', () => {
-      assert.match(content, /利用費用\s*\(USD\)/);
-      assert.match(content, /超過請求\s*\(USD\)/);
-      // Ensure they are not in the same th
-      assert.doesNotMatch(content, /<th[^>]*>[^<]*利用費用[^<]*超過請求[^<]*<\/th>/);
-    });
-
-    it('implements interactive sorting for all user metrics', () => {
-      assert.match(content, /type MonthlyUserSortKey\s*=/);
-      assert.match(content, /'spend'/);
-      assert.match(content, /'excess'/);
-      assert.match(content, /handleSort\('spend'\)/);
-      assert.match(content, /handleSort\('excess'\)/);
-      assert.match(content, /filteredUsers\s*=\s*useMemo/);
-    });
-  });
-
   describe('MonthlyReportCharts (3-Axis Allocation Table)', () => {
     const content = readComponent('dashboard/src/components/monthly-report/MonthlyReportCharts.tsx');
 
@@ -47,19 +27,25 @@ describe('Table Sorting & Separate Cost/Overage Columns Contract Tests', () => {
     });
   });
 
-  describe('UserDetailTable', () => {
+  describe('UserDetailTable (unified for live and monthly report)', () => {
     const content = readComponent('dashboard/src/components/UserDetailTable.tsx');
 
     it('separates usage cost and excess billing into two distinct columns', () => {
-      assert.match(content, /利用費用/);
+      assert.match(content, /利用費用\s*\(\{costUnitLabel\}\)/);
       assert.match(content, /超過請求\s*\(USD\)/);
+      // Ensure they are not in the same th
+      assert.doesNotMatch(content, /<th[^>]*>[^<]*利用費用[^<]*超過請求[^<]*<\/th>/);
     });
 
-    it('supports sorting by both cost and excess', () => {
+    it('implements interactive sorting for all user metrics', () => {
+      assert.match(content, /type UserSortMetric\s*=/);
       assert.match(content, /'excess'/);
       assert.match(content, /handleSort\('cost'\)/);
       assert.match(content, /handleSort\('excess'\)/);
-      assert.match(content, /colSpan=\{hasUsageMetrics \? 16 : 12\}/);
+      assert.match(content, /handleSort\('tokens'\)/);
+      assert.match(content, /handleSort\('signal'\)/);
+      assert.match(content, /filteredUsers\s*=\s*useMemo/);
+      assert.match(content, /colSpan=\{USER_DETAIL_COLUMN_COUNT\}/);
     });
   });
 

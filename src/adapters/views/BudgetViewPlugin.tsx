@@ -3,8 +3,8 @@ import { ViewPlugin, ViewPluginProps } from './ViewPlugin.js';
 import { BudgetPresenter, BudgetViewModel } from '../presenters/BudgetPresenter.js';
 import { CostCenterBudgetCards } from '../../../dashboard/src/components/CostCenterBudgetCards.js';
 import { CostAllocationCharts } from '../../../dashboard/src/components/CostAllocationCharts.js';
+import { UserDetailTable } from '../../../dashboard/src/components/UserDetailTable.js';
 import { MonthlyReportCharts } from '../../../dashboard/src/components/monthly-report/MonthlyReportCharts.js';
-import { MonthlyReportUserTable } from '../../../dashboard/src/components/monthly-report/MonthlyReportUserTable.js';
 
 export const BudgetViewComponent: React.FC<ViewPluginProps<BudgetViewModel>> = (props) => {
   const {
@@ -42,7 +42,7 @@ export const BudgetViewComponent: React.FC<ViewPluginProps<BudgetViewModel>> = (
             onGroupingChange={onGroupingChange || (() => {})}
             selectedGroup={selectedGroup}
           />
-          <MonthlyReportUserTable
+          <UserDetailTable
             reportData={currentReportData}
             userProfiles={deepAnalysisProfiles}
             initialSelectedLogin={focusedUserLogin}
