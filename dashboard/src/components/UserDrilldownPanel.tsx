@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { UserUsageProfile } from '../../../src/types/copilot';
 import { InefficiencyDiagnosticEngine } from '../../../src/processor/inefficiency-diagnostic';
+import { SIGNAL_BAND_LABELS } from '../../../src/processor/diagnostic-signals';
 import {
   X,
   LineChart,
@@ -767,7 +768,7 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
                               : 'text-emerald-400'
                           }`}
                         >
-                          {pat.evaluable === false ? '判定不能 (データ不足)' : `兆候: ${pat.probabilityPercent}%`}
+                          {pat.evaluable === false ? '判定不能 (データ不足)' : `シグナル強度: ${SIGNAL_BAND_LABELS[pat.signalBand ?? 'none']} (${pat.probabilityPercent}/100)`}
                         </span>
                       </div>
                       <p className="text-[11px] text-slate-400 leading-relaxed">{pat.summary}</p>

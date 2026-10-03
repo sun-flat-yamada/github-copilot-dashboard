@@ -9,12 +9,20 @@ import {
   LONG_AUTONOMY_REASONING_MODELS,
 } from './inefficiency-diagnostic.js';
 
-export const MODEL_ESTIMATED_CHAT_COST: Record<string, number> = {
-  'o1': 0.08,
-  'claude-3-7-sonnet': 0.04,
-  'gpt-4o': 0.015,
-  'gemini-2-0-flash': 0.004,
-};
+import { countByTier, classifyModel } from './model-classification.js';
+import {
+  DEFAULT_DIAGNOSTIC_CONFIG,
+  DiagnosticConfig,
+  isNonWorkingDay,
+} from './diagnostic-config.js';
+
+/**
+ * @deprecated Estimated chat cost for the four model IDs the diagnostics used to hardcode. Derived from the
+ * model classification catalog; use `classifyModel(id).estimatedChatCostUsd` for any model.
+ */
+export const MODEL_ESTIMATED_CHAT_COST: Record<string, number> = Object.fromEntries(
+  ['o1', 'claude-3-7-sonnet', 'gpt-4o', 'gemini-2-0-flash'].map((id) => [id, classifyModel(id).estimatedChatCostUsd])
+);
 
 export function getRiskLevel(prob: number): PatternRiskLevel {
   if (prob >= 70) return 'high';
@@ -154,13 +162,15 @@ export function diagnoseOverkillModel(
     const factors: ContributingFactor[] = [];
     const recommendations: string[] = [];
 
-    const o1Count = models['o1'] || 0;
-    const claudeCount = models['claude-3-7-sonnet'] || 0;
-    const flashCount = models['gemini-2-0-flash'] || 0;
-    const gpt4oCount = models['gpt-4o'] || 0;
-    const standardCount = flashCount + gpt4oCount;
+    // モデル ID を固定せず、分類カタログのティアで判定する (未分類モデルは重量級にも軽量にも数えない)
+    const tiers = countByTier(models);
+    const o1Count = tiers.reasoning_heavy;
+    const flashCount = tiers.light;
+    const standardCount = tiers.light + tiers.standard;
+    const flashOnly = tiers.light;
+    const gpt4oCount = tiers.standard;
 
-    const heavyCount = o1Count + claudeCount;
+    const heavyCount = tiers.reasoning_heavy + tiers.heavy;
     const heavyRatio = totalChats > 0 ? heavyCount / totalChats : 0;
     const o1Ratio = totalChats > 0 ? o1Count / totalChats : 0;
 
@@ -182,12 +192,12 @@ export function diagnoseOverkillModel(
     const riskLevel = getRiskLevel(prob);
 
     factors.push({
-      metricName: '推論特化・大型モデル比率 (o1 / Sonnet)',
-      currentValueFormatted: `${(heavyRatio * 100).toFixed(1)}% (o1: ${(o1Ratio * 100).toFixed(1)}%)`,
-      recommendedThresholdFormatted: '< 60.0% (o1: < 25%)',
+      metricName: '推論特化・大型モデル比率 (推論特化 + 大型ティア)',
+      currentValueFormatted: `${(heavyRatio * 100).toFixed(1)}% (推論特化: ${(o1Ratio * 100).toFixed(1)}%)`,
+      recommendedThresholdFormatted: '< 60.0% (推論特化: < 25%)',
       description:
         o1Ratio >= 0.4
-          ? '超高コストな推論モデル(o1)が利用チャットの大半を占めており、単純な定型作業にも投入されている疑いがあります。'
+          ? '超高コストな推論特化モデルが利用チャットの大半を占めており、単純な定型作業にも投入されている疑いがあります。'
           : heavyRatio >= 0.75
           ? '軽量・高速モデルの利用が少なく、全体的に重量級モデルに依存しています。'
           : 'タスクの性質に応じたモデルの使い分けが行われています。',
@@ -195,8 +205,8 @@ export function diagnoseOverkillModel(
     });
 
     factors.push({
-      metricName: '高速・標準モデル活用数 (Flash / GPT-4o)',
-      currentValueFormatted: `${standardCount} 回 (Flash: ${flashCount}, 4o: ${gpt4oCount})`,
+      metricName: '軽量・標準モデル活用数 (軽量 + 標準ティア)',
+      currentValueFormatted: `${standardCount} 回 (軽量: ${flashOnly}, 標準: ${gpt4oCount})`,
       recommendedThresholdFormatted: '≥ 25.0%',
       description:
         flashCount <= 2 && totalChats >= 20
@@ -223,7 +233,7 @@ export function diagnoseOverkillModel(
       tagline: '定型作業にも常に最高コストモデルを投入しコストと応答時間を浪費している兆候',
       summary:
         prob >= 70
-          ? '強い兆候を検出しました。o1やClaude 3.7 Sonnet等の最上位モデルばかりが使用され、軽量モデルの併用がほぼありません。予算消費の加速と応答待ち時間の増加を招いています。'
+          ? '強い兆候を検出しました。推論特化・大型ティアのモデルばかりが使用され、軽量モデルの併用がほぼありません。予算消費の加速と応答待ち時間の増加を招いています。'
           : prob >= 40
           ? '中程度の傾向があります。定型的な質問やリファクタリングに軽量モデルを併用することで、コストと速度の最適化が可能です。'
           : '兆候は検出されませんでした。バランスの良いモデル選定が行われています。',
@@ -431,7 +441,8 @@ export function diagnosePassiveSeat(
    * 適切にタスクをオフロードしている場合は「🌟 スマート・オフロード型 (Healthy)」として正当評価
    */
 export function diagnoseOffHoursWorkload(
-    history: UserModelDailyUsage[]
+    history: UserModelDailyUsage[],
+    config: DiagnosticConfig = DEFAULT_DIAGNOSTIC_CONFIG
   ): InefficiencyPatternResult {
     let prob = 0;
     const factors: ContributingFactor[] = [];
@@ -442,8 +453,8 @@ export function diagnoseOffHoursWorkload(
     const weekendHistory: UserModelDailyUsage[] = [];
 
     for (const h of history) {
-      const dayOfWeek = new Date(h.date).getDay();
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      // 暦日として解釈するため実行環境のタイムゾーンに依存しない。非稼働日 = 週末 + 祝日カレンダー
+      const isWeekend = isNonWorkingDay(h.date, config);
       const acts = h.total_chats + h.suggestions;
       totalActions += acts;
       if (isWeekend) {
@@ -497,7 +508,7 @@ export function diagnoseOffHoursWorkload(
 
     // 要因 1: 週末アクティビティ比率
     factors.push({
-      metricName: '週末・休日アクティビティ比率',
+      metricName: '非稼働日 (週末・祝日) アクティビティ比率',
       currentValueFormatted: `${(weekendRatio * 100).toFixed(1)}% (${weekendActions} / ${totalActions} 件)`,
       recommendedThresholdFormatted: '< 20.0%',
       description: isSmartOffload
@@ -663,7 +674,7 @@ export { calculateAutonomyMetrics as analyzeAutonomyDepth };
  * 判定に必要な実測値が無いときの結果。固定値・推定値で埋めて「兆候なし」と見せかけず、
  * 「判定不能 (データ不足)」として返す。確率は意味を持たないため 0 とし、UI は evaluable = false を見て表示を切り替える。
  */
-function insufficientDataResult(
+export function insufficientDataResult(
   id: InefficiencyPatternResult['id'],
   name: string,
   nameEn: string,
@@ -933,8 +944,8 @@ export function diagnoseModelCostMismatch(
     description:
       heavyRatio >= 0.7
         ? isAgentHeavy
-          ? '高コストな最上位モデル（o1 / Claude 3.7 Sonnet等）が中心ですが、Agent自律タスクの設計・検証に投入されています。'
-          : '高コストな最上位モデル（o1 / Claude 3.7 Sonnet等）に極端に偏っており、コスト対効果の不整合が懸念されます。'
+          ? '高コストな上位ティアのモデル（推論特化・大型）が中心ですが、Agent自律タスクの設計・検証に投入されています。'
+          : '高コストな上位ティアのモデル（推論特化・大型）に極端に偏っており、コスト対効果の不整合が懸念されます。'
         : 'モデルの利用比率はバランスの取れた範囲内です。',
     severity: heavyRatio >= 0.7 && !isAgentHeavy ? 'danger' : heavyRatio >= 0.5 ? 'warning' : 'good',
   });
