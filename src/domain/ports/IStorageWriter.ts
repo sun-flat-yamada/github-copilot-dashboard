@@ -1,3 +1,4 @@
+import type { DataQualityHistory } from '../entities/data-quality.js';
 import {
   CopilotDailyMetrics,
   CopilotSeatAssignment,
@@ -31,6 +32,9 @@ export interface IStorageWriter {
   saveDeepAnalysisArchive(month: string, profiles: UserUsageProfile[]): void;
   saveRolling1YearTrend(data: RollingTrendDataset): void;
   saveIndex(metadata: IndexMetadata): void;
+  /** データ品質レポートの履歴 (P1-7)。未対応の実装では未定義 */
+  saveDataQualityHistory?(history: DataQualityHistory): void;
+  loadDataQualityHistory?(): DataQualityHistory | null;
   /** 前回保存した index.json。未保存・破損時は null */
   loadIndex(): IndexMetadata | null;
   /** 保存済みのスコープ集計 (daily / monthly / custom)。未保存・破損時は null */
