@@ -139,7 +139,7 @@ A run must never publish "empty" as if it were a measurement. The pipeline (`Pip
 | Presenters | All views | Only the Credits / Agent / Adoption presenters are used by `App.tsx`. |
 | Pipeline | `createPipelineApp` → `PipelineOrchestrator` | As described (this is the live path). |
 
-Converging the front end on one architecture (and the Dataset Loader / Query layer) is **Phase 2 of the improvement plan** and depends on a pending decision (ADR); until it is made, the rules of SDD-15 (single filter engine, one definition per concept, lint-enforced hook rules) apply to the live path.
+Converging the front end on one architecture (and the Dataset Loader / Query layer) is **Phase 2 of the improvement plan** and the decision is recorded in [ADR-0001](../adr/0001-single-frontend-architecture.md) (hook path → Dataset + Registry; the DataStore path is removed, `VITE_USE_NEW_STORE` in P2-5). Until the migration lands, the rules of SDD-15 (single filter engine, one definition per concept, lint-enforced hook rules) apply to the live path.
 
 ### 2.8 Raw Landing & Reprocess (P1-2)
 
