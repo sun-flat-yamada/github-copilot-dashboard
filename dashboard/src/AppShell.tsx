@@ -25,6 +25,7 @@ import { RefreshCw, AlertCircle } from 'lucide-react';
 
 const ALL_SECTION_IDS = [
   'advisor',
+  'yearly-trend',
   'allocation',
   'budget',
   'users',
@@ -233,6 +234,7 @@ export const AppShell: React.FC<AppShellProps> = ({ registry: defaultViewRegistr
   // View Registry へ渡す描画コンテキスト (各ビューはこれだけに依存する)
   const viewContext: ViewContext = {
     activeSource,
+    dataBaseDir,
     isReportSource,
     isDemoData: resolveIsDemoData({ indexMeta, activeSource, activeDataIsDemoSourced }),
     currentData,

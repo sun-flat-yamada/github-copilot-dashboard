@@ -19,6 +19,8 @@ export type ViewDatasetId = 'scope' | 'report';
  */
 export interface ViewContext {
   activeSource: DataSourceType;
+  /** データの取得元ディレクトリ (LIVE: ./data / DEMO: ./data/demo)。ビューが追加データセットを取得するときに使う */
+  dataBaseDir: string;
   isReportSource: boolean;
   /** デモ由来データか (Metric Registry の品質属性判定に使う) */
   isDemoData: boolean;

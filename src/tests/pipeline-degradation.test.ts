@@ -262,6 +262,20 @@ describe('PipelineOrchestrator: per-source degradation (P0-3)', () => {
     assert.ok(storage.scopes.has('monthly:2026-09'));
     assert.ok(storage.scopes.has('custom:latest-30d'));
     assert.equal(storage.scopes.get('monthly:2026-09')!.overview.overall_acceptance_rate, 0.3);
+
+    // P3-6: 1 年推移は暦月 12 か月の系列。保存が無い月は missing (null) で、当月 (締め前) は暫定
+    const trend = storage.trend!;
+    assert.equal(trend.schema_version, 2);
+    assert.equal(trend.points!.length, 12);
+    assert.equal(trend.window!.end, '2026-09');
+    const sep = trend.points!.at(-1)!;
+    assert.equal(sep.month, '2026-09');
+    assert.equal(sep.status, 'provisional');
+    assert.ok(sep.entry);
+    const aug = trend.points!.find((p) => p.month === '2026-08')!;
+    assert.equal(aug.status, 'missing');
+    assert.equal(aug.entry, null);
+    assert.equal(sep.yoy.total_spend_usd.reason, '前年同月のデータなし');
   });
 
   it('metrics failed, seats ok: seat / cost analysis still runs and usage metrics are reported as unavailable (null, not 0)', async () => {
