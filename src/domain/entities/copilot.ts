@@ -804,4 +804,53 @@ export interface RollingTrendDataset {
   months: string[];
   /** months と同じ順序の実績。保存済みの月次集計が無い月は含めない */
   trends: RollingTrendEntry[];
+  /** P3-6: 出力形式の版。旧ファイルには無い */
+  schema_version?: 2;
+  /** P3-6: `points` の対象窓 (暦月 12 か月。YYYY-MM) */
+  window?: { start: string; end: string };
+  /** P3-6: 締めのルール (宣言。画面と SDD に表示する) */
+  close_rule?: YearlyTrendCloseRule;
+  /** P3-6: 暦月で連続した 12 か月の系列 (古い順)。保存が無い月も `missing` として含む */
+  points?: YearlyTrendPoint[];
+}
+
+export interface YearlyTrendCloseRule {
+  /** 翌月の第 N 営業日 (平日のみ。祝日は考慮しない) に締める */
+  business_days_after_month_end: number;
+  /** 確定の意味。P4-2 (凍結・チェックサム) までは「締め日を過ぎた」ことだけを示す */
+  note: string;
+}
+
+/** closed=締め日を過ぎた (確定) / provisional=締め前 (暫定) / missing=その月の保存済み集計が無い */
+export type YearlyTrendStatus = 'closed' | 'provisional' | 'missing';
+
+export type YearlyTrendMetricKey =
+  | 'total_spend_usd'
+  | 'total_seats'
+  | 'active_seats'
+  | 'acceptance_rate'
+  | 'total_chats'
+  | 'total_ai_credits_used';
+
+/** 前年同月比。算出できない項目は null とし、理由を `reason` に持つ (0 で補完しない) */
+export interface YearlyTrendYoy {
+  current: number | null;
+  prior: number | null;
+  /** current - prior (割合指標は割合の差) */
+  delta: number | null;
+  /** delta / prior。prior が 0 / 欠損のときは null */
+  change_rate: number | null;
+  reason?: string;
+}
+
+export interface YearlyTrendPoint {
+  month: string; // 'YYYY-MM'
+  status: YearlyTrendStatus;
+  /** 締め日 (YYYY-MM-DD, UTC) */
+  closes_on: string;
+  /** missing のとき null */
+  entry: RollingTrendEntry | null;
+  /** 前年同月 (YYYY-MM) */
+  prior_month: string;
+  yoy: Record<YearlyTrendMetricKey, YearlyTrendYoy>;
 }

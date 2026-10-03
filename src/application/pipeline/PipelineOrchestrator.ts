@@ -9,6 +9,7 @@ import { ReportParser } from '../../processor/report-parser.js';
 import { enrichUserProfiles } from '../../processor/profile-enricher.js';
 import { carryOverUsageSections } from '../../processor/scope-merge.js';
 import { buildRollingTrendEntry } from '../../processor/rolling-trend.js';
+import { buildYearlyTrend, YEARLY_TREND_CLOSE_RULE, yearlyTrendMonthsNeeded } from '../../processor/yearly-trend.js';
 import { MockDataGenerator, MOCK_DATA_UNAVAILABLE_ORGS } from '../../collector/mock-generator.js';
 import {
   CostCenterBudget,
@@ -410,16 +411,33 @@ export class PipelineOrchestrator {
     const allRecordedMonths = Array.from(allMonthsSet).sort().reverse();
     const rolling12Months = allRecordedMonths.slice(0, 12);
 
+    // 窓 (暦月 12 か月) と前年同月 12 か月ぶんを、保存済みの月次集計から読み込む (P3-6)
+    const recorded = new Set(allRecordedMonths);
+    const endMonth = allRecordedMonths[0];
+    const entryByMonth = new Map<string, RollingTrendEntry>();
+    const monthsToLoad = new Set<string>([...rolling12Months, ...(endMonth ? yearlyTrendMonthsNeeded(endMonth) : [])]);
+    for (const m of monthsToLoad) {
+      if (!recorded.has(m)) continue;
+      const monthly: ScopeAggregatedData | null = this.storage.loadScopeData('monthly', m);
+      if (monthly) entryByMonth.set(m, buildRollingTrendEntry(m, monthly));
+    }
     const rollingTrendEntries: RollingTrendEntry[] = [];
     for (const m of rolling12Months) {
-      const monthly: ScopeAggregatedData | null = this.storage.loadScopeData('monthly', m);
-      if (monthly) rollingTrendEntries.push(buildRollingTrendEntry(m, monthly));
+      const entry = entryByMonth.get(m);
+      if (entry) rollingTrendEntries.push(entry);
     }
+    const yearlyPoints = endMonth ? buildYearlyTrend({ endMonth, entries: entryByMonth, now: new Date(nowIso) }) : [];
 
     this.storage.saveRolling1YearTrend({
       generated_at: nowIso,
       months: rolling12Months,
       trends: rollingTrendEntries,
+      schema_version: 2,
+      ...(yearlyPoints.length > 0
+        ? { window: { start: yearlyPoints[0].month, end: yearlyPoints[yearlyPoints.length - 1].month } }
+        : {}),
+      close_rule: YEARLY_TREND_CLOSE_RULE,
+      points: yearlyPoints,
     });
 
     // データ品質レポート: 実収集をした実行だけ、履歴に追記する (モック・未設定・失敗では前回の履歴を維持)

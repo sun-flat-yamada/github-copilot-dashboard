@@ -339,6 +339,30 @@ export const METRIC_REGISTRY = {
     caveats: ['プールを特定できない場合は算出しない (欠損)'],
     defaultQuality: 'measured',
   },
+  yoy_spend_change: {
+    id: 'yoy_spend_change',
+    label: { ja: '利用費用 前年同月比', en: 'Spend year-over-year' },
+    definition: { ja: '当月のシート費用の月次集計と、前年同月の月次集計との差と変化率。どちらかの月に保存済み集計が無い場合は算出しない (0 で補完しない)。', en: 'Difference and change rate between the stored monthly seat cost and the same month of the previous year. Not computed when either month has no stored aggregate (never filled with 0).' },
+    formula: '(spend[m] - spend[m-12]) / spend[m-12]',
+    unit: 'usd',
+    window: 'point_in_time',
+    filterable: false,
+    sources: ['processed/monthly', 'trends/rolling-1year'],
+    caveats: ['締め日 (翌月第 5 営業日) 前の月は暫定値', '前年同月が 0 のときは変化率を出さない', 'フィルターでは絞り込まれない (全社値)'],
+    defaultQuality: 'measured',
+  },
+  yoy_active_seats_change: {
+    id: 'yoy_active_seats_change',
+    label: { ja: '利用中シート 前年同月比', en: 'Active seats year-over-year' },
+    definition: { ja: '当月の利用中シート数の月次集計と、前年同月の月次集計との差と変化率。', en: 'Difference and change rate between the stored monthly active seat count and the same month of the previous year.' },
+    formula: '(active_seats[m] - active_seats[m-12]) / active_seats[m-12]',
+    unit: 'seats',
+    window: 'point_in_time',
+    filterable: false,
+    sources: ['processed/monthly', 'trends/rolling-1year'],
+    caveats: ['締め日 (翌月第 5 営業日) 前の月は暫定値', 'フィルターでは絞り込まれない (全社値)'],
+    defaultQuality: 'measured',
+  },
 } as const satisfies Record<string, MetricDefinition>;
 
 export type MetricId = keyof typeof METRIC_REGISTRY;

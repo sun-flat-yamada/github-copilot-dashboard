@@ -16,6 +16,7 @@ import type {
   AnalysisScopeType,
   IndexMetadata,
   MonthlyReportAggregatedData,
+  RollingTrendDataset,
   ScopeAggregatedData,
 } from '../../../src/types/copilot';
 import { fetchDataWithFallback, getCandidateDataUrls, resolveDataPath } from '../utils/pathResolver';
@@ -239,6 +240,25 @@ export async function loadReportDataset(
     state: deriveDatasetState({ demoSourced, partial: false }),
     data: fetched.data,
     url: fetched.url,
+    demoSourced,
+    error: null,
+  };
+}
+
+
+/**
+ * 1 年推移 (trends/rolling-1year.json, P3-6)。
+ * 反対モード (LIVE <=> DEMO) へは暗黙に切り替えない。無い・読めないときは failed (空の推移を作らない)。
+ */
+export async function loadYearlyTrendDataset(baseDir: string): Promise<DatasetResult<RollingTrendDataset>> {
+  const candidates = getCandidateDataUrls(baseDir, 'trends', 'rolling-1year.json');
+  const result = await fetchJson<RollingTrendDataset>(candidates);
+  if ('error' in result) return failed(result.error);
+  const demoSourced = isDemoUrl(result.url) || baseDir.includes('/demo');
+  return {
+    state: deriveDatasetState({ demoSourced, partial: false }),
+    data: result.data,
+    url: result.url,
     demoSourced,
     error: null,
   };
