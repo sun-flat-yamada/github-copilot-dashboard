@@ -7,7 +7,7 @@
 - **文書番号**: SPEC-COPILOT-015
 - **ステータス**: Approved / Active
 - **対象バージョン**: 2026.09-LTS
-- **作成日**: 2026-09-22 (2026-10-01 改訂: ケーススタディ C / D、§3.6、§6 を追加)
+- **作成日**: 2026-09-22 (2026-10-03 改訂: §7 Dataset Loader / Query 層を追加。2026-10-01: ケーススタディ C / D、§3.6、§6)
 - **関連要件**: [SDD-01 FR-9 (ビュー横断データセントリック・リアクティビティ)](01_requirements_specification.ja.md)
 
 ---
@@ -38,7 +38,7 @@
 - **症状**: Tagフィルターを変更しても、各AIモデルの「利用割合 (%)」表示が更新されなかった。
 - **根本原因**: `useDashboardData.ts` の `filteredActiveReportData`（タグ絞り込み後の月次レポートデータを生成するメモ化フック）は、`overview` / `user_details` / `by_department` 等の集計フィールドはタグ絞り込み後に正しく再集計していたが、**`model_breakdown`（モデル別内訳）だけはパース時点の組織全体の値をそのまま素通し**させていた。利用割合(%)の算出ロジック (`computeModelUsage`) は Live Metrics が空の場合にこの `model_breakdown` をフォールバックとして参照するため、Monthly Report / アップロードデータを分析中のユーザーには、タグ選択の効果が一切反映されなかった。
 - **教訓**: **1つの集計データ型に複数の派生フィールドが存在する場合、フィルター再計算メモは「一部のフィールドだけ」を更新し、残りを素通しさせる「部分的再集計漏れ」を起こしやすい。** 新しいフィールドをデータ型に追加するたびに、そのデータ型を再集計している全てのメモ関数を横断的に点検する必要がある。
-- **修正方針**: `model_breakdown` の再集計ロジックをフック内のインライン処理から独立した純粋関数 `buildFilteredModelBreakdown`（`dashboard/src/utils/reportModelBreakdown.ts`）として抽出し、`filteredActiveReportData` から呼び出すよう変更。純粋関数化したことで、実データ入出力による回帰テストが可能になった。
+- **修正方針**: `model_breakdown` の再集計ロジックをフック内のインライン処理から独立した純粋関数 `buildFilteredModelBreakdown`（`dashboard/src/query/reportModelBreakdown.ts`）として抽出し、`filteredActiveReportData` から呼び出すよう変更。純粋関数化したことで、実データ入出力による回帰テストが可能になった。
 
 #### ケーススタディ C: Cost Center / Organization / 部署 / ユーザー条件だけを変えても月次レポートの KPI が変わらない (P0-6)
 - **症状**: 月次レポート (CSV) またはアップロードファイルを表示中に、Cost Center・Organization・部署・ユーザーの条件を変えても KPI が変化せず、タグを変えたときだけ変化した。「未割当」フィルターは 0 件になり、日次・期間スコープでフィルターを適用すると費用が黙って*月額*に変わった。
@@ -97,7 +97,7 @@
 
 ### 3.6 フィルターエンジンの単一化と、概念ごとの単一定義 (P0-5 / P0-6)
 複数のモジュールが必要とする振る舞いは 1 か所に定義して import する。複製は必ずずれる (ケーススタディ C)。
-- **フィルターエンジン**: フィルター適用と全派生フィールドの再計算は `dashboard/src/utils/filterEngine.ts` (`applyFilterCriteriaToLiveScope`、レポート版、`isFilterCriteriaActive`) に置く。コンポーネントやフックでフィルターを再実装しない。
+- **フィルターエンジン**: フィルター適用と全派生フィールドの再計算は `dashboard/src/query/filterEngine.ts` (`applyFilterCriteriaToLiveScope`、レポート版、`isFilterCriteriaActive`) に置く。コンポーネントやフックでフィルターを再実装しない。
 - **未割当**: `UNASSIGNED_FILTER_SENTINEL` と `isUnassignedValue` (`src/domain/constants/unassigned.ts`) が、「Cost Center / Organization / グループ未設定」の唯一の定義。
 - **金額**: スコープ別のシート費用は `seatCostForScope` (日次=日割り、月次=月額、期間=日割り×日数)、予算使用率は `BudgetUtilizationRule.evaluateUsd`、価格は `src/domain/pricing/pricing-catalog.ts` (SDD-03 の価格表、SDD-06 §1.1 / §1.5 / §1.6)。母集団を変えるフィルターは、費用を**アクティブスコープの単位で**再計算しなければならない。
 - **フィルターに追従できないセクション**: ユーザー別の実測を持たないセクションは再計算せず、フィルター済みとして黙って表示することもしない。`LIVE_UNFILTERABLE_SECTIONS` / `REPORT_UNFILTERABLE_SECTIONS` (`src/domain/constants/filter-scope.ts`) に列挙し、全社値のまま、結果に `filter_notice.unfiltered_sections` を付けて View に「全社値 (フィルター非対応)」バッジを表示させる (SDD-07 §2.13)。集計データ型に新しいセクションを追加するときは、再計算するか、このリストへ追加する。§4 のチェックリストが対象とする。
@@ -136,3 +136,53 @@ Tagフィルター・スコープ・データソース切り替えに関わる�
 - **実行箇所**: ローカルの `npm run lint`、`.github/workflows/test-and-preview.yml` の専用ステップ「Run ESLint (React Hooks rules)」、および `npm test` 内の `src/tests/lint-react-hooks.test.ts`。したがって、文書化済みの 5 段階の品質ゲート (`fork:verify → typecheck → test → secret-scan → build`) が 6 段目を足さずにこれを強制する。
 - **抑止**: 意図的な省略は `// eslint-disable-next-line react-hooks/exhaustive-deps` に**理由を書いたコメントを添えて**記す (例: `useDashboardData` のレポート取得 effect は、選択レポート月が変わったときだけ実行する必要があり、`currentReportData` を依存に加えると無限ループになる)。理由の無い抑止はレビューの指摘事項とする。
 - **パーサー**: TypeScript は Babel (`@babel/eslint-parser` + `@babel/preset-typescript`) で構文解析する。本リポジトリは TypeScript 7 (ネイティブ版) を使っており、`typescript-eslint` が必要とする JavaScript API が提供されない。型情報を使うルール (例: `no-floating-promises`) の導入にはパーサーの選定が先に必要で、改善計画 (`.devs/changes/2026-10-01_DashboardReviewAndImprovementPlan`、P2-6) の Phase 2 の判断に委ねる。
+
+---
+
+## 7. Dataset Loader と Query 層 (P2-2 / ADR-0001)
+
+ビューごとにデータの取得・結合・フィルターが散在し、同じ条件でも画面によって数値が食い違う原因になっていた (改善計画 C-02 / C-03)。全ビューが同一のデータ契約 **Dataset (Loader) + Query** を参照する。
+
+```text
+index.json / スコープ JSON / レポート JSON
+   └─ Dataset Loader  (dashboard/src/dataset/datasetLoader.ts)   取得と状態。フィルターはしない
+        └─ Query 層 (dashboard/src/query/)                        フィルター・集計の唯一の実装
+             └─ hook / ビュー                                     結果を使うだけ。再実装しない
+```
+
+### 7.1 Dataset Loader
+
+- `index.json`、スコープ (`daily` / `monthly` / `custom`)、月次レポートを取得する。URL は `resolveDataPath` と複数階層フォールバック `getCandidateDataUrls` (直下 → `processed/`。SDD-05 §2.2) で組み立てる。デモデータへ勝手に切り替えない。
+- `DatasetResult<T>` を **状態** 付きで返す。
+
+| 状態 | 意味 |
+|:--|:--|
+| `ok` | 取得できた。既知の欠けはない |
+| `partial` | 取得できたが一部が欠けている。`index.json` に `failed` / `partial` のソースがある、またはスコープに `error` の異常がある |
+| `failed` | 取得できなかった。`data` は `null`、理由は `error`。失敗を空データや DEMO として見せない |
+| `demo` | DEMO データ。`/demo/` パスから取得、または `is_mock_mode: true` の宣言。デモの数値を実データと誤認させないため、`partial` / `ok` より優先する |
+
+- `custom:<開始>_<終了>` のスコープは取得後に期間で切り出す (`sliceScopeDataByDateRange`)。
+- `useDashboardData` は状態をソース別に保持し (`scopeDatasetState`、`reportDatasetState`)、URL の組み立てや DEMO 判定は持たない。
+
+### 7.2 Query 層
+
+- `filterEngine` (§3.6 の唯一のフィルター実装) は `queryEngine` とともに `dashboard/src/query/` に置く。ビューと hook は `dashboard/src/query` だけを import する。
+- API: `queryLiveScope` / `queryReport` (フィルター適用後の完全再集計データ)、`queryPopulation` (該当 / 全ユーザー数)、`queryFilterOptions` (選択肢)、`queryCapabilities` (フィルターに追従しないセクション。§3.6)。
+- `queryPopulation` は再集計と同じ述語 (`matchUserWithCriteria`) を使うため、セレクターに出る件数は、再集計後の KPI・明細のユーザー数と必ず一致する。渡すデータは**フィルター適用前**のもの。
+- フィルターに追従できない指標は `queryCapabilities(source).unfilterableSections` (§3.6 の一覧) で明示し、ビューでラベル表示する。黙ってフィルター済みとして扱わない。
+
+### 7.3 DuckDB-WASM (遅延ロード)
+
+- DuckDB-WASM は Query 層の SQL エンジン (改善計画 判断結果 #4)。`@duckdb/duckdb-wasm` を import するのは `dashboard/src/query/duckdb/duckdbLoader.ts` だけで、呼び出し側は dynamic `import()` で読み込む。静的 import はどこにも無く、Query の index からも再エクスポートしない (`src/tests/query-layer.test.ts` が検査する)。そのため初期バンドルには入らず、ビルドでは別チャンクと wasm / worker ファイルとして出力され、初回利用時にだけ取得される。バンドル予算は P2-7。
+- 同梱するのは例外処理 (`eh`) 対応ビルド (wasm 約 34 MB) だけ。現行の主要ブラウザはすべて対応している。
+- 最初に SQL 集計を必要とするビュー (ユーザー × 日のファクト。P1-3) が入るまでは、どのビューもローダーを参照せず、ビルド成果物にも含まれない。
+
+### 7.4 移行状況
+
+| 段階 | 状況 |
+|:--|:--|
+| `useDashboardData` の取得を Dataset Loader へ (index / スコープ / レポート) | 完了 (P2-2) |
+| hook のフィルター・選択肢を Query 層経由に | 完了 (P2-2) |
+| Query 結果を使うビュー: `ActiveDataSelector` (該当件数)、`DataSelectionModal` (プレビュー件数) | 完了 (P2-2)。どちらも独自にユーザー数を数えており、元データも異なっていた (セレクターはフィルター後のデータ、モーダルの母数は未フィルターのデータ) |
+| 残りのビューは hook の再集計済みデータを参照 | P2-3 / P2-4 (Metric Registry / View Registry) で段階移行 |

@@ -96,6 +96,7 @@ export const App: React.FC = () => {
     setSelectedKey,
     currentData,
     rawCurrentData,
+    rawCurrentReportData,
     loading,
     error,
     noLiveData,
@@ -299,8 +300,8 @@ export const App: React.FC = () => {
         availableOrganizations={availableOrganizations}
         availableGroups={hookAvailableGroups}
         availableTags={availableTags}
-        currentScopeData={currentData}
-        currentReportData={currentReportData}
+        currentScopeData={rawCurrentData}
+        currentReportData={rawCurrentReportData}
         repoInfo={repoInfo}
         isStarred={isStarred}
         onToggleStar={handleToggleStar}

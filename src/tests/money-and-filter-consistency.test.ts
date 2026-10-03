@@ -7,7 +7,7 @@ import { CreditsBillingService } from '../application/services/CreditsBillingSer
 import {
   applyFilterCriteriaToLiveScope,
   matchUserWithCriteria,
-} from '../../dashboard/src/utils/filterEngine.js';
+} from '../../dashboard/src/query/filterEngine.js';
 import {
   AnalysisScopeType,
   CopilotSeatAssignment,

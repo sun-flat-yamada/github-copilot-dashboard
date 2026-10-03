@@ -134,7 +134,7 @@ flowchart TB
 
 | 要素 | 目標 (§3〜§4) | 現在の本番経路 |
 |:--|:--|:--|
-| SPA の状態管理 | `DataStore` + `DerivedDataGraph` | `dashboard/src/main.tsx` は常に `App.tsx` を描画し、状態とフィルターは `useDashboardData` + `dashboard/src/utils/filterEngine.ts` が担う。`AppV2.tsx` はマウントされない (`VITE_USE_NEW_STORE` でも `App` は変わらない)。 |
+| SPA の状態管理 | `DataStore` + `DerivedDataGraph` | `dashboard/src/main.tsx` は常に `App.tsx` を描画し、データは Dataset Loader (`dashboard/src/dataset/`) が取得し、Query 層 (`dashboard/src/query/`) がフィルターする。両者を `useDashboardData` が束ねる (SDD-15 §7)。`AppV2.tsx` はマウントされない (`VITE_USE_NEW_STORE` でも `App` は変わらない)。 |
 | ビュー | Registry が調停する 9 種の `ViewPlugin` | Registry はナビゲーションのメタ情報のみ提供し、描画は `App.tsx` の条件分岐が行う。 |
 | Presenter | 全ビュー | `App.tsx` が使うのは Credits / Agent / Adoption の 3 つのみ。 |
 | パイプライン | `createPipelineApp` → `PipelineOrchestrator` | 記述どおり (これが本番経路)。 |

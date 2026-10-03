@@ -155,7 +155,7 @@ export class MetricsAggregator {
     const costUnconfirmedSeats = users.filter((u) => u.cost_unconfirmed).length;
 
     // スコープ種別に応じた費用 (daily=日割り / monthly=月額 / custom=日割り×日数)。
-    // フィルター再集計 (dashboard/src/utils/filterEngine.ts) も同じ関数を使い、単位がずれないようにする
+    // フィルター再集計 (dashboard/src/query/filterEngine.ts) も同じ関数を使い、単位がずれないようにする
     const costOf = (u: EnrichedUserSeat) => seatCostForScope(u, scopeType, dateRange.days_count);
     const totalSpend = users.reduce((sum, u) => sum + costOf(u), 0);
     const idleWaste = users.filter((u) => isIdleSeatStatus(u.status)).reduce((sum, u) => sum + costOf(u), 0);

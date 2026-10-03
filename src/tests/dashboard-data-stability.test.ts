@@ -35,7 +35,7 @@ test('Dashboard Data Stability & Infinite Loop Prevention Tests', async (t) => {
     // 1. Report in-memory cache (data + isDemoSourced tuple, so cache hits restore per-source demo status)
     assert.ok(
       hookContent.includes(
-        'reportCacheRef = useRef<Map<string, { data: MonthlyReportAggregatedData; isDemoSourced: boolean }>>'
+        'reportCacheRef = useRef<Map<string, { data: MonthlyReportAggregatedData; isDemoSourced: boolean; state: DatasetState }>>'
       ),
       'useDashboardData must use reportCacheRef for in-memory memoization, storing isDemoSourced alongside data'
     );
@@ -56,7 +56,7 @@ test('Dashboard Data Stability & Infinite Loop Prevention Tests', async (t) => {
   await t.test('verifies Live Metrics caching to prevent flicker on mode/tab toggle', () => {
     assert.ok(
       hookContent.includes(
-        'scopeDataCacheRef = useRef<Map<string, { data: ScopeAggregatedData; isDemoSourced: boolean }>>'
+        'scopeDataCacheRef = useRef<Map<string, { data: ScopeAggregatedData; isDemoSourced: boolean; state: DatasetState }>>'
       ),
       'useDashboardData must use scopeDataCacheRef for caching live metrics scopes, storing isDemoSourced alongside data'
     );
@@ -108,9 +108,19 @@ test('Dashboard Data Stability & Infinite Loop Prevention Tests', async (t) => {
       hookContent.includes('const [reportDataIsDemoSourced, setReportDataIsDemoSourced] = useState<boolean | undefined>(undefined);'),
       'useDashboardData must track whether the active Monthly Report data is demo-sourced, independently of isDemoMode'
     );
+    // 取得元 (/demo/ パス) の判定は Dataset Loader に移った。hook は結果の demoSourced をソース単位で保持する
+    const loaderContent = fs.readFileSync(
+      path.resolve(import.meta.dirname, '../../dashboard/src/dataset/datasetLoader.ts'),
+      'utf-8'
+    );
     assert.ok(
-      /const isDemoSourced = finalUrl\.includes\('\/demo\/'\);/.test(hookContent),
-      'Both fetch effects must derive a local per-request isDemoSourced flag from finalUrl'
+      /url\.includes\('\/demo\/'\)/.test(loaderContent),
+      'Dataset Loader must derive the per-request demo flag from the URL that actually served the data'
+    );
+    assert.ok(
+      hookContent.includes('setScopeDataIsDemoSourced(result.demoSourced)') &&
+        hookContent.includes('setReportDataIsDemoSourced(result.demoSourced)'),
+      'Both fetch effects must record the per-request demoSourced flag returned by the Dataset Loader'
     );
 
     // The derived value exposed to the UI must resolve per-activeSource, defaulting user_upload to
