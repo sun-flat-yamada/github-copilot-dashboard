@@ -107,7 +107,10 @@ test('Inefficiency Diagnostic: Tab-Spamming Roulette (生成ガチャ型)', () =
     ],
   };
 
-  const result = InefficiencyDiagnosticEngine.diagnoseUser(spammerProfile, 'today');
+  // 診断 v2: 最小稼働日数 (3 日) を満たすよう、同じ 1 日分の実績を 3 日に展開する
+  spammerProfile.daily_history = [8, 9, 10].map((d) => ({ ...spammerProfile.daily_history![0], date: `2026-09-${String(d).padStart(2, '0')}` }));
+
+  const result = InefficiencyDiagnosticEngine.diagnoseUser(spammerProfile, '7d');
   const tabSpamPattern = result.patterns.find((p) => p.id === 'tab_spamming_roulette');
   assert.ok(tabSpamPattern);
   assert.ok(tabSpamPattern.probabilityPercent >= 70, `Expected prob >= 70, got ${tabSpamPattern.probabilityPercent}`);

@@ -4,6 +4,7 @@ import {
   InefficiencyPatternResult,
 } from '../../../../src/types/deep-analysis';
 import { ShieldAlert, ChevronDown, ChevronUp } from 'lucide-react';
+import { SIGNAL_BAND_LABELS } from '../../../../src/processor/diagnostic-signals';
 
 interface PatternAccordionItemProps {
   patterns: InefficiencyPatternResult[];
@@ -22,10 +23,10 @@ export const PatternAccordionItem: React.FC<PatternAccordionItemProps> = ({
         <div>
           <h3 className="text-sm font-bold text-white flex items-center space-x-2">
             <ShieldAlert className="w-4 h-4 text-indigo-400" />
-            <span>AI利用 非効率パターン判定 & 兆候確率 (Pattern Diagnostic)</span>
+            <span>AI利用 非効率パターン判定 & シグナル強度 (Pattern Diagnostic)</span>
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            {patterns.length}つの典型的なアンチパターンの兆候有無を判定。判定に必要な実測値が無いものは「判定不能」と表示します。カードをクリックして要因と処方箋をドリルダウン表示
+            {patterns.length}つの典型的なアンチパターンの兆候をルールで判定。強度は確率ではなく未較正のルール成立度の目安です。データが不足するものは「判定不能」と理由を表示します。カードをクリックして入力値・しきい値・根拠と処方箋を表示
           </p>
         </div>
       </div>
@@ -34,7 +35,7 @@ export const PatternAccordionItem: React.FC<PatternAccordionItemProps> = ({
         {patterns.map((pattern) => {
           const isSelected = expandedPatternId === pattern.id;
           const prob = pattern.probabilityPercent;
-          // 判定に必要な実測値が揃っていない。確率を 0% (= 兆候なし) と見せかけない
+          // 判定に必要な実測値が揃っていない。強度を 0 (= 兆候なし) と見せかけない
           const isEvaluable = pattern.evaluable !== false;
 
           return (
@@ -97,7 +98,7 @@ export const PatternAccordionItem: React.FC<PatternAccordionItemProps> = ({
               {/* 確率 % 表示 & プログレスバー (判定不能のときは「—」と理由を表示) */}
               <div className="pt-2 border-t border-slate-800/80">
                 <div className="flex items-baseline justify-between mb-1.5">
-                  <span className="text-[10px] text-slate-400">兆候確率</span>
+                  <span className="text-[10px] text-slate-400" title="確率ではなく、ルールの成立度 (0-100) の目安です">シグナル強度</span>
                   {isEvaluable ? (
                     <span
                       className={`text-xl font-black ${
@@ -110,7 +111,8 @@ export const PatternAccordionItem: React.FC<PatternAccordionItemProps> = ({
                           : 'text-emerald-400'
                       }`}
                     >
-                      {prob}%
+                      {SIGNAL_BAND_LABELS[pattern.signalBand ?? 'none']}
+                      <span className="text-[10px] font-mono font-semibold text-slate-400 ml-1">{prob}/100</span>
                     </span>
                   ) : (
                     <span className="text-xl font-black text-slate-500" data-testid={`pattern-unevaluable-${pattern.id}`}>
