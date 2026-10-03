@@ -268,7 +268,8 @@ Enforces AES-256 symmetric GPG encryption for enterprise user mappings exceeding
 │   └── src/
 │       ├── components/                 # UI & view components
 │       │   └── common/ViewSkeleton.tsx # Suspense skeleton placeholder
-│       ├── App.tsx                     # Main SPA component (React.lazy + Suspense)
+│       ├── App.tsx                     # SPA entry: passes defaultViewRegistry to AppShell
+│       ├── AppShell.tsx                # Main SPA component (takes a ViewRegistry; testable without Vite, SDD-15 §8)
 │       └── main.tsx
 └── package.json
 ```

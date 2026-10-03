@@ -64,13 +64,14 @@ describe('View Registry', () => {
   it('既存の共有ファイルはビュー ID を知らない (App.tsx / ViewNavigation / ViewHost に条件分岐がない)', () => {
     for (const f of [
       'dashboard/src/App.tsx',
+      'dashboard/src/AppShell.tsx',
       'dashboard/src/components/layout/ViewNavigation.tsx',
       'dashboard/src/views/ViewHost.tsx',
       'dashboard/src/views/viewRegistry.ts',
     ]) {
       assert.doesNotMatch(read(f), /activeView\s*===\s*['"]/, `${f} must not branch on a specific view id`);
     }
-    assert.match(read('dashboard/src/App.tsx'), /<ViewHost /);
+    assert.match(read('dashboard/src/AppShell.tsx'), /<ViewHost /);
     assert.match(read('dashboard/src/views/defaultRegistry.ts'), /import\.meta\.glob[^)]*\.\/\*\/manifest\.ts/);
   });
 

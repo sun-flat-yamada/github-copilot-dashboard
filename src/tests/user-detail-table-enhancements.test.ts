@@ -110,7 +110,7 @@ describe('User Detail Table Enhancements & Compact Style Tests', () => {
         'MonthlyReportUserTable.tsx must not exist (SDD-07 §2.16)'
       );
       for (const f of [
-        'dashboard/src/App.tsx',
+        'dashboard/src/AppShell.tsx',
         'dashboard/src/views/users/View.tsx',
       ]) {
         const src = readComponent(f);

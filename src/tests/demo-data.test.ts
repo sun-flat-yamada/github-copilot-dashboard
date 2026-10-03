@@ -297,7 +297,7 @@ describe('Live Metrics DEMO Data & Referencing Tests', () => {
 
   it('verifies App.tsx displays reportError when isReportSource is true', () => {
     const appContent = fs.readFileSync(
-      path.resolve(projectRoot, 'dashboard/src/App.tsx'),
+      path.resolve(projectRoot, 'dashboard/src/AppShell.tsx'),
       'utf-8'
     );
     assert.match(

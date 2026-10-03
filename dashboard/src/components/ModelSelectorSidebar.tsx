@@ -104,7 +104,7 @@ export function getModelShortName(model: { id: string; name: string }): string {
   if (id === 'deepseek-r1') return 'deepseek-r1';
 
   // 汎用フォールバック (Claudeプレフィックスのみ除去し、派閥名とバージョン番号を温存)
-  let short = model.name
+  const short = model.name
     .replace(/^Claude\s+/i, '')
     .replace(/^OpenAI\s+/i, '')
     .replace(/\s*\(.*?\)/g, '')

@@ -180,20 +180,10 @@ describe('Demo detection does not guess from names or empty metrics (P0-3 / P0-7
   });
 });
 
-describe('App wiring for the banner and the explicit demo call-to-action', () => {
+// バナー表示とデモの明示操作 (画面の挙動) は src/tests/ui/app-behavior.test.tsx で検証する (P2-6)
+describe('Hook contract for the banner and the explicit demo call-to-action', () => {
   const root = path.resolve(import.meta.dirname, '../..');
-  const app = fs.readFileSync(path.join(root, 'dashboard/src/App.tsx'), 'utf-8');
   const hook = fs.readFileSync(path.join(root, 'dashboard/src/hooks/useDashboardData.ts'), 'utf-8');
-
-  it('App renders the data status banner above the main content', () => {
-    assert.match(app, /<DataStatusBanner items=\{dataStatusItems\}/);
-    assert.match(app, /buildDataStatusItems\(\{ indexMeta, activeSource, activeDataIsDemoSourced \}\)/);
-  });
-
-  it('demo is offered as an explicit action when the live data cannot be loaded', () => {
-    assert.match(app, /data-testid="show-demo-data-button"/);
-    assert.match(app, /toggleDemoMode\(true\)/);
-  });
 
   it('the hook never falls back to demo paths implicitly and ends loading when the index fails', () => {
     assert.doesNotMatch(hook, /includeAlternateMode/);

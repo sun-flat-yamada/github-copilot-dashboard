@@ -268,7 +268,8 @@ flowchart TD
 │   └── src/
 │       ├── components/                 # UIコンポーネント & Viewコンポーネント
 │       │   └── common/ViewSkeleton.tsx # Suspense用統一スケルトン
-│       ├── App.tsx                     # メインSPAコンポーネント (React.lazy + Suspense)
+│       ├── App.tsx                     # SPA のエントリ (defaultViewRegistry を AppShell へ渡す)
+│       ├── AppShell.tsx                # メインSPAコンポーネント (ViewRegistry を受け取る。Vite なしでテスト可能。SDD-15 §8)
 │       └── main.tsx
 └── package.json
 ```
