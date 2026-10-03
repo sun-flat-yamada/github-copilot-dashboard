@@ -185,4 +185,4 @@ index.json / スコープ JSON / レポート JSON
 | `useDashboardData` の取得を Dataset Loader へ (index / スコープ / レポート) | 完了 (P2-2) |
 | hook のフィルター・選択肢を Query 層経由に | 完了 (P2-2) |
 | Query 結果を使うビュー: `ActiveDataSelector` (該当件数)、`DataSelectionModal` (プレビュー件数) | 完了 (P2-2)。どちらも独自にユーザー数を数えており、元データも異なっていた (セレクターはフィルター後のデータ、モーダルの母数は未フィルターのデータ) |
-| 残りのビューは hook の再集計済みデータを参照 | P2-3 / P2-4 (Metric Registry / View Registry) で段階移行 |
+| 残りのビューは hook の再集計済みデータを参照 | 段階移行。Metric Registry + 品質属性: 概要 KPI カードは完了 (P2-3、SDD-07 §2.14a)、View Registry は P2-4 |
