@@ -28,6 +28,7 @@ import {
   estimateIncludedCreditsPool,
 } from '../../domain/pricing/pricing-catalog.js';
 import { PublicExchangeRatesService, type ExchangeRateCatalog } from '../../domain/services/PublicExchangeRatesService.js';
+import { appendQualityHistory, buildDataQualityReport, summarizeQualityHistory } from './data-quality.js';
 import { isSourceUsable, resolveSourceStatuses, statusOrInferred } from './source-status.js';
 
 export interface PipelineOrchestratorDependencies {
@@ -406,6 +407,22 @@ export class PipelineOrchestrator {
       trends: rollingTrendEntries,
     });
 
+    // データ品質レポート: 実収集をした実行だけ、履歴に追記する (モック・未設定・失敗では前回の履歴を維持)
+    let dataQuality = this.isMock ? undefined : previousIndex?.data_quality;
+    const observations = this.isMock ? null : this.dataSource.getQualityObservations?.() ?? null;
+    if (observations && this.storage.saveDataQualityHistory) {
+      const report = buildDataQualityReport(
+        observations,
+        statuses,
+        nowIso,
+        this.runInfo && landed ? this.runInfo.runId : undefined
+      );
+      const history = appendQualityHistory(this.storage.loadDataQualityHistory?.() ?? null, report);
+      this.storage.saveDataQualityHistory(history);
+      dataQuality = summarizeQualityHistory(history) ?? dataQuality;
+      console.log(`🩺 Data quality: ${report.level} (missing days: ${report.missing_days.length}, quarantined: ${report.quarantined}).`);
+    }
+
     // 8. IndexMetadata の保存
     const summary = seatsUsable
       ? this.buildSummary(enrichedSeats, userProfiles, monthKey, billingConfig.creditsPricing.includedCreditsPerSeat)
@@ -435,6 +452,7 @@ export class PipelineOrchestrator {
       // MOCK_MODE (デモデータ生成) のときだけ true。取得失敗・データなしでデモ扱いに反転させない
       is_mock_mode: this.isMock,
       source_status: statuses,
+      ...(dataQuality ? { data_quality: dataQuality } : {}),
       // 公開範囲の検査 (fork:verify) 用。実データでユーザー単位の情報を含み、かつ仮名化されていなければ、
       // リポジトリ / Pages の公開は個人情報の公開に直結する
       privacy: {

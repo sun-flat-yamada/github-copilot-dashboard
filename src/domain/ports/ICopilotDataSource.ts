@@ -7,6 +7,7 @@ import {
   DataFetchIssue,
   SourceStatus,
 } from '../entities/copilot.js';
+import type { QualityObservations } from '../entities/data-quality.js';
 import { TeamDailyMetrics } from '../entities/agent-metrics.js';
 
 /**
@@ -27,4 +28,9 @@ export interface ICopilotDataSource {
   getIssues(): DataFetchIssue[];
   /** ソース (metrics / seats / cost_centers) ごとの直近の取得状態 */
   getSourceStatuses(): SourceStatus[];
+  /**
+   * 直近の fetchMetrics で観測したデータ品質 (欠損日・重複・範囲外・隔離)。
+   * 実収集をしていない (モック・未設定・失敗) ときは null。
+   */
+  getQualityObservations?(): QualityObservations | null;
 }

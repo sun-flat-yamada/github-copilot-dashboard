@@ -4,6 +4,7 @@
 
 import { CurrencyConfig } from './billing-config.js';
 import type { RunReference } from './run-manifest.js';
+import type { DataQualitySummary } from './data-quality.js';
 
 /**
  * 'unknown' は API が plan_type を返さない / 未知の値を返した場合の「未確定」。
@@ -718,6 +719,8 @@ export interface IndexMetadata {
   is_mock_mode?: boolean;
   /** ソース別の取得状態。失敗ソースの last_success_at は前回成功時刻を指す */
   source_status?: SourceStatus[];
+  /** 最新のデータ品質と直前との比較 (P1-7)。実収集をしていない成果物では無い */
+  data_quality?: DataQualitySummary;
   /**
    * 公開範囲の検査 (npm run fork:verify) が参照する、この成果物のプライバシー属性。
    * リポジトリ / Pages が公開されているときに、個人単位のデータが含まれるかを判定する。
