@@ -16,13 +16,17 @@
 Defines the official GitHub REST API specifications for GitHub Copilot and Enterprise Billing available as of September 2026.
 
 ### 1.1 API Versioning and Common HTTP Request Headers
-The GitHub REST API adheres to calendar-based versioning. This platform complies with the latest official REST API version: **`2026-03-10`**.
+The GitHub REST API adheres to calendar-based versioning. This platform defaults to the internal standard version **`2026-03-10`** while guaranteeing complete backward compatibility with the official GitHub GA calendar version **`2022-11-28`** (configurable via the `GITHUB_API_VERSION` environment variable or client config; an empty value falls back to the default).
 All API requests must supply the following HTTP headers:
 
 - `Authorization: Bearer <GITHUB_TOKEN>`
 - `Accept: application/vnd.github+json`
-- `X-GitHub-Api-Version: 2026-03-10` (latest version, configurable via `GITHUB_API_VERSION` environment variable or client config; an empty value falls back to the default)
-- `User-Agent: GitHub-Copilot-Analytics-Platform/2026.09`
+- `X-GitHub-Api-Version: 2026-03-10` (or `2022-11-28`)
+- `User-Agent: GitHub-Copilot-Analytics-Platform/2026.09` (Mandatory per GitHub API specification)
+
+**Rate Limiting & Detection Rules**:
+Rate limits are indicated by HTTP `429 Too Many Requests` or HTTP `403 Forbidden` with header `x-ratelimit-remaining: 0`.
+The client layer (`RawApiFetcher`) intercepts both status signals and raises a `RateLimitError`, pausing and scheduling exponential backoff based on the `x-ratelimit-reset` timestamp.
 
 **Token resolution order**: explicit client config → `COPILOT_READ_TOKEN` (the secret the workflow provides) → `GITHUB_TOKEN` → `GH_TOKEN`. When no token is resolved, the client raises an authorization error **before sending any request** (no unauthenticated calls); the collector reports it as an `api_auth` issue naming `COPILOT_READ_TOKEN`, and the affected sources are recorded as `failed` (see SDD-05 §3).
 

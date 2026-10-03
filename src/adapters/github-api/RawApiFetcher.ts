@@ -241,6 +241,7 @@ export class RawApiFetcher {
     const headers: Record<string, string> = {
       Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': this.apiVersion,
+      'User-Agent': 'GitHub-Copilot-Analytics-Platform/2026.09',
       Authorization: `Bearer ${this.token}`,
     };
 
@@ -249,7 +250,8 @@ export class RawApiFetcher {
       try {
         const response = await this.fetchImpl(url, { headers });
 
-        if (response.status === 429) {
+        const remainingHeader = response.headers.get('x-ratelimit-remaining');
+        if (response.status === 429 || (response.status === 403 && remainingHeader === '0')) {
           const resetHeader = response.headers.get('x-ratelimit-reset');
           throw new RateLimitError(label, resetHeader);
         }

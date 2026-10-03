@@ -16,13 +16,17 @@
 2026年9月時点で利用可能なGitHub Copilot関連の公式REST API仕様を定義する。
 
 ### 1.1 APIバージョンおよび共通HTTPリクエストヘッダー
-GitHub REST API はカレンダーベースのバージョン体系を採用しており、本プラットフォームは公式の最新APIバージョンである **`2026-03-10`** に準拠する。
+GitHub REST API はカレンダーベースのバージョン体系を採用しており、本プラットフォームは内部標準バージョン **`2026-03-10`** に準拠するとともに、GitHub 公式 GA カレンダーバージョン **`2022-11-28`** との完全な後方互換性を保証する（環境変数 `GITHUB_API_VERSION` またはクライアント設定で指定可能。空の場合は既定値）。
 すべてのAPIリクエストには以下のヘッダーを付与する：
 
 - `Authorization: Bearer <GITHUB_TOKEN>`
 - `Accept: application/vnd.github+json`
-- `X-GitHub-Api-Version: 2026-03-10`（最新バージョン、環境変数 `GITHUB_API_VERSION` またはクライアント設定で変更可能。空の場合は既定値）
-- `User-Agent: GitHub-Copilot-Analytics-Platform/2026.09`
+- `X-GitHub-Api-Version: 2026-03-10`（または `2022-11-28`）
+- `User-Agent: GitHub-Copilot-Analytics-Platform/2026.09`（GitHub API仕様により必須）
+
+**レートリミット制御と検出ルール**:
+レート制限超過時は HTTP `429 Too Many Requests` または `403 Forbidden`（かつヘッダー `x-ratelimit-remaining: 0`）が返却される。
+クライアント側（`RawApiFetcher`）は上記両方のステータスを検知して即座に `RateLimitError` を発火し、`x-ratelimit-reset` ヘッダーに基づく待機および指数バックオフリトライを実行する。
 
 **トークンの解決順**: クライアント設定の明示指定 → `COPILOT_READ_TOKEN`（ワークフローが渡すシークレット）→ `GITHUB_TOKEN` → `GH_TOKEN`。トークンが解決できない場合、クライアントは **リクエストを送る前に** 認可エラーを返す（無認証の呼び出しは行わない）。収集側は `COPILOT_READ_TOKEN` を明示した `api_auth` の issue として報告し、該当ソースを `failed` として記録する（SDD-05 §3）。
 
