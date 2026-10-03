@@ -16,7 +16,7 @@ describe('User Detail Table Inline Drilldown Analysis Tests', () => {
   );
   const appPath = path.resolve(
     process.cwd(),
-    'dashboard/src/App.tsx'
+    'dashboard/src/views/users/View.tsx'
   );
 
   it('verifies UserDrilldownPanel component file exists and contains expected structure', () => {

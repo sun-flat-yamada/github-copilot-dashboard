@@ -158,8 +158,9 @@ test('Dashboard Data Stability & Infinite Loop Prevention Tests', async (t) => {
       appContent.includes('reportLoading && !currentReportData'),
       'App.tsx must show full loading spinner only when initial data is absent (!currentReportData)'
     );
+    const overviewContent = fs.readFileSync(path.resolve(process.cwd(), 'dashboard/src/views/overview/View.tsx'), 'utf-8');
     assert.ok(
-      appContent.includes('currentReportData && ('),
+      overviewContent.includes('currentReportData && ('),
       'App.tsx must keep existing report mounted to prevent DOM flicker and unmounting'
     );
   });

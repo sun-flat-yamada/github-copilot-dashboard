@@ -241,6 +241,23 @@
 
 バッジは色だけに頼らず、必ず文言を併記する。欠損はデモより優先し、値が無いことを隠さない。概要の KPI カード (費用・アクティブ率・遊休コスト・受諾率) を移行済みで、他のビューは段階的に移行する。指標カタログ v1 (定義・窓・出典の表示) は P3-1 でこの Registry を拡張する。
 
+### 2.14b View Registry (P2-4 / C-01, D-06)
+
+View Registry は **ビュー描画の唯一の入口**である。`App.tsx` にビューごとの分岐は無く、`ViewContext` を 1 つ組み立てて `<ViewHost>` を描画する。ナビゲーションも同じ Registry から作る。
+
+| 項目 | 場所 |
+|:--|:--|
+| manifest (`ViewManifest`): ID・ラベル・タイトル・説明・アイコン・並び順・対応データソース・`requiredDatasets`・バッジ・`isVisible`・コンポーネント | `dashboard/src/views/types.ts` |
+| Registry (`createViewRegistry`, `getMissingDatasets`) | `dashboard/src/views/viewRegistry.ts` |
+| `views/<id>/manifest.ts` の自動収集 (`import.meta.glob`) | `dashboard/src/views/defaultRegistry.ts` |
+| Suspense 付き描画 | `dashboard/src/views/ViewHost.tsx` |
+
+- **ビュー追加は 2 ファイル**: `views/<id>/manifest.ts` と `views/<id>/View.tsx`。`App.tsx` も `ViewNavigation` も変更しない。`src/tests/view-registry.test.ts` がダミービュー (`src/tests/fixtures/dummy-view/`) で示す。
+- `order` がナビゲーションの並び (昇順、同順位は登録順)。`isVisible(ctx)` が false のビューはナビゲーションにも描画にも出ない (権限制御など)。ID 重複は例外。
+- `requiredDatasets` (`scope` / `report`) はビューの入力を表し、**いずれか 1 つ**取得済みなら描画可能 (空配列はデータ非依存)。`getMissingDatasets` が不足分を返すので理由を示せる。既存ビューは従来どおり各自の空状態を描画する (挙動不変)。
+- ビューはデータ・フォーカス状態・ハンドラーをすべて `ViewContext` で受け取る。フォーカスのリセット規則 (タブ直接遷移でのレーダー対象モデルのリセット等) は `App.tsx` のハンドラーに残す。
+- 旧 `src/adapters/views/*` のプラグインは本番経路では使われない。DataStore 系とあわせて Phase 2 の後続タスクで撤去する。
+
 ### 2.15 ユーザー明細への使用量インサイト（`UserDetailTable`）
 - 「総リクエスト」の右に **トークン**、**コスト/100 万トークン**、**兆候**（バッジ）の列を追加する。いずれも並べ替え可能で、CSV エクスポートにも含める（トークンは入力 / 出力 / キャッシュ読取 / キャッシュ書込に分けて出力）。データが無いセルは「—」とし、理由（例: CSV にトークン列が無い）をツールチップに出す。
 - **兆候**バッジは、色だけに頼らず文字ラベルで段階を示す: 特記なし / 参考 / **確認を推奨** / データ不足。ツールチップには、`参考` または `確認を推奨` のシグナルの根拠を列挙する。チェックボックス **「確認を推奨のみ」** で、総合が `確認を推奨` のユーザーに絞り込める。

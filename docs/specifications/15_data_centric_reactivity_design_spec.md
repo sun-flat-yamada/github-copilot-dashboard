@@ -185,4 +185,4 @@ index.json / scope JSON / report JSON
 | Dataset Loader behind `useDashboardData` (index, scope, report) | Done (P2-2) |
 | Hook filtering / filter options through the Query layer | Done (P2-2) |
 | Views on Query results: `ActiveDataSelector` (match count), `DataSelectionModal` (preview count) | Done (P2-2). Both used to count users on their own, from different data (the selector from filtered data, the modal's total from the raw data). |
-| Remaining views read the hook's recomputed data | Migrated step by step. Metric Registry + quality attributes: overview KPI cards done (P2-3, SDD-07 §2.14a); View Registry in P2-4 |
+| Remaining views read the hook's recomputed data | Migrated step by step. Metric Registry + quality attributes: overview KPI cards done (P2-3, SDD-07 §2.14a); View Registry is the only rendering entry, `App.tsx` branches removed (P2-4, SDD-07 §2.14b) |
