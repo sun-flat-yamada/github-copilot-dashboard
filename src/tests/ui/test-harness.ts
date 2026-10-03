@@ -2,6 +2,7 @@ import './dom-setup.js';
 import { createAutoCollectedTestDataset } from '../fixtures/auto-collected-data-fixtures.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import type { IndexMetadata } from '../../types/copilot.js';
 import { createViewRegistry, type ViewRegistry } from '../../../dashboard/src/views/viewRegistry.js';
 
@@ -54,6 +55,8 @@ export async function discoverViewRegistry(): Promise<ViewRegistry> {
   const dirs = fs
     .readdirSync(viewsDir, { withFileTypes: true })
     .filter((d) => d.isDirectory() && fs.existsSync(path.join(viewsDir, d.name, 'manifest.ts')));
-  const manifests = await Promise.all(dirs.map(async (d) => (await import(path.join(viewsDir, d.name, 'manifest.ts'))).default));
+  const manifests = await Promise.all(
+    dirs.map(async (d) => (await import(pathToFileURL(path.join(viewsDir, d.name, 'manifest.ts')).href)).default)
+  );
   return createViewRegistry(manifests);
 }
