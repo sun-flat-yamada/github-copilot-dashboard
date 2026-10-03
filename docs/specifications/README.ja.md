@@ -33,6 +33,7 @@ flowchart TD
     subgraph D4["4. フロントエンド UI/UX"]
         S07["SDD-07 ダッシュボード UI/UX 仕様"]
         S15["SDD-15 データセントリック・リアクティビティ設計"]
+        S16["SDD-16 データ契約 & 指標カタログ"]
     end
 
     subgraph D5["5. 自動化運用 & Fork保守ライフサイクル"]
@@ -67,6 +68,7 @@ flowchart TD
 | **SDD-13** | Fork制限環境向けセットアップ手順書 | [JA](13_fork_restricted_environment_setup_guide.ja.md) \| [EN](13_fork_restricted_environment_setup_guide.md) | EMU・ポリシー制限によりGitHub Forkを使えない組織向けのミラー複製手順 | 正式運用 (2026.09) |
 | **SDD-14** | 開発運用ワークフロー & Git Ops 仕様書 | [JA](14_development_workflow_and_git_ops_spec.ja.md) \| [EN](14_development_workflow_and_git_ops_spec.md) | 複数AIエージェント並行Worktree運用、Issue起票、PR作成、Rebaseマージ、権限制御 | 正式運用 (2026.09) |
 | **SDD-15** | データセントリック・リアクティビティ設計仕様書 | [JA](15_data_centric_reactivity_design_spec.ja.md) \| [EN](15_data_centric_reactivity_design_spec.md) | 各Viewのアクティブ選択データ（データソース/スコープ/タグ）への追従原則、React実装規約、既知アンチパターン | 正式運用 (2026.09) |
+| **SDD-16** | データ契約 & 指標カタログ仕様書 | [JA](16_data_contract_and_metric_catalog_spec.ja.md) \| [EN](16_data_contract_and_metric_catalog_spec.md) | 指標カタログ v1 (全 KPI の定義・窓・出典)、個人指標の位置づけ | 正式運用 (2026.10) |
 
 ---
 

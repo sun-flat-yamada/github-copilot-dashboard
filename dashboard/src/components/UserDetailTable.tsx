@@ -40,6 +40,7 @@ import {
   UserDetailRow,
   UserDetailRowSet,
 } from '../../../src/adapters/presenters/UserDetailRows';
+import { PERSONAL_METRICS_NOTICE } from '../../../src/domain/metrics/metric-registry';
 import { describeInsightTooltip } from '../../../src/processor/usage-insight-definitions';
 
 export type UserSortMetric =
@@ -505,6 +506,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
           <p className="text-xs text-slate-400 mt-0.5">
             該当ユーザー数: <strong className="text-slate-200">{filteredUsers.length}</strong> / {users.length} 名
           </p>
+          <p className="text-[11px] text-slate-500 mt-0.5" data-testid="personal-metrics-notice">{PERSONAL_METRICS_NOTICE}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">

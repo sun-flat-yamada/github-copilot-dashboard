@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { AgentViewModel } from '../../../../src/adapters/presenters/AgentPresenter';
+import { MetricLabel } from '../common/MetricLabel';
 import { Bot, MessageSquare, Users, GitPullRequest, Wrench, Terminal, Sparkles, CheckCircle2, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 
 interface AgentActivityViewProps {
@@ -104,7 +105,7 @@ export const AgentActivityView: React.FC<AgentActivityViewProps> = ({ viewModel 
           <div className="bg-slate-950/80 border border-slate-800/90 p-4 rounded-xl">
             <span className="text-xs text-slate-400 block mb-1 flex items-center gap-1.5">
               <Bot className="w-3.5 h-3.5 text-purple-400" />
-              <span>総 Agent セッション数</span>
+              <MetricLabel metricId="agent_sessions" className="" />
             </span>
             <span className="text-2xl font-black text-purple-300 font-mono">{totalSessionsFormatted}</span>
           </div>
@@ -112,7 +113,7 @@ export const AgentActivityView: React.FC<AgentActivityViewProps> = ({ viewModel 
           <div className="bg-slate-950/80 border border-slate-800/90 p-4 rounded-xl">
             <span className="text-xs text-slate-400 block mb-1 flex items-center gap-1.5">
               <MessageSquare className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Agent メッセージ総数</span>
+              <MetricLabel metricId="agent_messages" className="" />
             </span>
             <span className="text-2xl font-black text-indigo-300 font-mono">{totalMessagesFormatted}</span>
           </div>
@@ -120,7 +121,7 @@ export const AgentActivityView: React.FC<AgentActivityViewProps> = ({ viewModel 
           <div className="bg-slate-950/80 border border-slate-800/90 p-4 rounded-xl">
             <span className="text-xs text-slate-400 block mb-1 flex items-center gap-1.5">
               <Users className="w-3.5 h-3.5 text-cyan-400" />
-              <span>アクティブ Agent ユーザー</span>
+              <MetricLabel metricId="agent_active_users" className="" />
             </span>
             <span className="text-2xl font-black text-cyan-300 font-mono">{engagedUsers} 名</span>
           </div>
@@ -128,7 +129,7 @@ export const AgentActivityView: React.FC<AgentActivityViewProps> = ({ viewModel 
           <div className="bg-slate-950/80 border border-slate-800/90 p-4 rounded-xl">
             <span className="text-xs text-slate-400 block mb-1 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Agent 浸透率 (Adoption)</span>
+              <MetricLabel metricId="agent_adoption_rate" className="" label="Agent 浸透率 (Adoption)" />
             </span>
             <span className="text-2xl font-black text-emerald-300 font-mono">{adoptionRateFormatted}</span>
           </div>

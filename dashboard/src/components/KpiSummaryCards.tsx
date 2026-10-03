@@ -6,6 +6,7 @@ import { SEAT_IDLE_CRITERIA_TEXT } from '../../../src/domain/rules/SeatClassific
 import { UNFILTERED_SECTION_NOTICE } from '../../../src/domain/constants/filter-scope';
 import { qualify } from '../../../src/domain/metrics/metric-registry';
 import { MetricValue } from './common/MetricValue';
+import { MetricLabel } from './common/MetricLabel';
 
 interface KpiSummaryCardsProps {
   data: ScopeAggregatedData;
@@ -24,6 +25,7 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data, isDemo =
       : scope_type === 'monthly'
       ? '当月 月額費用 (シート費)'
       : '期間 費用 (日割り×日数)';
+  const metricScope = scope_type;
 
   const isChatMissing = overview.missing_metrics?.includes('copilot_ide_chat');
   const isLanguageMissing = overview.missing_metrics?.includes('copilot_ide_code_completions');
@@ -58,7 +60,7 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data, isDemo =
       {/* 1. 総費用 (利用費用 & 超過請求費用) */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg relative overflow-hidden group hover:border-slate-700 transition-all" title="GitHubのカタログ価格(USD)基準">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-400">{costLabel}</span>
+          <MetricLabel metricId="total_spend" scopeType={metricScope} label={costLabel} />
           <div className="p-2 rounded-lg bg-emerald-950/80 border border-emerald-800/60 text-emerald-400">
             <DollarSign className="w-4 h-4" />
           </div>
@@ -112,7 +114,7 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data, isDemo =
       {/* 2. アクティブ率 */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg relative overflow-hidden group hover:border-slate-700 transition-all">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-400">アクティブ利用率</span>
+          <MetricLabel metricId="active_rate" scopeType={metricScope} />
           <div className="p-2 rounded-lg bg-blue-950/80 border border-blue-800/60 text-blue-400">
             <Users className="w-4 h-4" />
           </div>
@@ -137,7 +139,7 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data, isDemo =
       {/* 3. 遊休コスト / 削減可能額 */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg relative overflow-hidden group hover:border-amber-800/80 transition-all">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-amber-400">遊休コスト (削減可能)</span>
+          <MetricLabel metricId="idle_waste" scopeType={metricScope} className="text-xs font-medium text-amber-400" />
           <div className="p-2 rounded-lg bg-amber-950/80 border border-amber-800/60 text-amber-400">
             <AlertTriangle className="w-4 h-4" />
           </div>
@@ -161,7 +163,7 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data, isDemo =
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-1.5">
-            <span className="text-xs font-medium text-purple-400">Inline補完受諾率</span>
+            <MetricLabel metricId="acceptance_rate" scopeType={metricScope} className="text-xs font-medium text-purple-400" />
           </div>
           <div className="flex items-center space-x-1">
             {isUsageCarriedOver && (

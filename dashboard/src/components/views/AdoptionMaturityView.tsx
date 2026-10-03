@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { AdoptionViewModel } from '../../../../src/adapters/presenters/AdoptionPresenter';
 import { TrendingUp, Users, Award, Shield, CheckCircle2, Layers, Zap, Bot, Code, HelpCircle, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { AdoptionPhase } from '../../../../src/domain/entities/agent-metrics';
+import { MetricLabel } from '../common/MetricLabel';
 
 interface AdoptionMaturityViewProps {
   viewModel: AdoptionViewModel;
@@ -153,7 +154,7 @@ export const AdoptionMaturityView: React.FC<AdoptionMaturityViewProps> = ({ view
           <div className="bg-slate-950/80 border border-slate-800/90 p-4 rounded-xl">
             <span className="text-xs text-slate-400 block mb-1 flex items-center gap-1.5">
               <Users className="w-3.5 h-3.5 text-slate-400" />
-              <span>評価対象ユーザー総数</span>
+              <MetricLabel metricId="adoption_evaluated_users" className="" />
             </span>
             <span className="text-2xl font-black text-slate-100 font-mono">
               {totalEvaluatedUsers.toLocaleString()} 名
@@ -163,7 +164,7 @@ export const AdoptionMaturityView: React.FC<AdoptionMaturityViewProps> = ({ view
           <div className="bg-slate-950/80 border border-slate-800/90 p-4 rounded-xl">
             <span className="text-xs text-slate-400 block mb-1 flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
-              <span>全体活用定着率 (Active Rate)</span>
+              <MetricLabel metricId="adoption_active_rate" className="" label="全体活用定着率 (Active Rate)" />
             </span>
             <span className="text-2xl font-black text-blue-300 font-mono">{activeAdoptionRate}%</span>
           </div>
@@ -171,7 +172,7 @@ export const AdoptionMaturityView: React.FC<AdoptionMaturityViewProps> = ({ view
           <div className="bg-slate-950/80 border border-slate-800/90 p-4 rounded-xl">
             <span className="text-xs text-slate-400 block mb-1 flex items-center gap-1.5">
               <Award className="w-3.5 h-3.5 text-purple-400" />
-              <span>高度活用率 (Agent+ 定着)</span>
+              <MetricLabel metricId="adoption_advanced_rate" className="" label="高度活用率 (Agent+ 定着)" />
             </span>
             <span className="text-2xl font-black text-purple-300 font-mono">{advancedAdoptionRate}%</span>
           </div>
@@ -179,7 +180,7 @@ export const AdoptionMaturityView: React.FC<AdoptionMaturityViewProps> = ({ view
           <div className="bg-slate-950/80 border border-slate-800/90 p-4 rounded-xl">
             <span className="text-xs text-slate-400 block mb-1 flex items-center gap-1.5">
               <Zap className="w-3.5 h-3.5 text-emerald-400" />
-              <span>自律協調層 (Multi-Agent)</span>
+              <MetricLabel metricId="adoption_multi_agent_users" className="" label="自律協調層 (Multi-Agent)" />
             </span>
             <span className="text-2xl font-black text-emerald-300 font-mono">
               {stages.find((s) => s.phase === 'multi_agent')?.count || 0} 名

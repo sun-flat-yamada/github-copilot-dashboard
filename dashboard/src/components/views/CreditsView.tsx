@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { CreditsViewModel } from '../../../../src/adapters/presenters/CreditsPresenter';
+import { MetricLabel } from '../common/MetricLabel';
 import { Coins, DollarSign, Layers, PieChart, AlertTriangle, ShieldCheck, Users, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 
 interface CreditsViewProps {
@@ -108,7 +109,7 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ viewModel }) => {
           <div className="bg-slate-950/80 border border-slate-800/90 p-4 rounded-xl">
             <span className="text-xs text-slate-400 block mb-1 flex items-center gap-1.5">
               <Coins className="w-3.5 h-3.5 text-amber-400" />
-              <span>組織プール総消費</span>
+              <MetricLabel metricId="credits_pool_used" className="" />
             </span>
             <span className="text-2xl font-black text-amber-300 font-mono">{totalCreditsUsedFormatted}</span>
           </div>
@@ -116,7 +117,7 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ viewModel }) => {
           <div className="bg-slate-950/80 border border-slate-800/90 p-4 rounded-xl" title="AI Credits 換算費用 (GitHubのカタログ価格(USD)基準)">
             <span className="text-xs text-slate-400 block mb-1 flex items-center gap-1.5">
               <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-              <span>AI Credits 換算費用 ({effectiveRateFormatted})</span>
+              <MetricLabel metricId="credits_cost" className="" label={`AI Credits 換算費用 (${effectiveRateFormatted})`} />
             </span>
             <span className="text-2xl font-black text-emerald-300 font-mono">{totalCreditsCostFormatted}</span>
           </div>
@@ -124,14 +125,14 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ viewModel }) => {
           <div className="bg-slate-950/80 border border-slate-800/90 p-4 rounded-xl" title="総合費用 (GitHubのカタログ価格(USD)基準)">
             <span className="text-xs text-slate-400 block mb-1 flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5 text-indigo-400" />
-              <span>総合費用 (シート＋Credits)</span>
+              <MetricLabel metricId="combined_cost" className="" />
             </span>
             <span className="text-2xl font-black text-slate-100 font-mono">{totalCombinedCostFormatted}</span>
           </div>
 
           <div className="bg-slate-950/80 border border-slate-800/90 p-4 rounded-xl">
             <span className="text-xs text-slate-400 block mb-1 flex items-center justify-between">
-              <span>プール消化率</span>
+              <MetricLabel metricId="pool_utilization" className="" />
               {poolStatus === 'exceeded' ? (
                 <span className="text-[10px] text-rose-400 flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" /> 超過

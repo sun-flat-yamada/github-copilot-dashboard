@@ -2,6 +2,7 @@ import React from 'react';
 import { DollarSign, Sparkles, Users, Cpu, Boxes } from 'lucide-react';
 import { MonthlyReportAggregatedData } from '../../../../src/types/copilot';
 import { useCurrency } from '../../contexts/CurrencyContext';
+import { MetricLabel } from '../common/MetricLabel';
 
 interface MonthlyReportKpisProps {
   reportData: MonthlyReportAggregatedData;
@@ -25,7 +26,7 @@ export const MonthlyReportKpis: React.FC<MonthlyReportKpisProps> = ({ reportData
         </div>
         <div className="mt-2 space-y-1.5">
           <div>
-            <span className="text-[10px] text-slate-400 block font-medium">利用費用 (総額):</span>
+            <span className="text-[10px] text-slate-400 block font-medium"><MetricLabel metricId="report_gross_spend" className="text-[10px] text-slate-400 font-medium" label="利用費用 (総額):" /></span>
             <div className="flex items-baseline space-x-1.5 flex-wrap">
               <span className="text-xl font-black text-white tracking-tight">
                 {grossDual.usd}
@@ -38,7 +39,7 @@ export const MonthlyReportKpis: React.FC<MonthlyReportKpisProps> = ({ reportData
             </div>
           </div>
           <div className="pt-1.5 border-t border-slate-800/80 flex items-center justify-between flex-wrap gap-1">
-            <span className="text-[11px] text-amber-400 font-medium">超過請求費用:</span>
+            <MetricLabel metricId="report_net_spend" className="text-[11px] text-amber-400 font-medium" label="超過請求費用:" hideWindow />
             <span className="font-mono font-bold text-amber-300 text-sm">
               {netDual.usd} {netDual.sub && <span className="text-[11px] text-amber-400/80 font-normal">({netDual.sub})</span>}
             </span>
@@ -54,7 +55,7 @@ export const MonthlyReportKpis: React.FC<MonthlyReportKpisProps> = ({ reportData
       {/* カード 2: 総リクエスト数 */}
       <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-400">総リクエスト / クレジット</span>
+          <MetricLabel metricId="report_requests" />
           <div className="p-1.5 rounded-lg bg-indigo-950 border border-indigo-800/60 text-indigo-400">
             <Sparkles className="w-4 h-4" />
           </div>
@@ -70,7 +71,7 @@ export const MonthlyReportKpis: React.FC<MonthlyReportKpisProps> = ({ reportData
       {/* カード 3: アクティブ人数 */}
       <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-400">レポート内アクティブ人数</span>
+          <MetricLabel metricId="report_active_users" />
           <div className="p-1.5 rounded-lg bg-blue-950 border border-blue-800/60 text-blue-400">
             <Users className="w-4 h-4" />
           </div>
@@ -86,7 +87,7 @@ export const MonthlyReportKpis: React.FC<MonthlyReportKpisProps> = ({ reportData
       {/* カード 4: 最多使用モデル */}
       <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-400">最多利用 AI モデル</span>
+          <MetricLabel metricId="report_top_model" />
           <div className="p-1.5 rounded-lg bg-purple-950 border border-purple-800/60 text-purple-400">
             <Cpu className="w-4 h-4" />
           </div>
@@ -104,7 +105,7 @@ export const MonthlyReportKpis: React.FC<MonthlyReportKpisProps> = ({ reportData
       {/* カード 5: 主要課金 SKU */}
       <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-400">主契約 / SKU</span>
+          <MetricLabel metricId="report_top_sku" />
           <div className="p-1.5 rounded-lg bg-amber-950 border border-amber-800/60 text-amber-400">
             <Boxes className="w-4 h-4" />
           </div>
