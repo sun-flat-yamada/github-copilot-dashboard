@@ -2,11 +2,11 @@
 
 - [x] Issue 確認・前提 (P2-3) マージ確認
 - [x] implementation_plan.md / task.md を単独コミット
-- [ ] カタログ拡張・MetricLabel 実装
-- [ ] 全 KPI へ適用
-- [ ] テスト（漏れ防止）
-- [ ] SDD-16 新設・SDD-07 更新（日英）
-- [ ] 品質ゲート + lint
-- [ ] walkthrough.md
+- [x] カタログ拡張・MetricLabel 実装
+- [x] 全 KPI へ適用
+- [x] テスト（漏れ防止）
+- [x] SDD-16 新設・SDD-07 更新（日英）
+- [x] 品質ゲート + lint
+- [x] walkthrough.md
 - [ ] PR 作成 (Closes #188)
 - [ ] `change-dev:finish` でマージ

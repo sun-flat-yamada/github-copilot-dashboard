@@ -236,7 +236,7 @@ Metrics are declared once in `src/domain/metrics/metric-registry.ts` (id, label 
 | `missing` | Not retrieved | "—（reason）" — never `0` |
 | `demo` | Fictitious demo data | Value + **「デモ」** badge |
 
-Badges always carry a text label (never colour alone). Missing wins over demo so that the absence of a value is never hidden. The overview KPI cards (spend, active rate, idle cost, acceptance rate) are migrated; other views migrate step by step. The metric catalog v1 (definition / window / source display) extends this registry in P3-1.
+Badges always carry a text label (never colour alone). Missing wins over demo so that the absence of a value is never hidden. The overview KPI cards (spend, active rate, idle cost, acceptance rate) are migrated; other views migrate step by step. The metric catalog v1 (P3-1 / #188, [SDD-16](16_data_contract_and_metric_catalog_spec.md)) extends this registry with `definition`, `formula`, `window` kind and `caveats`. Every KPI label (overview, monthly report, adoption maturity, agent activity, credits) is rendered by `MetricLabel`: a definition tooltip (definition, formula, window, unit, source, filter support) and a visible window chip that follows the scope type. A KPI missing from the catalog fails `src/tests/metric-catalog.test.ts`. The user detail table states that personal metrics are improvement-support information for authorised employees and are not used for evaluation or ranking.
 
 ### 2.14b View Registry (P2-4 / C-01, D-06)
 
