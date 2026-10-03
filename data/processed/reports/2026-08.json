@@ -2,7 +2,7 @@
   "report_month": "2026-08",
   "source_type": "persisted",
   "file_name": "copilot_monthly_usage_2026-08.csv",
-  "parsed_at": "2026-10-03T05:03:01.090Z",
+  "parsed_at": "2026-10-03T05:05:50.955Z",
   "overview": {
     "total_net_spend_usd": 333.3,
     "total_gross_spend_usd": 335.22,
@@ -2466,6 +2466,102 @@
       "copilot_monthly_usage_2026-08.csv"
     ],
     "records_total": 163,
-    "duplicates_skipped": 0
+    "duplicates_skipped": 0,
+    "csv_reports": [
+      {
+        "schema_version": 1,
+        "file_name": "copilot_monthly_usage_2026-08.csv",
+        "profile": {
+          "id": "billing-usage-report",
+          "label": "Billing usage report (使用量・金額)"
+        },
+        "columns": {
+          "recognized": [
+            {
+              "header": "date",
+              "field": "date"
+            },
+            {
+              "header": "username",
+              "field": "username"
+            },
+            {
+              "header": "product",
+              "field": "product"
+            },
+            {
+              "header": "sku",
+              "field": "sku"
+            },
+            {
+              "header": "model",
+              "field": "model"
+            },
+            {
+              "header": "quantity",
+              "field": "quantity"
+            },
+            {
+              "header": "unit_type",
+              "field": "unit_type"
+            },
+            {
+              "header": "applied_cost_per_quantity",
+              "field": "applied_cost_per_quantity"
+            },
+            {
+              "header": "gross_amount",
+              "field": "gross_amount"
+            },
+            {
+              "header": "discount_amount",
+              "field": "discount_amount"
+            },
+            {
+              "header": "net_amount",
+              "field": "net_amount"
+            },
+            {
+              "header": "organization",
+              "field": "organization"
+            },
+            {
+              "header": "cost_center_name",
+              "field": "cost_center_name"
+            }
+          ],
+          "unrecognized": []
+        },
+        "rows": {
+          "total": 163,
+          "imported": 163,
+          "skipped": 0,
+          "skipped_by_reason": {},
+          "skipped_samples": [],
+          "undated": 0,
+          "ragged": 0,
+          "repeated": 0
+        },
+        "totals_by_unit": [
+          {
+            "unit": "requests",
+            "rows": 153,
+            "quantity": 2451,
+            "gross_usd": 85.22,
+            "net_usd": 83.304
+          },
+          {
+            "unit": "seats",
+            "rows": 10,
+            "quantity": 10,
+            "gross_usd": 250,
+            "net_usd": 250
+          }
+        ],
+        "warnings": [
+          "単位の異なる明細が混在しています。合計は単位ごとに分けて表示しています"
+        ]
+      }
+    ]
   }
 }
