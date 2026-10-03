@@ -29,6 +29,7 @@ GitHub Enterprise Billingで定義された各Cost CenterのBudgetに対して�
 4. **課金対象実使用額 ($S_{\text{billable}}$)**:
    $$S_{\text{billable}} = \max(0, S_{\text{current}} - B_{\text{free}})$$
 5. **残余Budget額 ($B_{\text{remaining}}$)**:
+6. **採用成熟度**は、直近 28 日の実測の利用日数から導出し、チーム別は判定済み 5 人以上のグループのみ表示する。データが足りないユーザーは No Cohort ではなく判定不能として示す (SDD-11 §8)。
    $$B_{\text{remaining}} = \max(0, B_{\text{limit}} - S_{\text{billable}})$$
 6. **予算消化率 ($U_{\%}$)**:
    $$U_{\%} = \frac{S_{\text{billable}}}{B_{\text{limit}}} \times 100\%$$

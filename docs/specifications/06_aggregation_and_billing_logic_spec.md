@@ -29,6 +29,7 @@ Calculates the following financial indicators against each Cost Center budget de
 4. **Billable Usage ($S_{\text{billable}}$)**:
    $$S_{\text{billable}} = \max(0, S_{\text{current}} - B_{\text{free}})$$
 5. **Remaining Budget ($B_{\text{remaining}}$)**:
+6. **Adoption maturity** is derived from measured usage days in a 28-day window and shown per team only for groups of 5 or more classified members; users without enough data are reported as unclassified, never as No Cohort (SDD-11 §8).
    $$B_{\text{remaining}} = \max(0, B_{\text{limit}} - S_{\text{billable}})$$
 6. **Budget Consumption Ratio ($U_{\%}$)**:
    $$U_{\%} = \frac{S_{\text{billable}}}{B_{\text{limit}}} \times 100\%$$

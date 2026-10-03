@@ -7,7 +7,7 @@
 - **Document ID**: SPEC-COPILOT-011
 - **Status**: Approved / Active
 - **Target Version**: 2026.09-LTS
-- **Date**: 2026-09-12 (revised 2026-10-01: profile sources in §2.1 and the data-sufficiency rules in §6; revised 2026-10-03: diagnostic v2 in §7)
+- **Date**: 2026-09-12 (revised 2026-10-01: profile sources in §2.1 and the data-sufficiency rules in §6; revised 2026-10-03: diagnostic v2 in §7; revised 2026-10-04: adoption maturity v2 in §8)
 
 ---
 
@@ -195,3 +195,35 @@ Diagnostic v2 answers findings B-11 (hardcoded 2025 model IDs), B-12 (statistica
 ### 7.6 Configuration and calibration plan
 - All thresholds (minimums, band boundaries, minimum team size, holidays, working weekdays, time zone) are in `DiagnosticConfig`; `resolveDiagnosticConfig(overrides)` merges overrides and falls back to the defaults for invalid values. The rule thresholds inside each pattern function are still code constants.
 - Status: **uncalibrated** (`calibration.status`, shown in the view). Calibration plan (`CALIBRATION_PLAN`): (1) collect ≥ 6 months of measurements and review the metric distributions per role/team; (2) collect ≥ 50 reviewer labels (valid / false positive / missed); (3) compare precision and recall while moving thresholds and update `DiagnosticConfig`; (4) after calibration, show the observed hit rate per band and switch the status to `calibrated`.
+
+## 8. Adoption Maturity v2: Measured, Window-Based, Team Cells k >= 5 (P3-5)
+
+Adoption maturity v2 answers finding B-06 (the cohort was computed from proxy values and the team breakdown was a company-wide ratio times the head count). Implementation: `src/domain/rules/AdoptionPhaseRule.ts` (`ADOPTION_RULE_V2`, `AdoptionPhaseRule.evaluate`), `src/adapters/github-api/usage-reports/user-report-mapper.ts` (inputs), `src/processor/metrics-aggregator.ts` (distribution), `src/adapters/presenters/AdoptionPresenter.ts` (teams).
+
+### 8.1 Window and inputs
+- Window: the last **28 days ending at the organization's latest data day** (not each user's last day). Inputs per user come from the users-1-day report (SDD-03): number of days with any activity, completion (`code_completion` suggestions), chat (`chat_*` interactions or `used_chat`), agent (`used_agent`) and CLI (`copilot_cli` or `used_cli`). They are stored on the profile as `adoption_inputs`, so the applied inputs are inspectable.
+- `observedDays` is the number of window days covered by the collected data (dataset-wide). MCP invocations and distinct agent counts are not in the user report, so v1's "MCP / multiple agents" criteria are dropped instead of being estimated.
+
+### 8.2 Rule (uncalibrated heuristics, one place: `ADOPTION_RULE_V2`)
+| Phase | Criteria |
+| :--- | :--- |
+| Multi-Agent | agent days >= 8 and >= 3 surfaces used (completion / chat / agent / CLI) |
+| Agent First | agent days >= 3, or chat days >= 8 |
+| Code First | some usage, below the Agent First criteria (includes completion-centered use) |
+| No Cohort | no activity in the window (only when sufficiently observed) |
+
+Boundaries are inclusive (`>=`). An administrator-defined `overridePhase` wins.
+
+### 8.3 Data sufficiency (no judgement without data)
+- `observedDays < 7`: nobody is classified ("観測日数が 7 日未満 …").
+- The report carries no agent flag (`agentDays = null`, unknown, never 0): a user is classified only when the chat criterion alone proves Agent First; otherwise the user is **not classified** with a reason, because a lower phase could hide agent usage.
+- Unclassified users are **not counted as No Cohort**. They are reported as `unclassified_users` (metric `adoption_unclassified_users`); the evaluated count and every rate use classified users only. The seat count is never substituted for the evaluated count.
+
+### 8.4 Team breakdown (real head count, k >= 5)
+- Teams are aggregated from the **classified members** of the selected scope. The company-wide ratio is never apportioned.
+- A team with fewer than **5** classified members (`minTeamSize`, same k as SDD-11 §7.5) is merged into one "少人数チーム (合算)" row. If the merged row still has fewer than 5, the distribution is withheld and only the reason and the number of teams are shown. Per-team unclassified counts are shown only for teams that meet k.
+- Residual risk: company-wide totals minus the shown teams could still reveal a small merged group when the merged row is withheld. The individual view is available only to authorised employees (§7.5), so this is accepted; the withheld row never shows a person count.
+- The screen shows the rule version, window, criteria and unclassified reasons ("判定基準"). Individual classification is for in-company use by authorised employees only.
+
+### 8.5 Calibration
+Thresholds are not calibrated. Plan: reuse the reviewer-label procedure of SDD-11 §7.6 for adoption phases (>= 6 months of data, reviewer labels, threshold comparison) and record the calibration status before presenting phases as targets.
