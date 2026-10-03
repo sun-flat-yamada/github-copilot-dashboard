@@ -358,7 +358,7 @@ Always reference and adhere to the repository's specifications and rule files:
 
 - **Autonomous Agent Personas (`.agents/`)**:
   - [Change Dev Agent (`change-dev.agent.md`)](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/.agents/change-dev.agent.md)
-  - [Fork Synchronization Agent (`fork-sync-agent.md`)](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/.agents/fork-sync-agent.md)
+  - [Fork Synchronization Agent (`fork-sync.agent.md`)](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/.agents/fork-sync.agent.md)
 
 - **Antigravity Customization System & Built-in Guides**:
   - [Google Antigravity Guide Skill](file:///C:/Users/sun_flat/.gemini/antigravity/builtin/skills/antigravity_guide/SKILL.md)
