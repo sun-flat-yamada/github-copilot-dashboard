@@ -225,6 +225,19 @@ Each live collection run also produces a **data quality report** (`DataQualityRe
 - Nothing is recorded in mock mode or when no live collection ran (unconfigured / failed); the previous history and summary are kept.
 - The file is on the `pages:stage` allow-list (`STAGED_PROCESSED_DIRS` includes `quality`).
 
+### 2.6 1-Year Trend File (`trends/rolling-1year.json`, P3-6)
+
+Built on every run from the stored `processed/monthly/{YYYY-MM}.json` files (never from the current month's snapshot copied into every month, B-01). Legacy fields stay; schema version 2 adds:
+
+| Field | Meaning |
+|:--|:--|
+| `schema_version` | `2`. A file without it is the legacy format; the SPA shows "not yet produced in the new format" instead of a chart |
+| `window` | `{ start, end }` calendar months of `points`; `end` is the latest recorded month |
+| `close_rule` | The declared close rule (see SDD-06 §4.6) |
+| `points` | **12 consecutive calendar months, oldest first.** A month without a stored aggregate is a point with `status: "missing"`, `entry: null` and null year-over-year values; it is never filled with 0 and never dropped silently. Each point has `status` (`closed` / `provisional` / `missing`), `closes_on`, `entry`, `prior_month` and `yoy` |
+
+`months` / `trends` (the latest 12 recorded months, possibly non-consecutive) are kept for compatibility. Monthly aggregates up to 24 months back are read so that the previous-year month is available for the comparison. The file contains company-wide values only (no per-user data) and stays on the `pages:stage` allow-list (`trends`). Frozen snapshots, checksums and revisions of closed months are the monthly close (P4-2) and are not part of this file yet.
+
 ## 3. Metadata Index (`index.json`) Specification
 
 The entry metadata file loaded first by the dashboard SPA to provide available dates, months, archives, and default scope parameters.

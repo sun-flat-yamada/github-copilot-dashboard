@@ -304,3 +304,13 @@ Chart choice follows appendix A.5.2 of the improvement plan; accessibility follo
 **Automated check**: `e2e/a11y.spec.ts` (Playwright smoke, P2-6) runs axe-core on the overview in light and dark with the allocation section open and fails on any critical / serious violation (`color-contrast` is excluded from the automated run), and verifies the table toggle and keyboard focus. Unit tests: `src/tests/chart-series.test.ts`, `src/tests/ranked-bar-chart.test.ts`.
 
 **Manual checklist** (before release): (1) operate every chart toggle with the keyboard only; (2) read one chart with a screen reader and confirm the summary and table are announced; (3) check text contrast of labels and chips in both themes (≥ 4.5:1); (4) with a colour-vision simulator, confirm that rows, seat series and budget status are distinguishable; (5) zoom to 200% and confirm no horizontal scrolling of the page.
+
+### 2.18 1-Year Trend Section (P3-6 / B-01)
+
+The overview has a **「1 年推移 (月次・前年同月比)」** accordion section (`YearlyTrendSection`, `dashboard/src/components/YearlyTrendPanel.tsx`) that loads `trends/rolling-1year.json` through `loadYearlyTrendDataset` (`getCandidateDataUrls`; no implicit switch to the other mode, a failure shows its reason instead of an empty chart).
+
+- **Closed / provisional / missing are told apart by text and pattern, not colour alone**: a legend states 確定 (close day passed), 暫定 (before the close day; values may change) and 欠損 (no stored aggregate; **not 0**). Provisional bars use a lighter fill with a dashed outline; a missing month draws no bar and the acceptance-rate line is cut there (`connectNulls=false`).
+- The close rule text from the dataset (`close_rule`) is shown under the legend. Closed means the close day has passed; frozen numbers come with the monthly close (P4-2).
+- The data table (「表で見る」, `AccessibleChart`) lists per month the status (with the close day for provisional months), spend and active seats with their **year-over-year** values, and the acceptance rate. Values that cannot be computed read **「—（reason）」** (SDD-06 §4.6); nothing is shown as 0.
+- A legacy file (no `points`) shows "not yet produced in the new format"; demo-sourced data is labelled.
+- The year-over-year metrics are catalogued (`yoy_spend_change`, `yoy_active_seats_change`) and shown with `MetricLabel`. The section shows company-wide values; filters do not apply.
