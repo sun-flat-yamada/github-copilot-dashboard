@@ -7,7 +7,7 @@
 - **Document ID**: SPEC-COPILOT-016
 - **Status**: Approved / Active
 - **Target Version**: 2026.10
-- **Date**: 2026-10-03 (P3-1 / #188: metric catalog v1)
+- **Date**: 2026-10-03 (P3-1 / #188: metric catalog v1; P3-2 / #189: budget and forecast metrics)
 - **Related**: [SDD-06 Aggregation & Billing Logic](06_aggregation_and_billing_logic_spec.md), [SDD-07 Dashboard UI/UX §2.14a](07_dashboard_ui_ux_spec.md), [SDD-15 Data-Centric Reactivity](15_data_centric_reactivity_design_spec.md)
 
 ---
@@ -60,6 +60,9 @@ Per-user metrics (the user detail table, the drill-down panel, user trends) are 
 | `active_rate` | Active seat rate | ratio | scope | yes | seats |
 | `idle_waste` | Idle cost (potential savings) | usd | scope | yes | seats, pricing catalog |
 | `acceptance_rate` | Inline completion acceptance rate | ratio | scope | no | metrics |
+| `budget_utilization` | Budget utilization | ratio | scope | yes | billing, cost center budgets |
+| `spend_forecast` | Month-end forecast (spend) | usd | scope | no | daily trends |
+| `credits_forecast` | Month-end forecast (AI Credits) | credits | scope | no | daily trends |
 | `report_gross_spend` | Gross spend | usd | report_month | yes | monthly usage report CSV |
 | `report_net_spend` | Net billable spend | usd | report_month | yes | monthly usage report CSV |
 | `report_requests` | Total requests / credits | count | report_month | yes | monthly usage report CSV |

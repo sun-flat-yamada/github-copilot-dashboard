@@ -10,6 +10,7 @@ import {
   DEFAULT_FILTER_CRITERIA,
 } from '../../../src/types/copilot';
 import { resolveDataPath } from '../utils/pathResolver';
+import { previousScopeKey } from '../../../src/domain/metrics/kpi-analysis';
 import {
   generateDatasetVersionKey,
   isFilterCriteriaActive,
@@ -72,6 +73,9 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
   const currentDataRef = useRef<ScopeAggregatedData | null>(null);
   currentDataRef.current = currentData;
   const scopeDataCacheRef = useRef<Map<string, { data: ScopeAggregatedData; isDemoSourced: boolean; state: DatasetState }>>(new Map());
+
+  // 前期スコープ (前月比・前日比用)。index に存在するときだけ取得し、無ければ null (理由は画面で「前期データなし」)
+  const [previousScopeData, setPreviousScopeData] = useState<ScopeAggregatedData | null>(null);
 
   // Monthly Usage Report スコープ
   const [selectedReportMonth, setSelectedReportMonth] = useState<string>('');
@@ -341,6 +345,44 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     };
   }, [scopeType, selectedKey, indexMeta, noLiveData, dataBaseDir, addRuntimeIssue, clearRuntimeIssue, activeSource]);
 
+  // 2b. 前期スコープの取得 (前期比の入力)。現在のスコープ (月次=前月 / 日次=前日) に対応する前期が
+  // index に存在するときだけ取得する。失敗してもエラーにせず、前期比を「—（前期データなし）」とする。
+  const currentScopeType = currentData?.scope_type;
+  const currentScopeKeyForPrev = currentData?.scope_key;
+  useEffect(() => {
+    if (!indexMeta || noLiveData || !currentScopeType || !currentScopeKeyForPrev) {
+      setPreviousScopeData(null);
+      return;
+    }
+    const prevKey = previousScopeKey(currentScopeType, currentScopeKeyForPrev);
+    const known =
+      currentScopeType === 'monthly'
+        ? [...(indexMeta.available_months ?? []), ...(indexMeta.all_recorded_months ?? [])]
+        : indexMeta.available_days ?? [];
+    if (!prevKey || !known.includes(prevKey)) {
+      setPreviousScopeData(null);
+      return;
+    }
+    const cacheKey = `${dataBaseDir}:${currentScopeType}:${prevKey}`;
+    const cached = scopeDataCacheRef.current.get(cacheKey);
+    if (cached) {
+      setPreviousScopeData(cached.data);
+      return;
+    }
+    let isCancelled = false;
+    setPreviousScopeData(null);
+    loadScopeDataset(dataBaseDir, currentScopeType, prevKey, {
+      mockDeclared: indexMetaRef.current?.is_mock_mode === true,
+    }).then((result) => {
+      if (isCancelled || result.state === 'failed' || !result.data) return;
+      scopeDataCacheRef.current.set(cacheKey, { data: result.data, isDemoSourced: result.demoSourced, state: result.state });
+      setPreviousScopeData(result.data);
+    });
+    return () => {
+      isCancelled = true;
+    };
+  }, [indexMeta, noLiveData, dataBaseDir, currentScopeType, currentScopeKeyForPrev]);
+
   // 3. Monthly Usage Report データの取得
   useEffect(() => {
     if (!selectedReportMonth) return;
@@ -501,6 +543,12 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     return queryLiveScope(currentData, filterCriteria);
   }, [currentData, filterCriteria]);
 
+  // 前期スコープにも同じフィルターを適用する (当期と同じ母集団で比較する)
+  const filteredPreviousData = useMemo<ScopeAggregatedData | null>(() => {
+    if (!previousScopeData) return null;
+    return queryLiveScope(previousScopeData, filterCriteria);
+  }, [previousScopeData, filterCriteria]);
+
   // 統合フィルター条件 (FilterCriteria) を適用したレポートデータ (SDD-15 準拠・完全再集計)
   // 再集計は filterEngine の単一実装 (applyFilterCriteriaToMonthlyReport) に委譲する。
   // 依存配列は filterCriteria 全体 (Cost Center / Org / 部署 / タグ / ユーザー)。以前はタグ (selectedTags) だけを
@@ -529,6 +577,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     setSelectedKey,
     currentData: filteredCurrentData,
     rawCurrentData: currentData,
+    previousData: filteredPreviousData,
     // Dataset Loader のデータ状態 (ok / partial / failed / demo)
     scopeDatasetState,
     reportDatasetState,

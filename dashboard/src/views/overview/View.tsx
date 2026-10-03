@@ -48,7 +48,7 @@ function countGroups(
 
 export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
   const {
-    activeSource, isReportSource, isDemoData, currentData, currentReportData,
+    activeSource, isReportSource, isDemoData, currentData, previousData, currentReportData,
     deepAnalysisProfiles, focusedUserLogin, userTableFilterStatus, currentGrouping, selectedGroup,
     setSelectedGroup, accordion: { isExpanded, toggle, expandAll, collapseAll },
     onGroupingChange: handleGroupingChange, onFilterIdle: handleFilterIdle,
@@ -58,7 +58,7 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
     <div className="flex flex-col space-y-6 w-full">
       {/* サマリーブロック (常時展開 ★要件6) */}
       {activeSource === 'live_metrics' && currentData && (
-        <KpiSummaryCards data={currentData} isDemo={isDemoData} />
+        <KpiSummaryCards data={currentData} isDemo={isDemoData} previousData={previousData} />
       )}
       {isReportSource && currentReportData && (
         <MonthlyReportKpis reportData={currentReportData} />
