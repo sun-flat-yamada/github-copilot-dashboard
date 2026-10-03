@@ -1,3 +1,6 @@
+import { AiCreditUsageClient } from './ai-credits/AiCreditUsageClient.js';
+import { toCostLine } from '../../domain/facts/mappers.js';
+import type { CostLine } from '../../domain/facts/schemas.js';
 import type { QualityObservations } from '../../domain/entities/data-quality.js';
 import { ICopilotDataSource } from '../../domain/ports/ICopilotDataSource.js';
 import {
@@ -320,6 +323,84 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
     }
   }
 
+  /**
+   * Billing の AI credit usage (Enterprise 単位。REST にはこの Org 単位のエンドポイントが無い)。
+   * 状態: 全日取得 → ok / 一部の日が失敗・行を隔離 → partial / 1 日も取得できない → failed。
+   * Enterprise 未設定は対象外 (skipped)。収集時に無かった要求の再生 (古い run の再処理) も対象外にする。
+   */
+  async fetchAiCreditUsage(): Promise<CostLine[]> {
+    if (!this.enterprise) {
+      this.setStatus('ai_credits', 'skipped', 0);
+      return [];
+    }
+    if (!this.hasToken('ai_credits')) return [];
+
+    const days = this.reportDays ?? reportWindowDays();
+    try {
+      const result = await new AiCreditUsageClient(this.fetcher).fetchRange(this.enterprise, days);
+      const errors = result.outcomes.filter(
+        (o): o is Extract<typeof o, { outcome: 'error' }> => o.outcome === 'error'
+      );
+
+      if (errors.length > 0 && errors.every((e) => e.error.name === 'ReplayMissError')) {
+        this.setStatus('ai_credits', 'skipped', 0);
+        return [];
+      }
+
+      const reported = new Set<string>();
+      for (const e of errors) {
+        const key = `${e.error.name}:${(e.error as any).status ?? ''}`;
+        if (reported.has(key)) continue;
+        reported.add(key);
+        this.recordIssue('billing/ai_credit/usage', e.error);
+      }
+
+      if (result.quarantined > 0) {
+        this.pushIssue({
+          severity: 'warning',
+          category: 'data_integrity',
+          target: 'billing/ai_credit/usage',
+          message: `${result.quarantined} usage item(s) failed validation and were quarantined (excluded).`,
+          details: result.quarantineReasons.join('\n') || undefined,
+        });
+      }
+
+      const okDays = result.outcomes.filter((o) => o.outcome === 'ok').length;
+      if (okDays === 0) {
+        const reason =
+          errors.length > 0
+            ? `all ${errors.length} request(s) failed`
+            : 'no AI credit usage report was available (HTTP 404 for all requests)';
+        if (errors.length === 0) {
+          this.pushIssue({
+            severity: 'warning',
+            category: 'not_found',
+            target: 'billing/ai_credit/usage',
+            message: `No AI credit usage report was available for ${days[0]} .. ${days[days.length - 1]}.`,
+            details:
+              'The token needs read access to enterprise billing (enterprise administrator / billing manager). GitHub may return 404 for insufficient permission.',
+          });
+        }
+        this.setFailed('ai_credits', errors[0]?.error ?? new Error(reason), errors.length > 0 ? reason : undefined);
+        return [];
+      }
+
+      const lines: CostLine[] = [];
+      for (const [day, items] of result.itemsByDay) for (const item of items) lines.push(toCostLine(day, item));
+      this.setStatus(
+        'ai_credits',
+        errors.length > 0 || result.quarantined > 0 ? 'partial' : 'ok',
+        lines.length,
+        result.quarantined
+      );
+      return lines;
+    } catch (err: any) {
+      this.recordIssue('billing/ai_credit/usage', err);
+      this.setFailed('ai_credits', err);
+      return [];
+    }
+  }
+
   async fetchCostCenterBudgets(): Promise<CostCenterBudget[]> {
     // 本番環境では環境変数または Enterprise API から取得
     return [];
@@ -368,7 +449,7 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
   }
 
   getSourceStatuses(): SourceStatus[] {
-    const order: DataSourceId[] = ['metrics', 'seats', 'cost_centers'];
+    const order: DataSourceId[] = ['metrics', 'seats', 'cost_centers', 'ai_credits'];
     return order
       .map((id) => this.statuses.get(id))
       .filter((s): s is SourceStatus => s !== undefined)

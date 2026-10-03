@@ -17,6 +17,8 @@ const schemaVersion = z.literal(FACT_SCHEMA_VERSION);
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD');
 const timestamp = z.string().min(1);
 const metric = z.number().finite().nonnegative().nullable();
+/** 費用系は調整行で負になりうるため符号を許容する */
+const signed = z.number().finite().nullable();
 
 /** 値の出所。`api` = Reports / Seats API、`csv` = 取込レポート、`derived` = 他ファクトからの導出 */
 export const factSourceSchema = z.enum(['api', 'csv', 'derived']);
@@ -113,12 +115,12 @@ export const costLineSchema = z
     user_key: z.string().min(1).nullable(),
     sku: z.string().min(1),
     model: z.string().min(1).nullable(),
-    quantity: metric,
+    quantity: signed,
     unit_type: z.string().min(1).nullable(),
-    unit_price: metric,
-    gross: metric,
-    discount: metric,
-    net: metric,
+    unit_price: signed,
+    gross: signed,
+    discount: signed,
+    net: signed,
     currency: z.string().length(3).nullable(),
     pricing_version: z.string().min(1).nullable(),
     ...provenance,
