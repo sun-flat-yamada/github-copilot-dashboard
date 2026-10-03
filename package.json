@@ -47,6 +47,7 @@
     "benchmark:update": "tsx scripts/update-benchmarks.ts",
     "test": "tsx --test \"src/tests/**/*.test.ts\"",
     "secret-scan": "tsx scripts/scan-secrets.ts",
+    "schema:drift": "tsx scripts/schema-drift.ts",
     "upstream:audit": "tsx scripts/audit-upstream-contribution.ts",
     "fork:verify": "tsx scripts/verify-fork-health.ts",
     "fork:status": "tsx scripts/verify-fork-health.ts --quick",

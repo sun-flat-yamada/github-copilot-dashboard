@@ -1,0 +1,47 @@
+[
+  {
+    "day": "2026-09-30",
+    "user_id": 1001,
+    "user_login": "user-a",
+    "enterprise_id": "e1",
+    "organization_id": null,
+    "ai_credits_used": 2.5,
+    "user_initiated_interaction_count": 14,
+    "code_generation_activity_count": 100,
+    "code_acceptance_activity_count": 30,
+    "loc_suggested_to_add_sum": 400,
+    "loc_suggested_to_delete_sum": 20,
+    "loc_added_sum": 170,
+    "loc_deleted_sum": 8,
+    "used_agent": true,
+    "used_chat": true,
+    "used_cli": false,
+    "used_copilot_app": false,
+    "used_copilot_cloud_agent": false,
+    "totals_by_ide": [
+      { "ide": "vscode", "user_initiated_interaction_count": 14, "code_generation_activity_count": 100, "code_acceptance_activity_count": 30, "loc_suggested_to_add_sum": 400, "loc_suggested_to_delete_sum": 20, "loc_added_sum": 170, "loc_deleted_sum": 8 }
+    ],
+    "totals_by_feature": [
+      { "feature": "code_completion", "user_initiated_interaction_count": 0, "code_generation_activity_count": 100, "code_acceptance_activity_count": 30, "loc_suggested_to_add_sum": 400, "loc_suggested_to_delete_sum": 20, "loc_added_sum": 120, "loc_deleted_sum": 4 }
+    ],
+    "totals_by_language_feature": [
+      { "language": "typescript", "feature": "code_completion", "user_initiated_interaction_count": 0, "code_generation_activity_count": 100, "code_acceptance_activity_count": 30, "loc_suggested_to_add_sum": 400, "loc_suggested_to_delete_sum": 20, "loc_added_sum": 120, "loc_deleted_sum": 4 }
+    ],
+    "totals_by_language_model": [
+      { "language": "typescript", "model": "model-x", "user_initiated_interaction_count": 0, "code_generation_activity_count": 100, "code_acceptance_activity_count": 30, "loc_suggested_to_add_sum": 400, "loc_suggested_to_delete_sum": 20, "loc_added_sum": 120, "loc_deleted_sum": 4 }
+    ],
+    "totals_by_model_feature": [
+      { "model": "model-x", "feature": "chat_panel_ask_mode", "user_initiated_interaction_count": 14, "code_generation_activity_count": 0, "code_acceptance_activity_count": 0, "loc_suggested_to_add_sum": 0, "loc_suggested_to_delete_sum": 0, "loc_added_sum": 0, "loc_deleted_sum": 0 }
+    ]
+  },
+  {
+    "day": "2026-09-30",
+    "user_id": 1002,
+    "user_login": "user-b",
+    "enterprise_id": "e1",
+    "organization_id": 2001,
+    "user_initiated_interaction_count": 3,
+    "used_chat": true,
+    "totals_by_feature": []
+  }
+]
