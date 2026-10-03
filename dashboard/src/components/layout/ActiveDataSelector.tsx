@@ -11,7 +11,8 @@ import {
 import {
   isFilterCriteriaActive,
   getFilterSummaryBadges,
-} from '../../utils/filterEngine';
+  queryPopulation,
+} from '../../query';
 import { DataSelectionModal } from './DataSelectionModal';
 import {
   Activity,
@@ -46,7 +47,7 @@ interface ActiveDataSelectorProps {
   availableOrganizations: string[];
   availableGroups: string[];
   availableTags: string[];
-  // リアルタイムプレビュー用データ
+  // 該当件数 (Query 層) の対象。フィルター適用前のデータを渡す
   currentScopeData: ScopeAggregatedData | null;
   currentReportData: MonthlyReportAggregatedData | null;
 }
@@ -155,23 +156,14 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
   const isFiltered = isFilterCriteriaActive(filterCriteria);
   const filterBadges = getFilterSummaryBadges(filterCriteria);
 
-  // 該当件数の計算
-  const counts = (() => {
-    if (activeSource === 'live_metrics' && currentScopeData?.users) {
-      return {
-        matched: currentScopeData.users.length,
-        total: indexMeta?.summary?.total_seats || currentScopeData.users.length,
-      };
-    }
-    const report = activeSource === 'user_upload' ? uploadedData : currentReportData;
-    if (report?.user_details) {
-      return {
-        matched: report.user_details.length,
-        total: report.user_details.length,
-      };
-    }
-    return { matched: 0, total: 0 };
-  })();
+  // 該当件数 (Query 層。DataSelectionModal のプレビューと同じ関数・同じ (未フィルターの) データを使う)
+  const population = queryPopulation(
+    activeSource === 'live_metrics'
+      ? { source: 'live_metrics', data: currentScopeData }
+      : { source: activeSource, data: activeSource === 'user_upload' ? uploadedData : currentReportData },
+    filterCriteria
+  );
+  const counts = { matched: population.matched, total: population.total };
 
   // カテゴリ別バッジ配色定義 (CostCenter: Amber, Org: Blue, Group: Purple, Tag: Rose, User: Cyan)
   const getBadgeColorClass = (type: string) => {

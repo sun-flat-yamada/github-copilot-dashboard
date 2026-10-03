@@ -10,7 +10,7 @@ import {
   generateDatasetVersionKey,
   applyFilterCriteriaToLiveScope,
   applyFilterCriteriaToMonthlyReport,
-} from '../../dashboard/src/utils/filterEngine.js';
+} from '../../dashboard/src/query/filterEngine.js';
 import {
   FilterCriteria,
   DEFAULT_FILTER_CRITERIA,

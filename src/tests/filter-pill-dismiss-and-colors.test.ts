@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import * as fs from 'fs';
 import * as path from 'path';
-import { getFilterSummaryBadges } from '../../dashboard/src/utils/filterEngine';
+import { getFilterSummaryBadges } from '../../dashboard/src/query/filterEngine';
 import { FilterCriteria } from '../types/copilot';
 
 describe('Filter Pill Click-to-Dismiss & Category Color Coordination Tests', () => {

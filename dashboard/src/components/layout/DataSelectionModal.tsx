@@ -14,9 +14,9 @@ import { ReportParser } from '../../../../src/processor/report-parser';
 import { CsvImportReportPanel } from '../common/CsvImportReportPanel';
 import {
   validatePattern,
-  matchUserWithCriteria,
+  queryPopulation,
   MAX_REGEX_PATTERN_LENGTH,
-} from '../../utils/filterEngine';
+} from '../../query';
 import {
   Activity,
   FileSpreadsheet,
@@ -217,35 +217,16 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
     reader.readAsText(file, 'utf-8');
   };
 
-  // リアルタイム集計プレビュー (現在の localCriteria を適用した場合の該当人数)
+  // リアルタイム集計プレビュー (現在の localCriteria を適用した場合の該当人数)。
+  // ActiveDataSelector と同じ Query 層の関数。未フィルターのデータに対して数える
   const previewStats = useMemo(() => {
-    let totalCount = 0;
-    let matchedCount = 0;
-
-    if (localSource === 'live_metrics' && currentScopeData?.users) {
-      totalCount = currentScopeData.users.length;
-      matchedCount = currentScopeData.users.filter((u) => matchUserWithCriteria(u, localCriteria)).length;
-    } else {
-      const report = localSource === 'user_upload' ? uploadedData : currentReportData;
-      if (report?.user_details) {
-        totalCount = report.user_details.length;
-        matchedCount = report.user_details.filter((u) => {
-          return matchUserWithCriteria(
-            {
-              login: u.login,
-              display_name: u.display_name,
-              cost_center: u.cost_center,
-              organization: u.organization,
-              department: u.department,
-              tags: u.tags,
-            },
-            localCriteria
-          );
-        }).length;
-      }
-    }
-
-    return { totalCount, matchedCount };
+    const population = queryPopulation(
+      localSource === 'live_metrics'
+        ? { source: 'live_metrics', data: currentScopeData }
+        : { source: localSource, data: localSource === 'user_upload' ? uploadedData : currentReportData },
+      localCriteria
+    );
+    return { totalCount: population.total, matchedCount: population.matched };
   }, [localSource, currentScopeData, currentReportData, uploadedData, localCriteria]);
 
   // タグトグル

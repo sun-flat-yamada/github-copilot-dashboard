@@ -52,7 +52,7 @@
 | `src/application/views/ViewPluginRegistry.ts`, `ViewOrchestrator.ts` | View Registry へ発展させる（P2-4） |
 | `src/adapters/presenters/*`（データ → ビューモデルの純粋関数） | 残す。Query 層の出力の下へ移す。Credits / Agent / Adoption の Presenter は `App.tsx` が既に使用している |
 | `src/adapters/views/*ViewPlugin.tsx` | 実コンポーネントを指す View manifest に置き換え、JSX の複製を削除する（P2-4, P2-5） |
-| `dashboard/src/utils/filterEngine.ts`, `useDashboardData` | Query 層が置き換える（P2-2）まで残し、その後削除する |
+| `dashboard/src/utils/filterEngine.ts`, `useDashboardData` | P2-2 で `filterEngine` を `dashboard/src/query/` へ移し、Query 層の実装とした。`useDashboardData` は取得を Dataset Loader へ委譲済みで、P2-4 で退役する |
 
 ## 5. 撤去対象
 

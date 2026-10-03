@@ -7,7 +7,7 @@
 - **Document ID**: SPEC-COPILOT-015
 - **Status**: Approved / Active
 - **Target Version**: 2026.09-LTS
-- **Date**: 2026-09-22 (revised 2026-10-01: Case Studies C / D, §3.6 and §6 added)
+- **Date**: 2026-09-22 (revised 2026-10-03: §7 Dataset Loader / Query layer added; 2026-10-01: Case Studies C / D, §3.6 and §6)
 - **Related Requirement**: [SDD-01 FR-9 (Cross-View Data-Centric Reactivity)](01_requirements_specification.md)
 
 ---
@@ -38,7 +38,7 @@ The following representative bugs actually occurred — and were fixed — becau
 - **Symptom**: Changing the Tag filter had no effect whatsoever on each AI model's displayed "Usage Share (%)".
 - **Root Cause**: In `useDashboardData.ts`, `filteredActiveReportData` (the memoized hook producing tag-filtered monthly report data) correctly recomputed aggregate fields such as `overview`, `user_details`, and `by_department` from the filtered user subset — but **`model_breakdown` (the per-model breakdown) alone was passed through unchanged** from the org-wide value computed at parse time. Since the usage-percentage calculation (`computeModelUsage`) falls back to this `model_breakdown` whenever Live Metrics data is empty, users analyzing Monthly Report / uploaded data saw zero effect from tag selection.
 - **Lesson**: **When a single aggregated data type has multiple derived fields, a filter-recomputation memo is prone to a "partial recomputation gap" — updating only some fields while silently passing others through unfiltered.** Whenever a new field is added to such a data type, every memo function that recomputes that type must be cross-checked and updated in lockstep.
-- **Fix**: Extracted the `model_breakdown` recomputation logic out of the inline hook body into an independent pure function, `buildFilteredModelBreakdown` (`dashboard/src/utils/reportModelBreakdown.ts`), called from `filteredActiveReportData`. Being a pure function, it became directly unit-testable with real input/output assertions.
+- **Fix**: Extracted the `model_breakdown` recomputation logic out of the inline hook body into an independent pure function, `buildFilteredModelBreakdown` (`dashboard/src/query/reportModelBreakdown.ts`), called from `filteredActiveReportData`. Being a pure function, it became directly unit-testable with real input/output assertions.
 
 #### Case Study C: Changing only the Cost Center / Organization / Department / User condition did not change the monthly report KPIs (P0-6)
 - **Symptom**: With a Monthly Usage Report (CSV) or an uploaded file active, changing the Cost Center, Organization, Department or User condition left the KPIs unchanged; only changing a tag did anything. Filtering for "Unassigned" matched nothing, and with a filter on a daily or custom-period scope the cost silently turned into the *monthly* amount.
@@ -97,7 +97,7 @@ The structural lessons common to these cases are generalized in Sections 2, 3 an
 
 ### 3.6 One Filter Engine, One Definition per Concept (P0-5 / P0-6)
 Behaviour that several modules need must be defined once and imported; copies drift (Case Study C).
-- **Filter engine**: filtering and the recomputation of every derived field live in `dashboard/src/utils/filterEngine.ts` (`applyFilterCriteriaToLiveScope`, the report counterpart, `isFilterCriteriaActive`). Components and hooks never re-implement a filter.
+- **Filter engine**: filtering and the recomputation of every derived field live in `dashboard/src/query/filterEngine.ts` (`applyFilterCriteriaToLiveScope`, the report counterpart, `isFilterCriteriaActive`). Components and hooks never re-implement a filter.
 - **Unassigned**: `UNASSIGNED_FILTER_SENTINEL` and `isUnassignedValue` (`src/domain/constants/unassigned.ts`) are the only definition of "no cost center / organization / group".
 - **Money**: seat cost for a scope is `seatCostForScope` (daily = pro-rated, monthly = full month, custom = pro-rated × days); budget utilisation is `BudgetUtilizationRule.evaluateUsd`; prices come from `src/domain/pricing/pricing-catalog.ts` (SDD-03 pricing table, SDD-06 §1.1 / §1.4 / §1.5). A filter that changes the population must recompute cost **in the unit of the active scope**.
 - **Sections that cannot follow a filter**: a section without per-user measurements is not recomputed and not silently shown as filtered. It is listed in `LIVE_UNFILTERABLE_SECTIONS` / `REPORT_UNFILTERABLE_SECTIONS` (`src/domain/constants/filter-scope.ts`), keeps its organisation-wide value, and the result carries `filter_notice.unfiltered_sections` so the View renders the "全社値 (フィルター非対応)" badge (SDD-07 §2.14). When a new section is added to the aggregated type, it is either recomputed or added to that list — the checklist in §4 covers this.
@@ -136,3 +136,53 @@ Review checklists did not catch Case Studies C and D; a machine does.
 - **Where it runs**: `npm run lint` locally, the dedicated step "Run ESLint (React Hooks rules)" in `.github/workflows/test-and-preview.yml`, and `src/tests/lint-react-hooks.test.ts` inside `npm test` (so the documented 5-stage quality gate `fork:verify → typecheck → test → secret-scan → build` already enforces it without a sixth stage).
 - **Suppressions**: an intentional omission is written as `// eslint-disable-next-line react-hooks/exhaustive-deps` **with a comment stating why** (for example the report-loading effect in `useDashboardData`, which must run only when the selected report month changes — adding `currentReportData` to its dependencies would loop). A suppression without a reason is a review finding.
 - **Parser**: TypeScript is parsed by Babel (`@babel/eslint-parser` + `@babel/preset-typescript`). The repository uses TypeScript 7 (native) whose JavaScript API `typescript-eslint` needs is not provided. Introducing type-aware rules (e.g. `no-floating-promises`) requires choosing a parser first and is deferred to the Phase 2 decision recorded in the improvement plan (`.devs/changes/2026-10-01_DashboardReviewAndImprovementPlan`, P2-6).
+
+---
+
+## 7. Dataset Loader and Query Layer (P2-2 / ADR-0001)
+
+Several views used to fetch, join and filter data on their own, which let the same condition show different numbers on different screens (improvement plan C-02 / C-03). Every view now reads one data contract: **Dataset (Loader) + Query**.
+
+```text
+index.json / scope JSON / report JSON
+   └─ Dataset Loader  (dashboard/src/dataset/datasetLoader.ts)   fetch + state, no filtering
+        └─ Query layer (dashboard/src/query/)                    the only filtering / aggregation
+             └─ hooks / views                                    consume results, never re-implement
+```
+
+### 7.1 Dataset Loader
+
+- Loads `index.json`, a scope (`daily` / `monthly` / `custom`) or a monthly report. URLs are built with `resolveDataPath` and the multi-tier fallback `getCandidateDataUrls` (direct path, then `processed/`; SDD-05 §2.2). It never switches to demo data on its own.
+- Returns `DatasetResult<T>` with a **state**:
+
+| State | Meaning |
+|:--|:--|
+| `ok` | Loaded; no known gap. |
+| `partial` | Loaded, but part of the data is missing: `index.json` has a `failed` / `partial` source, or the scope carries an `error` issue. |
+| `failed` | Could not be loaded. `data` is `null` and `error` says why. A failure is never shown as an empty or demo dataset. |
+| `demo` | Demo data: served from a `/demo/` path or declared by `is_mock_mode: true`. `demo` takes precedence over `partial` / `ok` so that demo numbers are never read as real. |
+
+- `custom:<start>_<end>` scopes are cut to the period after loading (`sliceScopeDataByDateRange`).
+- `useDashboardData` keeps the state per source (`scopeDatasetState`, `reportDatasetState`) and no longer builds URLs or detects demo sources itself.
+
+### 7.2 Query layer
+
+- `filterEngine` (the single filter implementation of §3.6) lives in `dashboard/src/query/` together with `queryEngine`. Views and hooks import from `dashboard/src/query` only.
+- API: `queryLiveScope` / `queryReport` (filtered and fully recomputed data), `queryPopulation` (matched / total users), `queryFilterOptions` (selectable values), `queryCapabilities` (sections that do not follow filters, §3.6).
+- `queryPopulation` uses the same predicate as the recomputation (`matchUserWithCriteria`), so the count shown by a selector always equals the user count of the recomputed KPIs and tables. **Pass unfiltered data** to it.
+- Metrics that cannot follow a filter are declared in `queryCapabilities(source).unfilterableSections` (the lists of §3.6) and labelled in the view; they are never silently treated as filtered.
+
+### 7.3 DuckDB-WASM (lazy)
+
+- DuckDB-WASM is the Query layer's SQL engine (improvement plan decision #4). Only `dashboard/src/query/duckdb/duckdbLoader.ts` imports it, and callers must `import()` it dynamically; nothing imports it statically and the Query index does not re-export it (`src/tests/query-layer.test.ts` enforces this). It therefore never enters the initial bundle: the build emits it as a separate chunk plus the wasm / worker files, fetched only on first use. The bundle budget is P2-7.
+- Only the exception-handling (`eh`) build (about 34 MB wasm) is shipped; every current major browser supports it.
+- Until the first view needs SQL aggregation (user x day facts, P1-3), no view references the loader, and the build output does not contain it.
+
+### 7.4 Migration status
+
+| Step | Status |
+|:--|:--|
+| Dataset Loader behind `useDashboardData` (index, scope, report) | Done (P2-2) |
+| Hook filtering / filter options through the Query layer | Done (P2-2) |
+| Views on Query results: `ActiveDataSelector` (match count), `DataSelectionModal` (preview count) | Done (P2-2). Both used to count users on their own, from different data (the selector from filtered data, the modal's total from the raw data). |
+| Remaining views read the hook's recomputed data | Migrated step by step in P2-3 / P2-4 (Metric Registry / View Registry) |

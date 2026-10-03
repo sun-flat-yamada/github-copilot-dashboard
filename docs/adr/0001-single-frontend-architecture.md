@@ -52,7 +52,7 @@ Adopt **Option C**.
 | `src/application/views/ViewPluginRegistry.ts`, `ViewOrchestrator.ts` | Evolve into the View Registry (P2-4). |
 | `src/adapters/presenters/*` (pure data → view model) | Kept; moved under the Query layer's outputs. The Credits / Agent / Adoption presenters are already used by `App.tsx`. |
 | `src/adapters/views/*ViewPlugin.tsx` | Replaced by View manifests that point at the real components; the JSX copies are deleted (P2-4, P2-5). |
-| `dashboard/src/utils/filterEngine.ts`, `useDashboardData` | Kept until the Query layer replaces them (P2-2), then deleted. |
+| `dashboard/src/utils/filterEngine.ts`, `useDashboardData` | P2-2: `filterEngine` moved to `dashboard/src/query/` and is now the Query layer's implementation; `useDashboardData` delegates loading to the Dataset Loader and is retired when P2-4 lands. |
 
 ## 5. Removal Targets
 

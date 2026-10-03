@@ -3,8 +3,8 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
 import { DEFAULT_FILTER_CRITERIA, MonthlyReportAggregatedData, ReportUserDetail } from '../types/copilot.js';
-import { buildFilteredModelBreakdown } from '../../dashboard/src/utils/reportModelBreakdown.js';
-import { applyFilterCriteriaToMonthlyReport } from '../../dashboard/src/utils/filterEngine.js';
+import { buildFilteredModelBreakdown } from '../../dashboard/src/query/reportModelBreakdown.js';
+import { applyFilterCriteriaToMonthlyReport } from '../../dashboard/src/query/filterEngine.js';
 
 describe('モデル特性レーダー: Tag選択によるモデル利用割合(%)の再集計', () => {
   const baseUsers: ReportUserDetail[] = [
@@ -144,8 +144,8 @@ describe('モデル特性レーダー: Tag選択によるモデル利用割合(%
     // 変えてもレポートの KPI・明細が再計算されなかった
     assert.match(
       hookContent,
-      /const filteredActiveReportData = useMemo<MonthlyReportAggregatedData \| null>\(\(\) => \{[\s\S]*?applyFilterCriteriaToMonthlyReport\(activeReportData, filterCriteria\);[\s\S]*?\}, \[activeReportData, filterCriteria\]\);/,
-      'filteredActiveReportData must call the shared filterEngine function and list the whole filterCriteria as a dependency'
+      /const filteredActiveReportData = useMemo<MonthlyReportAggregatedData \| null>\(\(\) => \{[\s\S]*?queryReport\(activeReportData, filterCriteria\);[\s\S]*?\}, \[activeReportData, filterCriteria\]\);/,
+      'filteredActiveReportData must call the shared Query-layer function (filterEngine) and list the whole filterCriteria as a dependency'
     );
     assert.ok(
       !hookContent.includes('[activeReportData, selectedTags]'),

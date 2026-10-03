@@ -58,6 +58,7 @@
     "worktree:clean": "tsx scripts/worktree-manage.ts clean"
   },
   "dependencies": {
+    "@duckdb/duckdb-wasm": "1.32.0",
     "clsx": "^2.1.1",
     "lucide-react": "^1.47.0",
     "react": "^19.2.8",

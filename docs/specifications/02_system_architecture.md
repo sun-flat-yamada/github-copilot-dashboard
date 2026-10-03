@@ -134,7 +134,7 @@ A run must never publish "empty" as if it were a measurement. The pipeline (`Pip
 
 | Element | Target (§3–§4) | Production path today |
 |:--|:--|:--|
-| SPA state | `DataStore` + `DerivedDataGraph` | `dashboard/src/main.tsx` always renders `App.tsx`; state and filtering come from `useDashboardData` + `dashboard/src/utils/filterEngine.ts`. `AppV2.tsx` is not mounted (`VITE_USE_NEW_STORE` does not change `App`). |
+| SPA state | `DataStore` + `DerivedDataGraph` | `dashboard/src/main.tsx` always renders `App.tsx`; data is loaded by the Dataset Loader (`dashboard/src/dataset/`) and filtered by the Query layer (`dashboard/src/query/`), driven by `useDashboardData` (SDD-15 §7). `AppV2.tsx` is not mounted (`VITE_USE_NEW_STORE` does not change `App`). |
 | Views | 9 `ViewPlugin`s mediated by the registry | The registry supplies navigation metadata; rendering is done by conditionals in `App.tsx`. |
 | Presenters | All views | Only the Credits / Agent / Adoption presenters are used by `App.tsx`. |
 | Pipeline | `createPipelineApp` → `PipelineOrchestrator` | As described (this is the live path). |
