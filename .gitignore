@@ -132,3 +132,7 @@ Thumbs.db
 # change-dev artifacts under .devs/changes/ are shared via PRs; everything else in .devs/ stays local
 .devs/*
 !.devs/changes/
+
+# Playwright
+test-results/
+playwright-report/

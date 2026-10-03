@@ -95,6 +95,8 @@ The structural lessons common to these cases are generalized in Sections 2, 3 an
   2. No exceptions occur (e.g., division by zero) when the filter narrows the target set to zero records.
   3. When no filter is applied, the original value computed at parse time is preserved unchanged (regression guard).
 
+- **Behaviour tests over source-text tests (P2-6)**: UI behaviour is protected by tests that render and operate the screen, not by regular expressions over source text. Two layers: React Testing Library tests (`src/tests/ui/*.test.tsx`, run by `npm test`; see §8) and Playwright smoke tests (`e2e/*.spec.ts`, run by `npm run e2e`; see §8). A source-text test is acceptable only for a structural rule that has no visible behaviour (e.g. import direction).
+
 ### 3.6 One Filter Engine, One Definition per Concept (P0-5 / P0-6)
 Behaviour that several modules need must be defined once and imported; copies drift (Case Study C).
 - **Filter engine**: filtering and the recomputation of every derived field live in `dashboard/src/query/filterEngine.ts` (`applyFilterCriteriaToLiveScope`, the report counterpart, `isFilterCriteriaActive`). Components and hooks never re-implement a filter.
@@ -133,9 +135,10 @@ When reviewing or implementing code changes touching Tag filters, scope, or data
 Review checklists did not catch Case Studies C and D; a machine does.
 
 - **Rules** (`eslint.config.js`, flat config, applied to `dashboard/src/**/*.{ts,tsx}`): `react-hooks/rules-of-hooks: error` and `react-hooks/exhaustive-deps: error`.
-- **Where it runs**: `npm run lint` locally, the dedicated step "Run ESLint (React Hooks rules)" in `.github/workflows/test-and-preview.yml`, and `src/tests/lint-react-hooks.test.ts` inside `npm test` (so the documented 5-stage quality gate `fork:verify → typecheck → test → secret-scan → build` already enforces it without a sixth stage).
+- **Where it runs**: `npm run lint` locally, the dedicated step "Run ESLint (React Hooks rules + TypeScript-oriented core rules)" in `.github/workflows/test-and-preview.yml`, and `src/tests/lint-react-hooks.test.ts` inside `npm test` (so the documented 5-stage quality gate `fork:verify → typecheck → test → secret-scan → build` already enforces it without a sixth stage).
 - **Suppressions**: an intentional omission is written as `// eslint-disable-next-line react-hooks/exhaustive-deps` **with a comment stating why** (for example the report-loading effect in `useDashboardData`, which must run only when the selected report month changes — adding `currentReportData` to its dependencies would loop). A suppression without a reason is a review finding.
-- **Parser**: TypeScript is parsed by Babel (`@babel/eslint-parser` + `@babel/preset-typescript`). The repository uses TypeScript 7 (native) whose JavaScript API `typescript-eslint` needs is not provided. Introducing type-aware rules (e.g. `no-floating-promises`) requires choosing a parser first and is deferred to the Phase 2 decision recorded in the improvement plan (`.devs/changes/2026-10-01_DashboardReviewAndImprovementPlan`, P2-6).
+- **Parser**: TypeScript is parsed by Babel (`@babel/eslint-parser` + `@babel/preset-typescript`). The repository uses TypeScript 7 (native) whose JavaScript API `typescript-eslint` needs is not provided.
+- **typescript-eslint status (re-checked in P2-6)**: the latest typescript-eslint (8.x) declares `typescript >=4.8.4 <6.1.0` as a peer dependency, so it cannot be used with TypeScript 7. Until it supports TypeScript 7, type-aware rules (e.g. `no-floating-promises`) are **not** introduced, and the following type-free alternatives are enforced instead (same flat config): core rules `eqeqeq` (`null` allowed), `no-var`, `prefer-const`, `no-debugger`, and `no-restricted-syntax` selectors on the TS nodes the Babel parser produces (chained non-null assertions `x!!`, the `Function` type). `tsc --noEmit` (`strict`, `noUnusedLocals`, `noUnusedParameters`) remains the type checker. When typescript-eslint supports TypeScript 7, replace the parser and add the recommended type-aware set in this file.
 
 ---
 
@@ -187,3 +190,18 @@ index.json / scope JSON / report JSON
 | Views on Query results: `ActiveDataSelector` (match count), `DataSelectionModal` (preview count) | Done (P2-2). Both used to count users on their own, from different data (the selector from filtered data, the modal's total from the raw data). |
 | Remaining views read the hook's recomputed data | Migrated step by step. Metric Registry + quality attributes: overview KPI cards done (P2-3, SDD-07 §2.14a); View Registry is the only rendering entry, `App.tsx` branches removed (P2-4, SDD-07 §2.14b) |
 | Dead code and layer violations | Done (P2-5): the DataStore path and the unreferenced Appendix C modules are deleted; `src/tests/layer-boundaries.test.ts` fails if `src/**` imports `dashboard/` (SDD-02 §3.1) |
+
+---
+
+## 8. Behaviour Tests: React Testing Library and Playwright (P2-6)
+
+| Layer | Where | Runs in | Protects |
+|:--|:--|:--|:--|
+| React Testing Library (jsdom) | `src/tests/ui/app-behavior.test.tsx` | `npm test` (part of the quality gate) | Applying a Cost Center filter recomputes the KPI cards for that population only; quality attributes (measured / estimated / demo badge, "—" with a reason for missing values, never `0`); data status banner (demo banner and "show live data" switch, failed source announced as `role="alert"`, missing live data offers but never silently loads demo data) |
+| Playwright smoke (Chromium) | `e2e/smoke.spec.ts` | `npm run e2e`; CI step in `.github/workflows/test-and-preview.yml` | Filter → KPI change (and reset), demo banner + demo badge, opening a past month from the data selector |
+
+- **Rendering without Vite**: `import.meta.glob` (View Registry auto-collection) exists only under Vite. The application body is therefore `AppShell` (`dashboard/src/AppShell.tsx`), which receives the `ViewRegistry`; `App.tsx` passes `defaultViewRegistry`, and tests pass a registry built by `discoverViewRegistry()` (`src/tests/ui/test-harness.ts`) with the same discovery rule. Do not render `App` in tests.
+- **Data**: RTL tests serve the fixed 13-user dataset (`src/tests/fixtures/auto-collected-data-fixtures.ts`) through a `fetch` stub (`installFakeDataServer`); unregistered URLs return 404 like a static host, which is how "no silent demo fallback" is asserted. Playwright uses the DEMO data generated by `npm run demo:generate` (git-ignored) and opens it with `?demo=true`.
+- **jsdom setup**: `src/tests/ui/dom-setup.ts` must be the first import of a UI test (RTL reads `document` at import time).
+- **Browser**: Playwright uses the pre-installed Chromium (`PLAYWRIGHT_BROWSERS_PATH/chromium` or `PLAYWRIGHT_CHROMIUM_EXECUTABLE`) and never downloads one; CI, which has none, runs `npx playwright install --with-deps chromium`.
+- **Replaced source-text tests** (P2-6): in `data-status-banner.test.ts` the two "App wiring" tests (banner rendered above the content; demo offered as an explicit action), and in `dashboard-data-stability.test.ts` the `activeDataIsDemoSourced` wiring test, were deleted — the same behaviour is now asserted on the rendered screen. The remaining source-text tests that read `App.tsx` were re-pointed to `AppShell.tsx` and are replaced step by step as their screens gain behaviour tests.

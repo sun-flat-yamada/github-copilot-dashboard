@@ -19,7 +19,7 @@ describe('ScopeSelector Consolidation & DataSelectionModal Enhancements Tests (#
   });
 
   it('verifies App.tsx does not import or render ScopeSelector', () => {
-    const appPath = path.join(REPO_ROOT, 'dashboard/src/App.tsx');
+    const appPath = path.join(REPO_ROOT, 'dashboard/src/AppShell.tsx');
     const appContent = fs.readFileSync(appPath, 'utf8');
 
     assert.equal(

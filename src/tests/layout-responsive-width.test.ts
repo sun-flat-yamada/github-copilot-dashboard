@@ -7,7 +7,7 @@ test('Layout Responsive Width Tests', async (t) => {
   const projectRoot = process.cwd();
 
   await t.test('verifies App.tsx main container has no max-w-7xl restriction and allows full width expansion', () => {
-    const appFile = path.resolve(projectRoot, 'dashboard/src/App.tsx');
+    const appFile = path.resolve(projectRoot, 'dashboard/src/AppShell.tsx');
     assert.ok(fs.existsSync(appFile), 'App.tsx must exist');
     const content = fs.readFileSync(appFile, 'utf-8');
 

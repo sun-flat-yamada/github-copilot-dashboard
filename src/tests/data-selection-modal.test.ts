@@ -30,7 +30,7 @@ describe('Data Selection & Hierarchical AND Filtering Tests', () => {
   );
   const appPath = path.resolve(
     process.cwd(),
-    'dashboard/src/App.tsx'
+    'dashboard/src/AppShell.tsx'
   );
 
   describe('Domain & FilterEngine Contracts', () => {
