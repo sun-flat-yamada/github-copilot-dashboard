@@ -225,6 +225,19 @@ Missing data is **`null`, shown as "—" with its reason — never `0`, never a 
 
 Hooks in these components obey the SDD-15 §6 rules (no hook after an early return); this is enforced by ESLint (`npm run lint`, also part of `npm test`).
 
+### 2.14a Metric Registry and Quality Attributes (P2-3 / D-01)
+
+Metrics are declared once in `src/domain/metrics/metric-registry.ts` (id, label ja/en, unit, window, filterability, sources, default quality). Every value carries a **quality attribute**, decided by `qualify()` with the priority **missing > demo > the definition's default**:
+
+| Quality | Meaning | Display (`MetricValue`) |
+|:--|:--|:--|
+| `measured` | Measured value | Value only |
+| `estimated` | Computed from criteria / unit prices (e.g. idle cost) | Value + **「推定」** badge (tooltip: reason) |
+| `missing` | Not retrieved | "—（reason）" — never `0` |
+| `demo` | Fictitious demo data | Value + **「デモ」** badge |
+
+Badges always carry a text label (never colour alone). Missing wins over demo so that the absence of a value is never hidden. The overview KPI cards (spend, active rate, idle cost, acceptance rate) are migrated; other views migrate step by step. The metric catalog v1 (definition / window / source display) extends this registry in P3-1.
+
 ### 2.15 Usage Insights in the User Detail Table (`UserDetailTable`)
 - Columns after "Total Requests": **Tokens**, **Cost per 1M Tokens**, **Signal** (badge). All three are sortable and included in the CSV export (tokens split into input / output / cache read / cache write). A cell without data shows "—" with the reason in the tooltip (e.g. the CSV has no token columns).
 - The **Signal** badge shows the level with a text label (never colour alone): 特記なし / 参考 / **確認を推奨** / データ不足. The tooltip lists the evidence of every signal that is `watch` or `review`. The checkbox **「確認を推奨のみ」** narrows the list to users whose overall level is `review`.
