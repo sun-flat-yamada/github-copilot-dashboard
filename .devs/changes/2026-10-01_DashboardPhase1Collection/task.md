@@ -21,16 +21,18 @@
     - [x] 匿名化モード・モックでは保存しない。`index.json` の `run`（`run_id`、再処理は `reprocessed: true`）
     - [x] `npm run pipeline:reprocess [-- --run <id>]`（通信なし。既存の `raw/YYYY/MM` は書き換えない）
     - [x] テスト（`RawLanding.test.ts`: 記録 → 成果物を消して再生 → 同一の成果物、録画済みの失敗の再現、未記録の要求は失敗）
-  - [ ] PR D 以降: P1-3 / P1-4 / P1-5 / P1-7
+  - [x] P1-3 正準ファクト v1（#177）、P1-4 契約テストとスキーマドリフト検知（#178）、P1-7 データ品質レポートの履歴化（#180）、P1-5 AI Credits API アダプタと CSV プロファイル（#179）: 1 つの PR に子 Issue ごとのコミットで実装（詳細は `2026-10-03_P1-*` の計画・タスク）
 - [x] Phase 4: Local Quality Gate & Specification Sync（PR A 分: SDD-02 / 03 / 08、セットアップガイド。PR B 分: SDD-06、セットアップガイド。PR C 分: SDD-02 §2.8 / SDD-03 §1.1 / SDD-05 §2.3 / SDD-08 §1）
 - [/] Phase 5: Walkthrough（PR A / B / C 分は `walkthrough.md`。以降の PR 分は各 PR で追記）
 - [/] Phase 6: PR / Phase 7: Rebase & Merge
   - [x] PR A（#164）、PR B（#165）: 作成・マージ済み
   - [ ] PR C: 作成後、レビュー・マージ待ち
-  - [ ] PR D 以降
+  - [ ] PR D（P1-3 / P1-4 / P1-5 / P1-7）: 作成後、レビュー・マージ待ち
 
 ## 持ち越し（実環境が必要で、作業環境からは検証できない）
 
 - Reports API と PAT の実機検証（トークンが必要）。エンドポイント・スキーマ・スコープは GitHub の REST API description に基づく。契約テスト（P1-4）で固定する
 - ECB への実接続（パーサーはフィクスチャのみで検証）と、価格の GitHub 公式ドキュメントとの照合
 - Raw Landing の実運用での容量（内容ハッシュによる重複排除を前提とした見積もりは未実施）
+- スキーマドリフト検知ワークフロー（`schema-drift.yml`）の実 API での初回実行（Enterprise の PAT が必要。`--dry-run` と単体テストまで）
+- AI credit usage API の実機検証（Billing の権限が必要。エンドポイントと項目は REST API description に基づく）。取得した明細の集計への反映は Phase 2

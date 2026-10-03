@@ -1,4 +1,5 @@
 #!/usr/bin/env tsx
+import { formatCsvImportReport } from '../src/processor/csv-import-report-format.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
@@ -31,10 +32,11 @@ async function importReport() {
   const csvContent = fs.readFileSync(inputPath, 'utf-8');
   // new AttributeResolver() は ANONYMIZE_USERS=true のとき秘密鍵 (ANONYMIZE_SECRET) を必須とし、無ければ例外で停止する
   const parser = new ReportParser(new AttributeResolver());
-  const records = parser.parseRecords(csvContent);
+  const { records, report: csvReport } = parser.parseRecordsWithReport(csvContent, path.basename(inputPath));
+  for (const line of formatCsvImportReport(csvReport)) console.log(line);
 
   if (records.length === 0) {
-    console.error('❌ Error: No valid usage records found in the provided CSV file.');
+    console.error(`❌ Error: ${csvReport.stop_reason ?? 'No valid usage records found in the provided CSV file.'}`);
     process.exit(1);
   }
 
@@ -67,7 +69,12 @@ async function importReport() {
   }
 
   // 2. 集計処理の実行
-  const aggregated = parser.aggregate(records, targetMonth, fileName, 'persisted');
+  const aggregated = parser.aggregate(records, targetMonth, fileName, 'persisted', {
+    source_files: [fileName],
+    records_total: records.length,
+    duplicates_skipped: 0,
+    csv_reports: [csvReport],
+  });
   storage.saveProcessedReport(aggregated);
   console.log(`✅ Aggregated report generated: $${aggregated.overview.total_net_spend_usd} net spend.`);
 

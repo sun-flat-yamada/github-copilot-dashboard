@@ -1,3 +1,4 @@
+import type { CsvImportReport } from '../../domain/entities/csv-import.js';
 import * as fs from 'fs';
 import { ICopilotDataSource } from '../../domain/ports/ICopilotDataSource.js';
 import { IAttributeResolver } from '../../domain/ports/IAttributeResolver.js';
@@ -364,11 +365,17 @@ export class PipelineOrchestrator {
       // (旧実装はファイルごとに集計して保存しており、最後のファイルの集計が前のファイルを上書きしていた)
       const csvFiles = this.storage.getRawReportFiles(repMonth);
       const recordSets: Array<{ fileName: string; records: ReturnType<ReportParser['parseRecords']> }> = [];
+      const csvReports: CsvImportReport[] = [];
       for (const csvPath of csvFiles) {
         try {
           const csvContent = fs.readFileSync(csvPath, 'utf-8');
           const fileName = csvPath.split(/[\\/]/).pop() || `${repMonth}.csv`;
-          recordSets.push({ fileName, records: reportParser.parseRecords(csvContent) });
+          const parsed = reportParser.parseRecordsWithReport(csvContent, fileName);
+          recordSets.push({ fileName, records: parsed.records });
+          csvReports.push(parsed.report);
+          if (parsed.report.stop_reason) {
+            console.warn(`⚠️ Report CSV ${fileName} was not imported: ${parsed.report.stop_reason}`);
+          }
         } catch (err) {
           console.warn(`⚠️ Warning: Failed to parse report CSV at ${csvPath}:`, err);
         }
@@ -384,6 +391,7 @@ export class PipelineOrchestrator {
           source_files: merged.sourceFiles,
           records_total: merged.records.length,
           duplicates_skipped: merged.duplicatesSkipped,
+          csv_reports: csvReports,
         });
         this.storage.saveReportData(repMonth, aggregatedReport);
         console.log(
