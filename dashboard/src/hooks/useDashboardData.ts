@@ -9,20 +9,23 @@ import {
   FilterCriteria,
   DEFAULT_FILTER_CRITERIA,
 } from '../../../src/types/copilot';
+import { resolveDataPath } from '../utils/pathResolver';
 import {
-  resolveDataPath,
-  getCandidateDataUrls,
-  fetchDataWithFallback,
-} from '../utils/pathResolver';
-import {
-  applyFilterCriteriaToLiveScope,
-  applyFilterCriteriaToMonthlyReport,
   generateDatasetVersionKey,
   isFilterCriteriaActive,
   countActiveFilterConditions,
   getFilterSummaryBadges,
-} from '../utils/filterEngine';
-import { isUnassignedValue } from '../../../src/domain/constants/unassigned';
+  queryLiveScope,
+  queryReport,
+  queryFilterOptions,
+} from '../query';
+import {
+  loadIndexDataset,
+  loadScopeDataset,
+  loadReportDataset,
+  sliceScopeDataByDateRange,
+  type DatasetState,
+} from '../dataset/datasetLoader';
 
 export interface RepoInfo {
   owner: string;
@@ -34,74 +37,8 @@ export interface RepoInfo {
 import { DemoModeService } from '../../../src/application/services/DemoModeService';
 export const checkIsDemoMode = DemoModeService.checkIsDemoMode;
 
-export function sliceScopeDataByDateRange(
-  baseData: ScopeAggregatedData,
-  startDate: string,
-  endDate: string
-): ScopeAggregatedData {
-  const filteredTrends = (baseData.daily_trends || []).filter(
-    (d) => d.date >= startDate && d.date <= endDate
-  );
-  const daysCount = filteredTrends.length || 1;
-
-  const totalSpend = filteredTrends.reduce((sum, d) => sum + (d.daily_cost_usd || 0), 0);
-  const totalSuggestions = filteredTrends.reduce((sum, d) => sum + (d.suggestions || 0), 0);
-  const totalAcceptances = filteredTrends.reduce((sum, d) => sum + (d.acceptances || 0), 0);
-  const totalChats = filteredTrends.reduce((sum, d) => sum + (d.chats || 0), 0);
-  const totalPrSummaries = filteredTrends.reduce((sum, d) => sum + (d.pr_summaries || 0), 0);
-  const acceptanceRate = totalSuggestions > 0 ? totalAcceptances / totalSuggestions : 0;
-
-  // 期間内に日次の利用実績が 1 日も無い (利用状況メトリクスが取得できていない) 場合、
-  // 利用指標を 0 で埋めず欠損 (null) のままにする
-  const hasDailyUsage = filteredTrends.length > 0;
-
-  const filteredUserProfiles = (baseData.user_profiles || []).map((p) => {
-    const history = (p.daily_history || []).filter(
-      (h) => h.date >= startDate && h.date <= endDate
-    );
-    const userSuggestions = history.reduce((s, h) => s + (h.suggestions || 0), 0);
-    const userAcceptances = history.reduce((s, h) => s + (h.acceptances || 0), 0);
-    const userChats = history.reduce((s, h) => s + (h.total_chats || 0), 0);
-    const userSpend = history.reduce((s, h) => s + (h.daily_cost_usd || 0), 0);
-    const userRate = userSuggestions > 0 ? userAcceptances / userSuggestions : 0;
-    return {
-      ...p,
-      daily_history: history,
-      total_suggestions: userSuggestions,
-      total_acceptances: userAcceptances,
-      total_chats: userChats,
-      acceptance_rate: userRate,
-      total_cost_usd: Math.round(userSpend * 100) / 100,
-    };
-  });
-
-  const activeUsersCount = filteredUserProfiles.filter(
-    (p) => (p.total_suggestions || 0) > 0 || (p.total_chats || 0) > 0
-  ).length;
-
-  return {
-    ...baseData,
-    scope_type: 'custom',
-    scope_key: `custom:${startDate}_${endDate}`,
-    date_range: {
-      start: startDate,
-      end: endDate,
-      days_count: daysCount,
-    },
-    daily_trends: filteredTrends,
-    user_profiles: filteredUserProfiles,
-    overview: {
-      ...baseData.overview,
-      total_spend_usd: Math.round(totalSpend * 100) / 100,
-      total_suggestions: hasDailyUsage ? totalSuggestions : null,
-      total_acceptances: hasDailyUsage ? totalAcceptances : null,
-      overall_acceptance_rate: hasDailyUsage ? Math.round(acceptanceRate * 10000) / 10000 : null,
-      total_chats: hasDailyUsage ? totalChats : null,
-      total_pr_summaries: hasDailyUsage ? totalPrSummaries : null,
-      active_users: activeUsersCount,
-    },
-  };
-}
+// 期間の切り出しは Dataset Loader に移った (後方互換のため再エクスポート)
+export { sliceScopeDataByDateRange };
 
 export function useDashboardData(initialSource: DataSourceType = 'live_metrics') {
   const [activeSource, setActiveSource] = useState<DataSourceType>(initialSource);
@@ -128,11 +65,13 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
   const [noLiveData, setNoLiveData] = useState<boolean>(false);
   // 現在表示中の Live Metrics データが実際に /demo/ パスから取得されたものか (ソース単位で追跡)
   const [scopeDataIsDemoSourced, setScopeDataIsDemoSourced] = useState<boolean | undefined>(undefined);
+  // Dataset Loader が返したデータ状態 (ok / partial / failed / demo)。未取得は undefined
+  const [scopeDatasetState, setScopeDatasetState] = useState<DatasetState | undefined>(undefined);
 
   // キャッシュ (取得元が demo パスだったかどうかも併せて保持する)
   const currentDataRef = useRef<ScopeAggregatedData | null>(null);
   currentDataRef.current = currentData;
-  const scopeDataCacheRef = useRef<Map<string, { data: ScopeAggregatedData; isDemoSourced: boolean }>>(new Map());
+  const scopeDataCacheRef = useRef<Map<string, { data: ScopeAggregatedData; isDemoSourced: boolean; state: DatasetState }>>(new Map());
 
   // Monthly Usage Report スコープ
   const [selectedReportMonth, setSelectedReportMonth] = useState<string>('');
@@ -141,9 +80,10 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
   const [reportError, setReportError] = useState<string | null>(null);
   const currentReportDataRef = useRef<MonthlyReportAggregatedData | null>(null);
   currentReportDataRef.current = currentReportData;
-  const reportCacheRef = useRef<Map<string, { data: MonthlyReportAggregatedData; isDemoSourced: boolean }>>(new Map());
+  const reportCacheRef = useRef<Map<string, { data: MonthlyReportAggregatedData; isDemoSourced: boolean; state: DatasetState }>>(new Map());
   // 現在表示中の Monthly Report データが実際に /demo/ パスから取得されたものか (ソース単位で追跡)
   const [reportDataIsDemoSourced, setReportDataIsDemoSourced] = useState<boolean | undefined>(undefined);
+  const [reportDatasetState, setReportDatasetState] = useState<DatasetState | undefined>(undefined);
 
   // User Upload スコープ (On-demand)
   const [uploadedData, setUploadedData] = useState<MonthlyReportAggregatedData | null>(null);
@@ -236,9 +176,11 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     try {
       // 指定されたデータ (LIVE / DEMO) だけを読み込む。読み込めない場合に、もう一方 (DEMO など) へ
       // 暗黙に切り替えない。デモ表示は明示的な操作 (?demo=true / DEMO 切替) のときだけ行う。
-      const res = await fetch(resolveDataPath(`${dir}/index.json`));
-      if (!res.ok) throw new Error(`Failed to load index.json: ${res.status}`);
-      const meta = (await res.json()) as IndexMetadata;
+      const result = await loadIndexDataset(dir);
+      if (result.state === 'failed' || !result.data) {
+        throw new Error(result.error || 'Failed to load index.json');
+      }
+      const meta = result.data;
       setIndexMeta(meta);
 
       // isDemoMode は「どのディレクトリを読むか」の明示的な選択 (URL パラメータ / 環境変数 / 切替操作)。
@@ -308,6 +250,8 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
       setCurrentReportData(null);
       setScopeDataIsDemoSourced(undefined);
       setReportDataIsDemoSourced(undefined);
+      setScopeDatasetState(undefined);
+      setReportDatasetState(undefined);
       setSelectedKey('');
       setSelectedReportMonth('');
       setNoLiveData(false);
@@ -336,6 +280,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     if (cached) {
       setCurrentData(cached.data);
       setScopeDataIsDemoSourced(cached.isDemoSourced);
+      setScopeDatasetState(cached.state);
       setLoading(false);
       setError(null);
       return;
@@ -347,56 +292,23 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
       setLoading(true);
       setError(null);
       try {
-        let subDir = 'daily';
-        let fileName = `${selectedKey}.json`;
-
-        let candidateUrls: string[];
-        if (scopeType === 'monthly') {
-          subDir = 'monthly';
-          candidateUrls = getCandidateDataUrls(dataBaseDir, subDir, fileName);
-        } else if (scopeType === 'custom') {
-          subDir = 'custom';
-          if (selectedKey.startsWith('custom:')) {
-            const customFileName = `${selectedKey.replace(/[:\/]/g, '_')}.json`;
-            candidateUrls = [
-              ...getCandidateDataUrls(dataBaseDir, 'custom', customFileName),
-              ...getCandidateDataUrls(dataBaseDir, 'custom', 'latest-30d.json'),
-            ];
-          } else {
-            fileName = `${selectedKey.replace(/[:\/]/g, '_')}.json`;
-            candidateUrls = getCandidateDataUrls(dataBaseDir, subDir, fileName);
-          }
-        } else {
-          candidateUrls = getCandidateDataUrls(dataBaseDir, subDir, fileName);
-        }
-
-        const { res, finalUrl } = await fetchDataWithFallback(candidateUrls);
-
-        if (!res.ok) {
-          throw new Error(`Data for scope ${scopeType} (${selectedKey}) not found at ${candidateUrls[0]}`);
-        }
-        // このリクエストの取得元が /demo/ パスかどうかをソース単位で記録する。
+        // 取得 (候補 URL のフォールバック・期間の切り出し・DEMO 判定) は Dataset Loader に委ねる。
         // グローバルな isDemoMode (ユーザーの既定ディレクトリ選好) は書き換えない。これにより、
         // Live Metrics だけがデモの場合でも Monthly Report 等 他ソースの表示が
         // 誤って「DEMO」表示になることを防ぐ。
-        // 暗黙のデモフォールバックは行わない (候補にデモパスを含めない) ため、/demo/ パスになるのは
-        // ユーザーが明示的にデモを選択した場合のみ。実データ側に置かれた MOCK_MODE 生成データ
-        // (index.json が is_mock_mode: true を宣言) もデモ由来として扱う。
-        const isDemoSourced = finalUrl.includes('/demo/');
-        const demoSourced = isDemoSourced || indexMetaRef.current?.is_mock_mode === true;
-        let data = (await res.json()) as ScopeAggregatedData;
-
-        if (scopeType === 'custom' && selectedKey.startsWith('custom:')) {
-          const parts = selectedKey.slice('custom:'.length).split('_');
-          if (parts.length === 2 && parts[0] && parts[1]) {
-            data = sliceScopeDataByDateRange(data, parts[0], parts[1]);
-          }
+        const result = await loadScopeDataset(dataBaseDir, scopeType, selectedKey, {
+          mockDeclared: indexMetaRef.current?.is_mock_mode === true,
+        });
+        if (result.state === 'failed' || !result.data) {
+          throw new Error(result.error || `Data for scope ${scopeType} (${selectedKey}) not found`);
         }
+        const data = result.data;
 
         if (!isCancelled) {
-          scopeDataCacheRef.current.set(cacheKey, { data, isDemoSourced: demoSourced });
+          scopeDataCacheRef.current.set(cacheKey, { data, isDemoSourced: result.demoSourced, state: result.state });
           setCurrentData(data);
-          setScopeDataIsDemoSourced(demoSourced);
+          setScopeDataIsDemoSourced(result.demoSourced);
+          setScopeDatasetState(result.state);
           clearRuntimeIssue(`scope-${scopeType}-${selectedKey}`);
         }
       } catch (e: any) {
@@ -441,6 +353,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     if (cached) {
       setCurrentReportData(cached.data);
       setReportDataIsDemoSourced(cached.isDemoSourced);
+      setReportDatasetState(cached.state);
       setReportLoading(false);
       setReportError(null);
       return;
@@ -452,22 +365,24 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
       setReportLoading(true);
       setReportError(null);
       try {
-        const candidateUrls = getCandidateDataUrls(dataBaseDir, 'reports', `${selectedReportMonth}.json`);
-        const { res, finalUrl } = await fetchDataWithFallback(candidateUrls);
-
-        if (!res.ok) {
-          throw new Error(`Monthly report for ${selectedReportMonth} not found at ${candidateUrls[0]}`);
+        // Live Metrics と同様、取得元がデモかどうかをソース単位で記録する (Dataset Loader が判定)。
+        // グローバルな isDemoMode は書き換えない。
+        const result = await loadReportDataset(dataBaseDir, selectedReportMonth, {
+          mockDeclared: indexMetaRef.current?.is_mock_mode === true,
+        });
+        if (result.state === 'failed' || !result.data) {
+          throw new Error(result.error || `Monthly report for ${selectedReportMonth} not found`);
         }
-        // Live Metrics と同様、このリクエストの取得元がデモかどうかをソース単位で記録する。
-        // グローバルな isDemoMode は書き換えない (Monthly Report がデモでも
-        // Live Metrics 側の表示に影響を与えないようにするため)。
-        const isDemoSourced = finalUrl.includes('/demo/');
-        const demoSourced = isDemoSourced || indexMetaRef.current?.is_mock_mode === true;
-        const data = (await res.json()) as MonthlyReportAggregatedData;
+        const data = result.data;
         if (!isCancelled) {
-          reportCacheRef.current.set(`${dataBaseDir}:${selectedReportMonth}`, { data, isDemoSourced: demoSourced });
+          reportCacheRef.current.set(`${dataBaseDir}:${selectedReportMonth}`, {
+            data,
+            isDemoSourced: result.demoSourced,
+            state: result.state,
+          });
           setCurrentReportData(data);
-          setReportDataIsDemoSourced(demoSourced);
+          setReportDataIsDemoSourced(result.demoSourced);
+          setReportDatasetState(result.state);
           clearRuntimeIssue(`report-${selectedReportMonth}`);
         }
       } catch (e: any) {
@@ -560,47 +475,30 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     return scopeDataIsDemoSourced;
   }, [activeSource, scopeDataIsDemoSourced, reportDataIsDemoSourced]);
 
-  // フィルター選択肢候補の抽出 (現在のデータソースから動的に導出)
-  // 未割当 (Default-CostCenter / Unassigned-CC / 未分類 (Unassigned) 等) は、専用の「未割当のみ」選択肢が
-  // あるため通常の候補には含めない (単一の定義: isUnassignedValue)。
+  // フィルター選択肢候補の抽出 (Query 層。未割当は専用の選択肢があるため含めない)
   const {
     availableCostCenters,
     availableOrganizations,
     availableGroups,
     availableTags,
   } = useMemo(() => {
-    const costCenters = new Set<string>();
-    const orgs = new Set<string>();
-    const groups = new Set<string>();
-    const tags = new Set<string>();
-
-    const collect = (u: { cost_center?: string; organization?: string; department?: string; tags?: string[] }) => {
-      if (u.cost_center && !isUnassignedValue(u.cost_center)) costCenters.add(u.cost_center.trim());
-      if (u.organization && !isUnassignedValue(u.organization)) orgs.add(u.organization.trim());
-      if (u.department && !isUnassignedValue(u.department)) groups.add(u.department.trim());
-      for (const t of u.tags || []) {
-        if (t && t.trim()) tags.add(t.trim());
-      }
-    };
-
-    if (activeSource === 'live_metrics' && currentData?.users) {
-      for (const u of currentData.users) collect(u);
-    } else if (activeReportData?.user_details) {
-      for (const u of activeReportData.user_details) collect(u);
-    }
-
+    const options = queryFilterOptions(
+      activeSource === 'live_metrics'
+        ? { source: 'live_metrics', data: currentData }
+        : { source: activeSource, data: activeReportData }
+    );
     return {
-      availableCostCenters: Array.from(costCenters).sort(),
-      availableOrganizations: Array.from(orgs).sort(),
-      availableGroups: Array.from(groups).sort(),
-      availableTags: Array.from(tags).sort(),
+      availableCostCenters: options.costCenters,
+      availableOrganizations: options.organizations,
+      availableGroups: options.groups,
+      availableTags: options.tags,
     };
   }, [activeSource, currentData, activeReportData]);
 
   // 統合フィルター条件 (FilterCriteria) を適用した Live Metrics データ (SDD-15 準拠・完全再集計)
   const filteredCurrentData = useMemo<ScopeAggregatedData | null>(() => {
     if (!currentData) return null;
-    return applyFilterCriteriaToLiveScope(currentData, filterCriteria);
+    return queryLiveScope(currentData, filterCriteria);
   }, [currentData, filterCriteria]);
 
   // 統合フィルター条件 (FilterCriteria) を適用したレポートデータ (SDD-15 準拠・完全再集計)
@@ -609,7 +507,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
   // 依存に含めており、タグ以外の条件を変えてもレポートの KPI・明細が再計算されなかった。
   const filteredActiveReportData = useMemo<MonthlyReportAggregatedData | null>(() => {
     if (!activeReportData) return null;
-    return applyFilterCriteriaToMonthlyReport(activeReportData, filterCriteria);
+    return queryReport(activeReportData, filterCriteria);
   }, [activeReportData, filterCriteria]);
 
   // 決定論的データセットバージョンキー (表示更新・再マウント保証)
@@ -631,6 +529,9 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     setSelectedKey,
     currentData: filteredCurrentData,
     rawCurrentData: currentData,
+    // Dataset Loader のデータ状態 (ok / partial / failed / demo)
+    scopeDatasetState,
+    reportDatasetState,
     loading,
     error,
     noLiveData,

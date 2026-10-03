@@ -13,7 +13,7 @@ import {
   isFilterCriteriaActive,
   getFilterSummaryBadges,
   computeDatasetVersionKey,
-} from '../../dashboard/src/utils/filterEngine';
+} from '../../dashboard/src/query/filterEngine';
 
 describe('Data Selection & Hierarchical AND Filtering Tests', () => {
   const modalComponentPath = path.resolve(
@@ -207,8 +207,10 @@ describe('Data Selection & Hierarchical AND Filtering Tests', () => {
       assert.match(content, /datasetVersionKey/);
       // 再集計は filterEngine の単一実装 (ライブ / 月次レポートとも) に委譲する。
       // (以前はフックにレポート用の再集計が重複実装され、タグ以外の条件変更が反映されなかった)
-      assert.match(content, /applyFilterCriteriaToLiveScope/);
-      assert.match(content, /applyFilterCriteriaToMonthlyReport/);
+      // hook は Query 層 (queryLiveScope / queryReport → filterEngine) を呼ぶだけで、再集計を持たない
+      assert.match(content, /queryLiveScope/);
+      assert.match(content, /queryReport/);
+      assert.doesNotMatch(content, /applyFilterCriteriaTo\w+\(/);
       assert.match(content, /availableCostCenters/);
       assert.match(content, /availableOrganizations/);
       assert.match(content, /availableGroups/);

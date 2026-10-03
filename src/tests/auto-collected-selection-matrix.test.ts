@@ -15,7 +15,7 @@ import {
   generateDatasetVersionKey,
   isFilterCriteriaActive,
   getFilterSummaryBadges,
-} from '../../dashboard/src/utils/filterEngine.js';
+} from '../../dashboard/src/query/filterEngine.js';
 
 describe('Auto-Collected Data Selection Pattern Matrix Tests (#90)', () => {
   const dataset = createAutoCollectedTestDataset();
