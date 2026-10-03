@@ -171,6 +171,30 @@ Organizations must not rely on Inline Completion Acceptance Rate as a solitary K
 4. **Not fabricated**: the 1-year trend is built month by month from the stored monthly aggregates (a month without stored data is simply absent; usage fields are `null` for months without measured usage); per-user profiles are never synthesized from an aggregated CSV; the adoption cohort is not derived from proxy values; agent / PR based diagnostics use measured fields only; peer averages are computed from the actual profiles or omitted; the surface of a CSV row stays empty when absent (no default "VS Code"); a missing included-credits basis is "unknown", not 3,900.
 5. **Filters**: sections without per-user measurements (usage metrics, daily trend, languages, SKU breakdown) cannot be re-aggregated. While a filter is active they keep the company-wide values and are labelled "company-wide (not filterable)" (`filter_notice`).
 
+### 4.5 Period Comparison and Month-End Forecast (P3-2 / D-02)
+
+Implemented as pure functions in `src/domain/metrics/kpi-analysis.ts` (same input gives the same output; the current time is injected). Dates are UTC `YYYY-MM-DD`.
+
+**Period comparison** (`compareToPrevious`): the comparison target is the previous month for a monthly scope and the previous day for a daily scope; a custom period has no defined target. The previous scope is loaded only when it is listed in `index.json` and is re-aggregated with the same filter as the current one. Output: difference (`current - previous`), change ratio (`/ previous`; **not shown when the previous value is 0**), direction. A missing previous value or target is "前月比 —（reason）"; it is never compared against 0. Ratios (active rate, budget utilization, acceptance rate) are differences in percentage points.
+
+**Month-end forecast** (`forecastMonthEnd`), an *estimated* value (the "推定" badge):
+
+```text
+projected = actual_to_date + mean(last 7 observed days) * remaining_days
+remaining_days = days_in_month - day of the last observed date
+range     = actual_to_date + (mean +/- stdev) * remaining_days   (lower bound: actual_to_date)
+```
+
+| Condition | Result |
+|:--|:--|
+| Scope is not monthly | Not computed: "—（monthly scope only）" |
+| Fewer than 7 observed days (start of month) | Not computed: "—（observed N days, fewer than 7）" |
+| Observed days / elapsed days < 50% (many gaps) | Not computed: "—（many gaps）" |
+| The month is past, or observed through the last day | **Closed month**: no forecast; the actual is shown |
+| Otherwise | Forecast + range + confidence + formula |
+
+Missing days (`null`) are not observed days and are never treated as 0. Confidence: **high** = 21+ observed days, coefficient of variation <= 0.2 and coverage >= 90%; **medium** = 14+ days, CV <= 0.5 and coverage >= 70%; otherwise **low**. Two series are forecast: daily seat cost (`daily_trends.daily_cost_usd`, `spend_forecast`) and AI Credits consumption (`daily_trends.ai_credits_used`, `credits_forecast`). Seat cost is prorated daily and nearly constant, so the forecast is informative mainly for AI Credits. `daily_trends` has no per-user measurements, so the forecast keeps the company-wide values while a filter is active and is labelled as such (§4.4-5).
+
 ---
 
 ## 5. Usage Insights per User (usage, tokens, unit cost, session-bloat signals)

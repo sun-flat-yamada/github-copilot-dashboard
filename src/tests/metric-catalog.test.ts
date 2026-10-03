@@ -56,7 +56,7 @@ describe('Metric catalog v1', () => {
   it('漏れ防止: KPI コンポーネントは MetricLabel を使い、素のラベルで KPI を増やさない', () => {
     // KPI カード = 大きな数値 (text-2xl) を持つ要素。カード数 <= MetricLabel 数であること
     const expectedLabels: Record<string, number> = {
-      'dashboard/src/components/KpiSummaryCards.tsx': 4,
+      'dashboard/src/components/KpiSummaryCards.tsx': 5,
       'dashboard/src/components/monthly-report/MonthlyReportKpis.tsx': 6,
       'dashboard/src/components/views/AdoptionMaturityView.tsx': 4,
       'dashboard/src/components/views/AgentActivityView.tsx': 4,
