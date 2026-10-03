@@ -30,10 +30,11 @@ export function buildDataQualityReport(
   }));
 
   let level: DataQualityLevel = 'ok';
-  if (sources.some((s) => s.status === 'failed')) {
+  // 利用状況・シート・Cost Center の失敗は異常。AI Credits (Billing の権限が別) の失敗は注意に留める
+  if (sources.some((s) => s.status === 'failed' && s.source !== 'ai_credits')) {
     level = 'error';
   } else if (
-    sources.some((s) => s.status === 'partial') ||
+    sources.some((s) => s.status === 'partial' || s.status === 'failed') ||
     missing_days.length > 0 ||
     obs.out_of_range > 0 ||
     obs.quarantined > 0 ||
