@@ -6,6 +6,7 @@ import {
   ChevronsUp,
   LayoutGrid,
   Landmark,
+  CalendarRange,
   PieChart as PieIcon,
   Users2,
 } from 'lucide-react';
@@ -18,6 +19,7 @@ import { IdleSeatAdvisor } from '../../components/IdleSeatAdvisor';
 import { CostAllocationCharts } from '../../components/CostAllocationCharts';
 import { UsageMetricsCharts } from '../../components/UsageMetricsCharts';
 import { UserDetailTable } from '../../components/UserDetailTable';
+import { YearlyTrendSection } from '../../components/YearlyTrendPanel';
 import { CostCenterBudgetCards } from '../../components/CostCenterBudgetCards';
 import { MonthlyReportKpis } from '../../components/monthly-report/MonthlyReportKpis';
 import { MonthlyReportCharts } from '../../components/monthly-report/MonthlyReportCharts';
@@ -48,7 +50,7 @@ function countGroups(
 
 export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
   const {
-    activeSource, isReportSource, isDemoData, currentData, previousData, currentReportData,
+    activeSource, dataBaseDir, isReportSource, isDemoData, currentData, previousData, currentReportData,
     deepAnalysisProfiles, focusedUserLogin, userTableFilterStatus, currentGrouping, selectedGroup,
     setSelectedGroup, accordion: { isExpanded, toggle, expandAll, collapseAll },
     onGroupingChange: handleGroupingChange, onFilterIdle: handleFilterIdle,
@@ -75,7 +77,7 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
               詳細分析セクション
             </h3>
             <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800/90 text-slate-400 font-mono border border-slate-700/50">
-              {activeSource === 'live_metrics' ? '5 セクション' : '2 セクション'}
+              {activeSource === 'live_metrics' ? '6 セクション' : '2 セクション'}
             </span>
           </div>
         </div>
@@ -141,6 +143,17 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
               grouping={currentGrouping}
               onGroupingChange={handleGroupingChange}
             />
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            id="yearly-trend"
+            title="1 年推移 (月次・前年同月比)"
+            subtitle="保存済みの月次集計から構成。確定 / 暫定 / 欠損を区別し、欠損月は 0 で補完しない"
+            icon={<CalendarRange className="w-4 h-4 text-sky-400" />}
+            isExpanded={isExpanded('yearly-trend')}
+            onToggle={() => toggle('yearly-trend')}
+          >
+            <YearlyTrendSection baseDir={dataBaseDir} isDemo={isDemoData} />
           </CollapsibleSection>
 
           <CollapsibleSection

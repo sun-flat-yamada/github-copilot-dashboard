@@ -23,6 +23,7 @@ const KPI_COMPONENTS = [
   'dashboard/src/components/views/AdoptionMaturityView.tsx',
   'dashboard/src/components/views/AgentActivityView.tsx',
   'dashboard/src/components/views/CreditsView.tsx',
+  'dashboard/src/components/YearlyTrendPanel.tsx',
 ];
 
 const referencedIds = (src: string): string[] => {
@@ -61,6 +62,7 @@ describe('Metric catalog v1', () => {
       'dashboard/src/components/views/AdoptionMaturityView.tsx': 4,
       'dashboard/src/components/views/AgentActivityView.tsx': 4,
       'dashboard/src/components/views/CreditsView.tsx': 4,
+      'dashboard/src/components/YearlyTrendPanel.tsx': 2,
     };
     for (const [file, min] of Object.entries(expectedLabels)) {
       const count = (read(file).match(/<MetricLabel\b/g) ?? []).length;
