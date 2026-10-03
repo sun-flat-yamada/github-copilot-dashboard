@@ -1,0 +1,320 @@
+{
+  "users-1-day": {
+    "ai_credits_used": [
+      "number"
+    ],
+    "code_acceptance_activity_count": [
+      "number"
+    ],
+    "code_generation_activity_count": [
+      "number"
+    ],
+    "day": [
+      "string"
+    ],
+    "enterprise_id": [
+      "string"
+    ],
+    "loc_added_sum": [
+      "number"
+    ],
+    "loc_deleted_sum": [
+      "number"
+    ],
+    "loc_suggested_to_add_sum": [
+      "number"
+    ],
+    "loc_suggested_to_delete_sum": [
+      "number"
+    ],
+    "organization_id": [
+      "null",
+      "number"
+    ],
+    "totals_by_feature": [
+      "array"
+    ],
+    "totals_by_feature[]": [
+      "object"
+    ],
+    "totals_by_feature[].code_acceptance_activity_count": [
+      "number"
+    ],
+    "totals_by_feature[].code_generation_activity_count": [
+      "number"
+    ],
+    "totals_by_feature[].feature": [
+      "string"
+    ],
+    "totals_by_feature[].loc_added_sum": [
+      "number"
+    ],
+    "totals_by_feature[].loc_deleted_sum": [
+      "number"
+    ],
+    "totals_by_feature[].loc_suggested_to_add_sum": [
+      "number"
+    ],
+    "totals_by_feature[].loc_suggested_to_delete_sum": [
+      "number"
+    ],
+    "totals_by_feature[].user_initiated_interaction_count": [
+      "number"
+    ],
+    "totals_by_ide": [
+      "array"
+    ],
+    "totals_by_ide[]": [
+      "object"
+    ],
+    "totals_by_ide[].code_acceptance_activity_count": [
+      "number"
+    ],
+    "totals_by_ide[].code_generation_activity_count": [
+      "number"
+    ],
+    "totals_by_ide[].ide": [
+      "string"
+    ],
+    "totals_by_ide[].loc_added_sum": [
+      "number"
+    ],
+    "totals_by_ide[].loc_deleted_sum": [
+      "number"
+    ],
+    "totals_by_ide[].loc_suggested_to_add_sum": [
+      "number"
+    ],
+    "totals_by_ide[].loc_suggested_to_delete_sum": [
+      "number"
+    ],
+    "totals_by_ide[].user_initiated_interaction_count": [
+      "number"
+    ],
+    "totals_by_language_feature": [
+      "array"
+    ],
+    "totals_by_language_feature[]": [
+      "object"
+    ],
+    "totals_by_language_feature[].code_acceptance_activity_count": [
+      "number"
+    ],
+    "totals_by_language_feature[].code_generation_activity_count": [
+      "number"
+    ],
+    "totals_by_language_feature[].feature": [
+      "string"
+    ],
+    "totals_by_language_feature[].language": [
+      "string"
+    ],
+    "totals_by_language_feature[].loc_added_sum": [
+      "number"
+    ],
+    "totals_by_language_feature[].loc_deleted_sum": [
+      "number"
+    ],
+    "totals_by_language_feature[].loc_suggested_to_add_sum": [
+      "number"
+    ],
+    "totals_by_language_feature[].loc_suggested_to_delete_sum": [
+      "number"
+    ],
+    "totals_by_language_feature[].user_initiated_interaction_count": [
+      "number"
+    ],
+    "totals_by_language_model": [
+      "array"
+    ],
+    "totals_by_language_model[]": [
+      "object"
+    ],
+    "totals_by_language_model[].code_acceptance_activity_count": [
+      "number"
+    ],
+    "totals_by_language_model[].code_generation_activity_count": [
+      "number"
+    ],
+    "totals_by_language_model[].language": [
+      "string"
+    ],
+    "totals_by_language_model[].loc_added_sum": [
+      "number"
+    ],
+    "totals_by_language_model[].loc_deleted_sum": [
+      "number"
+    ],
+    "totals_by_language_model[].loc_suggested_to_add_sum": [
+      "number"
+    ],
+    "totals_by_language_model[].loc_suggested_to_delete_sum": [
+      "number"
+    ],
+    "totals_by_language_model[].model": [
+      "string"
+    ],
+    "totals_by_language_model[].user_initiated_interaction_count": [
+      "number"
+    ],
+    "totals_by_model_feature": [
+      "array"
+    ],
+    "totals_by_model_feature[]": [
+      "object"
+    ],
+    "totals_by_model_feature[].code_acceptance_activity_count": [
+      "number"
+    ],
+    "totals_by_model_feature[].code_generation_activity_count": [
+      "number"
+    ],
+    "totals_by_model_feature[].feature": [
+      "string"
+    ],
+    "totals_by_model_feature[].loc_added_sum": [
+      "number"
+    ],
+    "totals_by_model_feature[].loc_deleted_sum": [
+      "number"
+    ],
+    "totals_by_model_feature[].loc_suggested_to_add_sum": [
+      "number"
+    ],
+    "totals_by_model_feature[].loc_suggested_to_delete_sum": [
+      "number"
+    ],
+    "totals_by_model_feature[].model": [
+      "string"
+    ],
+    "totals_by_model_feature[].user_initiated_interaction_count": [
+      "number"
+    ],
+    "used_agent": [
+      "boolean"
+    ],
+    "used_chat": [
+      "boolean"
+    ],
+    "used_cli": [
+      "boolean"
+    ],
+    "used_copilot_app": [
+      "boolean"
+    ],
+    "used_copilot_cloud_agent": [
+      "boolean"
+    ],
+    "user_id": [
+      "number"
+    ],
+    "user_initiated_interaction_count": [
+      "number"
+    ],
+    "user_login": [
+      "string"
+    ]
+  },
+  "seats": {
+    "seats": [
+      "array"
+    ],
+    "seats[]": [
+      "object"
+    ],
+    "seats[].assignee": [
+      "object"
+    ],
+    "seats[].assignee.avatar_url": [
+      "string"
+    ],
+    "seats[].assignee.html_url": [
+      "string"
+    ],
+    "seats[].assignee.id": [
+      "number"
+    ],
+    "seats[].assignee.login": [
+      "string"
+    ],
+    "seats[].assignee.type": [
+      "string"
+    ],
+    "seats[].assigning_team": [
+      "null",
+      "object"
+    ],
+    "seats[].assigning_team.id": [
+      "number"
+    ],
+    "seats[].assigning_team.name": [
+      "string"
+    ],
+    "seats[].assigning_team.slug": [
+      "string"
+    ],
+    "seats[].created_at": [
+      "string"
+    ],
+    "seats[].last_activity_at": [
+      "null",
+      "string"
+    ],
+    "seats[].last_activity_editor": [
+      "null",
+      "string"
+    ],
+    "seats[].organization": [
+      "null",
+      "object"
+    ],
+    "seats[].organization.id": [
+      "number"
+    ],
+    "seats[].organization.login": [
+      "string"
+    ],
+    "seats[].pending_cancellation_date": [
+      "null",
+      "string"
+    ],
+    "seats[].plan_type": [
+      "string"
+    ],
+    "seats[].updated_at": [
+      "string"
+    ],
+    "total_seats": [
+      "number"
+    ]
+  },
+  "cost-centers": {
+    "costCenters": [
+      "array"
+    ],
+    "costCenters[]": [
+      "object"
+    ],
+    "costCenters[].id": [
+      "string"
+    ],
+    "costCenters[].name": [
+      "string"
+    ],
+    "costCenters[].resources": [
+      "array"
+    ],
+    "costCenters[].resources[]": [
+      "object"
+    ],
+    "costCenters[].resources[].name": [
+      "string"
+    ],
+    "costCenters[].resources[].type": [
+      "string"
+    ],
+    "costCenters[].state": [
+      "string"
+    ]
+  }
+}
