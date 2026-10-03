@@ -4,6 +4,7 @@
 
 import { CurrencyConfig } from './billing-config.js';
 import type { RunReference } from './run-manifest.js';
+import type { CsvImportReport } from './csv-import.js';
 import type { DataQualitySummary } from './data-quality.js';
 
 /**
@@ -667,6 +668,8 @@ export interface ReportImportSummary {
   duplicates_skipped: number;
   /** 日付がなく、日別推移に載せられなかった行数 (合計には含む) */
   undated_records?: number;
+  /** ファイルごとの CSV 取込レポート (認識した列・未認識の列・スキップした行・単位別合計) */
+  csv_reports?: CsvImportReport[];
 }
 
 export interface MonthlyReportAggregatedData {

@@ -35,10 +35,10 @@ export const ReportDropzoneModal: React.FC<ReportDropzoneModalProps> = ({
       try {
         const text = e.target?.result as string;
         const parser = new ReportParser();
-        const records = parser.parseRecords(text);
+        const { records, report } = parser.parseRecordsWithReport(text, file.name);
 
         if (records.length === 0) {
-          setErrorMsg('CSV 内から有効な Copilot 利用レコードが検出されませんでした。フォーマットを確認してください。');
+          setErrorMsg(report.stop_reason ?? 'CSV 内から有効な Copilot 利用レコードが検出されませんでした。フォーマットを確認してください。');
           setLoading(false);
           return;
         }
@@ -50,7 +50,12 @@ export const ReportDropzoneModal: React.FC<ReportDropzoneModalProps> = ({
           guessedMonth = dates.sort().reverse()[0].substring(0, 7);
         }
 
-        const aggregated = parser.aggregate(records, guessedMonth, file.name, 'local_drop');
+        const aggregated = parser.aggregate(records, guessedMonth, file.name, 'local_drop', {
+          source_files: [file.name],
+          records_total: records.length,
+          duplicates_skipped: 0,
+          csv_reports: [report],
+        });
         onReportLoaded(aggregated);
         setLoading(false);
         onClose();
