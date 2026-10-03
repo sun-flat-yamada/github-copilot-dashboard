@@ -1,4 +1,4 @@
-import { View } from './View';
+import React from 'react';
 import type { ViewManifest } from '../types';
 
 const manifest: ViewManifest = {
@@ -10,7 +10,7 @@ const manifest: ViewManifest = {
   order: 20,
   supportedDataSources: ['live_metrics', 'monthly_report', 'user_upload'],
   requiredDatasets: ['scope', 'report'],
-  component: View,
+  component: React.lazy(() => import('./View')),
 };
 
 export default manifest;

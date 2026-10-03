@@ -1,5 +1,5 @@
 import { CostCenterBudget, DataSourceType } from '../../domain/entities/copilot.js';
-import { BillingConfigLoader } from '../storage/BillingConfigLoader.js';
+import { DEFAULT_BILLING_CONFIG, type EnterpriseBillingConfig } from '../../domain/entities/billing-config.js';
 import { Money } from '../../domain/value-objects/Money.js';
 
 export interface FormattedBudgetCard {
@@ -42,6 +42,8 @@ export interface BudgetViewModel {
 }
 
 export interface BudgetPresenterInput {
+  /** 請求設定。ブラウザは Node 側ローダー (fs / zod) を使えないため、未指定なら価格カタログの既定値 */
+  billingConfig?: EnterpriseBillingConfig;
   budgets?: CostCenterBudget[] | null;
   reportBudgets?: CostCenterBudget[] | null;
   activeSource: DataSourceType;
@@ -53,7 +55,7 @@ export class BudgetPresenter {
     const isReportSource = activeSource === 'monthly_report' || activeSource === 'user_upload';
     const targetBudgets = isReportSource ? (reportBudgets || budgets || []) : (budgets || []);
 
-    const billingConfig = BillingConfigLoader.load();
+    const billingConfig = input.billingConfig ?? DEFAULT_BILLING_CONFIG;
     const subCurrency = billingConfig.subCurrency ?? (billingConfig.currency.code !== 'USD' ? billingConfig.currency : null);
     const sym = '$';
 
