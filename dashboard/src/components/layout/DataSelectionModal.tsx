@@ -11,6 +11,7 @@ import {
   DATA_SOURCE_LABELS,
 } from '../../../../src/types/copilot';
 import { ReportParser } from '../../../../src/processor/report-parser';
+import { CsvImportReportPanel } from '../common/CsvImportReportPanel';
 import {
   validatePattern,
   matchUserWithCriteria,
@@ -178,10 +179,10 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
       try {
         const text = e.target?.result as string;
         const parser = new ReportParser();
-        const records = parser.parseRecords(text);
+        const { records, report } = parser.parseRecordsWithReport(text, file.name);
 
         if (records.length === 0) {
-          setUploadError('CSV 内から有効な Copilot 利用レコードが検出されませんでした。');
+          setUploadError(report.stop_reason ?? 'CSV 内から有効な Copilot 利用レコードが検出されませんでした。');
           setUploadLoading(false);
           return;
         }
@@ -192,7 +193,12 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
           guessedMonth = dates.sort().reverse()[0].substring(0, 7);
         }
 
-        const aggregated = parser.aggregate(records, guessedMonth, file.name, 'local_drop');
+        const aggregated = parser.aggregate(records, guessedMonth, file.name, 'local_drop', {
+          source_files: [file.name],
+          records_total: records.length,
+          duplicates_skipped: 0,
+          csv_reports: [report],
+        });
         onUploadFileLoaded(aggregated);
         setLocalSource('user_upload');
         setUploadLoading(false);
@@ -674,6 +680,10 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
                       </button>
                     </div>
                   )}
+
+                  {uploadedData?.import_summary?.csv_reports?.map((r, i) => (
+                    <CsvImportReportPanel key={`${r.file_name ?? 'csv'}-${i}`} report={r} />
+                  ))}
 
                   {uploadError && (
                     <p className="text-xs text-rose-400 bg-rose-950/40 p-2 rounded-lg border border-rose-900">

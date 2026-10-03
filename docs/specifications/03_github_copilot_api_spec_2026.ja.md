@@ -245,6 +245,16 @@ Cost Center は Enterprise Billing の機能。Org 単体運用では、該当�
 
 ---
 
+### 4a. AI Credit 利用量 API (Billing)
+
+REST API description (`ghec.2022-11-28.json`。`raw.githubusercontent.com/github/rest-api-description` 経由) で確認した内容。
+
+- `GET /enterprises/{enterprise}/settings/billing/ai_credit/usage` (Enterprise のみ。Organization 単位の形は無い)。クエリ: `year` / `month` / `day` (整数)、`organization` / `user` / `model` / `product` / `cost_center_id`。取得できるのは過去 24 か月まで。Enterprise の管理者・Billing manager (または Enterprise Billing への fine-grained 読み取り権限) が必要で、権限不足でも GitHub は 404 を返すことがある。
+- 応答: `{ timePeriod: { year, month?, day? }, enterprise, user?, organization?, product?, model?, costCenter?, usageItems: [ { product, sku, model, unitType, pricePerUnit, grossQuantity, grossAmount, discountQuantity, discountAmount, netQuantity, netAmount } ] }`。ページングも署名付き URL も無い。応答には**通貨が書かれていない**。
+- アダプタ (`src/adapters/github-api/ai-credits/`): レポート日ごとに 1 リクエスト (Reports API と同じ窓)。明細は 1 件ずつ検証し、不正な明細は値を出さずに隔離する (調整行は負になりうるので負の金額は許容)。別の期間の応答は拒否する。
+- 写像: 各明細を `fact.cost_line` (SDD-05 §2.4) にする。`user_key: null` (ユーザー別には取得しない)、`quantity = grossQuantity`、`unit_type` は応答のまま (単位の異なる値は合算しない)、`currency: null` (断定しない)、`source: "api"`。
+- `SourceStatus` の `ai_credits`: 全日取得 → `ok`、一部の日の失敗・明細の隔離 → `partial`、1 日も読めない → `failed` (権限のヒント付き)、Enterprise 未設定 → `skipped`、収集時に記録の無い古い run の再処理 → `skipped`。失敗が他のソースを止めることはない。取得した明細の集計への反映は Phase 2。
+
 ## 5. 課金モデル & 料金テーブル (2026年9月基準)
 
 | プラン / 機能 | 月額単価 (USD) | 日割り計算基準 (USD / 日) | 備考 |

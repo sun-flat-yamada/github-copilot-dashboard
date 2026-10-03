@@ -146,6 +146,25 @@ npm run report:import -- ./path/to/copilot-report.csv 2026-08
 
 ---
 
+### 3.6 フォーマットプロファイルと取込レポート (P1-5)
+
+ヘッダーの認識は `src/processor/csv-format-profiles.ts` に宣言する (フィールドの別名と、フォーマットごとの必須列)。列名は小文字化し、次の 2 つの形のどちらかが別名に一致すれば認識する: 記号を除いた形 (`user-name` → `username`)、英数字以外を `_` に置き換えた形 (`Gross Amount ($)` → `gross_amount`、`Net Amount` → `net_amount`)。
+
+| プロファイル | 必須列 |
+|:--|:--|
+| `ai-usage-report` | `username`、`model`、および `input_tokens` / `output_tokens` / `token_count` のいずれか |
+| `activity-report` | `username`、`last_activity_at` |
+| `billing-usage-report` | `username`、および `quantity` / `net_amount` / `gross_amount` / `ai_credits_consumed` のいずれか |
+
+どのプロファイルの条件も満たさないときは取込を**止め** (レコードなし)、理由 (足りない必須列と、認識できた列) を表示する。
+
+取込ごとに `CsvImportReport` (`src/domain/entities/csv-import.ts`。`import_summary.csv_reports` に保持) を作り、取込時に表示する (ヘッダーのデータ選択モーダルのアップロード欄、CLI の `npm run report:import`):
+- 認識した列と**未認識の列** (未認識の列はどの集計にも使わない)、
+- 行: 取込行数 / 総数、**スキップした行と理由** (現在は「ユーザー名が空」) と先頭数件のデータ行番号 (ヘッダーと空行は数えない)、列数が異なる行 (列ずれの疑い)、日付が使えない行、同一ファイル内で内容が完全に同一の行 (別明細の可能性があるため残す。ファイル間の重複は `mergeRecordSets` が集約)、
+- **単位別の合計** (requests / credits / seats / tokens / other): 行数・数量・gross / net 金額。単位の異なる値は合算しない。値が 1 件も無い単位は 0 ではなく `null` (「—（値なし）」と表示)。
+
+レポートは件数・列名・合計のみを持つ (ユーザー名や個別の値は含めない)。
+
 ## 4. 集計データ構造 (`MonthlyReportAggregatedData`)
 
 集計エンジンは、パースされたレコードを以下の構造に集約する：

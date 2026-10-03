@@ -131,6 +131,22 @@ describe('AI credit usage adapter (P1-5)', () => {
       assert.ok(source.getIssues().some((i) => /billing/i.test(i.details ?? '')));
     });
 
+    it('is skipped (not failed) when replaying an older run that never recorded the request', async () => {
+      const miss = Object.assign(new Error('No raw landing entry'), { name: 'ReplayMissError', status: 424 });
+      const replay = {
+        hasToken: () => true,
+        getApiVersion: () => '2022-11-28',
+        fetchRaw: async () => { throw miss; },
+        fetchRawAllowing: async () => { throw miss; },
+        downloadSigned: async () => { throw miss; },
+        fetchPaginated: async () => { throw miss; },
+      };
+      const source = new GitHubApiCopilotDataSource({ fetcher: replay as never, enterprise: 'acme-ent' });
+      assert.deepEqual(await source.fetchAiCreditUsage(), []);
+      assert.equal(statusOf(source)?.status, 'skipped');
+      assert.equal(source.getIssues().length, 0);
+    });
+
     it('is skipped without an enterprise (the endpoint has no organization form)', async () => {
       const srv = server();
       const source = make(srv, null);
