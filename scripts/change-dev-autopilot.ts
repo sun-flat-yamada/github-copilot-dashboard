@@ -265,6 +265,23 @@ function printMode(): void {
   console.log(JSON.stringify({ [KEY]: resolution, policy }, null, 2));
 }
 
+/** マージ済み PR のヘッドブランチを削除する。ベースブランチは決して削除しない */
+function deleteMergedBranch(repo: string, headRef: string, baseRef: string): 'deleted' | 'failed' | 'skipped' {
+  if (!headRef || headRef === baseRef || headRef === 'main') return 'skipped';
+  try {
+    execFileSync('git', ['push', 'origin', '--delete', headRef], { cwd: REPO_ROOT, stdio: 'pipe' });
+    return 'deleted';
+  } catch {
+    // 続けて REST を試す
+  }
+  try {
+    ghApi('DELETE', `repos/${repo}/git/refs/heads/${headRef}`);
+    return 'deleted';
+  } catch {
+    return 'failed';
+  }
+}
+
 async function finish(prArg: string | undefined, flags: Set<string>): Promise<number> {
   const pr = Number(prArg);
   if (!Number.isInteger(pr) || pr <= 0) {
@@ -330,15 +347,15 @@ async function finish(prArg: string | undefined, flags: Set<string>): Promise<nu
   ghApi('PUT', `repos/${repo}/pulls/${pr}/merge`, { merge_method: 'rebase', sha: pull.headSha });
   console.log(`🎉 PR #${pr} rebase-merged into ${pull.baseRef}`);
 
-  // ブランチ削除: クラウドの GitHub プロキシはブランチの削除を拒否するため行わない
-  if (!policy.cloud) {
-    try {
-      execFileSync('git', ['push', 'origin', '--delete', pull.headRef], { cwd: REPO_ROOT, stdio: 'inherit' });
-    } catch {
-      console.warn(`⚠️  could not delete remote branch ${pull.headRef}`);
-    }
-  } else {
-    console.log(`ℹ️  cloud session: remote branch ${pull.headRef} is kept (the GitHub proxy rejects branch deletion)`);
+  // マージ後のブランチ削除 (ローカル・クラウド共通)。git → REST の順に試す。
+  // クラウドの GitHub プロキシがどちらも拒否した場合は黙って残さず、手動削除が必要なことを報告する (exit code は 0 のまま)。
+  const deleted = deleteMergedBranch(repo, pull.headRef, pull.baseRef);
+  if (deleted === 'failed') {
+    console.warn(
+      `⚠️  could not delete remote branch ${pull.headRef}: delete it manually (GitHub UI, or enable "Automatically delete head branches" in the repository settings).`
+    );
+  } else if (deleted === 'deleted') {
+    console.log(`🧹 deleted remote branch ${pull.headRef}`);
   }
   return 0;
 }
