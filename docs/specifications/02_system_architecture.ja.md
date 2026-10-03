@@ -139,7 +139,7 @@ flowchart TB
 | Presenter | 全ビュー | `App.tsx` が使うのは Credits / Agent / Adoption の 3 つのみ。 |
 | パイプライン | `createPipelineApp` → `PipelineOrchestrator` | 記述どおり (これが本番経路)。 |
 
-フロントエンドの単一アーキテクチャへの収束 (および Dataset Loader / Query 層) は**改善計画の Phase 2** であり、未決の判断 (ADR) に依存する。決定されるまで、本番経路には SDD-15 の規約 (フィルターエンジンの単一化、概念ごとの単一定義、lint で強制する Hook 規約) を適用する。
+フロントエンドの単一アーキテクチャへの収束 (および Dataset Loader / Query 層) は**改善計画の Phase 2** であり、決定は [ADR-0001](../adr/0001-single-frontend-architecture.ja.md) に記録した (hook 経路を Dataset + Registry へ移行し、DataStore 経路を撤去する。`VITE_USE_NEW_STORE` は P2-5 で撤去)。移行が完了するまで、本番経路には SDD-15 の規約 (フィルターエンジンの単一化、概念ごとの単一定義、lint で強制する Hook 規約) を適用する。
 
 ### 2.8 Raw Landing と再処理 (P1-2)
 

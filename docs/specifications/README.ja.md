@@ -70,6 +70,16 @@ flowchart TD
 
 ---
 
+## 🧾 アーキテクチャ決定記録（ADR）
+
+仕様の背景にある決定は [`docs/adr/`](../adr/README.ja.md) に記録する。
+
+| ID | タイトル | 状態 | 言語 |
+| :--- | :--- | :--- | :--- |
+| **ADR-0001** | フロントエンドの単一アーキテクチャ（Dataset + Registry） | 承認済み (2026-10-03) | [JA](../adr/0001-single-frontend-architecture.ja.md) \| [EN](../adr/0001-single-frontend-architecture.md) |
+
+---
+
 ## 🧭 ロール別推奨リーディングパス
 
 利用者の役割や目的に応じたおすすめの確認順序です：
