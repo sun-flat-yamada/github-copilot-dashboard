@@ -221,9 +221,10 @@ flowchart TD
 ### 4.4 フロントエンド Code Splitting & バンドル最適化アーキテクチャ
 ブラウザ初期表示パフォーマンスを極大化するため、以下のコード分割アーキテクチャを適用：
 - **純粋ブラウザ Repository 分離**: `HttpJsonMetricsRepository`（`fetch` のみ使用）と Node.js `fs` 系 Repository を物理分離し、ブラウザバンドルから Node.js モジュール解決を完全排除（Vite externalize 警告 0 件）。
-- **On-demand View Lazy Loading**: 重量級 View（Model Radar, Deep Analysis, Credits, Agent Activity, Adoption Maturity）を `React.lazy` および `<Suspense>` で非同期分割。
+- **On-demand View Lazy Loading**: すべての View マニフェストが `View` を非同期に読み込む（Overview, Cost Center 予算, Trend, Users, Model Radar, Deep Analysis, Credits, Agent Activity, Adoption Maturity）。 `React.lazy` および `<Suspense>` で非同期分割。
 - **UI スケルトン保護**: チャンク読み込み中のチラつき・レイアウトシフトを抑止するパルススケルトン（`ViewSkeleton`）を配備。
-- **Rollup Manual Chunks**: `vendor-react`, `vendor-charts`, `vendor-icons`, `vendor-zod` にベンダーライブラリを適切に分離し、メイン JS チャンクを **300 kB 以下 (gzip 80 kB 以下)** に抑制。
+- **Rollup Manual Chunks**: `vendor-react`, `vendor-charts`, `vendor-icons` にベンダーライブラリを分離する。zod と `fs` はブラウザバンドルに入れない (サーバー側の `BillingConfigLoader` は Node 専用。ブラウザの Presenter は任意の `billingConfig` を受け取り、未指定なら価格カタログの既定値を使う)。
+- **バンドル予算 (P2-7)**: メイン (エントリ) チャンクは **300 kB 以下**。`scripts/check-bundle.ts` を `npm run build` の最後に実行する (`npm run bundle:check` でも可) ため、予算超過、またはチャンクに zod / Node 組み込みのスタブが含まれると、CI のビルドが失敗する。上限は `BUNDLE_BUDGET_MAIN_KB` で上書きできるが、ゲートが失敗することの確認以外では使わない。DuckDB-WASM とチャートのベンダーチャンクは遅延ロードする (SDD-15 §7.3、§9)。
 
 ### 4.5 セキュリティ & GPG 鍵管理ガバナンス
 48KB を超える大規模ユーザーマッピングの安全運用のため、AES-256 GPG 対称暗号化ワークアラウンドを採用：

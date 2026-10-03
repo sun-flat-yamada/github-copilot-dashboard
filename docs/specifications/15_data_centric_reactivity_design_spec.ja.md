@@ -177,7 +177,7 @@ index.json / スコープ JSON / レポート JSON
 
 ### 7.3 DuckDB-WASM (遅延ロード)
 
-- DuckDB-WASM は Query 層の SQL エンジン (改善計画 判断結果 #4)。`@duckdb/duckdb-wasm` を import するのは `dashboard/src/query/duckdb/duckdbLoader.ts` だけで、呼び出し側は dynamic `import()` で読み込む。静的 import はどこにも無く、Query の index からも再エクスポートしない (`src/tests/query-layer.test.ts` が検査する)。そのため初期バンドルには入らず、ビルドでは別チャンクと wasm / worker ファイルとして出力され、初回利用時にだけ取得される。バンドル予算は P2-7。
+- DuckDB-WASM は Query 層の SQL エンジン (改善計画 判断結果 #4)。`@duckdb/duckdb-wasm` を import するのは `dashboard/src/query/duckdb/duckdbLoader.ts` だけで、呼び出し側は dynamic `import()` で読み込む。静的 import はどこにも無く、Query の index からも再エクスポートしない (`src/tests/query-layer.test.ts` が検査する)。そのため初期バンドルには入らず、ビルドでは別チャンクと wasm / worker ファイルとして出力され、初回利用時にだけ取得される。バンドル予算は P2-7 で強制する (§9)。
 - 同梱するのは例外処理 (`eh`) 対応ビルド (wasm 約 34 MB) だけ。現行の主要ブラウザはすべて対応している。
 - 最初に SQL 集計を必要とするビュー (ユーザー × 日のファクト。P1-3) が入るまでは、どのビューもローダーを参照せず、ビルド成果物にも含まれない。
 
@@ -205,3 +205,10 @@ index.json / スコープ JSON / レポート JSON
 - **jsdom の準備**: `src/tests/ui/dom-setup.ts` を UI テストの最初の import にする (RTL は import 時に `document` を参照する)。
 - **ブラウザ**: Playwright は事前インストール済みの Chromium (`PLAYWRIGHT_BROWSERS_PATH/chromium` または `PLAYWRIGHT_CHROMIUM_EXECUTABLE`) を使い、ダウンロードしない。事前インストールの無い CI では `npx playwright install --with-deps chromium` を実行する。
 - **置き換えたソース文字列テスト** (P2-6): `data-status-banner.test.ts` の「App wiring」2 件 (バナーがコンテンツの上に描画される / デモが明示操作として提示される) と、`dashboard-data-stability.test.ts` の `activeDataIsDemoSourced` の受け渡しテストを削除した。同じ挙動を、描画した画面で検証するようになったため。`App.tsx` を読んでいた残りのソース文字列テストは `AppShell.tsx` へ向け直しており、各画面に挙動テストが加わるにつれて段階的に置き換える。
+
+## 9. バンドル予算とブラウザ安全な import (P2-7)
+
+- **予算**: メインチャンク (`dist/index.html` の module script) は 300 kB 以下 (Vite の表示と同じ 10 進)。`npm run build` の最後で `scripts/check-bundle.ts` が強制するため、CI (`test-and-preview.yml`、`copilot-analysis-cron.yml`) は違反で失敗する。遅延チャンクは予算に含めない。予算を上げるのではなく、コードを遅延ロードして解消する。
+- **ブラウザに `fs` / zod を入れない**: 出力された全チャンクに zod または Node 組み込みのスタブ (`__vite-browser-external`) が含まれても失敗する。加えて `src/tests/scripts/bundle-budget.test.ts` が `dashboard/src/main.tsx` から辿れるすべての import を調べ、Node 組み込みや zod の import があれば失敗する (`import type` はビルド時に消えるため許可)。サーバー側のコード (`BillingConfigLoader`、GitHub API の zod スキーマ、`ForkSafeStorage`) をブラウザのコードから import しない。Presenter は請求設定を入力で受け取り、未指定なら価格カタログの既定値を使う。
+- **遅延ロード**: すべての View マニフェストが `React.lazy(() => import('./View'))` を使う。これでチャート用のベンダーチャンク (`recharts`) も、ビューが必要とするまで読み込まれない。DuckDB-WASM は dynamic `import()` の後ろに置いたまま (§7.3)。
+- **結果** (P2-7 時点): メインチャンクは 330 kB から約 153 kB になった。

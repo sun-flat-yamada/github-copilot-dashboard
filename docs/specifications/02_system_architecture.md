@@ -221,9 +221,10 @@ Provides enterprise billing computation with permanent USD primary display and l
 ### 4.4 Frontend Code Splitting & Performance Architecture
 Maximizes initial page load performance via architectural bundle decomposition:
 - **Strict Browser Repository Isolation**: Physically separates `HttpJsonMetricsRepository` (pure `fetch` client) from the Node.js `fs`-based repositories, eliminating Node.js polyfill leaks and eradicating Vite externalization warnings.
-- **On-Demand View Lazy Loading**: Asynchronously splits heavy analytical views (Model Radar, Deep Analysis, Credits, Agent Activity, Adoption Maturity) via `React.lazy` and `<Suspense>`.
+- **On-Demand View Lazy Loading**: Every view manifest loads its `View` asynchronously (Overview, Cost Center Budget, Trend, Users, Model Radar, Deep Analysis, Credits, Agent Activity, Adoption Maturity) via `React.lazy` and `<Suspense>`.
 - **UI Skeleton Protection**: Employs an animated pulsing skeleton component (`ViewSkeleton`) to prevent layout shifts during async chunk arrival.
-- **Rollup Chunk Partitioning**: Groups vendor dependencies into `vendor-react`, `vendor-charts`, `vendor-icons`, and `vendor-zod`, keeping the initial entry chunk at **< 300 kB (< 80 kB gzip)**.
+- **Rollup Chunk Partitioning**: Groups vendor dependencies into `vendor-react`, `vendor-charts` and `vendor-icons`. zod and `fs` never enter the browser bundle (the server-side `BillingConfigLoader` is Node-only; browser presenters take an optional `billingConfig` and default to the price catalog).
+- **Bundle Budget (P2-7)**: the main (entry) chunk must be **<= 300 kB**. `scripts/check-bundle.ts` runs as the last step of `npm run build` (also `npm run bundle:check`), so every CI build fails when the budget is exceeded or a chunk contains zod or a Node built-in stub. Override the limit with `BUNDLE_BUDGET_MAIN_KB` only to prove the gate fails. DuckDB-WASM and the chart vendor chunk are loaded lazily (see SDD-15 §7.3, §9).
 
 ### 4.5 Security & GPG Key Management Governance
 Enforces AES-256 symmetric GPG encryption for enterprise user mappings exceeding GitHub's 48KB secret limit:

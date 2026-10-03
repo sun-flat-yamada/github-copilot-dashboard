@@ -25,9 +25,6 @@ export default defineConfig({
           if (id.includes('node_modules/lucide-react')) {
             return 'vendor-icons';
           }
-          if (id.includes('node_modules/zod')) {
-            return 'vendor-zod';
-          }
         },
       },
     },
