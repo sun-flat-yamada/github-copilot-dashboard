@@ -7,7 +7,7 @@
 - **文書番号**: SPEC-COPILOT-016
 - **ステータス**: Approved / Active
 - **対象バージョン**: 2026.10
-- **作成日**: 2026-10-03 (P3-1 / #188: 指標カタログ v1)
+- **作成日**: 2026-10-03 (P3-1 / #188: 指標カタログ v1、P3-2 / #189: 予算・予測指標)
 - **関連**: [SDD-06 集計・課金ロジック](06_aggregation_and_billing_logic_spec.ja.md)、[SDD-07 ダッシュボード UI/UX §2.14a](07_dashboard_ui_ux_spec.ja.md)、[SDD-15 データセントリック・リアクティビティ](15_data_centric_reactivity_design_spec.ja.md)
 
 ---
@@ -60,6 +60,9 @@
 | `active_rate` | アクティブ利用率 | ratio | scope | ○ | seats |
 | `idle_waste` | 遊休コスト (削減可能) | usd | scope | ○ | seats, pricing catalog |
 | `acceptance_rate` | Inline補完受諾率 | ratio | scope | × | metrics |
+| `budget_utilization` | 予算消化率 | ratio | scope | ○ | billing, cost center budgets |
+| `spend_forecast` | 月末着地予測 (費用) | usd | scope | × | daily trends |
+| `credits_forecast` | 月末着地予測 (AI Credits) | credits | scope | × | daily trends |
 | `report_gross_spend` | 利用費用 (総額) | usd | report_month | ○ | monthly usage report CSV |
 | `report_net_spend` | 超過請求費用 | usd | report_month | ○ | monthly usage report CSV |
 | `report_requests` | 総リクエスト / クレジット | count | report_month | ○ | monthly usage report CSV |

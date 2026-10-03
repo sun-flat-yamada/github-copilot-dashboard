@@ -238,6 +238,22 @@ Metrics are declared once in `src/domain/metrics/metric-registry.ts` (id, label 
 
 Badges always carry a text label (never colour alone). Missing wins over demo so that the absence of a value is never hidden. The overview KPI cards (spend, active rate, idle cost, acceptance rate) are migrated; other views migrate step by step. The metric catalog v1 (P3-1 / #188, [SDD-16](16_data_contract_and_metric_catalog_spec.md)) extends this registry with `definition`, `formula`, `window` kind and `caveats`. Every KPI label (overview, monthly report, adoption maturity, agent activity, credits) is rendered by `MetricLabel`: a definition tooltip (definition, formula, window, unit, source, filter support) and a visible window chip that follows the scope type. A KPI missing from the catalog fails `src/tests/metric-catalog.test.ts`. The user detail table states that personal metrics are improvement-support information for authorised employees and are not used for evaluation or ranking.
 
+### 2.14c Overview KPI Redesign (P3-2 / D-02)
+
+The overview cards (`KpiSummaryCards`, appendix A.5.2 of the improvement plan) are ordered by the decision they support, left to right:
+
+| # | Card | Metric id | Comparison / forecast |
+|:--|:--|:--|:--|
+| 1 | Cost (seat cost, with net billable and limit) | `total_spend` | Period comparison; **month-end forecast** for spend (`spend_forecast`) and AI Credits (`credits_forecast`) |
+| 2 | Adoption (active rate) | `active_rate` | Period comparison (pt) |
+| 3 | Optimisation (idle cost) | `idle_waste` | Period comparison (a decrease is good) |
+| 4 | Budget utilisation | `budget_utilization` | Period comparison (pt); "—（limit not set）" when no spending limit exists |
+| 5 | Reference: inline completion acceptance | `acceptance_rate` | Period comparison (pt); carries a **「参考」** chip (a fit measure, not productivity, SDD-06 §4.2) |
+
+- Comparison and forecast follow SDD-06 §4.5. The comparison label is 前月比 / 前日比 (a custom period shows "前期比 —（reason）"); arrows, signs and text carry the direction (never colour alone).
+- The forecast block (`ForecastNote`) is rendered with `MetricLabel` + `MetricValue` and the 「推定」 badge, and shows the range, **confidence**, formula and window. When data is insufficient it shows "—（reason）" instead of a value; a closed month shows the actual instead of a forecast.
+- Forecast metrics are catalog entries (SDD-16 §6) and are covered by the same leak-prevention test.
+
 ### 2.14b View Registry (P2-4 / C-01, D-06)
 
 The View Registry is the **only entry point for rendering a view**. `App.tsx` has no per-view branch: it builds one `ViewContext` and renders `<ViewHost>`; the navigation is built from the same registry.

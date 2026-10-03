@@ -23,6 +23,8 @@ export interface ViewContext {
   /** デモ由来データか (Metric Registry の品質属性判定に使う) */
   isDemoData: boolean;
   currentData: ScopeAggregatedData | null;
+  /** 前期 (月次=前月 / 日次=前日) の Live スコープ。同じフィルター適用済み。無ければ null (前期比は「—（理由）」) */
+  previousData?: ScopeAggregatedData | null;
   currentReportData: MonthlyReportAggregatedData | null;
   /** 月次レポート表示用に合成した Cost Center 予算 */
   reportBudgets: CostCenterBudget[];
