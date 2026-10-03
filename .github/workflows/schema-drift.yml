@@ -1,0 +1,82 @@
+name: 🔍 API Schema Drift Detection
+
+on:
+  schedule:
+    # 毎週月曜 UTC 01:17 (JST 10:17)
+    - cron: '17 1 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  detect:
+    name: Compare live API schema fingerprints with the recorded fixtures
+    # 正本リポジトリのみ (Fork では収集用シークレットが無いので何もしない)
+    if: github.repository == 'sun-flat-yamada/github-copilot-dashboard'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compare schema fingerprints (keys and types only; no values are stored)
+        run: npm run schema:drift -- --out drift-report.json
+        env:
+          COPILOT_READ_TOKEN: ${{ secrets.COPILOT_READ_TOKEN }}
+          COPILOT_ENTERPRISE: ${{ vars.COPILOT_ENTERPRISE }}
+          COPILOT_ORGS: ${{ vars.COPILOT_ORGS }}
+
+      - name: Open an Issue when the schema drifted (no duplicates)
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            const report = JSON.parse(fs.readFileSync('drift-report.json', 'utf8'));
+            core.info(`mode=${report.mode} drift=${report.drift}`);
+            if (!report.drift) return;
+
+            const marker = `schema-drift:${report.signature}`;
+            const { data: open } = await github.rest.issues.listForRepo({
+              ...context.repo, state: 'open', labels: 'schema-drift', per_page: 100,
+            });
+            if (open.some((i) => (i.body || '').includes(marker))) {
+              core.info('An open Issue already tracks this drift; not creating a duplicate.');
+              return;
+            }
+
+            const lines = [];
+            for (const [source, d] of Object.entries(report.sources)) {
+              if (!d.added.length && !d.removed.length && !d.typeChanged.length) continue;
+              lines.push(`### ${source}`);
+              for (const p of d.added) lines.push(`- ➕ added: \`${p}\``);
+              for (const p of d.removed) lines.push(`- ➖ not seen in live samples: \`${p}\``);
+              for (const t of d.typeChanged) lines.push(`- 🔀 type changed: \`${t.path}\` ${t.baseline.join('|')} → ${t.live.join('|')}`);
+            }
+            const body = [
+              'The live GitHub API response shape differs from the recorded fixtures (`fixtures/api-contract/`).',
+              '',
+              ...lines,
+              '',
+              'Only key paths and types were compared; no values are stored. A path "not seen" may be an optional field absent from the sampled rows — check before treating it as a removal.',
+              '',
+              'To resolve: update the ingestion schema if needed, refresh the fixtures, then `npm run schema:drift -- --update-baseline`.',
+              '',
+              `<!-- ${marker} -->`,
+              `Workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            ].join('\n');
+            await github.rest.issues.create({
+              ...context.repo,
+              title: `[schema-drift] GitHub API response shape changed (${report.signature})`,
+              body,
+              labels: ['schema-drift'],
+            });
