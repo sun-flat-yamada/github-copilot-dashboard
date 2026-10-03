@@ -6,6 +6,7 @@ import path from 'node:path';
 describe('Control Bar Consolidation & Filter Redundancy Removal (#108)', () => {
   const rootDir = process.cwd();
   const appTsxPath = path.join(rootDir, 'dashboard/src/App.tsx');
+  const overviewViewPath = path.join(rootDir, 'dashboard/src/views/overview/View.tsx');
   const appV2TsxPath = path.join(rootDir, 'dashboard/src/AppV2.tsx');
   const groupingSelectorPath = path.join(rootDir, 'dashboard/src/components/GroupingSelector.tsx');
   const tagFilterBarPath = path.join(rootDir, 'dashboard/src/components/TagFilterBar.tsx');
@@ -90,19 +91,19 @@ describe('Control Bar Consolidation & Filter Redundancy Removal (#108)', () => {
   });
 
   it('should retain accordion batch controls inside App.tsx Overview view', () => {
-    const appContent = fs.readFileSync(appTsxPath, 'utf-8');
+    const appContent = fs.readFileSync(overviewViewPath, 'utf-8');
     assert.ok(
       appContent.includes('expandAll()'),
-      'App.tsx must retain expandAll control'
+      'Overview view must retain expandAll control'
     );
     assert.ok(
       appContent.includes('collapseAll'),
-      'App.tsx must retain collapseAll control'
+      'Overview view must retain collapseAll control'
     );
   });
 
   it('should structure accordion controls in a dedicated section header with icon buttons and tooltips (#118)', () => {
-    const appContent = fs.readFileSync(appTsxPath, 'utf-8');
+    const appContent = fs.readFileSync(overviewViewPath, 'utf-8');
     assert.ok(
       appContent.includes('詳細分析セクション'),
       'App.tsx must contain detailed analysis section title'

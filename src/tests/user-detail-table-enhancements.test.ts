@@ -111,6 +111,7 @@ describe('User Detail Table Enhancements & Compact Style Tests', () => {
       );
       for (const f of [
         'dashboard/src/App.tsx',
+        'dashboard/src/views/users/View.tsx',
         'dashboard/src/components/MonthlyReportView.tsx',
         'src/adapters/views/UsersViewPlugin.tsx',
         'src/adapters/views/OverviewViewPlugin.tsx',
@@ -119,7 +120,7 @@ describe('User Detail Table Enhancements & Compact Style Tests', () => {
         const src = readComponent(f);
         assert.doesNotMatch(src, /MonthlyReportUserTable/, `${f} must use UserDetailTable`);
       }
-      assert.match(readComponent('dashboard/src/App.tsx'), /<UserDetailTable[\s\S]*?reportData=\{currentReportData\}/);
+      assert.match(readComponent('dashboard/src/views/users/View.tsx'), /<UserDetailTable[\s\S]*?reportData=\{currentReportData\}/);
       assert.match(readComponent('dashboard/src/components/MonthlyReportView.tsx'), /<UserDetailTable[\s\S]*?reportData=\{reportData\}/);
     });
 

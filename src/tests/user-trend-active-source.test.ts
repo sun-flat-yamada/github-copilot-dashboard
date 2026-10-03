@@ -176,11 +176,11 @@ describe('User Trend Viewer Active Source & Cross-View Consistency Tests', () =>
   });
 
   it('App.tsx renders UserTrendViewer for all data sources without isReportSource blocking', () => {
-    const appFile = path.resolve(projectRoot, 'dashboard/src/App.tsx');
-    const content = fs.readFileSync(appFile, 'utf-8');
+    const trendFile = path.resolve(projectRoot, 'dashboard/src/views/trend/View.tsx');
+    const content = fs.readFileSync(trendFile, 'utf-8');
 
     // trend ビューにおける isReportSource ブロックの撤廃
-    const trendViewSection = content.split("{activeView === 'trend'")[1]?.split("{activeView === 'budget'")[0];
+    const trendViewSection = content;
     assert.ok(trendViewSection, 'Trend view section should exist in App.tsx');
 
     assert.ok(
@@ -212,7 +212,7 @@ describe('User Trend Viewer Active Source & Cross-View Consistency Tests', () =>
     );
 
     // budget ビューにおいて CostCenterBudgetCards に渡されていること
-    const budgetViewSection = content.split("{activeView === 'budget'")[1]?.split("{activeView === 'deep_analysis'")[0];
+    const budgetViewSection = fs.readFileSync(path.resolve(projectRoot, 'dashboard/src/views/budget/View.tsx'), 'utf-8');
     assert.ok(budgetViewSection, 'Budget view section should exist in App.tsx');
 
     assert.ok(

@@ -6,6 +6,8 @@ import { useStoreDispatch } from '../../src/frameworks/react/hooks/useStoreDispa
 import { useViewPlugin } from '../../src/frameworks/react/hooks/useViewPlugin';
 import { useTheme } from './hooks/useTheme';
 import { DashboardHeader } from './components/layout/DashboardHeader';
+import { defaultViewRegistry } from './views/defaultRegistry';
+import { toNavigationItem } from './views/navigation';
 import { ViewNavigation } from './components/layout/ViewNavigation';
 import { ErrorLogModal } from './components/ErrorLogModal';
 import { AboutModal } from './components/AboutModal';
@@ -80,11 +82,13 @@ export const AppV2: React.FC = () => {
 
       <ViewNavigation
         activeView={resolvedViewId}
-        onSelectView={(view: AnalysisViewId) => {
+        onSelectView={(selected: string) => {
+          const view = selected as AnalysisViewId;
           setFocusedUserLogin('');
           setActiveView(view);
         }}
         activeSource={activeSource}
+        items={defaultViewRegistry.getAll().map(toNavigationItem)}
       />
 
       <main className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col space-y-6">

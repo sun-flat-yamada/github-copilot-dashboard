@@ -238,6 +238,23 @@ Metrics are declared once in `src/domain/metrics/metric-registry.ts` (id, label 
 
 Badges always carry a text label (never colour alone). Missing wins over demo so that the absence of a value is never hidden. The overview KPI cards (spend, active rate, idle cost, acceptance rate) are migrated; other views migrate step by step. The metric catalog v1 (definition / window / source display) extends this registry in P3-1.
 
+### 2.14b View Registry (P2-4 / C-01, D-06)
+
+The View Registry is the **only entry point for rendering a view**. `App.tsx` has no per-view branch: it builds one `ViewContext` and renders `<ViewHost>`; the navigation is built from the same registry.
+
+| Item | Where |
+|:--|:--|
+| Manifest (`ViewManifest`): id, label, title, description, icon, order, supported data sources, `requiredDatasets`, badge, `isVisible`, component | `dashboard/src/views/types.ts` |
+| Registry (`createViewRegistry`, `getMissingDatasets`) | `dashboard/src/views/viewRegistry.ts` |
+| Auto-collection of `views/<id>/manifest.ts` (`import.meta.glob`) | `dashboard/src/views/defaultRegistry.ts` |
+| Rendering with Suspense | `dashboard/src/views/ViewHost.tsx` |
+
+- **Adding a view = two files**: `views/<id>/manifest.ts` and `views/<id>/View.tsx`. Neither `App.tsx` nor `ViewNavigation` changes. `src/tests/view-registry.test.ts` shows this with a dummy view (`src/tests/fixtures/dummy-view/`).
+- `order` sorts the navigation (ascending, ties keep registration order). `isVisible(ctx)` hides a view from both the navigation and the rendering (e.g. permission control). A duplicate id throws.
+- `requiredDatasets` (`scope` / `report`) lists the inputs of the view; the view is renderable when **any one** is loaded (an empty list means data-independent). `getMissingDatasets` returns the missing ones so a reason can be shown; existing views keep rendering their own empty states (no behaviour change).
+- Views receive everything through `ViewContext` (data, focus state, handlers); focus-reset rules (e.g. the radar model reset on tab click) stay in `App.tsx` handlers.
+- The legacy `src/adapters/views/*` plugins are not used by the production path any more; they are removed with the DataStore path in a later Phase 2 task.
+
 ### 2.15 Usage Insights in the User Detail Table (`UserDetailTable`)
 - Columns after "Total Requests": **Tokens**, **Cost per 1M Tokens**, **Signal** (badge). All three are sortable and included in the CSV export (tokens split into input / output / cache read / cache write). A cell without data shows "—" with the reason in the tooltip (e.g. the CSV has no token columns).
 - The **Signal** badge shows the level with a text label (never colour alone): 特記なし / 参考 / **確認を推奨** / データ不足. The tooltip lists the evidence of every signal that is `watch` or `review`. The checkbox **「確認を推奨のみ」** narrows the list to users whose overall level is `review`.

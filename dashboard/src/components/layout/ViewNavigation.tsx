@@ -1,7 +1,6 @@
 import React from 'react';
-import { AnalysisViewId, ANALYSIS_VIEW_REGISTRY } from '../../../../src/types/views';
 import { DataSourceType } from '../../../../src/types/copilot';
-import { createDefaultViewPluginRegistry } from '../../../../src/adapters/views/index';
+import type { ViewNavigationItem } from '../../views/navigation';
 import {
   PieChart as PieIcon,
   Trophy,
@@ -14,23 +13,11 @@ import {
   TrendingUp,
 } from 'lucide-react';
 
-const defaultPluginRegistry = createDefaultViewPluginRegistry();
-
-export interface ViewNavigationItem {
-  id: AnalysisViewId;
-  shortTitle: string;
-  description: string;
-  iconName: string;
-  supportedDataSources: DataSourceType[];
-  badge?: string;
-  badgeColor?: string;
-}
-
 interface ViewNavigationProps {
-  activeView: AnalysisViewId;
-  onSelectView: (view: AnalysisViewId) => void;
+  activeView: string;
+  onSelectView: (view: string) => void;
   activeSource: DataSourceType;
-  items?: ViewNavigationItem[];
+  items: ViewNavigationItem[];
 }
 
 const ICON_MAP: Record<string, React.ReactNode> = {
@@ -51,22 +38,11 @@ export const ViewNavigation: React.FC<ViewNavigationProps> = ({
   activeSource,
   items,
 }) => {
-  // Use dynamically registered plugins from registry if available, fallback to ANALYSIS_VIEW_REGISTRY
-  const navItems = items || defaultPluginRegistry.getAll().map((p) => ({
-    id: p.id as AnalysisViewId,
-    shortTitle: p.shortTitle,
-    description: p.description,
-    iconName: p.iconName,
-    supportedDataSources: p.supportedDataSources,
-    badge: p.badge,
-    badgeColor: p.badgeColor,
-  })) || ANALYSIS_VIEW_REGISTRY;
-
   return (
     <nav className="w-full border-b border-slate-800/80 bg-slate-950/40 backdrop-blur-sm sticky top-16 z-40">
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-2 overflow-x-auto no-scrollbar">
         <div className="inline-flex items-center space-x-1 p-1 bg-slate-900/90 border border-slate-800/90 rounded-2xl shadow-inner min-w-max">
-          {navItems.map((view) => {
+          {items.map((view) => {
             const isActive = activeView === view.id;
             const isSupported = view.supportedDataSources.includes(activeSource);
             const icon = ICON_MAP[view.iconName] || <PieIcon className="w-3.5 h-3.5" />;
