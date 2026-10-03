@@ -37,7 +37,21 @@ function src(source: SourceStatus['source'], status: SourceStatus['status'], ext
 describe('Data status banner: demo and failed sources are visible at the top of the screen (P0-7 / P0-3)', () => {
   it('shows nothing for healthy real data', () => {
     const items = buildDataStatusItems({
-      indexMeta: index({ source_status: [src('metrics', 'ok'), src('seats', 'ok'), src('cost_centers', 'skipped')] }),
+      indexMeta: index({
+        source_status: [src('metrics', 'ok'), src('seats', 'ok'), src('cost_centers', 'skipped')],
+        data_quality: {
+          level: 'ok',
+          generated_at: '2026-09-10T00:00:00Z',
+          missing_days_count: 0,
+          out_of_range: 0,
+          quarantined: 0,
+          malformed_lines: 0,
+          trend: 'unchanged',
+          previous_level: 'ok',
+          last_change_at: null,
+          history_file: 'quality/history.json',
+        },
+      }),
       activeSource: 'live_metrics',
       activeDataIsDemoSourced: false,
     });

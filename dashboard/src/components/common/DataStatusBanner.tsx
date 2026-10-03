@@ -1,6 +1,7 @@
 import React from 'react';
-import { AlertCircle, AlertTriangle, FlaskConical } from 'lucide-react';
+import { AlertCircle, AlertTriangle, FlaskConical, Info } from 'lucide-react';
 import { DataStatusItem, DataStatusLevel } from '../../utils/dataStatus';
+import { resolveDataPath } from '../../utils/pathResolver';
 
 interface DataStatusBannerProps {
   items: DataStatusItem[];
@@ -27,11 +28,17 @@ const LEVEL_STYLES: Record<DataStatusLevel, { container: string; icon: string; l
     icon: 'text-yellow-400',
     label: '警告',
   },
+  info: {
+    container: 'bg-slate-900/60 border-slate-700/70 text-slate-200',
+    icon: 'text-slate-400',
+    label: '情報',
+  },
 };
 
 function LevelIcon({ level, className }: { level: DataStatusLevel; className: string }) {
   if (level === 'error') return <AlertCircle className={className} aria-hidden="true" />;
   if (level === 'warning') return <AlertTriangle className={className} aria-hidden="true" />;
+  if (level === 'info') return <Info className={className} aria-hidden="true" />;
   return <FlaskConical className={className} aria-hidden="true" />;
 }
 
@@ -63,6 +70,17 @@ export const DataStatusBanner: React.FC<DataStatusBannerProps> = ({ items, onSwi
                   {item.title}
                 </p>
                 {item.detail && <p className="mt-0.5 opacity-90 leading-relaxed">{item.detail}</p>}
+                {item.link && (
+                  <a
+                    href={resolveDataPath(`./data/${item.link.path}`)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`data-status-link-${item.id}`}
+                    className="mt-1 inline-block underline underline-offset-2 opacity-90 hover:opacity-100"
+                  >
+                    {item.link.label}
+                  </a>
+                )}
               </div>
             </div>
             {item.level === 'demo' && onSwitchToLive && (

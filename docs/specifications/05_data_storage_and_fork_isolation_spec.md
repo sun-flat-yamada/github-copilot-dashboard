@@ -215,6 +215,15 @@ Rules:
 - Totals and breakdowns are separate facts so that summing never double counts. A breakdown row uses the finest grain the source offers (model × feature, else feature).
 - `user_key` is resolved by the caller (a pseudonymous ID in anonymized mode); real names and emails are never written to facts.
 - Schemas are defined with zod (`schemas.ts`); JSON Schemas are generated into `docs/schemas/facts/` by `npm run schema:facts`. `npm test` fails when the committed files differ from the generated ones.
+### 2.5 Data Quality Report History (P1-7)
+
+Each live collection run also produces a **data quality report** (`DataQualityReport`, `src/domain/entities/data-quality.ts`), appended to `data/processed/quality/history.json` (staged as `quality/history.json`, newest last, capped at 90 entries; a reprocessed run replaces the entry with the same `run_id`).
+
+- Contents (counts, dates and source names only; no logins or values): `window`, `missing_days` (requested report days with no rows), `duplicates_collapsed` (Enterprise/Org overlap; informational), `out_of_range` (rows whose date differs from the requested day), `quarantined` (rows failing validation, out-of-range excluded), `malformed_lines`, per-source `status`, and `level`.
+- `level`: `error` when a source failed; `warning` for a partial source, missing days, quarantined / out-of-range rows or malformed lines; otherwise `ok`.
+- `index.json` `data_quality` holds the latest level, counts, `trend` (`first` / `unchanged` / `degraded` / `recovered`), `previous_level`, `last_change_at` and `history_file`. `run_id` ties an entry to its Run Manifest (§2.3).
+- Nothing is recorded in mock mode or when no live collection ran (unconfigured / failed); the previous history and summary are kept.
+- The file is on the `pages:stage` allow-list (`STAGED_PROCESSED_DIRS` includes `quality`).
 
 ## 3. Metadata Index (`index.json`) Specification
 
