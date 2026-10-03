@@ -3,6 +3,7 @@
  */
 
 import { CurrencyConfig } from './billing-config.js';
+import type { RunReference } from './run-manifest.js';
 
 /**
  * 'unknown' は API が plan_type を返さない / 未知の値を返した場合の「未確定」。
@@ -704,6 +705,8 @@ export interface IndexMetadata {
     is_fork: boolean;
   };
   generated_at: string;
+  /** この成果物を作った run (Raw Landing の Run Manifest の ID)。ライブ収集・再処理のときだけ */
+  run?: RunReference;
   data_retention_days: number;
   available_months: string[]; // 過去1年ローリング表示対象月 (最大12カ月)
   all_recorded_months?: string[]; // 全蓄積月（上限なく記録された月一覧）

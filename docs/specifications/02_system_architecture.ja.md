@@ -141,6 +141,18 @@ flowchart TB
 
 フロントエンドの単一アーキテクチャへの収束 (および Dataset Loader / Query 層) は**改善計画の Phase 2** であり、未決の判断 (ADR) に依存する。決定されるまで、本番経路には SDD-15 の規約 (フィルターエンジンの単一化、概念ごとの単一定義、lint で強制する Hook 規約) を適用する。
 
+### 2.8 Raw Landing と再処理 (P1-2)
+
+ソースアダプタは `RawApiClient` 契約 (`src/adapters/github-api/RawApiClient.ts`: `fetchRaw` / `fetchRawAllowing` / `fetchPaginated` / `downloadSigned`) だけに依存する。実装は 3 つある。
+
+| 実装 | 役割 |
+|:--|:--|
+| `RawApiFetcher` | HTTP (再試行、レート制限、Link ページング、認証なしの署名付きダウンロード) |
+| `RecordingFetcher` | デコレーター。実クライアントへ委譲し、各応答を保存する (SDD-05 §2.3) |
+| `ReplayFetcher` | Run Manifest の応答を返す。通信しない |
+
+`createPipelineApp` はライブのクライアントを `RecordingFetcher` で包む (匿名化・モックのときを除く)。`createReprocessApp` (`npm run pipeline:reprocess`) は、manifest の Enterprise / Org / レポート日と `ReplayFetcher` を、**同じ** `GitHubApiCopilotDataSource` と `PipelineOrchestrator` に結線する。アダプタと集計のコードを共有するので、同期すべき 2 つ目の実装はない。再生した run が収集時の成果物を再現することは、テストで検証している。
+
 ---
 
 ## 3. クリーンアーキテクチャ 4層設計 (Clean Architecture & DIP)

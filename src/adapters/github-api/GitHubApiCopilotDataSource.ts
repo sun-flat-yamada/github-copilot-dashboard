@@ -14,6 +14,7 @@ import { UsageReportsClient, ReportScope, reportWindowDays, scopeLabel } from '.
 import { buildAllDailyMetrics, buildUserProfiles } from './usage-reports/user-report-mapper.js';
 import { UserReportRow } from './usage-reports/user-report-schema.js';
 import { RawApiFetcher } from './RawApiFetcher.js';
+import { RawApiClient } from './RawApiClient.js';
 import { NormalizerRegistry } from './NormalizerRegistry.js';
 import { DomainMapper } from './DomainMapper.js';
 import { normalizeSeats20260310 } from './normalizers/seats-2026-03-10.js';
@@ -22,9 +23,11 @@ import { normalizeCostCenter20260310 } from './normalizers/cost-centers-2026-03-
 import { pickCostCenterRecords } from './schemas/cost-centers-schema.js';
 
 export interface GitHubApiDataSourceConfig {
-  fetcher?: RawApiFetcher;
+  fetcher?: RawApiClient;
   enterprise?: string;
   orgs?: string[];
+  /** 取得するレポート日 (昇順)。省略時は直近の窓 (reportWindowDays)。再処理が収集時の日付を再現するのに使う */
+  reportDays?: string[];
 }
 
 interface SeatsPage {
@@ -38,9 +41,12 @@ const MAX_ERROR_SUMMARY_LENGTH = 300;
 const MAX_QUARANTINE_REASONS = 3;
 
 export class GitHubApiCopilotDataSource implements ICopilotDataSource {
-  private fetcher: RawApiFetcher;
+  private fetcher: RawApiClient;
   private enterprise?: string;
   private orgs: string[];
+  private reportDays?: string[];
+  /** 直近の fetchMetrics で実際に取得を試みたレポート日 */
+  private requestedDays: string[] = [];
   private issues: DataFetchIssue[] = [];
   private statuses = new Map<DataSourceId, SourceStatus>();
   /** 直近の fetchMetrics で取得したユーザー行 (日付 → 重複排除済み)。fetchUserProfiles が使う */
@@ -50,6 +56,7 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
 
   constructor(config: GitHubApiDataSourceConfig = {}) {
     this.fetcher = config.fetcher || new RawApiFetcher();
+    this.reportDays = config.reportDays;
     this.enterprise = config.enterprise || process.env.COPILOT_ENTERPRISE || undefined;
     this.orgs =
       config.orgs ||
@@ -83,7 +90,8 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
       ...(this.enterprise ? [{ kind: 'enterprise' as const, slug: this.enterprise }] : []),
       ...this.orgs.map((slug) => ({ kind: 'org' as const, slug })),
     ];
-    const days = reportWindowDays();
+    const days = this.reportDays ?? reportWindowDays();
+    this.requestedDays = days;
 
     try {
       const client = new UsageReportsClient(this.fetcher);
@@ -329,6 +337,15 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
       this.recordIssue(`teams/${teamSlug}/copilot/metrics`, err);
       return [];
     }
+  }
+
+  /** Run Manifest に残す収集設定 (スラッグと日付のみ) */
+  getCollectionConfig(): { enterprise?: string; orgs: string[]; report_days: string[] } {
+    return {
+      ...(this.enterprise ? { enterprise: this.enterprise } : {}),
+      orgs: [...this.orgs],
+      report_days: [...this.requestedDays],
+    };
   }
 
   getIssues(): DataFetchIssue[] {

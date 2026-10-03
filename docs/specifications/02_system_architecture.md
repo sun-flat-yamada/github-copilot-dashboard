@@ -141,6 +141,18 @@ A run must never publish "empty" as if it were a measurement. The pipeline (`Pip
 
 Converging the front end on one architecture (and the Dataset Loader / Query layer) is **Phase 2 of the improvement plan** and depends on a pending decision (ADR); until it is made, the rules of SDD-15 (single filter engine, one definition per concept, lint-enforced hook rules) apply to the live path.
 
+### 2.8 Raw Landing & Reprocess (P1-2)
+
+Source adapters depend only on the `RawApiClient` contract (`src/adapters/github-api/RawApiClient.ts`: `fetchRaw`, `fetchRawAllowing`, `fetchPaginated`, `downloadSigned`). Three implementations share it:
+
+| Implementation | Role |
+|:--|:--|
+| `RawApiFetcher` | HTTP (retry, rate limits, Link pagination, unauthenticated signed downloads) |
+| `RecordingFetcher` | Decorator: delegates to the real client and lands each response (SDD-05 §2.3) |
+| `ReplayFetcher` | Serves the responses of a Run Manifest; no network |
+
+`createPipelineApp` wraps the live client in `RecordingFetcher` (unless anonymizing or mocking); `createReprocessApp` (`npm run pipeline:reprocess`) wires `ReplayFetcher` with the manifest's enterprise / orgs / report days into the **same** `GitHubApiCopilotDataSource` and `PipelineOrchestrator`. Because the adapter and the aggregation code are shared, there is no second implementation to keep in sync; the test suite asserts that a replayed run reproduces the collected outputs.
+
 ---
 
 ## 3. Four-Layer Clean Architecture & Dependency Inversion Principle (DIP)

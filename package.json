@@ -34,6 +34,7 @@
     "lint": "eslint dashboard/src",
     "pipeline:run": "tsx src/cli/run-pipeline.ts",
     "pipeline:mock": "tsx src/cli/run-pipeline.ts --mock",
+    "pipeline:reprocess": "tsx src/cli/reprocess-pipeline.ts",
     "demo:generate": "tsx scripts/generate-demo-data.ts",
     "demo:sync": "tsx scripts/sync-demo-to-copilot-data.ts",
     "demo:setup": "tsx scripts/setup-fork-demo.ts",

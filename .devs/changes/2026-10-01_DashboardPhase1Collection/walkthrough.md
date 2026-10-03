@@ -33,3 +33,49 @@ Phase 0 の `privacy.contains_user_level_data` は、取り込んだ月次レポ
 - 提供されない指標: PR 概要数（null）、チャットのコピー / 挿入、エージェントのセッション数。集計レポート（PR の `pull_requests` など）の利用は後続。
 - 旧 `normalizers/metrics-2026-03-10.ts` とスキーマは、チーム別メトリクス（旧 API）と zod テストが参照しているため残している。
 - GitHub App での実動作は未検証（PAT のみの決定は維持）。
+
+
+---
+
+# Walkthrough: Phase 1 / PR B（P1-6 価格カタログ v1 と為替カタログ）
+
+- **コミット**: `8fc56c3`（#165）
+
+## 変更の要点
+
+| 領域 | 内容 | 主なファイル |
+| :--- | :--- | :--- |
+| 為替 | 固定値の「公式」月次表とブラウザの外部取得を撤去。カタログ（保存済みの月次レート）だけを参照する。直前月の引き継ぎ、レートが無ければ換算を出さない | `PublicExchangeRatesService.ts`、`CurrencyContext.tsx` |
+| 取得 | ECB 月次平均を確定月のみ取得。上書きしない・失敗時は既存を保持。出典と取得日を保存 | `ExchangeRateCatalogUpdater.ts`、`scripts/update-exchange-rates.ts`（`npm run catalog:fx`） |
+| 保存・配信 | `catalog/<name>.json` の保存と読み込み、`pages:stage` の許可リストへ追加 | `fork-safe-storage.ts`、`pages-staging.ts`、ワークフロー |
+| 価格 | 価格カタログのバージョンに「GitHub 一次情報と未照合」を明記 | `pricing-catalog.ts` |
+
+## 未検証
+
+- ECB への実接続（作業環境から到達不可。パーサーはフィクスチャのみで検証）
+- 価格の GitHub 公式ドキュメントとの照合
+
+---
+
+# Walkthrough: Phase 1 / PR C（P1-2 Raw Landing + Run Manifest + 再処理）
+
+## 1. 変更の要点
+
+| 領域 | 内容 | 主なファイル |
+| :--- | :--- | :--- |
+| 取得の契約 | `RawApiClient` を抽出し、ソースアダプタ・`UsageReportsClient` はこれだけに依存する | `RawApiClient.ts` |
+| 記録 | `RecordingFetcher` が応答を内容ハッシュで不変保存し、run の台帳（Run Manifest）を最後に 1 回書く。署名付き URL の署名は保存しない | `raw-landing/RecordingFetcher.ts`、`RawLandingStore.ts`、`request-key.ts` |
+| 再生 | `ReplayFetcher` が manifest の応答を返す。記録された失敗は同じ失敗として再生、未記録の要求は `ReplayMissError` | `raw-landing/ReplayFetcher.ts` |
+| 結線 | 収集は録画、`createReprocessApp` は manifest の設定（Enterprise / Org / レポート日 / API バージョン）で同じデータソースとオーケストレーターを動かす。`index.json` に `run` | `composition-root.ts`、`PipelineOrchestrator.ts`、`cli/reprocess-pipeline.ts` |
+| 個人情報 | 匿名化モード・モックでは保存しない | `composition-root.ts` |
+
+## 2. 検証
+
+- `RawLanding.test.ts`（9 件）: 記録 → 成果物を削除 → 再生で、全 JSON 成果物が時刻・ID を除いて同一。再生中の通信は 0 回（`fetch` を例外にして確認）。署名は Raw のどこにも残らない。録画済みの失敗の再現。manifest の上書き禁止。パス脱出の拒否。匿名化では保存しない。
+- 品質ゲート: `fork:verify`（0 Failure）、`typecheck`、`lint`、`test`（728 件）、`secret-scan`、`build`、`pipeline:mock` が成功。
+
+## 3. 未検証・残課題
+
+- 実際の Enterprise での記録・再処理（トークンが必要）。
+- 複数 run を結合した長期バックフィル、保持期間（60 か月）の削除処理、正準ファクト（`schema_version`）の再生成は後続（P1-3 / Phase 4）。
+- 実運用での Raw Landing の容量（重複排除の効果）は未測定。

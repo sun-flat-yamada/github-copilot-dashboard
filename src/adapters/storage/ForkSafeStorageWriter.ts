@@ -20,6 +20,10 @@ export class ForkSafeStorageWriter implements IStorageWriter {
     this.storage = new ForkSafeStorage(config);
   }
 
+  getBaseDir(): string {
+    return this.storage.getBaseDir();
+  }
+
   saveRawDailyData(
     date: string,
     metrics: CopilotDailyMetrics,

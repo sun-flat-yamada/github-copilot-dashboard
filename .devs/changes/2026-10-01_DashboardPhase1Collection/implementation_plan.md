@@ -10,9 +10,10 @@ Phase 1 は大きいため、PR を分ける。完了条件は親計画の P1-1�
 
 | PR | 内容 | 状態 |
 | :--- | :--- | :--- |
-| A | P1-1 Usage Metrics Reports API アダプタ（`users-1-day`、Enterprise + Org、重複排除、プロファイル、旧 `/copilot/metrics` の削除） | 本 PR |
-| B | P1-6 価格カタログ v1 と為替カタログ | 未着手 |
-| C 以降 | P1-2 Raw Landing / Run Manifest、P1-3 正準ファクト、P1-4 契約テスト・ドリフト検知、P1-5 AI Credits API / CSV プロファイル、P1-7 データ品質レポート | 未着手 |
+| A | P1-1 Usage Metrics Reports API アダプタ（`users-1-day`、Enterprise + Org、重複排除、プロファイル、旧 `/copilot/metrics` の削除） | 完了（#164） |
+| B | P1-6 価格カタログ v1 と為替カタログ | 完了（#165） |
+| C | P1-2 Raw Landing / Run Manifest / `pipeline:reprocess` | 本 PR |
+| D 以降 | P1-3 正準ファクト、P1-4 契約テスト・ドリフト検知、P1-5 AI Credits API / CSV プロファイル、P1-7 データ品質レポート | 未着手 |
 
 ## PR A の設計
 
@@ -29,3 +30,13 @@ Phase 1 は大きいため、PR を分ける。完了条件は親計画の P1-1�
 ## 作業環境
 
 Phase 0 と同様、単一エージェントの使い捨てコンテナでプライマリ作業ツリーを使う。
+
+## PR C の設計（P1-2）
+
+| 論点 | 方針 |
+| :--- | :--- |
+| 記録の位置 | 取得層（`RawApiClient`）。ソースの正規化・検証・集計のコードは収集と再処理で同一 |
+| 保存 | `data/raw/landing/objects/<aa>/<sha256>.*`（内容ハッシュ、不変、重複排除）と `manifests/<run_id>.json`（run ごとに 1 回） |
+| 資格情報 | 署名付き URL の署名は保存しない。トークンは取得層の外に出ない |
+| 個人情報 | 匿名化モード・モックでは保存しない（Raw は実名を含み、仮名化できない） |
+| 再処理 | 1 つの run（既定は最新）を再生。通信なし。複数 run の結合（長期バックフィル）・保持期間・正準ファクトの再生成は後続（P1-3 / Phase 4） |

@@ -18,6 +18,8 @@
 | `copilot-analysis-cron.yml` | Scheduled (Daily UTC 00:00) / Manual (`workflow_dispatch`) | 1. **Exposure pre-flight** (`npm run fork:verify`, real-data runs only): fail before collecting anything when a public repository or public Pages would expose real, non-anonymized user-level data<br>2. Fetch latest API data per source (or continue gracefully with zero live data if credentials are absent/insufficiently privileged, recording each source's status)<br>3. Inject mapping via Attribute Resolver (pseudonymize when `ANONYMIZE_USERS=true`)<br>4. Multidimensional aggregation & billing calculation<br>5. Append commit to `copilot-data` (real data) or force-reset `copilot-data-mock` (simulated data) branch, depending on `MOCK_MODE`<br>6. Stage the allow-listed processed data (`pages:stage`), build the SPA, **verify the built artifact** (`pages:verify`) and deploy to GitHub Pages (real-data runs only; mock runs stop after step 5) |
 | `test-and-preview.yml` | Pull Request / Push to `main` | TypeScript typecheck, ESLint (React Hooks rules, SDD-15 §6), unit tests, and build verification using mock datasets |
 
+**Raw landing and reprocessing (P1-2)**: the daily run also lands the raw API responses under `data/raw/landing/` (Run Manifest + content-addressed objects, SDD-05 §2.3); they are committed to `copilot-data` together with the rest of `data/` and never staged to Pages. To regenerate the artifacts from a stored run without calling the API (after a logic fix), run `npm run pipeline:reprocess [-- --run <run_id>]` on a checkout of `copilot-data`; it needs no token. Nothing is landed when `ANONYMIZE_USERS=true`.
+
 ---
 
 ## 2. Required GitHub Actions Secrets & Variables

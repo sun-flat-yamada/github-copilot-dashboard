@@ -18,6 +18,8 @@
 | `copilot-analysis-cron.yml` | 定期実行 (毎日 UTC 00:00) / 手動実行 (`workflow_dispatch`) | 1. **公開範囲の事前検査** (`npm run fork:verify`、実データ運用時のみ): 公開リポジトリや公開 Pages が、実在の・仮名化されていないユーザー単位のデータを公開してしまう状態なら、何も収集する前に失敗させる<br>2. APIからソース別に最新データ収集 (認証情報が未設定/権限不足の場合もライブデータ0件として処理を継続し、ソースごとの状態を記録)<br>3. 属性リゾルバでマッピング注入 (`ANONYMIZE_USERS=true` なら仮名化)<br>4. 多次元集計・費用配賦<br>5. `MOCK_MODE` に応じて `copilot-data`(実データ、追記コミット) または `copilot-data-mock`(モックデータ、force-resetによる非蓄積) ブランチへ保存<br>6. 許可リストの processed データをステージ (`pages:stage`)、ダッシュボードビルド、**ビルド成果物の検証** (`pages:verify`)、GitHub Pagesデプロイ (実データ運用時のみ。モック実行はステップ5で終了) |
 | `test-and-preview.yml` | `main` へのPull Request / Push | TypeScript型検査、ESLint (React Hooks ルール、SDD-15 §6)、単体テスト、モックデータによるビルド動作検証 |
 
+**Raw Landing と再処理 (P1-2)**: 毎日の実行は、API の生の応答を `data/raw/landing/` にも保存する (Run Manifest と内容ハッシュ名のオブジェクト。SDD-05 §2.3)。これらは `data/` の他のファイルと一緒に `copilot-data` へコミットされ、Pages には載せない。ロジックの修正後に、API を呼ばず保存済みの run から成果物を作り直すには、`copilot-data` をチェックアウトした環境で `npm run pipeline:reprocess [-- --run <run_id>]` を実行する (トークン不要)。`ANONYMIZE_USERS=true` のときは何も保存しない。
+
 ---
 
 ## 2. 必要な GitHub Actions Secrets / Variables
