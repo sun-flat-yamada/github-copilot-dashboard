@@ -245,7 +245,7 @@ export function checkCopilotDataBranch(): HealthCheckResult[] {
       category: 'Storage Branch',
       name: 'DEMO Dataset Partition (data/demo/)',
       status: 'pass',
-      message: "Dedicated Live Metrics DEMO dataset is initialized and ready for simulation/testing.",
+      message: "Dedicated Auto-collected DEMO dataset is initialized and ready for simulation/testing.",
     });
   } else {
     results.push({

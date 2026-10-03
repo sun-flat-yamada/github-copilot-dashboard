@@ -231,7 +231,7 @@ export interface MonthlyReportAggregatedData {
 ## 5. Dashboard UI/UX Specifications
 
 1. **Header Active Data Selector (`ActiveDataSelector`)**:
-   - `Live Metrics`: Real-time daily, monthly, and custom range API dashboard.
+   - `Auto-collected Data`: Real-time daily, monthly, and custom range API dashboard.
    - `Monthly Usage Report`: Dedicated view for monthly billing CSV analysis, with support for on-demand local CSV upload.
 2. **Report Selector & On-Demand Import**:
    - Switch rapidly between past reported months (`2026-08`, `2026-09`, etc.).
@@ -244,7 +244,7 @@ export interface MonthlyReportAggregatedData {
      - Bi-directionally synchronized with the top control bar for active group filtering.
    - 3. **Model & SKU Breakdown**: Request shares and expenditure percentages.
    - 4. **Daily Trends Chart**: Spending cadence and peak consumption days across the month.
-   - 5. **Per-User Usage Details Table (`UserDetailTable`, the same component as live metrics — SDD-07 §2.16)**:
+   - 5. **Per-User Usage Details Table (`UserDetailTable`, the same component as auto-collected data — SDD-07 §2.16)**:
      - Explicit `Organization` column alongside Cost Center and Department.
      - Group filter dropdown dynamically adapts options based on the active grouping axis (Department / Cost Center / Organization).
      - Row-click interaction triggers inline deep analysis drilldown (`UserDrilldownPanel`).

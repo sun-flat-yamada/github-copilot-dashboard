@@ -36,7 +36,7 @@ The following representative bugs actually occurred — and were fixed — becau
 
 #### Case Study B: Model usage percentage (%) did not track the Tag filter (`model_radar` View, Monthly Usage Report path)
 - **Symptom**: Changing the Tag filter had no effect whatsoever on each AI model's displayed "Usage Share (%)".
-- **Root Cause**: In `useDashboardData.ts`, `filteredActiveReportData` (the memoized hook producing tag-filtered monthly report data) correctly recomputed aggregate fields such as `overview`, `user_details`, and `by_department` from the filtered user subset — but **`model_breakdown` (the per-model breakdown) alone was passed through unchanged** from the org-wide value computed at parse time. Since the usage-percentage calculation (`computeModelUsage`) falls back to this `model_breakdown` whenever Live Metrics data is empty, users analyzing Monthly Report / uploaded data saw zero effect from tag selection.
+- **Root Cause**: In `useDashboardData.ts`, `filteredActiveReportData` (the memoized hook producing tag-filtered monthly report data) correctly recomputed aggregate fields such as `overview`, `user_details`, and `by_department` from the filtered user subset — but **`model_breakdown` (the per-model breakdown) alone was passed through unchanged** from the org-wide value computed at parse time. Since the usage-percentage calculation (`computeModelUsage`) falls back to this `model_breakdown` whenever Auto-collected Data is empty, users analyzing Monthly Report / uploaded data saw zero effect from tag selection.
 - **Lesson**: **When a single aggregated data type has multiple derived fields, a filter-recomputation memo is prone to a "partial recomputation gap" — updating only some fields while silently passing others through unfiltered.** Whenever a new field is added to such a data type, every memo function that recomputes that type must be cross-checked and updated in lockstep.
 - **Fix**: Extracted the `model_breakdown` recomputation logic out of the inline hook body into an independent pure function, `buildFilteredModelBreakdown` (`dashboard/src/query/reportModelBreakdown.ts`), called from `filteredActiveReportData`. Being a pure function, it became directly unit-testable with real input/output assertions.
 
@@ -60,10 +60,10 @@ The structural lessons common to these cases are generalized in Sections 2, 3 an
 
 | Term | Definition |
 | :--- | :--- |
-| **Active Selected Data** | The combination the user currently has selected: **(a) the active data source type** (Live Metrics / Monthly Usage Report / User Upload, SDD-01 FR-3-1), **(b) the time/group scope** (daily/monthly/custom × selected key, SDD-01 FR-3-2), and **(c) the Tag AND filter** (`selectedTags`, SDD-01 FR-6). |
+| **Active Selected Data** | The combination the user currently has selected: **(a) the active data source type** (Auto-collected Data / Monthly Usage Report / User Upload, SDD-01 FR-3-1), **(b) the time/group scope** (daily/monthly/custom × selected key, SDD-01 FR-3-2), and **(c) the Tag AND filter** (`selectedTags`, SDD-01 FR-6). |
 | **Data-Centric Reactivity** | The property that a View's displayed content (KPI figures, default selections, charts, derived aggregates) is always computed as a pure function of "the currently Active Selected Data" — independent of mount timing, and must immediately track every change to the Active Selected Data. |
 | **Derived Data** | Filter-applied, second-order data computed by the `useDashboardData` hook from raw data (raw scope data such as `currentData`, raw report data such as `activeReportData`) — e.g. `filteredCurrentData` / `filteredActiveReportData`. View components must only consume this derived data, never the raw data directly. |
-| **Fallback Path** | A logic branch that substitutes an alternate data source's value when the primary data path is empty or unavailable (e.g., the Monthly Report branch in `computeModelUsage` when the Live Metrics branch is empty). |
+| **Fallback Path** | A logic branch that substitutes an alternate data source's value when the primary data path is empty or unavailable (e.g., the Monthly Report branch in `computeModelUsage` when the Auto-collected Data branch is empty). |
 
 ---
 
@@ -85,8 +85,8 @@ The structural lessons common to these cases are generalized in Sections 2, 3 an
 - **Design around the fact that Views are not unmounted**: Since `ActiveDataSelector` / `DataSelectionModal` are rendered outside each View, changes to them do not remount the View. Views must clearly separate "effects that run once on mount" from "effects that must run every time the Active Selected Data changes."
 
 ### 3.4 Fallback Path Parity
-- When a value can be computed via multiple data-source paths (e.g., Live Metrics preferred, falling back to Monthly Report when empty), **the fallback path must reference derived data filtered under the exact same conditions as the primary path**. A path being a "fallback" is never a valid excuse for skipping filter support.
-- When the paths differ in data granularity (e.g., Live Metrics retains a per-user, per-model breakdown, while Monthly Report retains only a single primary model per user), the fallback path must reflect the filter condition using **the best available approximation**, and that approximation must be explicitly documented in the relevant spec or implementation comment (see the `primary_model`-attribution approximation in SDD-10 §2.3).
+- When a value can be computed via multiple data-source paths (e.g., Auto-collected Data preferred, falling back to Monthly Report when empty), **the fallback path must reference derived data filtered under the exact same conditions as the primary path**. A path being a "fallback" is never a valid excuse for skipping filter support.
+- When the paths differ in data granularity (e.g., Auto-collected Data retains a per-user, per-model breakdown, while Monthly Report retains only a single primary model per user), the fallback path must reflect the filter condition using **the best available approximation**, and that approximation must be explicitly documented in the relevant spec or implementation comment (see the `primary_model`-attribution approximation in SDD-10 §2.3).
 
 ### 3.5 Testing Convention
 - Filtering/aggregation logic must not be written inline inside React hooks or components; extract it into **independent pure functions with explicit inputs/outputs** (e.g., under `dashboard/src/utils/`). This enables real input/output-based regression testing (`node:test`).
