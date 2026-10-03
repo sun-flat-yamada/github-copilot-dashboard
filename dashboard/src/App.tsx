@@ -5,52 +5,23 @@ import {
   GroupingDimension,
   UserSeatStatus,
 } from '../../src/types/copilot';
-import { AnalysisViewId } from '../../src/types/views';
 import { useDashboardData } from './hooks/useDashboardData';
 import { useAccordionGroup } from './hooks/useAccordionGroup';
 import { useDeepAnalysisData } from './hooks/useDeepAnalysisData';
 import { useTheme } from './hooks/useTheme';
 import { DashboardHeader } from './components/layout/DashboardHeader';
 import { ViewNavigation } from './components/layout/ViewNavigation';
-import { CollapsibleSection } from './components/common/CollapsibleSection';
-import { KpiSummaryCards } from './components/KpiSummaryCards';
-import { IdleSeatAdvisor } from './components/IdleSeatAdvisor';
-import { CostAllocationCharts } from './components/CostAllocationCharts';
-import { UsageMetricsCharts } from './components/UsageMetricsCharts';
-import { UserDetailTable } from './components/UserDetailTable';
+import { toNavigationItem } from './views/navigation';
+import { ViewHost } from './views/ViewHost';
+import { defaultViewRegistry } from './views/defaultRegistry';
+import type { ViewContext } from './views/types';
 import { ErrorLogModal } from './components/ErrorLogModal';
 import { AboutModal } from './components/AboutModal';
 import { CurrencyProvider } from './contexts/CurrencyContext';
-import { CostCenterBudgetCards } from './components/CostCenterBudgetCards';
-import { UserTrendViewer } from './components/UserTrendViewer';
-import { MonthlyReportKpis } from './components/monthly-report/MonthlyReportKpis';
-import { MonthlyReportCharts } from './components/monthly-report/MonthlyReportCharts';
-import { ViewSkeleton } from './components/common/ViewSkeleton';
 import { DataStatusBanner } from './components/common/DataStatusBanner';
 import { buildDataStatusItems, resolveIsDemoData } from './utils/dataStatus';
 import { BudgetUtilizationRule } from '../../src/domain/rules/BudgetUtilizationRule';
-import { monthlyIdleSavingsUsd } from '../../src/domain/rules/ScopeCostRule';
-import { SEAT_IDLE_CRITERIA_TEXT } from '../../src/domain/rules/SeatClassificationRule';
-const ModelRadarView = React.lazy(() => import('./components/ModelRadarView').then(m => ({ default: m.ModelRadarView })));
-const DeepAnalysisView = React.lazy(() => import('./components/DeepAnalysisView').then(m => ({ default: m.DeepAnalysisView })));
-const CreditsView = React.lazy(() => import('./components/views/CreditsView').then(m => ({ default: m.CreditsView })));
-const AgentActivityView = React.lazy(() => import('./components/views/AgentActivityView').then(m => ({ default: m.AgentActivityView })));
-const AdoptionMaturityView = React.lazy(() => import('./components/views/AdoptionMaturityView').then(m => ({ default: m.AdoptionMaturityView })));
-import { CreditsPresenter } from '../../src/adapters/presenters/CreditsPresenter';
-import { AgentPresenter } from '../../src/adapters/presenters/AgentPresenter';
-import { AdoptionPresenter } from '../../src/adapters/presenters/AdoptionPresenter';
-import {
-  RefreshCw,
-  PieChart as PieIcon,
-  Users2,
-  Landmark,
-  BarChart3,
-  AlertTriangle,
-  AlertCircle,
-  ChevronsDown,
-  ChevronsUp,
-  LayoutGrid,
-} from 'lucide-react';
+import { RefreshCw, AlertCircle } from 'lucide-react';
 
 const ALL_SECTION_IDS = [
   'advisor',
@@ -62,27 +33,6 @@ const ALL_SECTION_IDS = [
   'report_charts',
   'report_users',
 ];
-
-/** 集計軸ごとの単位ラベル (サマリーチップの件数表示用) */
-const GROUPING_UNIT_LABEL: Record<GroupingDimension, string> = {
-  department: '部署',
-  cost_center: 'Cost Center',
-  organization: 'Org',
-};
-
-/** 選択中の集計軸に対応するグループ数 (集計軸に関係なく部署数を出さない) */
-function countGroups(
-  data: { by_department?: object; by_cost_center?: object; by_organization?: object },
-  grouping: GroupingDimension
-): number {
-  const groups =
-    grouping === 'department'
-      ? data.by_department
-      : grouping === 'cost_center'
-      ? data.by_cost_center
-      : data.by_organization;
-  return Object.keys(groups || {}).length;
-}
 
 export const App: React.FC = () => {
   // 1. データ取得カスタムフック (3データソース統合 & タグANDフィルター対応)
@@ -143,7 +93,7 @@ export const App: React.FC = () => {
   });
 
   // 2. 分析View選択 (要件4: モード切替からView切替への抜本移行)
-  const [activeView, setActiveView] = useState<AnalysisViewId>('overview');
+  const [activeView, setActiveView] = useState<string>('overview');
 
   // 3. 集計軸 & フィルター状態
   const [currentGrouping, setCurrentGrouping] = useState<GroupingDimension>('department');
@@ -205,7 +155,7 @@ export const App: React.FC = () => {
   // Viewナビゲーションタブからの直接遷移時は個別モデル指定をリセットし、
   // モデル特性レーダーが常にアクティブ選択データのTop3利用モデルをデフォルト選択できるようにする
   // (特定モデルへのフォーカス遷移は handleOpenRadar 経由のみ)
-  const handleSelectView = (view: AnalysisViewId) => {
+  const handleSelectView = (view: string) => {
     if (view === 'model_radar') {
       setFocusedRadarModelId('');
     }
@@ -274,6 +224,36 @@ export const App: React.FC = () => {
   // (データ自身が is_mock_mode を宣言している場合は、戻す先の実データがない)
   const canSwitchToLive = isDemoMode && indexMeta?.is_mock_mode !== true ? () => toggleDemoMode(false) : undefined;
 
+  // View Registry へ渡す描画コンテキスト (各ビューはこれだけに依存する)
+  const viewContext: ViewContext = {
+    activeSource,
+    isReportSource,
+    isDemoData: resolveIsDemoData({ indexMeta, activeSource, activeDataIsDemoSourced }),
+    currentData,
+    currentReportData,
+    reportBudgets,
+    deepAnalysisProfiles,
+    deepAnalysisSourceInfo,
+    focusedUserLogin,
+    setFocusedUserLogin,
+    focusedRadarModelId,
+    userTableFilterStatus,
+    currentGrouping,
+    selectedGroup,
+    setSelectedGroup,
+    onGroupingChange: handleGroupingChange,
+    accordion: { isExpanded, toggle, expandAll, collapseAll },
+    onFilterIdle: handleFilterIdle,
+    onSelectUserForTrend: handleSelectUserForTrend,
+    onOpenRadar: handleOpenRadar,
+    onOpenDeepAnalysis: handleOpenDeepAnalysis,
+    onOpenTrendForModel: (modelId) => {
+      setFocusedRadarModelId(modelId);
+      setActiveView('trend');
+    },
+  };
+  const navigationItems = defaultViewRegistry.getVisible(viewContext).map(toNavigationItem);
+
   const currentActiveMonth = selectedReportMonth || (selectedKey && selectedKey.length >= 7 ? selectedKey.slice(0, 7) : indexMeta?.default_scopes?.latest_month);
 
   return (
@@ -321,6 +301,7 @@ export const App: React.FC = () => {
         activeView={activeView}
         onSelectView={handleSelectView}
         activeSource={activeSource}
+        items={navigationItems}
       />
 
       {/* 3. メインコンテンツエリア (フルレスポンシブ & 1カラム垂直スタック ★要件5 & 構造的リアクティビティキーイング SDD-15) */}
@@ -392,352 +373,8 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* ============================================================ */}
-        {/* 分析Viewの描画 (ヘッダー選択データに対して提供 ★要件3 & 4) */}
-        {/* ============================================================ */}
-
-        {/* View 1: コスト内訳 & 総合サマリー (Overview) */}
-        {activeView === 'overview' && (
-          <div className="flex flex-col space-y-6 w-full">
-            {/* サマリーブロック (常時展開 ★要件6) */}
-            {activeSource === 'live_metrics' && currentData && (
-              <KpiSummaryCards data={currentData} isDemo={resolveIsDemoData({ indexMeta, activeSource, activeDataIsDemoSourced })} />
-            )}
-            {isReportSource && currentReportData && (
-              <MonthlyReportKpis reportData={currentReportData} />
-            )}
-
-            {/* 詳細分析セクションヘッダー ＆ 一括開閉アイコンコントロール (★要件6, Issue #118) */}
-            <div className="flex items-center justify-between pt-2 pb-1 border-b border-slate-800/80">
-              <div className="flex items-center space-x-2.5">
-                <div className="p-1.5 rounded-lg bg-indigo-950/60 border border-indigo-800/50 text-indigo-400">
-                  <LayoutGrid className="w-4 h-4" />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <h3 className="text-sm font-bold text-slate-200 tracking-tight">
-                    詳細分析セクション
-                  </h3>
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800/90 text-slate-400 font-mono border border-slate-700/50">
-                    {activeSource === 'live_metrics' ? '5 セクション' : '2 セクション'}
-                  </span>
-                </div>
-              </div>
-
-              {/* スマートなアイコン化開閉ボタン群 (ツールチップ付き) */}
-              <div className="flex items-center space-x-1.5">
-                <button
-                  type="button"
-                  onClick={() => expandAll()}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/80 transition-all cursor-pointer shadow-sm"
-                  title="すべての個別要素を展開"
-                  aria-label="すべての個別要素を展開"
-                >
-                  <ChevronsDown className="w-4 h-4" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={collapseAll}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/80 transition-all cursor-pointer shadow-sm"
-                  title="すべての個別要素を収納"
-                  aria-label="すべての個別要素を収納"
-                >
-                  <ChevronsUp className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* 個別要素ブロック (初期折りたたみ ★要件6, 1カラム垂直スタック ★要件5) */}
-            {activeSource === 'live_metrics' && currentData && (
-              <>
-                <CollapsibleSection
-                  id="advisor"
-                  title="遊休シート・コスト削減アドバイザー"
-                  subtitle={`遊休アカウント検出と削減可能額 (判定基準: ${SEAT_IDLE_CRITERIA_TEXT})`}
-                  icon={<AlertTriangle className="w-4 h-4 text-amber-400" />}
-                  summaryChips={
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-800 font-bold">
-                      削減可能: ${monthlyIdleSavingsUsd(currentData.users).toFixed(2)}/月
-                    </span>
-                  }
-                  isExpanded={isExpanded('advisor')}
-                  onToggle={() => toggle('advisor')}
-                >
-                  <IdleSeatAdvisor data={currentData} onFilterIdleUsers={handleFilterIdle} />
-                </CollapsibleSection>
-
-                <CollapsibleSection
-                  id="allocation"
-                  title="グループ別 コスト内訳 & ライセンス稼働状況"
-                  subtitle="選択仕訳軸（ユーザー定義Gr / Cost Center / Org）に基づく費用シェアと稼働率"
-                  icon={<PieIcon className="w-4 h-4 text-purple-400" />}
-                  summaryChips={
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-                      {countGroups(currentData, currentGrouping)} {GROUPING_UNIT_LABEL[currentGrouping]}
-                    </span>
-                  }
-                  isExpanded={isExpanded('allocation')}
-                  onToggle={() => toggle('allocation')}
-                >
-                  <CostAllocationCharts
-                    data={currentData}
-                    grouping={currentGrouping}
-                    onGroupingChange={handleGroupingChange}
-                  />
-                </CollapsibleSection>
-
-                <CollapsibleSection
-                  id="budget"
-                  title="Cost Center 予算進捗管理"
-                  subtitle="上限Budget枠・無料枠・請求対象額とアラート"
-                  icon={<Landmark className="w-4 h-4 text-emerald-400" />}
-                  summaryChips={
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-                      {currentData.cost_center_budgets?.length || 0} Cost Centers
-                    </span>
-                  }
-                  isExpanded={isExpanded('budget')}
-                  onToggle={() => toggle('budget')}
-                >
-                  <CostCenterBudgetCards budgets={currentData.cost_center_budgets} />
-                </CollapsibleSection>
-
-                <CollapsibleSection
-                  id="usage"
-                  title="日次アクティビティ & 言語別Inline補完受諾率推移"
-                  subtitle="日次アクティブ推移、Inline補完受諾率、主要プログラミング言語シェア"
-                  icon={<BarChart3 className="w-4 h-4 text-cyan-400" />}
-                  summaryChips={
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-                      Inline補完受諾率{' '}
-                      {currentData.overview.overall_acceptance_rate === null
-                        ? '—'
-                        : `${Math.round(currentData.overview.overall_acceptance_rate * 100)}%`}
-                    </span>
-                  }
-                  isExpanded={isExpanded('usage')}
-                  onToggle={() => toggle('usage')}
-                >
-                  <UsageMetricsCharts data={currentData} />
-                </CollapsibleSection>
-
-                <CollapsibleSection
-                  id="users"
-                  title="ユーザー別利用明細テーブル"
-                  subtitle="全アカウントの利用ステータス、推計費用、最終アクティビティ"
-                  icon={<Users2 className="w-4 h-4 text-blue-400" />}
-                  summaryChips={
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-                      {currentData.users.length} 名
-                    </span>
-                  }
-                  isExpanded={isExpanded('users')}
-                  onToggle={() => toggle('users')}
-                >
-                  <UserDetailTable
-                    data={currentData}
-                    userProfiles={deepAnalysisProfiles}
-                    initialSelectedLogin={focusedUserLogin}
-                    filterStatus={userTableFilterStatus}
-                    onSelectUserForTrend={handleSelectUserForTrend}
-                    onSelectUserForDeepAnalysis={handleOpenDeepAnalysis}
-                  />
-                </CollapsibleSection>
-              </>
-            )}
-
-            {isReportSource && currentReportData && (
-              <>
-                <CollapsibleSection
-                  id="report_charts"
-                  title="3軸集計・費用配賦 & AIモデル別・日別推移"
-                  subtitle="部署/Cost Center別シェアとモデル別消費額"
-                  icon={<PieIcon className="w-4 h-4 text-teal-400" />}
-                  summaryChips={
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-teal-950 text-teal-300 border border-teal-800 font-mono">
-                      {currentReportData.model_breakdown.length} モデル
-                    </span>
-                  }
-                  isExpanded={isExpanded('report_charts')}
-                  onToggle={() => toggle('report_charts')}
-                >
-                  <MonthlyReportCharts
-                  reportData={currentReportData}
-                  grouping={currentGrouping}
-                  onGroupingChange={handleGroupingChange}
-                  selectedGroup={selectedGroup}
-                />
-                </CollapsibleSection>
-
-                <CollapsibleSection
-                  id="report_users"
-                  title="ユーザー別月次明細テーブル"
-                  subtitle="月次利用リクエスト数、消費額、主要モデル一覧"
-                  icon={<Users2 className="w-4 h-4 text-blue-400" />}
-                  summaryChips={
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-                      {currentReportData.user_details.length} 名
-                    </span>
-                  }
-                  isExpanded={isExpanded('report_users')}
-                  onToggle={() => toggle('report_users')}
-                >
-                  <UserDetailTable
-                    reportData={currentReportData}
-                    userProfiles={deepAnalysisProfiles}
-                    initialSelectedLogin={focusedUserLogin}
-                    grouping={currentGrouping}
-                    selectedGroup={selectedGroup}
-                    onGroupChange={setSelectedGroup}
-                    onSelectUserForDeepAnalysis={handleOpenDeepAnalysis}
-                    onSelectUserForTrend={handleSelectUserForTrend}
-                  />
-                </CollapsibleSection>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* View 2: ユーザー明細 (Users) */}
-        {activeView === 'users' && (
-          <div className="flex flex-col space-y-6 w-full">
-            {activeSource === 'live_metrics' && currentData && (
-              <UserDetailTable
-                data={currentData}
-                userProfiles={deepAnalysisProfiles}
-                initialSelectedLogin={focusedUserLogin}
-                filterStatus={userTableFilterStatus}
-                onSelectUserForTrend={handleSelectUserForTrend}
-                onSelectUserForDeepAnalysis={handleOpenDeepAnalysis}
-              />
-            )}
-
-            {isReportSource && currentReportData && (
-              <UserDetailTable
-                reportData={currentReportData}
-                userProfiles={deepAnalysisProfiles}
-                initialSelectedLogin={focusedUserLogin}
-                grouping={currentGrouping}
-                selectedGroup={selectedGroup}
-                onGroupChange={setSelectedGroup}
-                onSelectUserForDeepAnalysis={handleOpenDeepAnalysis}
-                onSelectUserForTrend={handleSelectUserForTrend}
-              />
-            )}
-          </div>
-        )}
-
-        {/* View 3: ユーザー別推移 (Trend) */}
-        {activeView === 'trend' && (
-          <div className="flex flex-col space-y-6 w-full">
-            <UserTrendViewer
-              profiles={deepAnalysisProfiles.length > 0 ? deepAnalysisProfiles : (currentData?.user_profiles || [])}
-              initialSelectedLogin={focusedUserLogin}
-              sourceInfo={deepAnalysisSourceInfo}
-              onOpenRadar={handleOpenRadar}
-              onOpenDeepAnalysis={handleOpenDeepAnalysis}
-            />
-          </div>
-        )}
-
-        {/* View 5: CostCenter予算 (Budget) */}
-        {activeView === 'budget' && (
-          <div className="flex flex-col space-y-6 w-full">
-            {activeSource === 'live_metrics' && currentData && (
-              <>
-                <CostCenterBudgetCards budgets={currentData.cost_center_budgets} />
-                <CostAllocationCharts data={currentData} grouping="cost_center" />
-              </>
-            )}
-
-            {isReportSource && currentReportData && (
-              <div className="flex flex-col space-y-6 w-full">
-                <CostCenterBudgetCards budgets={reportBudgets} />
-                <MonthlyReportCharts
-                  reportData={currentReportData}
-                  grouping="cost_center"
-                  onGroupingChange={handleGroupingChange}
-                  selectedGroup={selectedGroup}
-                />
-                <UserDetailTable
-                  reportData={currentReportData}
-                  userProfiles={deepAnalysisProfiles}
-                  initialSelectedLogin={focusedUserLogin}
-                  grouping="cost_center"
-                  selectedGroup={selectedGroup}
-                  onGroupChange={setSelectedGroup}
-                  onSelectUserForDeepAnalysis={handleOpenDeepAnalysis}
-                  onSelectUserForTrend={handleSelectUserForTrend}
-                />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Lazy Loaded Dynamic Views (Suspense wrapped) */}
-        <React.Suspense fallback={<ViewSkeleton />}>
-          {/* View 6: ディープ分析 (Deep Analysis) */}
-          {activeView === 'deep_analysis' && (
-            <div className="flex flex-col space-y-6 w-full">
-              <DeepAnalysisView
-                aggregatedData={currentData}
-                userProfiles={deepAnalysisProfiles}
-                sourceInfo={deepAnalysisSourceInfo}
-                initialSelectedLogin={focusedUserLogin}
-                onSelectLogin={setFocusedUserLogin}
-              />
-            </div>
-          )}
-
-          {/* View 7: AIモデル特性レーダー (Model Radar) */}
-          {activeView === 'model_radar' && (
-            <div className="w-full">
-              <ModelRadarView
-                initialSelectedModelId={focusedRadarModelId}
-                aggregatedData={currentData}
-                monthlyReportData={currentReportData}
-                onNavigateToTrend={(modelId) => {
-                  setFocusedRadarModelId(modelId);
-                  setActiveView('trend');
-                }}
-              />
-            </div>
-          )}
-
-          {/* View 8: AI Credits & コスト分析 (Credits) */}
-          {activeView === 'credits' && (
-            <div className="w-full">
-              <CreditsView
-                viewModel={CreditsPresenter.present({
-                  currentData,
-                  currentReportData,
-                })}
-              />
-            </div>
-          )}
-
-          {/* View 9: AI Agent & MCP 活用動向 (Agent) */}
-          {activeView === 'agent' && (
-            <div className="w-full">
-              <AgentActivityView
-                viewModel={AgentPresenter.present({
-                  currentData,
-                })}
-              />
-            </div>
-          )}
-
-          {/* View 10: AI 採用成熟度 (Adoption) */}
-          {activeView === 'adoption' && (
-            <div className="w-full">
-              <AdoptionMaturityView
-                viewModel={AdoptionPresenter.present({
-                  currentData,
-                })}
-              />
-            </div>
-          )}
-        </React.Suspense>
+        {/* 分析Viewの描画: View Registry が唯一の入口 (ビュー追加で App.tsx は変更しない) */}
+        <ViewHost registry={defaultViewRegistry} activeView={activeView} ctx={viewContext} />
       </main>
 
       {/* 異常検出ログモーダル */}

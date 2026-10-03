@@ -6,7 +6,6 @@ import path from 'node:path';
 describe('CostAllocationCharts Grouping Tab Toggle & Sync (#122)', () => {
   const rootDir = process.cwd();
   const costAllocationChartsPath = path.join(rootDir, 'dashboard/src/components/CostAllocationCharts.tsx');
-  const appTsxPath = path.join(rootDir, 'dashboard/src/App.tsx');
   const overviewPluginPath = path.join(rootDir, 'src/adapters/views/OverviewViewPlugin.tsx');
 
   it('CostAllocationCharts.tsx should synchronize externalGrouping with internalGrouping and support fallback', () => {
@@ -26,7 +25,7 @@ describe('CostAllocationCharts Grouping Tab Toggle & Sync (#122)', () => {
   });
 
   it('App.tsx should pass onGroupingChange to CostAllocationCharts in Overview Live Metrics section', () => {
-    const content = fs.readFileSync(appTsxPath, 'utf-8');
+    const content = fs.readFileSync(path.join(rootDir, 'dashboard/src/views/overview/View.tsx'), 'utf-8');
     // Ensure onGroupingChange={handleGroupingChange} is passed to CostAllocationCharts
     assert.ok(
       content.includes('<CostAllocationCharts\n                    data={currentData}\n                    grouping={currentGrouping}\n                    onGroupingChange={handleGroupingChange}\n                  />') ||
