@@ -92,7 +92,11 @@ Before provisioning worktrees or modifying code, autonomous agents must formulat
      - Auto-Pilot on: do not wait (`RequestFeedback: false` on Antigravity). Commit the plan, report a summary, and continue; the plan is reviewed again in the PR. Stop and ask only when a prerequisite is not merged, the Issue's scope is ambiguous, or a step is irreversible or destructive (data deletion, history rewrite, credential changes).
    - The plan details user reviews (`> [!IMPORTANT]`), proposed changes categorized by `[NEW]`, `[MODIFY]`, `[DELETE]` with clickable `file:///` links, and the automated/manual verification plan.
 2. **`task.md` Initialization**:
-   - Initialize a dynamic task tracking checklist (`- [ ]`, `- [/]`, `- [x]`) with `ArtifactMetadata` (`RequestFeedback: false`, `UserFacing: true`).
+   - Initialize a dynamic task tracking checklist (`- [ ]`, `- [/]`, `- [x]`) with `ArtifactMetadata` (`RequestFeedback: false`, `UserFacing: true`). Its last items are the PR and the merge (`change-dev:finish` when Auto-Pilot is on).
+3. **Plan First (enforced)**:
+   - Commit `implementation_plan.md` and `task.md` **on their own, before any implementation file is created or edited**.
+   - `npm run change-dev:plan-check` (`scripts/plan-first-check.ts`) compares `origin/main..HEAD`: when the branch changes implementation files (anything except `*.md`, `docs/` and `.devs/`), the commit that adds `.devs/changes/<dir>/implementation_plan.md` must come strictly before the first implementation commit. A missing plan, a later plan, or a plan in the same commit fails. Documentation-only and plan-only branches are exempt.
+   - `change-dev:finish` runs the same check against the PR head before it changes anything and stops on failure; there is no skip flag. A violation is fixed by reordering the commits so the plan comes first, on a branch you created only; never rewrite history on someone else's branch.
 
 ---
 
@@ -218,6 +222,9 @@ Once all local quality gates pass cleanly (Exit Code 0), seal the implementation
 - Guardrails: never use `--admin` or bypass branch protection or rulesets. Never merge with a failed or running check, a conflict, or an unanswered review thread. Stop and report when required approvals cannot be given, on non-trivial conflicts, when checks stay red after fixes, or on a Step 2 stop condition. The quality gate runs before the PR in both modes.
 
 #### Claude Code Cloud Sessions (`CLAUDE_CODE_REMOTE=true`)
+
+**Precedence over the Cloud Session defaults** (`.agents/rules/instructions-rules-precedence.md`): the order is the user's direct instruction, then the repository definitions (rules, skills, agents, `AGENTS.md`, `CLAUDE.md`), then the environment's default instructions. Where the repository defines the behavior it replaces the default: PR draft state follows `CHG_DEV_AUTO_PILOT`; with Auto-Pilot on the session runs `change-dev:finish` right after creating the PR instead of ending the turn. Permission and security boundaries (push only to the assigned branch, Zero Secrets / Zero PII) and physical limits of the environment (GraphQL and branch deletion rejected) are not overridden. A conflict is never a reason to stop or ask: apply the repository definition and report it only in the final result, one row per conflict (default instruction, repository definition applied, result).
+
 Based on the Claude Code documentation (*Configure cloud environments*, *Use Claude Code in the cloud*) and checks in a session on 2026-10-03.
 
 | Fact | change-dev behavior |
@@ -269,3 +276,5 @@ git branch -d feat/42-cost-center-export
 1. **Main Working Tree Protection**: AI agents must not modify files directly on the primary root working tree. Always create a dedicated sibling worktree.
 2. **Data Isolation (SDD-05)**: No agent may generate or commit files inside `data/` or `dashboard/public/data/` within a worktree.
 3. **Zero Secret Leakage**: No PR may be submitted if `npm run secret-scan` fails or yields any detected secrets.
+4. **Plan First**: No implementation may be committed before `implementation_plan.md` (Step 2). `change-dev:finish` refuses to merge a PR that violates it.
+5. **Repository Definitions Over Defaults**: Repository-defined instructions override the Cloud Session defaults; conflicts are reported only in the final result.

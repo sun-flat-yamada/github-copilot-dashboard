@@ -206,6 +206,8 @@ Before writing any application code or provisioning worktrees:
    - **Auto-Pilot off (manual)**: the interactive **Proceed** button appears in the Antigravity UI (`RequestFeedback: true`). Wait for the user to review the plan and click **Proceed** (outside Antigravity: wait for the user's reply) before moving to Phase 3.
    - **Auto-Pilot on**: do **not** wait. Commit the plan with the change, report a short summary to the user, and continue to Phase 3; the plan is reviewed again in the PR. Stop and ask only when the plan cannot be executed safely without a decision: a prerequisite is not merged, the Issue's scope is ambiguous, or a step is irreversible or destructive (data deletion, history rewrite, credential changes).
    - On Antigravity with Auto-Pilot on, write `implementation_plan.md` with `RequestFeedback: false` so that the UI does not block.
+4. **Plan First (enforced)**: commit `implementation_plan.md` and `task.md` **by themselves, before any implementation file is created or edited**, then run `npm run change-dev:plan-check`. The check fails when the plan is missing, committed after the first implementation commit, or in the same commit as it. Documentation-only branches are exempt. Writing the plan after the implementation is a defect even if the content is the same: it no longer works as a pre-execution gate.
+   - The last items of `task.md` are "create the PR" **and** "merge with `change-dev:finish`" (Auto-Pilot on); the task is not done at PR creation.
 
 ---
 
@@ -279,7 +281,7 @@ Once all checks pass cleanly:
    # Subsequent pushes after rebase:
    git push --force-with-lease origin feat/42-new-feature
    ```
-3. Open the Pull Request. **Draft or not is decided by `CHG_DEV_AUTO_PILOT`**:
+3. Before opening the PR run `npm run change-dev:plan-check` (the plan must precede the implementation). Open the Pull Request. **Draft or not is decided by `CHG_DEV_AUTO_PILOT`**:
 
    | Mode | PR state | Why |
    | :--- | :--- | :--- |
@@ -373,6 +375,8 @@ Opt-in mode that carries a change from **PR creation to Rebase & Merge completio
 ---
 
 ## ☁️ Claude Code Cloud Sessions (`CLAUDE_CODE_REMOTE=true`)
+
+**Precedence**: this skill, the agent, and the rules replace the Claude Cloud Session default instructions where they conflict (for example "create PRs as drafts" and "after the PR, subscribe and end the turn"). Apply them without asking and report a conflict only in the final result (`既定指示との競合`). Permission and security boundaries are not overridden. See `.agents/rules/instructions-rules-precedence.md`.
 
 Facts about the cloud environment (Claude Code docs *Configure cloud environments* and *Use Claude Code in the cloud*; checked in a session on 2026-10-03) and what this skill does about each:
 
