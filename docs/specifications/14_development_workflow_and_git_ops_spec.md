@@ -87,7 +87,9 @@ Before provisioning worktrees or modifying code, autonomous agents must formulat
 1. **`implementation_plan.md` Generation**:
    - Write to the change artifact directory under the original repository root (`.devs/changes/yyyy-mm-dd_<ChangeTitle>/implementation_plan.md`, never under `<appDataDir>`) using `write_to_file`.
    - Specify `ArtifactMetadata` with `{ "UserFacing": true, "RequestFeedback": true, "Summary": "..." }`.
-   - `RequestFeedback: true` instructs the Antigravity UI to render the interactive **Proceed** button, pausing execution until the user provides review and approval.
+   - **Whether to wait for plan review branches on `CHG_DEV_AUTO_PILOT`** (check with `npm run change-dev:mode`).
+     - Auto-Pilot off: `RequestFeedback: true` instructs the Antigravity UI to render the interactive **Proceed** button, pausing execution until the user provides review and approval.
+     - Auto-Pilot on: do not wait (`RequestFeedback: false` on Antigravity). Commit the plan, report a summary, and continue; the plan is reviewed again in the PR. Stop and ask only when a prerequisite is not merged, the Issue's scope is ambiguous, or a step is irreversible or destructive (data deletion, history rewrite, credential changes).
    - The plan details user reviews (`> [!IMPORTANT]`), proposed changes categorized by `[NEW]`, `[MODIFY]`, `[DELETE]` with clickable `file:///` links, and the automated/manual verification plan.
 2. **`task.md` Initialization**:
    - Initialize a dynamic task tracking checklist (`- [ ]`, `- [/]`, `- [x]`) with `ArtifactMetadata` (`RequestFeedback: false`, `UserFacing: true`).

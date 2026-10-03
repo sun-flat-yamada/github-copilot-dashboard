@@ -202,13 +202,17 @@ Before writing any application code or provisioning worktrees:
    - Detail user reviews, proposed file modifications with `file:///` links, and verification commands.
 2. **Initialize `task.md`** (same directory):
    - Write to `<repo-root>/.devs/changes/yyyy-mm-dd_<ChangeTitle>/task.md` with `ArtifactMetadata` (`RequestFeedback: false`, `UserFacing: true`).
-3. **Await User Sign-Off**:
-   - The interactive **Proceed** button appears in the Antigravity UI.
-   - Wait for the user to review the plan and click **Proceed** before moving to Phase 3.
+3. **Plan Review Gate (branches on `CHG_DEV_AUTO_PILOT`)**: check the mode first with `npm run change-dev:mode`.
+   - **Auto-Pilot off (manual)**: the interactive **Proceed** button appears in the Antigravity UI (`RequestFeedback: true`). Wait for the user to review the plan and click **Proceed** (outside Antigravity: wait for the user's reply) before moving to Phase 3.
+   - **Auto-Pilot on**: do **not** wait. Commit the plan with the change, report a short summary to the user, and continue to Phase 3; the plan is reviewed again in the PR. Stop and ask only when the plan cannot be executed safely without a decision: a prerequisite is not merged, the Issue's scope is ambiguous, or a step is irreversible or destructive (data deletion, history rewrite, credential changes).
+   - On Antigravity with Auto-Pilot on, write `implementation_plan.md` with `RequestFeedback: false` so that the UI does not block.
 
 ---
 
 ### Phase 3: Sibling Worktree Provisioning
+
+> [!NOTE]
+> **Claude Code cloud session** (`CLAUDE_CODE_REMOTE=true`): skip this phase. The session already runs in its own isolated VM with a fresh clone, on the branch the session was given; the VM is the isolation unit. Work on that branch and push only to it.
 
 To prevent multi-agent race conditions, file locking, and git index collisions, **never edit directly in the root working tree**. Worktrees are always provisioned in a **sibling directory** (`../<repo>-worktrees/<slug>`):
 
@@ -275,14 +279,23 @@ Once all checks pass cleanly:
    # Subsequent pushes after rebase:
    git push --force-with-lease origin feat/42-new-feature
    ```
-3. Open Pull Request using `gh` CLI:
+3. Open the Pull Request. **Draft or not is decided by `CHG_DEV_AUTO_PILOT`**:
+
+   | Mode | PR state | Why |
+   | :--- | :--- | :--- |
+   | Auto-Pilot on | **Ready for review** (not a draft) | A draft cannot be merged; Phase 7 runs right after creation |
+   | Auto-Pilot off | **Draft** | A person reviews it and marks it ready |
+
+   Local (`gh` CLI):
    ```bash
-   gh pr create \
-     --base main \
-     --head feat/42-new-feature \
-     --title "feat: Add new feature (#42)" \
-     --body "## Summary\n\nCloses #42\n\n## Checklist\n- [x] Antigravity implementation plan & walkthrough verified\n- [x] 5-stage quality gates passed\n- [x] Rebased onto latest base\n- [x] Zero secrets/PII verified"
+   # Auto-Pilot on
+   gh pr create --base main --head feat/42-new-feature --title "feat: Add new feature (#42)" --body "..."
+   # Auto-Pilot off
+   gh pr create --draft --base main --head feat/42-new-feature --title "feat: Add new feature (#42)" --body "..."
    ```
+   Claude Code cloud session: create it with the built-in GitHub tool (`create_pull_request`, `draft` set from the table). This repository rule decides the draft setting and takes precedence over a generic "create pull requests as drafts" default. If the PR was created as a draft anyway, Phase 7 marks it ready.
+
+   Body: `Closes #42`, summary, and the checklist (plan & walkthrough, 5-stage quality gate, rebased onto base, zero secrets/PII).
 
 ---
 
@@ -291,7 +304,12 @@ Once all checks pass cleanly:
 > [!NOTE]
 > When Auto-Pilot is enabled (`CHG_DEV_AUTO_PILOT=true`, see below), Phase 7 runs automatically right after Phase 6 without waiting for a manual approval/merge instruction.
 
-1. Merge using **Rebase & Merge** to preserve a clean linear history:
+1. Merge using **Rebase & Merge** to preserve a clean linear history. Use the helper; it works locally and in Claude Code cloud sessions (REST only, see *Claude Code Cloud Sessions*):
+   ```bash
+   npm run change-dev:finish -- 42          # ready if draft -> CI check -> approve -> rebase merge
+   npm run change-dev:finish -- 42 --wait   # local: poll CI every 30 s (up to 30 min) instead of exiting with 2
+   ```
+   Manual equivalent (local only; these `gh pr` commands use GraphQL and fail in cloud sessions):
    ```bash
    gh pr checks 42
    gh pr merge 42 --rebase --delete-branch
@@ -325,19 +343,49 @@ Opt-in mode that carries a change from **PR creation to Rebase & Merge completio
 | Resolution order | process environment → `.env` → `.env.example` (repository default) |
 | This repository | **enabled** (`CHG_DEV_AUTO_PILOT=true` in `.env.example`) |
 
+### What the mode decides
+
+`npm run change-dev:mode` prints the resolved value, its source and the branches below (`scripts/change-dev-autopilot.ts`).
+
+| Decision point | Auto-Pilot on (`true` / `1`) | Auto-Pilot off (unset or any other value) |
+| :--- | :--- | :--- |
+| After `implementation_plan.md` (Phase 2) | Report the plan and continue (stop only for the blocking cases in Phase 2) | Wait for **Proceed** / the user's approval |
+| PR at creation (Phase 6) | Ready for review | Draft |
+| After the PR (Phase 7) | Automatic: CI, approval, Rebase & Merge, cleanup | Manual |
+
 ### Behavior (after Phase 6 PR creation)
 
-1. **Wait for CI**: `gh pr checks <id> --watch` until all required checks complete.
-2. **Self-heal**: if a check fails, fix in the worktree, re-run the 5-stage quality gate, push, and watch again. Never skip/disable tests.
-3. **Approval**: when a review approval is required, request it; approve with `gh pr review <id> --approve` only when the authenticated account is not the PR author (GitHub forbids self-approval).
-4. **Rebase & Merge**: once CI is green, there are no conflicts and no unresolved review threads, run `gh pr merge <id> --rebase --delete-branch` (or `--auto --rebase` while required checks are still pending).
-5. **Cleanup**: remove the worktree and local branch (Phase 7 step 2).
+1. **Ready**: if the PR is a draft, mark it ready for review.
+2. **Wait for CI**: every check run on the PR head must complete. Locally, `npm run change-dev:finish -- <id> --wait` polls. In a cloud session do not poll: the PR is subscribed and a `check_suite.completed` event wakes the session; then run `npm run change-dev:finish -- <id>` (exit code `2` = still running, wait for the next event).
+3. **Self-heal**: if a check fails, fix it, re-run the 5-stage quality gate, push, and go back to step 2. Never skip or disable tests. Address review comments the same way; do not merge while a review thread waits on the agent.
+4. **Approval with the same account**: the agent approves with the account it runs as, also when that account opened the PR. GitHub rejects an approval by the PR author with `422 Can not approve your own pull request` (verified on PR #220, 2026-10-03; no repository or branch setting changes this on github.com). The helper treats that response as expected and merges without an approval when the base branch requires **0** approvals (`main`: `required_approving_review_count: 0`). If the branch requires approvals, it stops and reports: only another account can supply them.
+5. **Rebase & Merge**: when CI is green and there is no conflict, merge with the `rebase` method at the checked head SHA (`PUT /repos/{owner}/{repo}/pulls/{n}/merge`, `merge_method=rebase`, `sha=<head>`), so a commit pushed after the check is never merged unchecked.
+6. **Cleanup**: locally, delete the remote branch and remove the worktree (Phase 7 step 2). In a cloud session the remote branch is kept (the GitHub proxy rejects branch deletion) and the VM is discarded with the session.
+7. **Next task on the same session branch**: after the merge, restart the branch from the latest base (`git fetch origin main && git checkout -B <branch> origin/main`) before new work; never stack new commits on merged history.
 
 ### Guardrails (never relaxed by Auto-Pilot)
 
-- The Phase 2 implementation plan **Proceed** gate still applies.
-- Never use `--admin`, never bypass branch protection or required reviews, never push to `main` directly.
-- Stop and report to the user when: approval by another person is required and unavailable, a rebase conflict is non-trivial, or checks stay red after fixes.
+- Never use `--admin`, never bypass branch protection or rulesets, never push to `main` directly.
+- Never merge with a failed or still-running check, a merge conflict, or an unanswered review thread.
+- Stop and report to the user when: the base branch requires approvals the agent's account cannot give, a rebase conflict is non-trivial, checks stay red after fixes, or a Phase 2 blocking case appears.
+- The 5-stage quality gate always runs before the PR, in both modes.
+
+---
+
+## ☁️ Claude Code Cloud Sessions (`CLAUDE_CODE_REMOTE=true`)
+
+Facts about the cloud environment (Claude Code docs *Configure cloud environments* and *Use Claude Code in the cloud*; checked in a session on 2026-10-03) and what this skill does about each:
+
+| Fact | Consequence for change-dev |
+| :--- | :--- |
+| The session VM sets `CLAUDE_CODE_REMOTE=true`; it is never `true` locally. | The helper switches to the cloud behavior on it. |
+| GitHub traffic goes through the **GitHub proxy**, which attaches the user's credential server-side. `gh` is pre-installed and REST calls (`gh api repos/{owner}/{repo}/...`) work without `gh auth login`; `gh auth status` reports the placeholder token as invalid, which is expected. | Use REST only. The helper calls `gh api`. |
+| The proxy **rejects GraphQL** (HTTP 403) and names REST fallbacks plus routes for what REST lacks: `POST /repos/{o}/{r}/pulls/{n}/ccr/ready_for_review`, `POST .../ccr/convert_to_draft`, `PUT`/`DELETE .../ccr/auto_merge`, `GET .../ccr/review_threads`. | `gh pr view / checks / ready / merge / review` do not work. Ready-for-review uses `ccr/ready_for_review`; the merge uses REST `PUT .../merge`. |
+| The proxy **rejects branch deletion** and non-branch pushes (tags); it does not limit which branch a push updates. | No `--delete-branch` in the cloud. Push only to the session's branch. |
+| Environment variables come from the cloud environment's settings (`.env` format). `.env` is git-ignored and absent from a fresh clone. | Resolution stays environment setting, then `.env`, then `.env.example` (`true` here). To turn Auto-Pilot off for cloud sessions, set `CHG_DEV_AUTO_PILOT=false` in the cloud environment's variables. |
+| PR events (CI results, reviews, merge) wake a subscribed session. | Wait for `check_suite.completed`, then run `change-dev:finish`; do not poll with `sleep`. |
+| PRs and reviews created through the proxy act as the user's GitHub account, so the agent is the PR author. | GitHub rejects the approval (Behavior step 4); the merge relies on `main` requiring 0 approvals. |
+| The repository has auto-merge disabled (`allow_auto_merge: false`). | The helper merges directly instead of enabling auto-merge. |
 
 ---
 
@@ -414,7 +462,7 @@ Before finalizing any task or proposing changes, execute this verification check
    - On Antigravity, is a finished copy of every artifact placed there upon task completion?
 2. **`ArtifactMetadata` Schema Integrity**:
    - Does `ArtifactMetadata` include `UserFacing: true`?
-   - Does `implementation_plan.md` have `RequestFeedback: true` (to render the interactive Proceed button)?
+   - Does `implementation_plan.md` have `RequestFeedback: true` (to render the interactive Proceed button) when Auto-Pilot is off, and `RequestFeedback: false` when it is on?
    - Do `task.md` and `walkthrough.md` have `RequestFeedback: false`?
    - Are repository source files written without `ArtifactMetadata`?
 3. **Link & Formatting Compliance**:
