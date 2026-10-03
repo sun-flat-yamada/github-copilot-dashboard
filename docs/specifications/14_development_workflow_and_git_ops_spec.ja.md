@@ -215,7 +215,7 @@ npm ci
   2. PR の head のチェックがすべて完了するまで待つ。失敗したら修正し、品質ゲートを再実行して push し直す（テストのスキップ・無効化は禁止）。レビューコメントも同様に対応し、エージェントの返答待ちのスレッドが残る間はマージしない。
   3. **承認は実行中のアカウント（PR の作成者と同じでよい）で試みる。** ただし GitHub は PR 作成者による承認を `422 Can not approve your own pull request` で拒否する（2026-10-03 に PR #220 で確認。github.com ではリポジトリやブランチの設定でこの挙動は変わらない）。拒否されたときは想定内として扱い、base ブランチの必須承認数が **0**（`main` は `required_approving_review_count: 0`）なら承認なしでマージへ進む。1 以上なら停止して報告する（承認は別アカウントしか付けられない）。
   4. CI が成功し、コンフリクトが無ければ、確認した head SHA を指定して `rebase` 方式でマージする（`PUT /repos/{owner}/{repo}/pulls/{n}/merge`）。確認後に push されたコミットが未確認のままマージされることはない。
-  5. ローカルではリモートブランチと Worktree を削除する。クラウドセッションではリモートブランチを残す（GitHub プロキシがブランチ削除を拒否する）。同じセッションブランチで次の作業をするときは、最新の base からブランチを作り直す。
+  5. マージ済みブランチは必ず削除する（`main` は除く）。`change-dev:finish` が `git push origin --delete`、次に REST `DELETE git/refs/heads/<branch>` を実行する。ローカルでは Worktree も削除する。クラウドの GitHub プロキシが両方を拒否した場合（PR #227 で確認）、ヘルパーは失敗にせず警告する。その場合は手動で削除する（またはリポジトリ設定の *Automatically delete head branches* を使う）。報告せずに残さない。同じセッションブランチで次の作業をするときは、最新の base からブランチを作り直す。
 - ガードレール: `--admin` やブランチ保護・ルールセットの回避は禁止。失敗中・実行中のチェック、コンフリクト、未回答のレビュースレッドがある間はマージしない。必須承認を付けられない、自明でないコンフリクト、修正後も CI が失敗し続ける、ステップ 2 の停止条件に当たる、のいずれかで停止して報告する。品質ゲートはどちらのモードでも PR 前に必ず実行する。
 
 #### Claude Code クラウドセッション (`CLAUDE_CODE_REMOTE=true`)
@@ -226,7 +226,7 @@ Claude Code の公式ドキュメント（*Configure cloud environments*、*Use 
 | セッションの VM は `CLAUDE_CODE_REMOTE=true` を持つ（ローカルでは `true` にならない） | ヘルパーはこれでクラウド向けの動作に切り替える |
 | GitHub への通信は GitHub プロキシを経由し、認証情報はサーバー側で付与される。`gh` は導入済みで、REST（`gh api repos/{owner}/{repo}/...`）は `gh auth login` なしで動く（`gh auth status` はプレースホルダーのトークンを無効と表示するが想定どおり） | REST だけを使う |
 | プロキシは GraphQL を 403 で拒否し、REST の代替と専用ルート（`POST .../pulls/{n}/ccr/ready_for_review`、`.../ccr/convert_to_draft`、`.../ccr/auto_merge`、`.../ccr/review_threads`）を案内する | `gh pr view / checks / ready / merge / review` は使えない。ドラフト解除は `ccr/ready_for_review`、マージは REST の `PUT .../merge` |
-| プロキシはブランチの削除とブランチ以外（タグ）の push を拒否する。push 先のブランチは制限しない | クラウドでは `--delete-branch` しない。push はセッションのブランチだけに行う |
+| プロキシはブランチの削除（git と REST）とブランチ以外（タグ）の push を拒否する。push 先のブランチは制限しない | ヘルパーはマージ済みブランチの削除を試み、拒否されたら報告する。push はセッションのブランチだけに行う |
 | 環境変数はクラウド環境の設定（`.env` 形式）で与える。`.env` は Git 管理外でクローンに含まれない | クラウドでオートパイロットを無効にするには、クラウド環境の環境変数に `CHG_DEV_AUTO_PILOT=false` を設定する |
 | 購読した PR のイベント（CI 結果・レビュー・マージ）がセッションを起こす | `sleep` でポーリングせず、`check_suite.completed` を受けてから `change-dev:finish` を実行する |
 | プロキシ経由の PR・レビューはユーザーの GitHub アカウントで作られる（エージェント = PR 作成者） | 承認は GitHub に拒否される。マージは `main` の必須承認数 0 に依存する |
