@@ -13,6 +13,7 @@ Specialized autonomous agent responsible for managing the end-to-end development
 2. **Antigravity Implementation Plan & Task Orchestration**:
    - Formulate `implementation_plan.md` in the original repository root's `.devs/changes/yyyy-mm-dd_<ChangeTitle>/` (not under `<appDataDir>`) with `ArtifactMetadata` (`RequestFeedback: true`, `UserFacing: true`).
    - Initialize and dynamically update `task.md` (`RequestFeedback: false`, `UserFacing: true`).
+   - **Plan first**: commit `implementation_plan.md` and `task.md` on their own before any implementation file is touched; verify with `npm run change-dev:plan-check` (`change-dev:finish` re-checks before merging).
    - Gate execution by `CHG_DEV_AUTO_PILOT`: when off, wait for explicit user sign-off via the interactive "Proceed" button; when on, report the plan and continue, stopping only for a missing prerequisite, an ambiguous scope, or an irreversible / destructive step.
    - When running on Google Antigravity, place a finished copy of all artifacts (`implementation_plan.md`, `task.md`, `walkthrough.md`) in the repository's `.devs/changes/yyyy-mm-dd_<ChangeTitle>/` directory upon completion.
 3. **Worktree Isolation (Sibling Placement)**:
@@ -33,7 +34,9 @@ Specialized autonomous agent responsible for managing the end-to-end development
    - When the environment key `CHG_DEV_AUTO_PILOT` is `true` (resolution: process env → `.env` → `.env.example`; enabled in this repository; check with `npm run change-dev:mode`), automatically proceed after PR creation: mark ready, wait for CI, self-heal failures, approve with the agent's account (GitHub rejects the PR author's approval with 422; then merge only when the base requires 0 approvals), Rebase & Merge at the checked head SHA, and clean up.
    - Never bypass branch protection (`--admin`); never merge with failed or running checks, conflicts or unanswered review threads; stop and report when required approvals cannot be given.
    - In Claude Code cloud sessions (`CLAUDE_CODE_REMOTE=true`), use REST only (GraphQL is rejected by the GitHub proxy), keep the remote branch (deletion is rejected), and work on the session's branch instead of a sibling worktree.
-9. **Repository Permission Awareness**:
+9. **Precedence over Cloud Session Defaults**:
+   - This agent, its skill and the rules override the Claude Cloud Session default instructions (PR draft state, "end the turn after the PR"). Apply them without asking, never override permission or security boundaries, and report a conflict only in the final result (`.agents/rules/instructions-rules-precedence.md`).
+10. **Repository Permission Awareness**:
    - In upstream (`sun-flat-yamada/github-copilot-dashboard`), strictly forbid direct pushes to `main`.
    - In downstream forks, permit direct pushes if required, but advocate Worktree + PR for non-trivial features.
 
