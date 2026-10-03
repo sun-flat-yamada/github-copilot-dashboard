@@ -85,7 +85,9 @@
 1. **`implementation_plan.md` の生成**:
    - 元のリポジトリルート直下の変更成果物ディレクトリ（`.devs/changes/yyyy-mm-dd_<ChangeTitle>/implementation_plan.md`。`<appDataDir>` 下は使用しない）に `write_to_file` で書き込む。
    - `ArtifactMetadata` に `{ "UserFacing": true, "RequestFeedback": true, "Summary": "..." }` を指定する。
-   - `RequestFeedback: true` によりAntigravity UIに対話型の **"Proceed"** ボタンを表示させ、ユーザーの承認（またはフィードバック）を得るまでコード変更を実行しない。
+   - **計画レビューの待ちは `CHG_DEV_AUTO_PILOT` で分岐する**（`npm run change-dev:mode` で確認）。
+     - オートパイロット無効: `RequestFeedback: true` によりAntigravity UIに対話型の **"Proceed"** ボタンを表示させ、ユーザーの承認（またはフィードバック）を得るまでコード変更を実行しない。
+     - オートパイロット有効: 承認を待たない（Antigravity では `RequestFeedback: false`）。計画をコミットして要約を報告し、そのまま実装へ進む。計画は PR で改めてレビューされる。前提が未マージ、Issue の範囲が曖昧、取り消せない・破壊的な手順（データ削除、履歴の書き換え、認証情報の変更）がある場合だけ、止まって確認する。
    - 計画書には、変更コンテキスト、ユーザー確認必須事項（`> [!IMPORTANT]` 等）、変更対象ファイル（`[NEW]`, `[MODIFY]`, `[DELETE]` と `file:///` リンク）、自動/手動検証計画を明記する。
 2. **`task.md` の初期化**:
    - チェックリスト形式（`- [ ]`, `- [/]`, `- [x]`）で進捗を追跡するタスクファイルを初期化（`RequestFeedback: false`）。
@@ -185,9 +187,9 @@ npm ci
    # Rebase後に既にリモートにPush済みだった場合（安全なforce push）
    git push --force-with-lease origin feat/42-cost-center-export
    ```
-3. **Pull Requestの作成 (`gh` CLI)**:
+3. **Pull Requestの作成**: ドラフトにするかは `CHG_DEV_AUTO_PILOT` で決める。有効 = レビュー可能な状態（ドラフトにしない。ドラフトはマージできず、ステップ 7 が直後に動くため）、無効 = ドラフト（`--draft`。人がレビューして解除する）。Claude Code のクラウドセッションでは組み込みの GitHub ツール（`create_pull_request`、`draft` はモードから決める）で作成する。この規則は、汎用の「PR はドラフトで作る」既定より優先する。
    ```bash
-   gh pr create \
+   gh pr create [--draft] \
      --base main \
      --head feat/42-cost-center-export \
      --title "feat: Add CSV export capability for cost center summaries (#42)" \
@@ -200,9 +202,36 @@ npm ci
 ### 3.7. ステップ 7: Rebaseマージ & クリーンアップ
 
 #### オートパイロットモード (`CHG_DEV_AUTO_PILOT`)
-- `CHG_DEV_AUTO_PILOT=true` の場合、エージェントはPR作成後からRebase & Mergeまでを自動実行する: `gh pr checks <id> --watch` → 失敗時は修正して品質ゲートを再実行のうえ再push → 承認（許可される場合のみ。自己承認は不可） → `gh pr merge <id> --rebase --delete-branch` → Worktreeクリーンアップ。
-- 解決順序: プロセス環境変数 → `.env` → `.env.example`。本リポジトリは `CHG_DEV_AUTO_PILOT=true` を既定で有効化している。未設定またはその他の値は手動運用とする。
-- ガードレール: ステップ2の「Proceed」ゲートは引き続き有効。`--admin` やブランチ保護の回避は禁止。他者の承認が必須で得られない場合、自明でないコンフリクト、修正後もCIが失敗し続ける場合は停止して報告する。
+- 解決順序: プロセス環境変数（クラウドセッションではクラウド環境の環境変数）→ `.env` → `.env.example`。値が `true`（大小文字を問わない）または `1` で有効、未設定またはその他の値は手動運用。本リポジトリは `.env.example` で `CHG_DEV_AUTO_PILOT=true` を既定で有効化している。解決結果と分岐は `npm run change-dev:mode`（`scripts/change-dev-autopilot.ts`）で確認できる。
+
+| 判断箇所 | 有効 | 無効 |
+| :--- | :--- | :--- |
+| `implementation_plan.md` の後（ステップ 2） | 要約を報告して続行（停止条件はステップ 2） | Proceed / ユーザーの承認を待つ |
+| PR 作成時（ステップ 6） | レビュー可能 | ドラフト |
+| PR 作成後（ステップ 7） | 自動: CI → 承認 → Rebase & Merge → 後片付け | 手動 |
+
+- 有効時の PR 作成後の処理は `npm run change-dev:finish -- <id>`（ローカルで CI を待つ場合は `--wait`）が行う。GitHub の REST API だけを使うため、ローカルとクラウドセッションの両方で動く。
+  1. ドラフトならレビュー可能にする。
+  2. PR の head のチェックがすべて完了するまで待つ。失敗したら修正し、品質ゲートを再実行して push し直す（テストのスキップ・無効化は禁止）。レビューコメントも同様に対応し、エージェントの返答待ちのスレッドが残る間はマージしない。
+  3. **承認は実行中のアカウント（PR の作成者と同じでよい）で試みる。** ただし GitHub は PR 作成者による承認を `422 Can not approve your own pull request` で拒否する（2026-10-03 に PR #220 で確認。github.com ではリポジトリやブランチの設定でこの挙動は変わらない）。拒否されたときは想定内として扱い、base ブランチの必須承認数が **0**（`main` は `required_approving_review_count: 0`）なら承認なしでマージへ進む。1 以上なら停止して報告する（承認は別アカウントしか付けられない）。
+  4. CI が成功し、コンフリクトが無ければ、確認した head SHA を指定して `rebase` 方式でマージする（`PUT /repos/{owner}/{repo}/pulls/{n}/merge`）。確認後に push されたコミットが未確認のままマージされることはない。
+  5. ローカルではリモートブランチと Worktree を削除する。クラウドセッションではリモートブランチを残す（GitHub プロキシがブランチ削除を拒否する）。同じセッションブランチで次の作業をするときは、最新の base からブランチを作り直す。
+- ガードレール: `--admin` やブランチ保護・ルールセットの回避は禁止。失敗中・実行中のチェック、コンフリクト、未回答のレビュースレッドがある間はマージしない。必須承認を付けられない、自明でないコンフリクト、修正後も CI が失敗し続ける、ステップ 2 の停止条件に当たる、のいずれかで停止して報告する。品質ゲートはどちらのモードでも PR 前に必ず実行する。
+
+#### Claude Code クラウドセッション (`CLAUDE_CODE_REMOTE=true`)
+Claude Code の公式ドキュメント（*Configure cloud environments*、*Use Claude Code in the cloud*）と、2026-10-03 のセッションでの確認に基づく。
+
+| 事実 | change-dev の扱い |
+| :--- | :--- |
+| セッションの VM は `CLAUDE_CODE_REMOTE=true` を持つ（ローカルでは `true` にならない） | ヘルパーはこれでクラウド向けの動作に切り替える |
+| GitHub への通信は GitHub プロキシを経由し、認証情報はサーバー側で付与される。`gh` は導入済みで、REST（`gh api repos/{owner}/{repo}/...`）は `gh auth login` なしで動く（`gh auth status` はプレースホルダーのトークンを無効と表示するが想定どおり） | REST だけを使う |
+| プロキシは GraphQL を 403 で拒否し、REST の代替と専用ルート（`POST .../pulls/{n}/ccr/ready_for_review`、`.../ccr/convert_to_draft`、`.../ccr/auto_merge`、`.../ccr/review_threads`）を案内する | `gh pr view / checks / ready / merge / review` は使えない。ドラフト解除は `ccr/ready_for_review`、マージは REST の `PUT .../merge` |
+| プロキシはブランチの削除とブランチ以外（タグ）の push を拒否する。push 先のブランチは制限しない | クラウドでは `--delete-branch` しない。push はセッションのブランチだけに行う |
+| 環境変数はクラウド環境の設定（`.env` 形式）で与える。`.env` は Git 管理外でクローンに含まれない | クラウドでオートパイロットを無効にするには、クラウド環境の環境変数に `CHG_DEV_AUTO_PILOT=false` を設定する |
+| 購読した PR のイベント（CI 結果・レビュー・マージ）がセッションを起こす | `sleep` でポーリングせず、`check_suite.completed` を受けてから `change-dev:finish` を実行する |
+| プロキシ経由の PR・レビューはユーザーの GitHub アカウントで作られる（エージェント = PR 作成者） | 承認は GitHub に拒否される。マージは `main` の必須承認数 0 に依存する |
+| リポジトリの auto-merge は無効（`allow_auto_merge: false`） | auto-merge を使わず、直接マージする |
+| セッションは専用の VM と新しいクローン上で、割り当てられたブランチで動く | 兄弟 Worktree（ステップ 3）は作らない。VM が隔離の単位 |
 
 #### マージ方式の選定基準: なぜRebaseマージなのか？
 本プロジェクトでは、**GitHub上のマージ方式として "Rebase and merge"（または fast-forward）を標準**とする。

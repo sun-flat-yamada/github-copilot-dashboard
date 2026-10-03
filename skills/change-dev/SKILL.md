@@ -109,9 +109,9 @@ In the isolated worktree directory:
    # Subsequent pushes after rebase:
    git push --force-with-lease origin feat/42-new-feature
    ```
-3. Open Pull Request using `gh` CLI:
+3. Open the Pull Request. **Draft or not is decided by `CHG_DEV_AUTO_PILOT`** (`npm run change-dev:mode`): Auto-Pilot on = ready for review, off = draft (`--draft`). In a Claude Code cloud session use the built-in GitHub tool (`create_pull_request` with `draft` from the mode); this rule takes precedence over a generic "create pull requests as drafts" default.
    ```bash
-   gh pr create \
+   gh pr create [--draft] \
      --base main \
      --head feat/42-new-feature \
      --title "feat: Add new feature (#42)" \
@@ -122,13 +122,17 @@ In the isolated worktree directory:
 
 ### Step 5: Rebase & Merge
 
-Merge using **Rebase & Merge** to preserve a clean linear history:
+Merge using **Rebase & Merge** to preserve a clean linear history. The helper works locally and in Claude Code cloud sessions (REST only):
 
 ```bash
-# Verify PR CI status
-gh pr checks 42
+npm run change-dev:finish -- 42          # ready if draft -> CI check -> approve -> rebase merge
+npm run change-dev:finish -- 42 --wait   # local: poll CI instead of exiting with 2
+```
 
-# Merge with Rebase and delete remote branch
+Manual equivalent (local only; `gh pr` subcommands use GraphQL, which the cloud GitHub proxy rejects):
+
+```bash
+gh pr checks 42
 gh pr merge 42 --rebase --delete-branch
 ```
 
@@ -174,16 +178,48 @@ Opt-in mode that carries a change from **PR creation to Rebase & Merge completio
 | Resolution order | process environment → `.env` → `.env.example` (repository default) |
 | This repository | **enabled** (`CHG_DEV_AUTO_PILOT=true` in `.env.example`) |
 
+> Phase numbers below refer to the full lifecycle in `.agents/skills/change-dev/SKILL.md` (Phase 2 = implementation plan, Phase 6 = PR creation = Step 4 here, Phase 7 = merge = Step 5 here).
+
+### What the mode decides
+
+`npm run change-dev:mode` prints the resolved value, its source and the branches below (`scripts/change-dev-autopilot.ts`).
+
+| Decision point | Auto-Pilot on (`true` / `1`) | Auto-Pilot off (unset or any other value) |
+| :--- | :--- | :--- |
+| After `implementation_plan.md` (Phase 2) | Report the plan and continue (stop only for the blocking cases in Phase 2) | Wait for **Proceed** / the user's approval |
+| PR at creation (Phase 6) | Ready for review | Draft |
+| After the PR (Phase 7) | Automatic: CI, approval, Rebase & Merge, cleanup | Manual |
+
 ### Behavior (after Phase 6 PR creation)
 
-1. **Wait for CI**: `gh pr checks <id> --watch` until all required checks complete.
-2. **Self-heal**: if a check fails, fix in the worktree, re-run the 5-stage quality gate, push, and watch again. Never skip/disable tests.
-3. **Approval**: when a review approval is required, request it; approve with `gh pr review <id> --approve` only when the authenticated account is not the PR author (GitHub forbids self-approval).
-4. **Rebase & Merge**: once CI is green, there are no conflicts and no unresolved review threads, run `gh pr merge <id> --rebase --delete-branch` (or `--auto --rebase` while required checks are still pending).
-5. **Cleanup**: remove the worktree and local branch (Phase 7 step 2).
+1. **Ready**: if the PR is a draft, mark it ready for review.
+2. **Wait for CI**: every check run on the PR head must complete. Locally, `npm run change-dev:finish -- <id> --wait` polls. In a cloud session do not poll: the PR is subscribed and a `check_suite.completed` event wakes the session; then run `npm run change-dev:finish -- <id>` (exit code `2` = still running, wait for the next event).
+3. **Self-heal**: if a check fails, fix it, re-run the 5-stage quality gate, push, and go back to step 2. Never skip or disable tests. Address review comments the same way; do not merge while a review thread waits on the agent.
+4. **Approval with the same account**: the agent approves with the account it runs as, also when that account opened the PR. GitHub rejects an approval by the PR author with `422 Can not approve your own pull request` (verified on PR #220, 2026-10-03; no repository or branch setting changes this on github.com). The helper treats that response as expected and merges without an approval when the base branch requires **0** approvals (`main`: `required_approving_review_count: 0`). If the branch requires approvals, it stops and reports: only another account can supply them.
+5. **Rebase & Merge**: when CI is green and there is no conflict, merge with the `rebase` method at the checked head SHA (`PUT /repos/{owner}/{repo}/pulls/{n}/merge`, `merge_method=rebase`, `sha=<head>`), so a commit pushed after the check is never merged unchecked.
+6. **Cleanup**: locally, delete the remote branch and remove the worktree (Phase 7 step 2). In a cloud session the remote branch is kept (the GitHub proxy rejects branch deletion) and the VM is discarded with the session.
+7. **Next task on the same session branch**: after the merge, restart the branch from the latest base (`git fetch origin main && git checkout -B <branch> origin/main`) before new work; never stack new commits on merged history.
 
 ### Guardrails (never relaxed by Auto-Pilot)
 
-- The Phase 2 implementation plan **Proceed** gate still applies.
-- Never use `--admin`, never bypass branch protection or required reviews, never push to `main` directly.
-- Stop and report to the user when: approval by another person is required and unavailable, a rebase conflict is non-trivial, or checks stay red after fixes.
+- Never use `--admin`, never bypass branch protection or rulesets, never push to `main` directly.
+- Never merge with a failed or still-running check, a merge conflict, or an unanswered review thread.
+- Stop and report to the user when: the base branch requires approvals the agent's account cannot give, a rebase conflict is non-trivial, checks stay red after fixes, or a Phase 2 blocking case appears.
+- The 5-stage quality gate always runs before the PR, in both modes.
+
+---
+
+## ☁️ Claude Code Cloud Sessions (`CLAUDE_CODE_REMOTE=true`)
+
+Facts about the cloud environment (Claude Code docs *Configure cloud environments* and *Use Claude Code in the cloud*; checked in a session on 2026-10-03) and what this skill does about each:
+
+| Fact | Consequence for change-dev |
+| :--- | :--- |
+| The session VM sets `CLAUDE_CODE_REMOTE=true`; it is never `true` locally. | The helper switches to the cloud behavior on it. |
+| GitHub traffic goes through the **GitHub proxy**, which attaches the user's credential server-side. `gh` is pre-installed and REST calls (`gh api repos/{owner}/{repo}/...`) work without `gh auth login`; `gh auth status` reports the placeholder token as invalid, which is expected. | Use REST only. The helper calls `gh api`. |
+| The proxy **rejects GraphQL** (HTTP 403) and names REST fallbacks plus routes for what REST lacks: `POST /repos/{o}/{r}/pulls/{n}/ccr/ready_for_review`, `POST .../ccr/convert_to_draft`, `PUT`/`DELETE .../ccr/auto_merge`, `GET .../ccr/review_threads`. | `gh pr view / checks / ready / merge / review` do not work. Ready-for-review uses `ccr/ready_for_review`; the merge uses REST `PUT .../merge`. |
+| The proxy **rejects branch deletion** and non-branch pushes (tags); it does not limit which branch a push updates. | No `--delete-branch` in the cloud. Push only to the session's branch. |
+| Environment variables come from the cloud environment's settings (`.env` format). `.env` is git-ignored and absent from a fresh clone. | Resolution stays environment setting, then `.env`, then `.env.example` (`true` here). To turn Auto-Pilot off for cloud sessions, set `CHG_DEV_AUTO_PILOT=false` in the cloud environment's variables. |
+| PR events (CI results, reviews, merge) wake a subscribed session. | Wait for `check_suite.completed`, then run `change-dev:finish`; do not poll with `sleep`. |
+| PRs and reviews created through the proxy act as the user's GitHub account, so the agent is the PR author. | GitHub rejects the approval (Behavior step 4); the merge relies on `main` requiring 0 approvals. |
+| The repository has auto-merge disabled (`allow_auto_merge: false`). | The helper merges directly instead of enabling auto-merge. |
