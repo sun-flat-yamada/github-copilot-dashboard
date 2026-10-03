@@ -4,9 +4,9 @@
     "name": "github-copilot-dashboard",
     "is_fork": false
   },
-  "generated_at": "2026-10-03T04:57:07.838Z",
+  "generated_at": "2026-10-03T05:03:01.069Z",
   "run": {
-    "run_id": "20261003T045707Z-db0d"
+    "run_id": "20261003T050301Z-f8ef"
   },
   "data_retention_days": 365,
   "available_months": [
@@ -28,21 +28,21 @@
       "source": "metrics",
       "status": "skipped",
       "records": 0,
-      "last_attempt_at": "2026-10-03T04:57:07.838Z",
+      "last_attempt_at": "2026-10-03T05:03:01.069Z",
       "last_success_at": null
     },
     {
       "source": "seats",
       "status": "skipped",
       "records": 0,
-      "last_attempt_at": "2026-10-03T04:57:07.838Z",
+      "last_attempt_at": "2026-10-03T05:03:01.070Z",
       "last_success_at": null
     },
     {
       "source": "cost_centers",
       "status": "skipped",
       "records": 0,
-      "last_attempt_at": "2026-10-03T04:57:07.838Z",
+      "last_attempt_at": "2026-10-03T05:03:01.070Z",
       "last_success_at": null
     }
   ],
@@ -79,8 +79,8 @@
   },
   "issues": [
     {
-      "id": "issue_1791003427838_t7dp",
-      "timestamp": "2026-10-03T04:57:07.838Z",
+      "id": "issue_1791003781069_xkhw",
+      "timestamp": "2026-10-03T05:03:01.069Z",
       "severity": "warning",
       "category": "api_auth",
       "target": "config:copilot-metrics",
@@ -88,8 +88,8 @@
       "details": "Set COPILOT_ENTERPRISE (enterprise-wide) or COPILOT_ORGS (comma-separated org slugs) as a repository/organization Actions variable to enable live copilot metrics collection. Monthly Usage Report (CSV import) and other credential-independent features remain unaffected."
     },
     {
-      "id": "issue_1791003427838_jkxy",
-      "timestamp": "2026-10-03T04:57:07.838Z",
+      "id": "issue_1791003781070_3091",
+      "timestamp": "2026-10-03T05:03:01.070Z",
       "severity": "warning",
       "category": "api_auth",
       "target": "config:copilot-billing-seats",
