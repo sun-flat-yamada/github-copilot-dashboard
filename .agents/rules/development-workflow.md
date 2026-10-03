@@ -41,6 +41,7 @@ When multiple AI agents work concurrently on the codebase:
 
 - Every non-trivial change must correspond to an Issue specifying **Why**, **What**, and **Acceptance Criteria**.
 - Create via GitHub Web or `gh issue create`. Record the Issue number (`#<id>`).
+- **One task = one Issue**: every task a plan defines is registered as a single Issue sized for one PR (template `.github/ISSUE_TEMPLATE/work_unit.yml`), grouped under a per-phase parent (tracking) Issue as sub-issues. The Issue body is the hand-off: a new session starts from "Resolve Issue #N", reads the Issue, its parent and the referenced documents, checks the Prerequisites are merged, and opens the PR with `Closes #N`. Findings outside the Issue's scope become new Issues. See `.agents/skills/change-dev/SKILL.md` (Work-Unit Issue) and SDD-14 §3.1.1.
 
 ### Step 2: Antigravity Implementation Plan & Task Orchestration (Pre-Execution Gate)
 
