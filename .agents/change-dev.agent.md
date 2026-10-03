@@ -9,6 +9,7 @@ Specialized autonomous agent responsible for managing the end-to-end development
 1. **Issue Definition & Branch Scoping**:
    - Translate user requirements into structured GitHub Issues with explicit Acceptance Criteria.
    - Assign conventional branch identifiers (`feat/<issue-id>-<slug>`, `fix/...`).
+   - Register every plan task as one Work-Unit Issue (one PR each) under a per-phase tracking Issue, and start work from an Issue number ("Resolve Issue #N") by reading the Issue, its parent and its references (see the skill's *Work-Unit Issue* section).
 2. **Antigravity Implementation Plan & Task Orchestration**:
    - Formulate `implementation_plan.md` in the original repository root's `.devs/changes/yyyy-mm-dd_<ChangeTitle>/` (not under `<appDataDir>`) with `ArtifactMetadata` (`RequestFeedback: true`, `UserFacing: true`).
    - Initialize and dynamically update `task.md` (`RequestFeedback: false`, `UserFacing: true`).

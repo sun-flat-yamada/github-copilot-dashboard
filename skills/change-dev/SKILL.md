@@ -21,6 +21,22 @@ Before executing changes, identify whether this workspace is:
 
 ---
 
+## 🎫 Work-Unit Issue (one task = one Issue)
+
+Every task that a plan defines (a `task.md` item, a plan table row such as `P1-2`) is registered as **one Issue**, sized for one Pull Request. This lets a fresh agent session start work from the Issue number alone.
+
+1. **Register**: create one Issue per task with the `.github/ISSUE_TEMPLATE/work_unit.yml` sections: Why, What, Done condition, Acceptance Criteria (checklist), References (plan section, finding IDs, SDD, recorded decisions), Prerequisites, and a **How to start** block. Title format: `[<task-id>] <imperative title>`.
+2. **Group**: one parent (tracking) Issue per phase / epic, titled `[Phase N] <name> — tracking`, with each task Issue attached as a sub-issue. The parent holds shared context and the recommended order; it is closed when all children are closed.
+3. **Start from an Issue**: when the user says "Resolve Issue #N" (「Issue #N を対応せよ」), the agent:
+   1. Reads the Issue and its parent with the GitHub tool; reads `AGENTS.md` and everything under References.
+   2. Checks the Prerequisites are merged. If not, stops and reports instead of working around them.
+   3. Creates `.devs/changes/yyyy-mm-dd_<ChangeTitle>/` (`implementation_plan.md`, `task.md`) that links the Issue (Phase 2 of the lifecycle), then follows the normal lifecycle (worktree/branch → quality gate → walkthrough → PR).
+   4. Opens the PR with `Closes #N`. The sub-issue closes on merge, which ticks the parent checklist.
+4. **One Issue per session**: the Issue body is the hand-off. Anything a later session needs (decisions, unverified items, open questions) goes into the Issue or the plan documents, never only into chat.
+5. **Scope discipline**: findings outside the Issue's scope become new Issues (with the parent linked), not extra changes in the PR.
+
+---
+
 ## 🛠️ Execution Lifecycle
 
 ### Step 1: Issue Definition & Scoping

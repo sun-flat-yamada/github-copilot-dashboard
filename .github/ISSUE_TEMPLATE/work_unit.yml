@@ -1,0 +1,57 @@
+name: 🎫 Work Unit (change-dev task)
+description: One plan task = one Issue = one Pull Request. A fresh agent session starts from this Issue.
+title: "[<task-id>] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Register one task of a plan (e.g. `P1-2`) as one Issue sized for one PR. Attach it to the phase's tracking Issue as a sub-issue. See `.agents/skills/change-dev/SKILL.md` (Work-Unit Issue).
+  - type: textarea
+    id: why
+    attributes:
+      label: Why (背景)
+      description: The problem this task solves and the finding IDs it addresses.
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What (対応内容)
+      description: Concrete changes. Name the files/modules and the decisions already made.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done condition (完了条件)
+      description: The observable condition from the plan that makes this task complete.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria (受け入れ基準)
+      description: A checklist. Include the SDD sync (EN/JA) and the quality gate.
+      value: |
+        - [ ] 
+        - [ ] SDD synced (EN/JA)
+        - [ ] `npm run fork:verify && npm run typecheck && npm test && npm run secret-scan && npm run build` (+ `npm run lint`)
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: References and Prerequisites (参照・前提)
+      description: Plan section, SDD numbers, recorded decisions, parent Issue, and the tasks/PRs that must be merged first.
+    validations:
+      required: true
+  - type: textarea
+    id: start
+    attributes:
+      label: How to start (作業開始方法)
+      description: What a new session reads first and how it starts.
+      value: |
+        Say "Resolve this Issue". Follow `.agents/skills/change-dev/SKILL.md` (Work-Unit Issue). Read `AGENTS.md`, the plan, its recorded decisions and the SDDs above first. Open the PR with `Closes` for this Issue.
+    validations:
+      required: true

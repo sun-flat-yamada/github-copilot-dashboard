@@ -20,3 +20,14 @@
   - [x] Phase 0 の walkthrough（[../2026-10-01_DashboardPhase0Stabilization/walkthrough.md](../2026-10-01_DashboardPhase0Stabilization/walkthrough.md)）
 - [ ] Phase 6: Rebase onto Base & Create PR <!-- id: 5 -->
 - [ ] Phase 7: Rebase & Merge and Worktree Cleanup <!-- id: 6 -->
+
+## 作業単位 Issue の索引（1 タスク = 1 Issue = 1 PR）
+
+新しいセッションは「Issue #N を対応せよ」で開始できる（`.agents/skills/change-dev/SKILL.md` の「Work-Unit Issue」）。親（追跡）Issue は各フェーズの共通前提と推奨順を持つ。
+
+| フェーズ | 親 Issue | 子 Issue |
+| :--- | :--- | :--- |
+| Phase 1（残り） | #172 | P1-2 #176 / P1-3 #177 / P1-4 #178 / P1-5 #179 / P1-7 #180（完了済み: P1-1 #163、P1-6 PR #165） |
+| Phase 2 | #173 | P2-1 #181 / P2-2 #182 / P2-3 #183 / P2-4 #184 / P2-5 #185 / P2-6 #186 / P2-7 #187 |
+| Phase 3 | #174 | P3-1 #188 / P3-2 #189 / P3-3 #190 / P3-4 #191 / P3-5 #192 / P3-6 #193 / P3-7 #195 / P3-8 #196 |
+| Phase 4 | #175 | P4-1 #197 / P4-2 #198 / P4-3 #199 / P4-4 #200 / P4-5 #201 / P4-6 #202 / P4-7 #203 |
