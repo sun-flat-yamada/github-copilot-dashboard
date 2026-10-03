@@ -1,0 +1,128 @@
+{
+  "title": "fact.usage_org_daily",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "number",
+      "const": 1
+    },
+    "day": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1
+    },
+    "active_users": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "engaged_users": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "completion_users": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "chat_users": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "cli_users": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "agent_users": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "pr_summaries_created": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "api",
+        "csv",
+        "derived"
+      ]
+    },
+    "quality": {
+      "type": "string",
+      "enum": [
+        "measured",
+        "estimated",
+        "missing",
+        "demo"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "day",
+    "scope",
+    "active_users",
+    "engaged_users",
+    "completion_users",
+    "chat_users",
+    "cli_users",
+    "agent_users",
+    "pr_summaries_created",
+    "source",
+    "quality"
+  ],
+  "additionalProperties": false
+}
