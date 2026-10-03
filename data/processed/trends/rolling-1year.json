@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-03T23:32:27.688Z",
+  "generated_at": "2026-10-03T23:40:54.787Z",
   "months": [
     "2026-09"
   ],
@@ -15,6 +15,640 @@
       "total_ai_credits_used": 0,
       "total_agent_sessions": null,
       "agent_adoption_rate": null
+    }
+  ],
+  "schema_version": 2,
+  "window": {
+    "start": "2025-10",
+    "end": "2026-09"
+  },
+  "close_rule": {
+    "business_days_after_month_end": 5,
+    "note": "翌月の第 5 営業日 (平日のみ・祝日は考慮しない) を過ぎた月を確定とする。数値の凍結・改訂履歴は月次締め (P4-2) で扱う。"
+  },
+  "points": [
+    {
+      "month": "2025-10",
+      "status": "missing",
+      "closes_on": "2025-11-07",
+      "entry": null,
+      "prior_month": "2024-10",
+      "yoy": {
+        "total_spend_usd": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "active_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "acceptance_rate": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_chats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_ai_credits_used": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        }
+      }
+    },
+    {
+      "month": "2025-11",
+      "status": "missing",
+      "closes_on": "2025-12-05",
+      "entry": null,
+      "prior_month": "2024-11",
+      "yoy": {
+        "total_spend_usd": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "active_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "acceptance_rate": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_chats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_ai_credits_used": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        }
+      }
+    },
+    {
+      "month": "2025-12",
+      "status": "missing",
+      "closes_on": "2026-01-07",
+      "entry": null,
+      "prior_month": "2024-12",
+      "yoy": {
+        "total_spend_usd": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "active_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "acceptance_rate": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_chats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_ai_credits_used": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        }
+      }
+    },
+    {
+      "month": "2026-01",
+      "status": "missing",
+      "closes_on": "2026-02-06",
+      "entry": null,
+      "prior_month": "2025-01",
+      "yoy": {
+        "total_spend_usd": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "active_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "acceptance_rate": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_chats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_ai_credits_used": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        }
+      }
+    },
+    {
+      "month": "2026-02",
+      "status": "missing",
+      "closes_on": "2026-03-06",
+      "entry": null,
+      "prior_month": "2025-02",
+      "yoy": {
+        "total_spend_usd": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "active_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "acceptance_rate": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_chats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_ai_credits_used": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        }
+      }
+    },
+    {
+      "month": "2026-03",
+      "status": "missing",
+      "closes_on": "2026-04-07",
+      "entry": null,
+      "prior_month": "2025-03",
+      "yoy": {
+        "total_spend_usd": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "active_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "acceptance_rate": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_chats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_ai_credits_used": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        }
+      }
+    },
+    {
+      "month": "2026-04",
+      "status": "missing",
+      "closes_on": "2026-05-07",
+      "entry": null,
+      "prior_month": "2025-04",
+      "yoy": {
+        "total_spend_usd": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "active_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "acceptance_rate": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_chats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_ai_credits_used": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        }
+      }
+    },
+    {
+      "month": "2026-05",
+      "status": "missing",
+      "closes_on": "2026-06-05",
+      "entry": null,
+      "prior_month": "2025-05",
+      "yoy": {
+        "total_spend_usd": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "active_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "acceptance_rate": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_chats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_ai_credits_used": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        }
+      }
+    },
+    {
+      "month": "2026-06",
+      "status": "missing",
+      "closes_on": "2026-07-07",
+      "entry": null,
+      "prior_month": "2025-06",
+      "yoy": {
+        "total_spend_usd": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "active_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "acceptance_rate": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_chats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_ai_credits_used": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        }
+      }
+    },
+    {
+      "month": "2026-07",
+      "status": "missing",
+      "closes_on": "2026-08-07",
+      "entry": null,
+      "prior_month": "2025-07",
+      "yoy": {
+        "total_spend_usd": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "active_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "acceptance_rate": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_chats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_ai_credits_used": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        }
+      }
+    },
+    {
+      "month": "2026-08",
+      "status": "missing",
+      "closes_on": "2026-09-07",
+      "entry": null,
+      "prior_month": "2025-08",
+      "yoy": {
+        "total_spend_usd": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "active_seats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "acceptance_rate": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_chats": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        },
+        "total_ai_credits_used": {
+          "current": null,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "この月の保存済み集計がない"
+        }
+      }
+    },
+    {
+      "month": "2026-09",
+      "status": "provisional",
+      "closes_on": "2026-10-07",
+      "entry": {
+        "month": "2026-09",
+        "total_spend_usd": 2975,
+        "total_seats": 85,
+        "active_seats": 77,
+        "idle_seats": 8,
+        "acceptance_rate": 0.3415,
+        "total_chats": 15239,
+        "total_ai_credits_used": 0,
+        "total_agent_sessions": null,
+        "agent_adoption_rate": null
+      },
+      "prior_month": "2025-09",
+      "yoy": {
+        "total_spend_usd": {
+          "current": 2975,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "前年同月のデータなし"
+        },
+        "total_seats": {
+          "current": 85,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "前年同月のデータなし"
+        },
+        "active_seats": {
+          "current": 77,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "前年同月のデータなし"
+        },
+        "acceptance_rate": {
+          "current": 0.3415,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "前年同月のデータなし"
+        },
+        "total_chats": {
+          "current": 15239,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "前年同月のデータなし"
+        },
+        "total_ai_credits_used": {
+          "current": 0,
+          "prior": null,
+          "delta": null,
+          "change_rate": null,
+          "reason": "前年同月のデータなし"
+        }
+      }
     }
   ]
 }
