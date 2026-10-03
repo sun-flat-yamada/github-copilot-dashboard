@@ -245,6 +245,16 @@ Cost Centers are an Enterprise Billing feature: for organization-only operation 
 
 ---
 
+### 4a. AI Credit Usage API (Billing)
+
+Verified against the REST API description (`ghec.2022-11-28.json`, via `raw.githubusercontent.com/github/rest-api-description`).
+
+- `GET /enterprises/{enterprise}/settings/billing/ai_credit/usage` (Enterprise only; there is no organization form). Query: `year`, `month`, `day` (integers), `organization`, `user`, `model`, `product`, `cost_center_id`. Only the past 24 months are available. Requires enterprise administrator / billing manager (or fine-grained read access to enterprise billing); GitHub may answer 404 for insufficient permission.
+- Response: `{ timePeriod: { year, month?, day? }, enterprise, user?, organization?, product?, model?, costCenter?, usageItems: [ { product, sku, model, unitType, pricePerUnit, grossQuantity, grossAmount, discountQuantity, discountAmount, netQuantity, netAmount } ] }`. No pagination and no signed URLs. The response does **not** state a currency.
+- Adapter (`src/adapters/github-api/ai-credits/`): one request per report day (the same window as the Reports API), items validated one by one (an invalid item is quarantined, without echoing values; negative amounts are allowed because adjustments can be negative), a response for another period is rejected.
+- Mapping: each item becomes a `fact.cost_line` (SDD-05 §2.4) with `user_key: null` (not fetched per user), `quantity = grossQuantity`, `unit_type` kept as returned (units are never added together), `currency: null` (not assumed), `source: "api"`.
+- `SourceStatus` `ai_credits`: all days read → `ok`; some days failed or items quarantined → `partial`; no day readable → `failed` (with the permission hint); no enterprise configured → `skipped`; replaying an older run that never recorded the request → `skipped`. A failure never stops the other sources. Consuming the lines in aggregation is Phase 2.
+
 ## 5. Billing Model & Pricing Table (September 2026 Baseline)
 
 | Plan / Feature | Monthly Price (USD) | Prorated Daily Rate (USD / day) | Notes |

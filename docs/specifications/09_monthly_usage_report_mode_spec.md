@@ -146,6 +146,25 @@ Official field reference: GitHub Docs "Billing reports reference" (`billing/refe
 
 ---
 
+### 3.6 Format Profiles and the Import Report (P1-5)
+
+Header recognition is declared in `src/processor/csv-format-profiles.ts` (field aliases + per-format required columns). A header is lower-cased and recognized if either of two forms matches an alias: punctuation removed (`user-name` → `username`) or non-alphanumerics turned into `_` (`Gross Amount ($)` → `gross_amount`, `Net Amount` → `net_amount`).
+
+| Profile | Required columns |
+|:--|:--|
+| `ai-usage-report` | `username`, `model` and one of `input_tokens` / `output_tokens` / `token_count` |
+| `activity-report` | `username`, `last_activity_at` |
+| `billing-usage-report` | `username` and one of `quantity` / `net_amount` / `gross_amount` / `ai_credits_consumed` |
+
+If no profile's requirements are met the import **stops** (no records) and the reason is shown (which required column is missing and which columns were recognized).
+
+Every import produces a `CsvImportReport` (`src/domain/entities/csv-import.ts`, kept in `import_summary.csv_reports`), shown at import time (header data-selection modal upload area, and `npm run report:import` on the CLI):
+- recognized and **unrecognized columns** (unrecognized ones are not used in any aggregation),
+- rows: imported / total, **skipped rows with reason** (currently: empty username) and the data-row numbers of the first samples (the header and blank lines are not counted), rows with a different column count (suspected column shift), rows without a usable date, identical repeated rows within a file (kept, since they can be legitimate separate line items; cross-file duplicates are collapsed by `mergeRecordSets`),
+- **totals per unit family** (requests / credits / seats / tokens / other): row count, quantity, gross and net amounts. Different units are never added together; a unit with no value stays `null` (shown as "—（値なし）"), not 0.
+
+The report contains counts, column names and totals only (no user names or individual values).
+
 ## 4. Aggregated Data Structure (`MonthlyReportAggregatedData`)
 
 ```typescript

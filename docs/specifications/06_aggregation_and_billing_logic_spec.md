@@ -85,6 +85,7 @@ The pipeline aggregation and the client-side filter re-aggregation use the same 
 - Included credits are **plan-specific, period-specific and pooled per billing entity**: `pool = Σ includedCredits(plan of each seat)`; seats with an unknown plan are not counted and reported as "plan unconfirmed". An EA contract value (`creditsPricing.includedCreditsPerSeat`) overrides it for all plans.
 - Pool utilization = used credits / pool × 100, **not capped at 100%** (an overrun is shown as such); it is absent when the pool is unknown or 0.
 - Per-seat credits cost is a usage amount (credits × price). Because the included credits are pooled, an individual's overage cannot be derived and is not displayed as such.
+- **AI credit usage API values** (P1-5, SDD-03 §4a) are kept per `unit_type` in `fact.cost_line`; credits (quantity) and amounts are never added across units, and no currency is assumed because the response does not state one. They are not yet consumed by the aggregation above (Phase 2).
 
 ---
 

@@ -13,6 +13,12 @@ import {
   UserModelDailyUsage,
   UserUsageProfile,
 } from '../types/copilot.js';
+import { analyzeHeaders } from './csv-format-profiles.js';
+import {
+  CSV_IMPORT_REPORT_SCHEMA_VERSION,
+  CsvImportReport,
+  CsvUnitFamily,
+} from '../domain/entities/csv-import.js';
 import { UNASSIGNED_LABELS } from '../domain/constants/unassigned.js';
 import {
   addUsageRow,
@@ -21,6 +27,9 @@ import {
   createUserUsageAccumulator,
   UserUsageAccumulator,
 } from './usage-insight.js';
+
+const MAX_SKIPPED_SAMPLES = 10;
+const UNIT_ORDER: CsvUnitFamily[] = ['requests', 'credits', 'seats', 'tokens', 'other'];
 
 /**
  * 数量 (quantity) の単位の系統。レポートにはリクエスト数・AI クレジット・シート (ユーザー月) 等が
@@ -99,66 +108,6 @@ export class ReportParser {
   }
 
   /**
-   * ヘッダー自動認識（Smart Header Detection）によるカラムインデックスのマッピング
-   */
-  private detectHeaders(headerRow: string[]): Record<string, number> {
-    const map: Record<string, number> = {};
-    const normalized = headerRow.map((h) => h.toLowerCase().replace(/[^a-z0-9_]/g, ''));
-
-    normalized.forEach((h, idx) => {
-      // 日付
-      if (['date', 'day', 'usage_date', 'report_date'].includes(h)) map.date = idx;
-      else if (h.includes('report_time') || h.includes('timestamp')) map.report_time = idx;
-
-      // ユーザー名
-      if (['username', 'login', 'user', 'user_login', 'github_username'].includes(h)) map.username = idx;
-
-      // 製品・SKU
-      if (['product', 'product_name'].includes(h)) map.product = idx;
-      if (['sku', 'sku_name', 'metric'].includes(h)) map.sku = idx;
-
-      // モデル
-      if (['model', 'model_name', 'ai_model'].includes(h)) map.model = idx;
-
-      // 数量 ('tokens' は token_count 専用。quantity と token_count の両方に割り当てない)
-      if (['quantity', 'requests', 'requests_count', 'count'].includes(h)) map.quantity = idx;
-
-      // 単位
-      if (['unit_type', 'unit', 'pricing_unit'].includes(h)) map.unit_type = idx;
-
-      // 単価
-      if (['applied_cost_per_quantity', 'cost_per_unit', 'unit_price', 'rate'].includes(h))
-        map.applied_cost_per_quantity = idx;
-
-      // 金額
-      if (['gross_amount', 'gross_cost', 'total_gross'].includes(h)) map.gross_amount = idx;
-      if (['discount_amount', 'discount', 'credits_applied'].includes(h)) map.discount_amount = idx;
-      if (['net_amount', 'net_cost', 'cost', 'amount', 'total_amount'].includes(h)) map.net_amount = idx;
-
-      // 組織・Cost Center
-      if (['organization', 'org', 'organization_name'].includes(h)) map.organization = idx;
-      if (['cost_center_name', 'cost_center', 'costcenter', 'cost_centre'].includes(h)) map.cost_center_name = idx;
-
-      // アクティビティ情報 (Activity Report 向け)
-      if (['last_activity_at', 'last_interaction_at'].includes(h)) map.last_activity_at = idx;
-      if (['last_authenticated_at'].includes(h)) map.last_authenticated_at = idx;
-      if (['last_surface_used', 'surface', 'editor', 'ide'].includes(h)) map.last_surface_used = idx;
-
-      // AI Credits & Tokens (2026.09 仕様)
-      if (['ai_credits_consumed', 'credits_consumed', 'credits', 'ai_credits'].includes(h)) map.ai_credits_consumed = idx;
-      if (['token_count', 'tokens', 'total_tokens'].includes(h)) map.token_count = idx;
-
-      // AI usage report の token 内訳 (date × model × username)
-      if (['input', 'input_tokens'].includes(h)) map.input_tokens = idx;
-      if (['output', 'output_tokens'].includes(h)) map.output_tokens = idx;
-      if (['cache_read', 'cache_read_tokens'].includes(h)) map.cache_read_tokens = idx;
-      if (['cache_write', 'cache_write_tokens'].includes(h)) map.cache_write_tokens = idx;
-    });
-
-    return map;
-  }
-
-  /**
    * 日付文字列を "YYYY-MM-DD" (ゼロ埋め) に正規化する。
    *
    * CSV の日付列はエクスポート元やスプレッドシートでの再編集によって
@@ -198,21 +147,75 @@ export class ReportParser {
    * CSV テキストから生レコード配列を抽出
    */
   public parseRecords(csvText: string): MonthlyUsageReportRawRecord[] {
+    return this.parseRecordsWithReport(csvText).records;
+  }
+
+  /**
+   * CSV テキストから生レコードと取込レポート (認識した列・未認識の列・スキップした行・単位別合計) を作る。
+   * フォーマットを自動判別できない (必須列が無い) ときは、レコードを返さず理由を report.stop_reason に残す。
+   */
+  public parseRecordsWithReport(
+    csvText: string,
+    fileName?: string
+  ): { records: MonthlyUsageReportRawRecord[]; report: CsvImportReport } {
     const rows = this.parseCSVRows(csvText);
+    const report: CsvImportReport = {
+      schema_version: CSV_IMPORT_REPORT_SCHEMA_VERSION,
+      ...(fileName ? { file_name: fileName } : {}),
+      profile: null,
+      columns: { recognized: [], unrecognized: [] },
+      rows: {
+        total: 0,
+        imported: 0,
+        skipped: 0,
+        skipped_by_reason: {},
+        skipped_samples: [],
+        undated: 0,
+        ragged: 0,
+        repeated: 0,
+      },
+      totals_by_unit: [],
+      warnings: [],
+    };
+
     if (rows.length < 2) {
-      return [];
+      report.stop_reason = rows.length === 0 ? 'ファイルが空です' : 'ヘッダー行のみで、データ行がありません';
+      return { records: [], report };
     }
 
-    const headerMap = this.detectHeaders(rows[0]);
+    const analysis = analyzeHeaders(rows[0]);
+    report.columns = { recognized: analysis.recognized, unrecognized: analysis.unrecognized };
+    if (!analysis.profile) {
+      report.stop_reason = analysis.stopReason;
+      return { records: [], report };
+    }
+    report.profile = { id: analysis.profile.id, label: analysis.profile.label };
+    const headerMap = analysis.map;
+    const headerWidth = rows[0].length;
     const records: MonthlyUsageReportRawRecord[] = [];
+    const unitTotals = new Map<CsvUnitFamily, { rows: number; quantity: number | null; gross: number | null; net: number | null }>();
+    const seenRows = new Set<string>();
+    const skip = (rowNumber: number, reason: string) => {
+      report.rows.skipped++;
+      report.rows.skipped_by_reason[reason] = (report.rows.skipped_by_reason[reason] ?? 0) + 1;
+      if (report.rows.skipped_samples.length < MAX_SKIPPED_SAMPLES) report.rows.skipped_samples.push({ row: rowNumber, reason });
+    };
 
     for (let r = 1; r < rows.length; r++) {
       const row = rows[r];
       if (row.length === 0 || !row.some((c) => c.length > 0)) continue;
+      report.rows.total++;
+      if (row.length !== headerWidth) report.rows.ragged++;
+      const rowKey = row.join('\u0000');
+      if (seenRows.has(rowKey)) report.rows.repeated++;
+      else seenRows.add(rowKey);
 
       // ユーザー名の取得 (必須)
       const username = headerMap.username !== undefined ? row[headerMap.username] : '';
-      if (!username) continue;
+      if (!username) {
+        skip(report.rows.total, 'ユーザー名が空');
+        continue;
+      }
 
       // 日付の取得 (date または report_time の先頭 YYYY-MM-DD)
       // 表記ゆれは normalizeDateString() で "YYYY-MM-DD" ゼロ埋め形式に正規化する。
@@ -235,11 +238,13 @@ export class ReportParser {
             `⚠️ [ReportParser] Unrecognized date format "${rawDateValue}" at row ${r + 1} — falling back to raw substring. Chronological sort order may be affected.`
           );
           date = rawDateValue.substring(0, 10);
+          report.rows.undated++;
         }
       } else {
         // 日付が無い行を「今日」にしない。日付なし (空文字) のまま保持し、集計では合計にのみ含めて
         // 日別推移からは除外する。
         date = '';
+        report.rows.undated++;
       }
 
       // 数値項目の取得とパース
@@ -266,7 +271,7 @@ export class ReportParser {
         netAmount = Math.max(0, grossAmount - discountAmount);
       }
 
-      records.push({
+      const record: MonthlyUsageReportRawRecord = {
         date,
         username,
         product: headerMap.product !== undefined ? row[headerMap.product] : 'copilot',
@@ -288,10 +293,36 @@ export class ReportParser {
         output_tokens: parseNum(headerMap.output_tokens),
         cache_read_tokens: parseNum(headerMap.cache_read_tokens),
         cache_write_tokens: parseNum(headerMap.cache_write_tokens),
-      });
+      };
+      records.push(record);
+
+      // 単位別の合計 (単位の異なる値を合算しない。値が無い行は 0 として足さない)
+      const unit = classifyRecordUnit(record);
+      const total = unitTotals.get(unit) ?? { rows: 0, quantity: null, gross: null, net: null };
+      total.rows++;
+      if (quantity !== undefined) total.quantity = (total.quantity ?? 0) + quantity;
+      if (grossAmount !== undefined) total.gross = (total.gross ?? 0) + grossAmount;
+      if (netAmount !== undefined) total.net = (total.net ?? 0) + netAmount;
+      unitTotals.set(unit, total);
     }
 
-    return records;
+    report.rows.imported = records.length;
+    report.totals_by_unit = UNIT_ORDER.filter((u) => unitTotals.has(u)).map((unit) => {
+      const t = unitTotals.get(unit)!;
+      const round = (v: number | null) => (v === null ? null : Number(v.toFixed(4)));
+      return { unit, rows: t.rows, quantity: round(t.quantity), gross_usd: round(t.gross), net_usd: round(t.net) };
+    });
+
+    if (report.columns.unrecognized.length > 0) {
+      report.warnings.push(`未認識の列 ${report.columns.unrecognized.length} 件は集計に使っていません: ${report.columns.unrecognized.join(', ')}`);
+    }
+    if (report.rows.skipped > 0) report.warnings.push(`${report.rows.skipped} 行をスキップしました`);
+    if (report.rows.ragged > 0) report.warnings.push(`列数がヘッダーと異なる行が ${report.rows.ragged} 行あります (列ずれの疑い)`);
+    if (report.rows.undated > 0) report.warnings.push(`日付が無い / 解釈できない行が ${report.rows.undated} 行あります (日別推移には載りません)`);
+    if (report.rows.repeated > 0) report.warnings.push(`内容が完全に同一の行が ${report.rows.repeated} 行あります (複数明細の可能性があるため残しています)`);
+    if (report.totals_by_unit.length > 1) report.warnings.push('単位の異なる明細が混在しています。合計は単位ごとに分けて表示しています');
+
+    return { records, report };
   }
 
   /**
