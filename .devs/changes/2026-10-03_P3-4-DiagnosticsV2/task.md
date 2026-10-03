@@ -8,5 +8,5 @@
 - [x] SDD-11 更新（日英）
 - [x] 品質ゲート + lint
 - [x] walkthrough.md
-- [ ] PR 作成 (Closes #191)
+- [x] PR 作成 (Closes #191) — #246
 - [ ] `change-dev:finish` でマージ
