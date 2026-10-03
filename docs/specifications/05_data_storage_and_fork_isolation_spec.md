@@ -177,6 +177,25 @@ All data fetches resolve through `resolveDataPath`, dynamically extracting the b
 
 ---
 
+### 2.3 Raw Landing & Run Manifest (P1-2)
+
+Every live collection run lands the HTTP responses it received **immutably**, so that artifacts can be regenerated from the same input (`npm run pipeline:reprocess`) after a logic change or a bug fix, without calling the API again.
+
+```
+data/raw/landing/
+├── manifests/<run_id>.json          # one Run Manifest per run (written once, never overwritten)
+└── objects/<aa>/<sha256>.json|ndjson  # response bodies, content-addressed (identical content is stored once)
+```
+
+- **Run Manifest** (`RunManifest`, `src/domain/entities/run-manifest.ts`): `run_id` (time-ordered, e.g. `20261003T041500Z-ab12`), `api_version`, the collection `config` (enterprise / org slugs and the requested report days — no personal data) and `entries[]`, one per request: canonical `request` key, `kind` (`json` / `paginated` / `download`), `outcome` (`ok` / `empty` / `error`), `status`, `fetched_at`, and for `ok` the `object` path, `sha256` and `bytes`. Errors keep only a summary (name, status, truncated message), never a body.
+- **No signatures at rest**: signed report URLs (`download_links`) are stored with the query string removed; the download is keyed by host + path. A signature is a short-lived credential and is never persisted.
+- **Dedup**: the 30-day window re-fetches the same finished days every run; content addressing makes an unchanged report cost nothing.
+- **Anonymization mode lands nothing.** Raw bodies contain real logins and names and cannot be pseudonymized, so with `ANONYMIZE_USERS=true` (and in mock mode) no landing is written, and `index.json` carries no `run`.
+- **`index.json` `run`**: `{ run_id, reprocessed? }` names the run an artifact was built from (`reprocessed: true` for `pipeline:reprocess`). It is omitted when no run was landed (or the manifest could not be written — such a run is not reprocessable).
+- **Reprocess** (`npm run pipeline:reprocess [-- --run <run_id>]`, default: the latest run) replays one run through the same fetch → normalize → aggregate code via a replay client (`ReplayFetcher`) and makes **no network access**. A request the run never made fails loudly (`ReplayMissError`); a recorded failure replays as the same failure. The existing `raw/YYYY/MM/*-raw.json` partitions are not rewritten.
+- **Not yet covered**: merging several runs into a longer history (backfill beyond one run's window), retention / pruning (SDD target: 60 months, Phase 4), and canonical-fact (`schema_version`) regeneration (P1-3).
+- `raw/` is never published: `pages:stage` allow-lists, and `pages:verify` forbids it in `dist/`.
+
 ## 3. Metadata Index (`index.json`) Specification
 
 The entry metadata file loaded first by the dashboard SPA to provide available dates, months, archives, and default scope parameters.

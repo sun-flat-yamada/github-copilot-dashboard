@@ -28,6 +28,7 @@ GitHub REST API はカレンダーベースのバージョン体系を採用し�
 
 **失敗と「データなし」の区別**: データソースの各 `fetch*` は配列を返し、例外を投げない。失敗はソース別ステータス（`ok` / `partial` / `failed` / `skipped`、SDD-05 §3）と `DataFetchIssue` で表現する。呼び出し側は、空配列だけから「失敗」「データなし」を推測してはならない。
 
+**クライアント契約と記録**: ソースは `RawApiClient` (`fetchRaw` / `fetchRawAllowing` / `fetchPaginated` / `downloadSigned`) だけを通して API を呼ぶ。ライブ実行では、全ての応答を Run Manifest 付きで不変保存し (SDD-05 §2.3)、オフラインで再生できる (`npm run pipeline:reprocess`、SDD-02 §2.8)。署名付きレポート URL は署名を除いて記録する。
 ---
 
 ## 2. Copilot Metrics & Reports API

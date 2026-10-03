@@ -178,6 +178,25 @@ GitHub Pages 等のサブディレクトリ環境において、末尾スラッ�
 
 ---
 
+### 2.3 Raw Landing と Run Manifest (P1-2)
+
+ライブ収集の実行 (run) ごとに、受け取った HTTP 応答を**不変**で保存する。ロジックの変更や不具合の修正のあと、API を呼び直さずに同じ入力から成果物を作り直せる (`npm run pipeline:reprocess`)。
+
+```
+data/raw/landing/
+├── manifests/<run_id>.json            # run ごとに 1 つの Run Manifest (1 回だけ書き、上書きしない)
+└── objects/<aa>/<sha256>.json|ndjson  # 応答本文。内容ハッシュ名 (同じ内容は 1 回だけ保存)
+```
+
+- **Run Manifest** (`RunManifest`、`src/domain/entities/run-manifest.ts`): `run_id` (時刻順。例 `20261003T041500Z-ab12`)、`api_version`、収集設定 `config` (Enterprise / Org のスラッグと取得したレポート日。個人情報は含まない)、リクエストごとの `entries[]`。各 entry は正準化した `request`、`kind` (`json` / `paginated` / `download`)、`outcome` (`ok` / `empty` / `error`)、`status`、`fetched_at`、`ok` のときは `object` のパス・`sha256`・`bytes`。エラーは要約 (名前・ステータス・切り詰めたメッセージ) だけで、本文は残さない。
+- **署名は保存しない**: 署名付きのレポート URL (`download_links`) はクエリ文字列を除いて保存し、ダウンロードはホスト + パスをキーにする。署名は短命の資格情報であり、永続化しない。
+- **重複排除**: 30 日の窓は確定済みの同じ日を毎回取り直す。内容ハッシュ名なので、変化のないレポートは追加の保存量が増えない。
+- **匿名化モードでは保存しない。** Raw 本文には実名のログイン名・氏名が含まれ、仮名化できない。`ANONYMIZE_USERS=true` (およびモックモード) では Raw Landing を書かず、`index.json` にも `run` を付けない。
+- **`index.json` の `run`**: `{ run_id, reprocessed? }`。成果物の元になった run を示す (`pipeline:reprocess` では `reprocessed: true`)。run を保存しなかった場合 (または manifest を書けなかった場合。その run は再処理できない) は付けない。
+- **再処理** (`npm run pipeline:reprocess [-- --run <run_id>]`、省略時は最新の run) は、再生用クライアント (`ReplayFetcher`) 経由で、収集と同じ「取得 → 正規化 → 集計」のコードに 1 つの run を流す。**通信はしない**。run が行わなかったリクエストを要求した場合は `ReplayMissError` で明示的に失敗し、記録された失敗は同じ失敗として再生される。既存の `raw/YYYY/MM/*-raw.json` は書き換えない。
+- **未対応**: 複数 run を結合した長期の履歴 (1 回の窓を超えるバックフィル)、保持期間・削除 (目標 60 か月、Phase 4)、正準ファクト (`schema_version`) の再生成 (P1-3)。
+- `raw/` は公開しない: `pages:stage` は許可リスト方式で、`pages:verify` は `dist/` に含まれていれば失敗とする。
+
 ## 3. インデックスメタデータ (`index.json`) 仕様
 
 ダッシュボードSPAが起動時に最初に読み込み、利用可能な「日」「月」「期間」「アーカイブ」の選択肢を提供するメタデータ。
