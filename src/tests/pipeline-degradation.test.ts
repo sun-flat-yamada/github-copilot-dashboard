@@ -678,3 +678,36 @@ describe('PipelineOrchestrator: data quality history (P1-7)', () => {
     assert.equal(storage.index!.data_quality, undefined);
   });
 });
+
+describe('PipelineOrchestrator: AI credits source status (P1-5)', () => {
+  beforeEach(() => {
+    mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, 8, 10, 12, 0, 0) });
+  });
+  afterEach(() => {
+    mock.timers.reset();
+  });
+
+  it('records the ai_credits status only when the data source reports one, and a failure does not stop the other sources', async () => {
+    const storage = new MemoryStorage();
+    await runPipeline(
+      new FakeDataSource({
+        metrics: METRICS,
+        seats: SEATS,
+        statuses: [
+          status('metrics', 'ok', 2),
+          status('seats', 'ok', 3),
+          status('cost_centers', 'skipped', 0),
+          status('ai_credits', 'failed', 0, 'HTTP 403'),
+        ],
+      }),
+      storage
+    );
+    assert.deepEqual(storage.index!.source_status?.map((s) => `${s.source}:${s.status}`), [
+      'metrics:ok',
+      'seats:ok',
+      'cost_centers:skipped',
+      'ai_credits:failed',
+    ]);
+    assert.equal(storage.index!.summary.total_seats, 3);
+  });
+});
