@@ -3,7 +3,7 @@
 `npm run secret-scan` (`scripts/scan-secrets.ts`) skips every directory whose name starts with `.`. Because of that, the change-dev artifacts tracked under `.devs/changes/` (re-included by `!.devs/changes/` in `.gitignore`) are never scanned, although the change-dev skill tells agents to rely on `npm run secret-scan` for them. In the previous change the artifacts had to be scanned by hand, by running the scanner from inside the change directory. This change makes the scanner descend into `.devs/changes/` and keeps every other dot-directory, including the rest of `.devs/`, out of scope.
 
 - **Base**: `main` @ `bee5e8b`.
-- **Issue**: none filed. The change request (goal, context, what to change, done-when) defines the scope, as for `2026-10-01_DashboardReviewAndImprovementPlan`.
+- **Issue**: [#171](https://github.com/sun-flat-yamada/github-copilot-dashboard/issues/171), filed on 2026-10-03, after the merge, as a record of this fix. The change request (goal, context, what to change, done-when) defines the scope, as for `2026-10-01_DashboardReviewAndImprovementPlan`.
 - **Branch / worktree**: `claude/wonderful-turing-1icdpq` in the sibling worktree `../github-copilot-dashboard-worktrees/claude-wonderful-turing-1icdpq`.
 
 ## User Review Required
@@ -16,7 +16,7 @@
 
 > [!WARNING]
 > - **The existing artifacts become part of the gate**: from now on a finding in `.devs/changes/` fails `npm run secret-scan`, locally and in CI (`secret-scan.yml`, `test-and-preview.yml`). Running the current scanner over copies of `.devs/changes/`, `.agents/` and `.github/` reported no findings, so the existing artifacts pass.
-> - **Pattern coverage**: the scanner matches secret patterns (tokens, keys, private-key headers, hard-coded credentials). It has no rules for PII or machine-specific absolute paths, which the change-dev skill also forbids in artifacts, so those still need a manual check. The skill text is adjusted so that it does not suggest otherwise.
+> - **Pattern coverage**: the scanner matches secret patterns (tokens, keys, private-key headers, hard-coded credentials). It has no rules for PII or machine-specific absolute paths, which the change-dev skill also forbids in artifacts, so those still need a manual check. The skill text is adjusted so that it does not suggest otherwise. Adding those rules is tracked in [#206](https://github.com/sun-flat-yamada/github-copilot-dashboard/issues/206).
 > - **No broader scope**: `.agents/` and `.github/` are also clean today, but scanning them is a separate decision. Agent documents quote token prefixes as examples and can produce false positives as they change.
 
 ## Proposed Changes
