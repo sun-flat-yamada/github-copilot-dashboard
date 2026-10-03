@@ -253,7 +253,7 @@ The View Registry is the **only entry point for rendering a view**. `App.tsx` ha
 - `order` sorts the navigation (ascending, ties keep registration order). `isVisible(ctx)` hides a view from both the navigation and the rendering (e.g. permission control). A duplicate id throws.
 - `requiredDatasets` (`scope` / `report`) lists the inputs of the view; the view is renderable when **any one** is loaded (an empty list means data-independent). `getMissingDatasets` returns the missing ones so a reason can be shown; existing views keep rendering their own empty states (no behaviour change).
 - Views receive everything through `ViewContext` (data, focus state, handlers); focus-reset rules (e.g. the radar model reset on tab click) stay in `App.tsx` handlers.
-- The legacy `src/adapters/views/*` plugins are not used by the production path any more; they are removed with the DataStore path in a later Phase 2 task.
+- The legacy `src/adapters/views/*` plugins were removed together with the DataStore path (P2-5).
 
 ### 2.15 Usage Insights in the User Detail Table (`UserDetailTable`)
 - Columns after "Total Requests": **Tokens**, **Cost per 1M Tokens**, **Signal** (badge). All three are sortable and included in the CSV export (tokens split into input / output / cache read / cache write). A cell without data shows "—" with the reason in the tooltip (e.g. the CSV has no token columns).

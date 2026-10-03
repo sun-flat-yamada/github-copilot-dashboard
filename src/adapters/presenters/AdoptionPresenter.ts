@@ -1,5 +1,5 @@
 import { ScopeAggregatedData } from '../../domain/entities/copilot.js';
-import { AgentAdoptionResult } from '../../application/store/derived/nodes/agentAdoption.js';
+import { AgentAdoptionResult } from '../../domain/entities/analysis-results.js';
 import { AdoptionPhase } from '../../domain/entities/agent-metrics.js';
 
 export interface StageDefinition {

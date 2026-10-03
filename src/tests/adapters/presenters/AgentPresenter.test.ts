@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert';
 import { AgentPresenter } from '../../../adapters/presenters/AgentPresenter.js';
-import { AgentAdoptionResult } from '../../../application/store/derived/nodes/agentAdoption.js';
+import { AgentAdoptionResult } from '../../../domain/entities/analysis-results.js';
 
 test('AgentPresenter: transforms agent adoption result into view model', () => {
   const result: AgentAdoptionResult = {

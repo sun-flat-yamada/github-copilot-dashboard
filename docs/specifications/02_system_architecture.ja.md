@@ -134,12 +134,12 @@ flowchart TB
 
 | 要素 | 目標 (§3〜§4) | 現在の本番経路 |
 |:--|:--|:--|
-| SPA の状態管理 | `DataStore` + `DerivedDataGraph` | `dashboard/src/main.tsx` は常に `App.tsx` を描画し、データは Dataset Loader (`dashboard/src/dataset/`) が取得し、Query 層 (`dashboard/src/query/`) がフィルターする。両者を `useDashboardData` が束ねる (SDD-15 §7)。`AppV2.tsx` はマウントされない (`VITE_USE_NEW_STORE` でも `App` は変わらない)。 |
-| ビュー | Registry が調停する 9 種の `ViewPlugin` | Registry はナビゲーションのメタ情報のみ提供し、描画は `App.tsx` の条件分岐が行う。 |
-| Presenter | 全ビュー | `App.tsx` が使うのは Credits / Agent / Adoption の 3 つのみ。 |
+| SPA の状態管理 | Dataset Loader + Query 層 | 記述どおり: `main.tsx` が `App.tsx` を描画し、`useDashboardData` が Dataset Loader (`dashboard/src/dataset/`) と Query 層 (`dashboard/src/query/`) を束ねる (SDD-15 §7)。DataStore 経路は P2-5 で撤去した。 |
+| ビュー | View Registry | `dashboard/src/views/` が唯一の描画入口。 |
+| Presenter | データセット駆動のビューモデル | Credits / Agent / Adoption の Presenter がビューで使われる。他は純粋なビューモデル補助で、テストとともに残す。 |
 | パイプライン | `createPipelineApp` → `PipelineOrchestrator` | 記述どおり (これが本番経路)。 |
 
-フロントエンドの単一アーキテクチャへの収束 (および Dataset Loader / Query 層) は**改善計画の Phase 2** であり、決定は [ADR-0001](../adr/0001-single-frontend-architecture.ja.md) に記録した (hook 経路を Dataset + Registry へ移行し、DataStore 経路を撤去する。`VITE_USE_NEW_STORE` は P2-5 で撤去)。移行が完了するまで、本番経路には SDD-15 の規約 (フィルターエンジンの単一化、概念ごとの単一定義、lint で強制する Hook 規約) を適用する。
+フロントエンドの単一アーキテクチャへの収束 (および Dataset Loader / Query 層) は**改善計画の Phase 2** であり、決定は [ADR-0001](../adr/0001-single-frontend-architecture.ja.md) に記録した (hook 経路を Dataset + Registry へ移行し、DataStore 経路と `VITE_USE_NEW_STORE` は P2-5 で撤去した)。本番経路には SDD-15 の規約 (フィルターエンジンの単一化、概念ごとの単一定義、lint で強制する Hook 規約) を適用する。
 
 ### 2.8 Raw Landing と再処理 (P1-2)
 
@@ -163,15 +163,13 @@ flowchart TB
 flowchart TD
     subgraph Domain["1. Domain Layer (純粋TS・ゼロ外部依存)"]
         Entities["Entities\n- copilot.ts / deep-analysis.ts\n- model-benchmark.ts / views.ts"]
-        VO["Value Objects\n- Money / HealthScore / DateRange"]
+        VO["Value Objects\n- Money / HealthScore"]
         Rules["Business Rules\n- SeatClassification / BudgetUtilization\n- AdoptionPhaseRule / SeatBillingRule"]
-        Ports["Ports (Interfaces)\n- ICopilotDataSource / IStorageWriter\n- IAttributeResolver / IMetricsRepository\n- IViewPluginManifest"]
+        Ports["Ports (Interfaces)\n- ICopilotDataSource / IStorageWriter\n- IAttributeResolver / IMetricsRepository"]
     end
 
     subgraph Application["2. Application Layer (ユースケース・ステート)"]
-        Services["Application Services\n- ScopeManager / FilterService\n- CacheService / DiagnosticService\n- DemoModeService / AdoptionPhaseService"]
-        Store["Reactive DataStore & DerivedDataGraph\n- DataStore / Reducer / State\n- DAG (トポロジカルソート・メモ化)"]
-        Views["View System\n- ViewPluginRegistry / ViewOrchestrator"]
+        Services["Application Services\n- ScopeManager / CacheService\n- CreditsBillingService / DemoModeService"]
         Pipeline["Pipeline\n- PipelineOrchestrator"]
     end
 
@@ -180,11 +178,10 @@ flowchart TD
         DataSources["Data Sources\n- GitHubApiCopilotDataSource\n- MockCopilotDataSource\n- StaticJsonMetricsRepository"]
         StorageAdapters["Storage Adapters\n- ForkSafeStorageWriter\n- AttributeResolverAdapter / DemoAttributeResolver"]
         Presenters["Presenters (DOM非依存)\n- Overview / Users / Trend\n- Budget / DeepAnalysis / ModelRadar\n- Credits / Agent / Adoption"]
-        ViewPlugins["View Plugins (全9種)\n- Overview / Users / Trend\n- Budget / DeepAnalysis / ModelRadar\n- Credits / Agent / Adoption"]
     end
 
     subgraph Frameworks["4. Frameworks & Drivers (React & CLI & Web)"]
-        ReactUI["React Dashboard SPA\n- DashboardProvider / useStoreSelector\n- useStoreDispatch / useViewPlugin\n- App.tsx / AppV2.tsx"]
+        ReactUI["React Dashboard SPA (dashboard/)\n- App.tsx / View Registry (dashboard/src/views)\n- Dataset Loader / Query 層"]
         CLI["CLI Entrypoint\n- run-pipeline.ts -> createPipelineApp()"]
     end
 
@@ -196,35 +193,34 @@ flowchart TD
 
 ### 3.1 レイヤー責務
 1. **Domain Layer (`src/domain/`)**: フレームワーク（React / CLI）や外部ライブラリに一切依存しない純粋なビジネスエンティティ、値オブジェクト（`Money`, `HealthScore`）、不変ビジネスルール、および抽象ポート（Interfaces）。
-2. **Application Layer (`src/application/`)**: ユースケース、リアクティブ状態管理（`DataStore`）、派生データ計算グラフ（`DerivedDataGraph`）、およびビューオーケストレーション（`ViewOrchestrator`, `ViewPluginRegistry`）。
-3. **Interface Adapters (`src/adapters/`)**: 外部API（GitHub REST API）のスキーマ防壁（ACL: `RawApiFetcher`, Zod Schemas）、ストレージアダプタ、および表示ロジックを純粋関数化する Presenters（DOM非依存・単体テスト可能）。
-4. **Frameworks & Drivers (`src/frameworks/`, `dashboard/`, `src/cli/`)**: React Context (`DashboardProvider`)、カスタムフック (`useViewPlugin`, `useStoreSelector`)、CLI エントリポイント。
+2. **Application Layer (`src/application/`)**: ユースケース（`ScopeManager`, `CreditsBillingService`, `PipelineOrchestrator` 等）。フロントエンドの状態は持たない。SPA の状態は `dashboard/src/`（Dataset Loader、Query 層、View Registry）にある。
+3. **Interface Adapters (`src/adapters/`)**: 外部API（GitHub REST API）のスキーマ防壁（ACL: `RawApiFetcher`, Zod Schemas）、ストレージアダプタ、および表示ロジックを純粋関数化する Presenters（DOM非依存・単体テスト可能）。`dashboard/` を import してはならない。
+4. **Frameworks & Drivers (`dashboard/`, `src/cli/`)**: React SPA と CLI エントリポイント。
+
+**import 方向**は `src/tests/layer-boundaries.test.ts` で検査する: `src/**` は `dashboard/` を import しない（SPA が `src/` に依存し、逆は不可）。`src/domain/**` は `application/`・`adapters/`・`frameworks/` を import しない。別タスクで解消する既知の違反 (C-07): `CreditsBillingService` → `BillingConfigLoader`（application → adapter）。
 
 ---
 
-## 4. フロントエンドの状態管理原則 (Reactive DataStore & View Plugins)
+## 4. フロントエンドの状態管理原則 (Dataset Loader・Query 層・View Registry)
 
-### 4.1 Reactive DataStore + DerivedDataGraph
-ダッシュボードは `DataStore` と `DerivedDataGraph` による単方向データフローを採用している。
-- **トポロジカルソート & 循環検出**: 派生ノード（`filteredScopeData`, `filteredReportData`, `diagnosticResults` 等）は依存関係に基づきトポロジカル順に自動計算される。
-- **入力ハッシュメモ化**: 依存ステートや上流派生データに変更がない場合、キャッシュされた計算結果を再利用し、無駄な再計算を完全防止。
+### 4.1 単一の描画経路
+ダッシュボードの経路は 1 本: `main.tsx` → `App.tsx` → View Registry (`dashboard/src/views/`)。データは Dataset Loader (`dashboard/src/dataset/`) が取得し、Query 層 (`dashboard/src/query/`) がフィルターする。両者を `useDashboardData` が束ねる (SDD-15 §7)。旧 DataStore / `DerivedDataGraph` 経路（`AppV2.tsx`、`src/application/store/**`、`src/frameworks/**`、`src/adapters/views/**`、`VITE_USE_NEW_STORE`）は P2-5 で撤去した ([ADR-0001](../adr/0001-single-frontend-architecture.ja.md) §5)。
 
-### 4.2 View Plugin System & Presenter 分離
-全9種の分析ビュー（Overview, Users, Trend, Budget, DeepAnalysis, ModelRadar, Credits, Agent, Adoption）は `IViewPluginManifest` を実装した独立プラグインとして定義される。
-- **ViewOrchestrator**: 表示条件（`canRender`）および派生データの準備状況（`requiredDerivedData`）を検証し、表示可能ビューの切り替えを安全に調停。
+### 4.2 View Registry & Presenter 分離
+分析ビューは `dashboard/src/views/defaultRegistry.ts` に登録する（ビューごとに manifest とコンポーネント）。表示ロジックは UI 描画から分離する。
 - **Presenter**: ビュー表示に必要なフォーマット・計算（通貨表記、比率、ソート、フィルタ結果等）を React / DOM から完全に切り離した純粋 TypeScript クラスとして実装し、ブラウザ不要の高速単体テストを実現。
 
 ### 4.3 FinOps 常時USD基本表示 & サブ表示通貨・EA契約単価サブシステム
 企業の Enterprise Agreement (EA) 契約や多国籍通貨管理に対応した動的課金計算レイヤーを装備する：
 - **常時USD基本表示 & サブ表示通貨併記**: 全9分析画面・KPI・チャート・テーブルにおいて、USD（`$`）が常時基本通貨として表示され、オプションで日本円（JPY）やユーロ（EUR）などのサブ通貨がカッコ書きで併記される（例: `$2,975.00 (¥461,125)`）。
-- **`CurrencyContext` & `CurrencySelector`**: 画面上部ヘッダーのセレクターから、閲覧者自身がリアルタイムにサブ表示通貨（USDのみ / USD+JPY / USD+EUR）を切り替え可能（ブラウザの `localStorage` に保持）。
+- **`CurrencyContext` とヘッダーの設定メニュー**: 画面上部ヘッダーの設定メニューから、閲覧者自身がリアルタイムにサブ表示通貨（USDのみ / USD+JPY / USD+EUR）を切り替え可能（ブラウザの `localStorage` に保持）。
 - **`EnterpriseBillingConfig`**: 通貨定義（USD基本、任意の `subCurrency` JPY/EUR等）、為替レート、ボリュームディスカウント率（0-100%）、および直接契約単価（`customPricePerCredit`: 例 `1.273円 / AIC`、`customSeatPricing`）を管理。直接指定時はそれを最優先適用。
 - **`Money` Value Object**: USD基本とサブ通貨を統合フォーマットする `formatWithSubCurrency`、構造化出力を返す `formatDual`、任意精度フォーマット、割引適用を一元提供。
 - **`BillingConfigLoader`**: 環境変数 `COPILOT_BILLING_CONFIG` または `data/config/billing.json` から安全にロードし、未指定時は標準 USD レートへ自動フォールバック。
 
 ### 4.4 フロントエンド Code Splitting & バンドル最適化アーキテクチャ
 ブラウザ初期表示パフォーマンスを極大化するため、以下のコード分割アーキテクチャを適用：
-- **純粋ブラウザ Repository 分離**: `HttpJsonMetricsRepository`（`fetch` のみ使用）と `FsJsonMetricsRepository`（Node.js `fs` 使用）を物理分離し、ブラウザバンドルから Node.js モジュール解決を完全排除（Vite externalize 警告 0 件）。
+- **純粋ブラウザ Repository 分離**: `HttpJsonMetricsRepository`（`fetch` のみ使用）と Node.js `fs` 系 Repository を物理分離し、ブラウザバンドルから Node.js モジュール解決を完全排除（Vite externalize 警告 0 件）。
 - **On-demand View Lazy Loading**: 重量級 View（Model Radar, Deep Analysis, Credits, Agent Activity, Adoption Maturity）を `React.lazy` および `<Suspense>` で非同期分割。
 - **UI スケルトン保護**: チャンク読み込み中のチラつき・レイアウトシフトを抑止するパルススケルトン（`ViewSkeleton`）を配備。
 - **Rollup Manual Chunks**: `vendor-react`, `vendor-charts`, `vendor-icons`, `vendor-zod` にベンダーライブラリを適切に分離し、メイン JS チャンクを **300 kB 以下 (gzip 80 kB 以下)** に抑制。
@@ -251,28 +247,21 @@ flowchart TD
 ├── src/
 │   ├── domain/                         # Layer 1: Domain
 │   │   ├── entities/                   # エンティティ (copilot, views, billing-config 等)
-│   │   ├── value-objects/              # 値オブジェクト (Money, HealthScore, DateRange 等)
+│   │   ├── value-objects/              # 値オブジェクト (Money, HealthScore 等)
 │   │   ├── pricing/                    # 価格カタログ (価格の唯一の定義元)
 │   │   ├── constants/                  # unassigned.ts (フィルター用センチネル), filter-scope.ts (フィルター非対応セクション)
 │   │   ├── rules/                      # ビジネスルール (SeatClassification, AdoptionPhase 等)
 │   │   └── ports/                      # ポート (ICopilotDataSource, IStorageWriter 等)
 │   ├── application/                    # Layer 2: Application
-│   │   ├── store/                      # DataStore, Reducer, State, DerivedDataGraph
-│   │   ├── services/                   # ScopeManager, FilterService, CreditsBillingService 等
-│   │   ├── views/                      # ViewPluginRegistry, ViewOrchestrator
+│   │   ├── services/                   # ScopeManager, CacheService, CreditsBillingService 等
 │   │   └── pipeline/                   # PipelineOrchestrator, source-status.ts (ソース別縮退)
 │   ├── adapters/                       # Layer 3: Adapters
 │   │   ├── github-api/                 # ACL, RawApiFetcher, Normalizers, Zod Schemas
-│   │   ├── storage/                    # HttpJsonMetricsRepository, FsJsonMetricsRepository, BillingConfigLoader
+│   │   ├── storage/                    # HttpJsonMetricsRepository, BillingConfigLoader
 │   │   ├── presenters/                 # Overview, Users, Trend, Budget, DeepAnalysis, ModelRadar, Credits, Agent, Adoption
-│   │   ├── views/                      # ViewPlugin 定義 & レジストリ登録 (全9種、lazy分割対応)
 │   │   └── composition-root.ts         # バックエンド Composition Root (createPipelineApp)
 │   ├── collector/                      # 収集補助: attribute-resolver.ts, pseudonymizer.ts (ブラウザ互換: Node の静的 import なし)
 │   ├── processor/                      # 集計: metrics-aggregator, billing-calculator, report-parser, rolling-trend, scope-merge, inefficiency-*
-│   ├── frameworks/                     # Layer 4: Frameworks
-│   │   ├── react/                      # DashboardProvider, useStoreSelector, useViewPlugin
-│   │   ├── composition-root.ts         # フロントエンド Composition Root (HttpJsonMetricsRepository注入)
-│   │   └── cli-composition-root.ts     # CLI Composition Root (FsJsonMetricsRepository注入)
 │   └── cli/
 │       └── run-pipeline.ts             # CLI実行エントリポイント (createPipelineApp経由)
 ├── dashboard/                          # フロントエンド SPA (Vite + React + Tailwind)

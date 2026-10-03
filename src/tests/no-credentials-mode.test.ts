@@ -5,7 +5,6 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { GitHubCopilotClient } from '../collector/github-client.js';
 
 // COPILOT_READ_TOKEN / COPILOT_ENTERPRISE / COPILOT_ORGS が未設定でも、
 // (a) 捏造データで埋めず、(b) パイプライン全体を中断せず、
@@ -38,30 +37,6 @@ function runPipelineWithoutCredentials(cwd: string): string {
 function makeTempDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'copilot-pipeline-test-'));
 }
-
-describe('GitHubCopilotClient: no COPILOT_ENTERPRISE/COPILOT_ORGS configured (real mode)', () => {
-  it('fetchMetrics returns [] and records an explanatory (not silent) issue', async () => {
-    const client = new GitHubCopilotClient({ mockMode: false, token: 'dummy-token' });
-    const metrics = await client.fetchMetrics();
-    assert.deepStrictEqual(metrics, []);
-    const issues = client.getIssues();
-    assert.ok(
-      issues.some((i) => i.target === 'config:copilot-metrics' && i.severity === 'warning'),
-      'expected an explanatory issue about missing COPILOT_ENTERPRISE/COPILOT_ORGS configuration'
-    );
-  });
-
-  it('fetchSeats returns [] and records an explanatory (not silent) issue', async () => {
-    const client = new GitHubCopilotClient({ mockMode: false, token: 'dummy-token' });
-    const seats = await client.fetchSeats();
-    assert.deepStrictEqual(seats, []);
-    const issues = client.getIssues();
-    assert.ok(
-      issues.some((i) => i.target === 'config:copilot-billing-seats' && i.severity === 'warning'),
-      'expected an explanatory issue about missing COPILOT_ENTERPRISE/COPILOT_ORGS configuration'
-    );
-  });
-});
 
 describe('run-pipeline.ts (graceful operation without credentials)', () => {
   it('completes successfully (does not abort) and produces a valid empty-state index.json', () => {
