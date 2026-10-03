@@ -233,6 +233,9 @@ Claude Code の公式ドキュメント（*Configure cloud environments*、*Use 
 | リポジトリの auto-merge は無効（`allow_auto_merge: false`） | auto-merge を使わず、直接マージする |
 | セッションは専用の VM と新しいクローン上で、割り当てられたブランチで動く | 兄弟 Worktree（ステップ 3）は作らない。VM が隔離の単位 |
 
+#### 推奨するリポジトリ設定: Automatically delete head branches
+クラウドセッションではプロキシがブランチ削除を拒否する（上表）ため、ヘルパーはマージ済みブランチを片付けられない。リポジトリの **Settings → General → Pull Requests → Automatically delete head branches** を有効にする（REST では `delete_branch_on_merge: true`）。有効にすると、PR のマージ時（Rebase & Merge でも）に GitHub 自身がヘッドブランチを削除するため、プロキシを通らない。この運用を使うすべてのリポジトリ（フォーク含む）で推奨する。`change-dev:finish` も削除を試み、できなければ報告するので、両者は競合しない。現在の値は `gh api repos/{owner}/{repo} --jq .delete_branch_on_merge` で確認できる（読み取りのみ。upstream リポジトリでは 2026-10-03 時点で `true`）。
+
 #### マージ方式の選定基準: なぜRebaseマージなのか？
 本プロジェクトでは、**GitHub上のマージ方式として "Rebase and merge"（または fast-forward）を標準**とする。
 

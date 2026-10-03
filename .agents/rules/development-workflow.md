@@ -105,6 +105,7 @@ When multiple AI agents work concurrently on the codebase:
 
 ### Step 7: Rebase Merge & Pruning
 - **Auto-Pilot (`CHG_DEV_AUTO_PILOT=true`)**: runs right after PR creation with `npm run change-dev:finish -- <id>` (REST only; works locally and in cloud sessions): ready for review → CI → fix failures → approve with the agent's account (GitHub returns 422 for the PR author; then merge proceeds only if the base requires 0 approvals) → rebase merge at the checked head SHA → delete the merged branch (reported if the cloud proxy rejects it) → prune. Resolution order: process env (cloud: the environment's variables) → `.env` → `.env.example` (enabled in this repository). Never use `--admin` or bypass branch protection; never merge with failed/running checks, conflicts or unanswered review threads; stop and report if required approvals cannot be given. See the `change-dev` skill and SDD-14 §3.7.
+- **Recommended repository setting**: enable *Automatically delete head branches* (`delete_branch_on_merge: true`) so GitHub deletes the merged branch itself; the cloud GitHub proxy rejects branch deletion from a session. See SDD-14 §3.7.
 - Merge using **Rebase & Merge** to maintain a linear commit history (manual, local only; `gh pr` subcommands use GraphQL, which cloud sessions reject):
   ```bash
   gh pr merge <id> --rebase --delete-branch
