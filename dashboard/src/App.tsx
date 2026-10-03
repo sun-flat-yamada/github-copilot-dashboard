@@ -27,7 +27,7 @@ import { MonthlyReportKpis } from './components/monthly-report/MonthlyReportKpis
 import { MonthlyReportCharts } from './components/monthly-report/MonthlyReportCharts';
 import { ViewSkeleton } from './components/common/ViewSkeleton';
 import { DataStatusBanner } from './components/common/DataStatusBanner';
-import { buildDataStatusItems } from './utils/dataStatus';
+import { buildDataStatusItems, resolveIsDemoData } from './utils/dataStatus';
 import { BudgetUtilizationRule } from '../../src/domain/rules/BudgetUtilizationRule';
 import { monthlyIdleSavingsUsd } from '../../src/domain/rules/ScopeCostRule';
 import { SEAT_IDLE_CRITERIA_TEXT } from '../../src/domain/rules/SeatClassificationRule';
@@ -401,7 +401,7 @@ export const App: React.FC = () => {
           <div className="flex flex-col space-y-6 w-full">
             {/* サマリーブロック (常時展開 ★要件6) */}
             {activeSource === 'live_metrics' && currentData && (
-              <KpiSummaryCards data={currentData} />
+              <KpiSummaryCards data={currentData} isDemo={resolveIsDemoData({ indexMeta, activeSource, activeDataIsDemoSourced })} />
             )}
             {isReportSource && currentReportData && (
               <MonthlyReportKpis reportData={currentReportData} />

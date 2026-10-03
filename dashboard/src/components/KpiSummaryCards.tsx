@@ -4,12 +4,16 @@ import { DollarSign, Users, AlertTriangle, AlertCircle, CheckCircle2, MessageSqu
 import { useCurrency } from '../contexts/CurrencyContext';
 import { SEAT_IDLE_CRITERIA_TEXT } from '../../../src/domain/rules/SeatClassificationRule';
 import { UNFILTERED_SECTION_NOTICE } from '../../../src/domain/constants/filter-scope';
+import { qualify } from '../../../src/domain/metrics/metric-registry';
+import { MetricValue } from './common/MetricValue';
 
 interface KpiSummaryCardsProps {
   data: ScopeAggregatedData;
+  /** デモデータ由来か。true のとき各 KPI に「デモ」バッジを付ける */
+  isDemo?: boolean;
 }
 
-export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data }) => {
+export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data, isDemo = false }) => {
   const { overview, scope_type } = data;
   const { formatMoney } = useCurrency();
 
@@ -37,6 +41,18 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data }) => {
     : null;
   const idleWasteDual = formatMoney(overview.idle_waste_usd);
 
+  // 品質属性 (Metric Registry): 実測 / 推定 / 欠損 / デモ
+  const spendQ = qualify('total_spend', overview.total_spend_usd, { isDemo });
+  const activeQ = qualify('active_rate', overview.active_ratio, { isDemo });
+  const idleQ = qualify('idle_waste', overview.idle_waste_usd, {
+    isDemo,
+    estimatedReason: `遊休の判定基準 (${SEAT_IDLE_CRITERIA_TEXT}) に基づく見込み額です。確定した削減額ではありません`,
+  });
+  const acceptanceQ = qualify('acceptance_rate', isUsageUnavailable ? null : overview.overall_acceptance_rate, {
+    isDemo,
+    missingReason: '利用状況メトリクスを取得できていません',
+  });
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* 1. 総費用 (利用費用 & 超過請求費用) */}
@@ -49,14 +65,10 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data }) => {
         </div>
         <div className="mt-3">
           <div className="flex items-baseline space-x-2 flex-wrap">
-            <span className="text-2xl font-bold text-slate-100">
-              {spendDual.usd}
-            </span>
-            {spendDual.sub && (
-              <span className="text-sm font-semibold text-slate-400">
-                ({spendDual.sub})
-              </span>
-            )}
+            <MetricValue
+              qualified={spendQ}
+              format={() => <>{spendDual.usd}{spendDual.sub && <span className="text-sm font-semibold text-slate-400"> ({spendDual.sub})</span>}</>}
+            />
             <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">利用費用</span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
@@ -106,9 +118,7 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data }) => {
           </div>
         </div>
         <div className="mt-3">
-          <div className="text-2xl font-bold text-slate-100">
-            {(overview.active_ratio * 100).toFixed(1)}%
-          </div>
+          <MetricValue qualified={activeQ} format={(v) => `${(v * 100).toFixed(1)}%`} />
           <p className="text-xs text-slate-500 mt-1">
             稼働ユーザー: <span className="text-blue-400 font-medium">{overview.active_users}</span> / {overview.total_seats} 名
           </p>
@@ -133,16 +143,11 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data }) => {
           </div>
         </div>
         <div className="mt-3">
-          <div className="flex items-baseline space-x-1.5 flex-wrap">
-            <span className="text-2xl font-bold text-amber-300">
-              {idleWasteDual.usd}
-            </span>
-            {idleWasteDual.sub && (
-              <span className="text-sm font-semibold text-amber-400/80">
-                ({idleWasteDual.sub})
-              </span>
-            )}
-          </div>
+          <MetricValue
+            qualified={idleQ}
+            valueClassName="text-2xl font-bold text-amber-300"
+            format={() => <>{idleWasteDual.usd}{idleWasteDual.sub && <span className="text-sm font-semibold text-amber-400/80"> ({idleWasteDual.sub})</span>}</>}
+          />
           <p className="text-xs text-slate-500 mt-1" title={`遊休の判定基準: ${SEAT_IDLE_CRITERIA_TEXT}`}>
             遊休 ({SEAT_IDLE_CRITERIA_TEXT}): <span className="text-amber-400 font-semibold">{overview.idle_seats} 席</span>
           </p>
@@ -194,16 +199,20 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data }) => {
         <div className="mt-3">
           {isUsageUnavailable ? (
             <>
-              <div className="text-2xl font-bold text-slate-500" data-testid="usage-unavailable">—</div>
+              <div data-testid="usage-unavailable">
+                <MetricValue qualified={acceptanceQ} format={() => null} />
+              </div>
               <p className="text-xs text-slate-500 mt-1">
                 取得不可: 利用状況メトリクス (補完・チャット等) を取得できていません
               </p>
             </>
           ) : (
             <>
-              <div className="text-2xl font-bold text-purple-300 flex items-center space-x-2">
-                <span>{((overview.overall_acceptance_rate ?? 0) * 100).toFixed(1)}%</span>
-              </div>
+              <MetricValue
+                qualified={acceptanceQ}
+                valueClassName="text-2xl font-bold text-purple-300"
+                format={(v) => `${(v * 100).toFixed(1)}%`}
+              />
               <div className="flex items-center space-x-3 text-xs text-slate-500 mt-1">
                 <span className="flex items-center space-x-1">
                   {isChatMissing ? (
