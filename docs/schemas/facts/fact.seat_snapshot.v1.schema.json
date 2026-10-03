@@ -1,0 +1,103 @@
+{
+  "title": "fact.seat_snapshot",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "number",
+      "const": 1
+    },
+    "snapshot_day": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "user_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "plan_type": {
+      "type": "string",
+      "enum": [
+        "business",
+        "enterprise",
+        "unknown"
+      ]
+    },
+    "organization": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "assigning_teams": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "created_at": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "last_activity_at": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "pending_cancellation_date": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "api",
+        "csv",
+        "derived"
+      ]
+    },
+    "quality": {
+      "type": "string",
+      "enum": [
+        "measured",
+        "estimated",
+        "missing",
+        "demo"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "snapshot_day",
+    "user_key",
+    "plan_type",
+    "organization",
+    "assigning_teams",
+    "created_at",
+    "last_activity_at",
+    "pending_cancellation_date",
+    "source",
+    "quality"
+  ],
+  "additionalProperties": false
+}
