@@ -70,6 +70,16 @@ flowchart TD
 
 ---
 
+## 🧾 Architecture Decision Records
+
+Decisions behind the specifications are recorded in [`docs/adr/`](../adr/README.md).
+
+| ID | Title | Status | Languages |
+| :--- | :--- | :--- | :--- |
+| **ADR-0001** | Single Front-End Architecture (Dataset + Registry) | Accepted (2026-10-03) | [EN](../adr/0001-single-frontend-architecture.md) \| [JA](../adr/0001-single-frontend-architecture.ja.md) |
+
+---
+
 ## 🧭 Recommended Reading Paths
 
 Depending on your role, we recommend reviewing specifications in the following order:
