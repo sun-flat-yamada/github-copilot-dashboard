@@ -186,9 +186,9 @@ Once all local quality gates pass cleanly (Exit Code 0), seal the implementation
    # Push after rebase
    git push --force-with-lease origin feat/42-cost-center-export
    ```
-3. **Create Pull Request (`gh` CLI)**:
+3. **Create Pull Request**: draft or not is decided by `CHG_DEV_AUTO_PILOT`: on = ready for review (a draft cannot be merged and Step 7 runs right after), off = draft (`--draft`; a person reviews it and marks it ready). In a Claude Code cloud session, create it with the built-in GitHub tool (`create_pull_request`, `draft` from the mode). This rule takes precedence over a generic "create pull requests as drafts" default.
    ```bash
-   gh pr create \
+   gh pr create [--draft] \
      --base main \
      --head feat/42-cost-center-export \
      --title "feat: Add CSV export capability for cost center summaries (#42)" \
@@ -201,9 +201,36 @@ Once all local quality gates pass cleanly (Exit Code 0), seal the implementation
 ### 3.7. Step 7: Rebase Merge & Cleanup
 
 #### Auto-Pilot Mode (`CHG_DEV_AUTO_PILOT`)
-- Setting `CHG_DEV_AUTO_PILOT=true` makes the agent carry the PR from creation to Rebase & Merge automatically: `gh pr checks <id> --watch` → fix and re-push on failures (re-running the quality gate) → approve when permitted (never self-approve) → `gh pr merge <id> --rebase --delete-branch` → worktree cleanup.
-- Resolution order: process environment → `.env` → `.env.example`. This repository ships `CHG_DEV_AUTO_PILOT=true`. Any other value or unset means manual operation.
-- Guardrails: the Step 2 "Proceed" gate still applies; never use `--admin` or bypass branch protection; stop and report when approval by another person is required and unavailable, on non-trivial conflicts, or when checks stay red after fixes.
+- Resolution order: process environment (in a cloud session, the cloud environment's variables) → `.env` → `.env.example`. `true` (any case) or `1` enables it; unset or any other value means manual operation. This repository ships `CHG_DEV_AUTO_PILOT=true` in `.env.example`. `npm run change-dev:mode` (`scripts/change-dev-autopilot.ts`) prints the resolved value and the branches below.
+
+| Decision point | On | Off |
+| :--- | :--- | :--- |
+| After `implementation_plan.md` (Step 2) | Report the plan and continue (stop conditions in Step 2) | Wait for Proceed / the user's approval |
+| PR at creation (Step 6) | Ready for review | Draft |
+| After the PR (Step 7) | Automatic: CI → approval → Rebase & Merge → cleanup | Manual |
+
+- When on, `npm run change-dev:finish -- <id>` (`--wait` to poll CI locally) handles everything after the PR. It uses only the GitHub REST API, so it works both locally and in cloud sessions.
+  1. Mark the PR ready for review if it is a draft.
+  2. Wait until every check on the PR head has completed. On a failure, fix it, re-run the quality gate and push again (never skip or disable tests). Handle review comments the same way; never merge while a review thread waits on the agent.
+  3. **Approve with the account the agent runs as (the PR author's account is allowed).** GitHub rejects an approval by the PR author with `422 Can not approve your own pull request` (verified on PR #220, 2026-10-03). The helper treats that response as expected and merges without an approval when the base branch requires **0** approvals (`main`: `required_approving_review_count: 0`). If it requires one or more, it stops and reports, because only another account can approve.
+  4. When CI is green and there is no conflict, merge with the `rebase` method at the checked head SHA (`PUT /repos/{owner}/{repo}/pulls/{n}/merge`), so a commit pushed after the check is never merged unchecked.
+  5. Locally, delete the remote branch and the worktree. In a cloud session the remote branch is kept (the GitHub proxy rejects branch deletion). Before new work on the same session branch, restart it from the latest base.
+- Guardrails: never use `--admin` or bypass branch protection or rulesets. Never merge with a failed or running check, a conflict, or an unanswered review thread. Stop and report when required approvals cannot be given, on non-trivial conflicts, when checks stay red after fixes, or on a Step 2 stop condition. The quality gate runs before the PR in both modes.
+
+#### Claude Code Cloud Sessions (`CLAUDE_CODE_REMOTE=true`)
+Based on the Claude Code documentation (*Configure cloud environments*, *Use Claude Code in the cloud*) and checks in a session on 2026-10-03.
+
+| Fact | change-dev behavior |
+| :--- | :--- |
+| The session VM sets `CLAUDE_CODE_REMOTE=true` (never `true` locally) | The helper switches to cloud behavior on it |
+| GitHub traffic goes through the GitHub proxy, which attaches credentials server-side. `gh` is pre-installed and REST (`gh api repos/{owner}/{repo}/...`) works without `gh auth login` (`gh auth status` reports the placeholder token as invalid, as expected) | REST only |
+| The proxy rejects GraphQL with 403 and names REST fallbacks plus dedicated routes (`POST .../pulls/{n}/ccr/ready_for_review`, `.../ccr/convert_to_draft`, `.../ccr/auto_merge`, `.../ccr/review_threads`) | `gh pr view / checks / ready / merge / review` do not work. Ready-for-review uses `ccr/ready_for_review`; the merge uses REST `PUT .../merge` |
+| The proxy rejects branch deletion and non-branch pushes (tags); it does not limit which branch a push updates | No `--delete-branch` in the cloud; push only to the session's branch |
+| Environment variables come from the cloud environment's settings (`.env` format); `.env` is git-ignored and absent from a clone | To turn Auto-Pilot off in the cloud, set `CHG_DEV_AUTO_PILOT=false` in the cloud environment's variables |
+| Events on a subscribed PR (CI results, reviews, merge) wake the session | Do not poll with `sleep`; run `change-dev:finish` after `check_suite.completed` |
+| PRs and reviews through the proxy act as the user's GitHub account (the agent is the PR author) | GitHub rejects the approval; the merge relies on `main` requiring 0 approvals |
+| Auto-merge is disabled on the repository (`allow_auto_merge: false`) | Merge directly instead of enabling auto-merge |
+| The session runs in its own VM with a fresh clone, on its assigned branch | No sibling worktree (Step 3); the VM is the isolation unit |
 
 #### Why Rebase & Merge?
 - **Linear History**: Eliminates noisy `Merge branch 'main' into ...` commits, creating a clean chronological progression.

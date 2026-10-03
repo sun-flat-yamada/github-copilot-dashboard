@@ -34,7 +34,7 @@ Welcome to `github-copilot-dashboard`. All AI coding assistants (Antigravity, Ge
 - `/gate`: Run the full quality gate: `npm run fork:verify && npm run typecheck && npm test && npm run secret-scan && npm run build`.
 - `/secret-scan`: Run `npm run secret-scan`.
 - `/verify-fork`: Run `npm run fork:verify` and follow `.agents/skills/fork-sync-ops/SKILL.md` (never push `main` on upstream).
-- `/change-dev`: Follow `.agents/skills/change-dev/SKILL.md` (Issue → plan gate → sibling worktree → quality gate → draft PR).
+- `/change-dev`: Follow `.agents/skills/change-dev/SKILL.md` (Issue → plan gate → sibling worktree → quality gate → PR → Rebase Merge; the plan wait, PR draft state and post-PR automation follow `CHG_DEV_AUTO_PILOT`).
 - `/plan`: Write an implementation plan before any significant code change.
 
 ## Directives
