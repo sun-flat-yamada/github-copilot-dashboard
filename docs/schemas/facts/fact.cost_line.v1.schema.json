@@ -38,14 +38,9 @@
       ]
     },
     "quantity": {
-      "anyOf": [
-        {
-          "type": "number",
-          "minimum": 0
-        },
-        {
-          "type": "null"
-        }
+      "type": [
+        "number",
+        "null"
       ]
     },
     "unit_type": {
@@ -60,47 +55,27 @@
       ]
     },
     "unit_price": {
-      "anyOf": [
-        {
-          "type": "number",
-          "minimum": 0
-        },
-        {
-          "type": "null"
-        }
+      "type": [
+        "number",
+        "null"
       ]
     },
     "gross": {
-      "anyOf": [
-        {
-          "type": "number",
-          "minimum": 0
-        },
-        {
-          "type": "null"
-        }
+      "type": [
+        "number",
+        "null"
       ]
     },
     "discount": {
-      "anyOf": [
-        {
-          "type": "number",
-          "minimum": 0
-        },
-        {
-          "type": "null"
-        }
+      "type": [
+        "number",
+        "null"
       ]
     },
     "net": {
-      "anyOf": [
-        {
-          "type": "number",
-          "minimum": 0
-        },
-        {
-          "type": "null"
-        }
+      "type": [
+        "number",
+        "null"
       ]
     },
     "currency": {
