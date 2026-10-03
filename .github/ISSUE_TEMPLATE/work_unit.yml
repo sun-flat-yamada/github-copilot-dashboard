@@ -53,5 +53,6 @@ body:
       description: What a new session reads first and how it starts.
       value: |
         Say "Resolve this Issue". Follow `.agents/skills/change-dev/SKILL.md` (Work-Unit Issue). Read `AGENTS.md`, the plan, its recorded decisions and the SDDs above first. Open the PR with `Closes` for this Issue.
+        Branch: `<type>/<this issue number>-<slug>` from `npm run change-dev:branch -- name --issue <this issue number>`; a cloud session renames its assigned branch to it with `rename` before the first push.
     validations:
       required: true

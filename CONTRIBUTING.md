@@ -64,7 +64,7 @@ npm ci
 ```
 
 #### Step 3: Implement & Run Local Quality Gate
-1. **Branch Naming**: `feat/<issue>-<slug>`, `fix/<issue>-<slug>`, `docs/...`, `refactor/...`.
+1. **Branch Naming**: `<type>/<issue>-<slug>` such as `feat/42-budget-alerts` or `fix/43-prorate-calc` (rules: `.agents/rules/git-rules-commit.md` §2). Generate it with `npm run change-dev:branch -- name --issue <id>` and check it with `npm run change-dev:branch -- check`; CI rejects PRs from other names.
 2. **Conventional Commits**: `feat: ...`, `fix: ...`, `docs: ...`, `test: ...`.
 3. **Mandatory 5-Stage Quality Gate** (run inside the worktree):
    ```bash
