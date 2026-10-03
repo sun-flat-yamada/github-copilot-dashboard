@@ -668,5 +668,7 @@ async function main(): Promise<number> {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename)) {
-  main().then((code) => process.exit(code));
+  main().then((code) => {
+    process.exitCode = code;
+  });
 }
