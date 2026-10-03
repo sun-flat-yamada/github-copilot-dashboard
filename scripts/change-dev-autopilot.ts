@@ -16,6 +16,7 @@
  */
 
 import { execFileSync } from 'child_process';
+import { checkPlanFirst } from './plan-first-check.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -282,6 +283,27 @@ function deleteMergedBranch(repo: string, headRef: string, baseRef: string): 'de
   }
 }
 
+/** PR の head (ローカルに無ければ fetch) と base の差分で計画先行を検査する */
+function checkPlanFirstForPull(pull: PullSnapshot & { baseRef: string; headRef: string }) {
+  const git = (args: string[]) => execFileSync('git', args, { cwd: REPO_ROOT, stdio: 'pipe', encoding: 'utf-8' });
+  try {
+    git(['fetch', '--quiet', 'origin', pull.baseRef, pull.headRef]);
+  } catch {
+    // オフライン等。手元の参照で続ける
+  }
+  let head = pull.headSha;
+  try {
+    git(['cat-file', '-e', `${head}^{commit}`]);
+  } catch {
+    head = 'HEAD';
+  }
+  try {
+    return checkPlanFirst(REPO_ROOT, `origin/${pull.baseRef}`, head);
+  } catch (e) {
+    return { ok: false, exempt: false, message: `could not read git history: ${(e as Error).message.split('\n')[0]}` };
+  }
+}
+
 async function finish(prArg: string | undefined, flags: Set<string>): Promise<number> {
   const pr = Number(prArg);
   if (!Number.isInteger(pr) || pr <= 0) {
@@ -297,6 +319,15 @@ async function finish(prArg: string | undefined, flags: Set<string>): Promise<nu
   const repo = repoSlug();
 
   let pull = readPull(repo, pr);
+
+  // 計画先行の検査 (implementation_plan.md が実装より前のコミットにあること)。状態を変える操作の前に行う。
+  const planCheck = checkPlanFirstForPull(pull);
+  if (!planCheck.ok) {
+    console.error(`🛑 plan-first check failed: ${planCheck.message}`);
+    return 1;
+  }
+  console.log(`✅ ${planCheck.message}`);
+
   if (pull.draft) {
     console.log(`📝 PR #${pr} is a draft → marking ready for review`);
     if (!dryRun) markReady(repo, pr, policy.cloud);

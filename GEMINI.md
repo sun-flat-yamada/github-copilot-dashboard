@@ -27,6 +27,7 @@ Welcome to `github-copilot-dashboard`. All AI coding assistants (Antigravity, Ge
 @.agents/rules/git-rules-commit.md
 @.agents/rules/naming-rules-general.md
 @.agents/rules/language-rules-output.md
+@.agents/rules/instructions-rules-precedence.md
 
 ## Commands
 - `/status`: Show `git status`, current branch, and `npm run fork:status`.
