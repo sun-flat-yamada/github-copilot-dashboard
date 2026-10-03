@@ -65,6 +65,19 @@ All changes start with a dedicated GitHub Issue.
    ```
 3. Use the generated Issue number (e.g. `#42`) in the branch identifier.
 
+#### 3.1.1. Work-Unit Issue (one task = one Issue)
+Every task a plan defines (a `task.md` item, a plan table row such as `P1-2`) is registered as **one Issue** sized for one Pull Request, so that a fresh agent session can start from the Issue number alone.
+
+1. **Register**: fill in the `.github/ISSUE_TEMPLATE/work_unit.yml` sections (Why, What, Done condition, Acceptance Criteria, References, Prerequisites, **How to start**). Title: `[<task-id>] <imperative title>`.
+2. **Group**: one parent (tracking) Issue per phase / epic (`[Phase N] <name> — tracking`) with each task Issue attached as a sub-issue. The parent carries shared context and the recommended order, and closes when all children are closed.
+3. **Start from an Issue**: when the user says "Resolve Issue #N", the agent:
+   1. Reads the Issue and its parent with the GitHub tool, plus `AGENTS.md` and everything under References.
+   2. Checks the Prerequisites are merged; if not, stops and reports instead of working around them.
+   3. Creates `.devs/changes/yyyy-mm-dd_<ChangeTitle>/` (`implementation_plan.md`, `task.md`) linking the Issue (lifecycle Step 2), then follows the normal lifecycle (worktree/branch → quality gate → walkthrough → PR).
+   4. Opens the PR with `Closes #N`; the sub-issue closes on merge and the parent checklist follows.
+4. **One Issue per session**: the Issue body is the hand-off. Anything a later session needs (decisions, unverified items, open questions) goes into the Issue or the plan documents, never only into chat.
+5. **Scope discipline**: findings outside the Issue's scope become new Issues (parent linked), not extra changes in the PR.
+
 ---
 
 ### 3.2. Step 2: Antigravity Implementation Plan & Task Orchestration (Pre-Execution Gate)
