@@ -289,3 +289,18 @@ The user detail table has **one format**, whatever the data source (auto-collect
 - **Signals for auto-collected data**: computed by the same functions (SDD-06 §5) from the daily history of the measured profile; tokens are absent there, so S1 / S2 / S5 are "データ不足". The badge tooltip lists the signals that could not be evaluated, so "特記なし" is not read as "everything was checked".
 - **Behavioural test**: `src/tests/user-detail-table-unified.test.ts` renders both sources and asserts identical headers and cell counts.
 
+
+### 2.17 Charts and Accessibility (P3-3 / D-03, D-07)
+
+Chart choice follows appendix A.5.2 of the improvement plan; accessibility follows WCAG 2.2 AA as far as it is checkable in the SPA.
+
+- **Many groups use a sorted horizontal bar, not a donut**: `RankedBarChart` shows the top N (default 8) groups by value in descending order plus one aggregated **「その他 (k 件)」** row (`rankWithOther`, `dashboard/src/utils/chart-series.ts`). A single leftover row is not folded. Zero, negative and missing values are not drawn as bars. The aggregated row is distinguished by a hatch pattern and text, not by colour.
+- **Colour is never the only cue**: every bar row shows rank, name, value and share as text. Stacked seat bars use fill patterns (active = solid, idle = diagonal stripes, onboarding = dots) in addition to colour and the legend. Budget status keeps icon + text (正常 / 注意 / 予算超過), and the budget bar is a `role="progressbar"` with `aria-valuetext`.
+- **Alternative to the picture**: every chart that carries data offers a **「表で見る」 / 「グラフで見る」** toggle (`<button aria-pressed>`) that swaps the chart for a data table (`<caption>`, `<th scope>`). SVG charts are wrapped by `AccessibleChart` (`role="img"` + a summary `aria-label`).
+- **Keyboard**: the toggle is a native button (Tab / Enter / Space); each ranked row is focusable (`tabindex=0`) with a full `aria-label` and a visible focus ring.
+- **Light / dark**: charts use theme-independent mid-tone fills with text labels in theme colours; both themes are checked by the automated test.
+- **Out of scope here**: the model radar (replaced by a dot plot with a raw-value table together with the normalisation review in P3-7), the 100% stacked trend and bullet charts (tracked with the budget redesign).
+
+**Automated check**: `e2e/a11y.spec.ts` (Playwright smoke, P2-6) runs axe-core on the overview in light and dark with the allocation section open and fails on any critical / serious violation (`color-contrast` is excluded from the automated run), and verifies the table toggle and keyboard focus. Unit tests: `src/tests/chart-series.test.ts`, `src/tests/ranked-bar-chart.test.ts`.
+
+**Manual checklist** (before release): (1) operate every chart toggle with the keyboard only; (2) read one chart with a screen reader and confirm the summary and table are announced; (3) check text contrast of labels and chips in both themes (≥ 4.5:1); (4) with a colour-vision simulator, confirm that rows, seat series and budget status are distinguishable; (5) zoom to 200% and confirm no horizontal scrolling of the page.

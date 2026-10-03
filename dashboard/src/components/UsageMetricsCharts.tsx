@@ -1,6 +1,7 @@
 import React from 'react';
 import { ScopeAggregatedData } from '../../../src/types/copilot';
 import { UNFILTERED_SECTION_NOTICE } from '../../../src/domain/constants/filter-scope';
+import { AccessibleChart } from './common/AccessibleChart';
 import {
   LineChart,
   Line,
@@ -86,51 +87,59 @@ export const UsageMetricsCharts: React.FC<UsageMetricsChartsProps> = ({ data }) 
           <span className="text-xs text-slate-400">期間トレンド</span>
         </div>
 
-        <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={trendData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#21262d" />
-              <XAxis dataKey="date" stroke="#8b949e" fontSize={11} />
-              <YAxis yAxisId="left" stroke="#8b949e" fontSize={11} />
-              <YAxis
-                yAxisId="right"
-                orientation="right"
-                unit="%"
-                stroke="#a371f7"
-                fontSize={11}
-                domain={[0, 100]}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#161b22',
-                  borderColor: '#30363d',
-                  borderRadius: '8px',
-                  color: '#f0f6fc',
-                  fontSize: '12px',
-                }}
-              />
-              <Legend wrapperStyle={{ fontSize: '11px', color: '#8b949e' }} />
-              <Line
-                yAxisId="left"
-                type="monotone"
-                dataKey="activeUsers"
-                name="アクティブユーザー"
-                stroke="#2f81f7"
-                strokeWidth={2}
-                dot={false}
-              />
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey="acceptanceRate"
-                name="Inline補完受諾率 (%)"
-                stroke="#a371f7"
-                strokeWidth={2}
-                dot={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        <AccessibleChart
+          testId="usage-trend-chart"
+          title="日次アクティブユーザーと Inline補完受諾率の推移"
+          summary={`${trendData.length} 日分。アクティブユーザーと受諾率 (%) の日次推移。`}
+          columns={[{ key: 'date', label: '日付' }, { key: 'activeUsers', label: 'アクティブユーザー' }, { key: 'rate', label: 'Inline補完受諾率' }]}
+          rows={trendData.map((t) => ({ date: t.date, activeUsers: t.activeUsers, rate: `${t.acceptanceRate}%` }))}
+        >
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={trendData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#21262d" />
+                <XAxis dataKey="date" stroke="#8b949e" fontSize={11} />
+                <YAxis yAxisId="left" stroke="#8b949e" fontSize={11} />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  unit="%"
+                  stroke="#a371f7"
+                  fontSize={11}
+                  domain={[0, 100]}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#161b22',
+                    borderColor: '#30363d',
+                    borderRadius: '8px',
+                    color: '#f0f6fc',
+                    fontSize: '12px',
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: '11px', color: '#8b949e' }} />
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="activeUsers"
+                  name="アクティブユーザー"
+                  stroke="#2f81f7"
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="acceptanceRate"
+                  name="Inline補完受諾率 (%)"
+                  stroke="#a371f7"
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </AccessibleChart>
       </div>
 
       {/* 2. プログラミング言語別 提案 & 受諾数 */}
@@ -142,27 +151,35 @@ export const UsageMetricsCharts: React.FC<UsageMetricsChartsProps> = ({ data }) 
           <span className="text-xs text-slate-400">Top Languages</span>
         </div>
 
-        <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={langData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#21262d" />
-              <XAxis dataKey="name" stroke="#8b949e" fontSize={11} />
-              <YAxis stroke="#8b949e" fontSize={11} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#161b22',
-                  borderColor: '#30363d',
-                  borderRadius: '8px',
-                  color: '#f0f6fc',
-                  fontSize: '12px',
-                }}
-              />
-              <Legend wrapperStyle={{ fontSize: '11px', color: '#8b949e' }} />
-              <Bar dataKey="suggestions" name="AI提案数" fill="#58a6ff" />
-              <Bar dataKey="acceptances" name="受諾採用数" fill="#3fb950" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <AccessibleChart
+          testId="usage-language-chart"
+          title="開発言語別 コード提案と受諾数"
+          summary={`上位 ${langData.length} 言語の AI 提案数と受諾採用数。`}
+          columns={[{ key: 'name', label: '言語' }, { key: 'suggestions', label: 'AI提案数' }, { key: 'acceptances', label: '受諾採用数' }, { key: 'rate', label: '受諾率' }]}
+          rows={langData.map((l) => ({ name: l.name, suggestions: l.suggestions, acceptances: l.acceptances, rate: `${l.rate}%` }))}
+        >
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={langData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#21262d" />
+                <XAxis dataKey="name" stroke="#8b949e" fontSize={11} />
+                <YAxis stroke="#8b949e" fontSize={11} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#161b22',
+                    borderColor: '#30363d',
+                    borderRadius: '8px',
+                    color: '#f0f6fc',
+                    fontSize: '12px',
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: '11px', color: '#8b949e' }} />
+                <Bar dataKey="suggestions" name="AI提案数" fill="#58a6ff" />
+                <Bar dataKey="acceptances" name="受諾採用数" fill="#3fb950" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </AccessibleChart>
       </div>
     </div>
   );
