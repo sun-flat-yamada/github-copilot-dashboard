@@ -217,6 +217,16 @@ data/raw/landing/
 - `user_key` は呼び出し側が解決する (匿名化モードでは仮名 ID)。実名・メールはファクトに書かない。
 - スキーマは zod で定義し (`schemas.ts`)、JSON Schema は `npm run schema:facts` で `docs/schemas/facts/` に生成する。コミット済みファイルと生成結果が異なると `npm test` が失敗する。
 
+### 2.5 データ品質レポートの履歴 (P1-7)
+
+ライブ収集の実行ごとに**データ品質レポート** (`DataQualityReport`、`src/domain/entities/data-quality.ts`) も作り、`data/processed/quality/history.json` に追記する (配信時は `quality/history.json`。新しいものが末尾、最大 90 件。再処理した run は同じ `run_id` のエントリを置き換える)。
+
+- 内容 (件数・日付・ソース名のみ。ログイン名や値は含めない): `window`、`missing_days` (要求したレポート日のうち 1 件も取得できなかった日)、`duplicates_collapsed` (Enterprise と Org の重複。情報のみ)、`out_of_range` (要求した日と異なる日付の行)、`quarantined` (検証に失敗した行。範囲外を除く)、`malformed_lines`、ソース別 `status`、`level`。
+- `level`: ソースが失敗なら `error`。一部取得のソース・欠損日・隔離 / 範囲外の行・破損行があれば `warning`。それ以外は `ok`。
+- `index.json` の `data_quality` に、最新の level・件数・`trend` (`first` / `unchanged` / `degraded` / `recovered`)・`previous_level`・`last_change_at`・`history_file` を持つ。`run_id` でエントリを Run Manifest (§2.3) に結び付ける。
+- モックと、ライブ収集をしなかった実行 (未設定・失敗) では記録せず、前回の履歴と要約を維持する。
+- このファイルは `pages:stage` の許可リストに入る (`STAGED_PROCESSED_DIRS` に `quality` を含む)。
+
 ## 3. インデックスメタデータ (`index.json`) 仕様
 
 ダッシュボードSPAが起動時に最初に読み込み、利用可能な「日」「月」「期間」「アーカイブ」の選択肢を提供するメタデータ。

@@ -1,3 +1,4 @@
+import type { DataQualitySummary } from '../../../src/domain/entities/data-quality';
 import type {
   DataSourceId,
   DataSourceType,
@@ -27,7 +28,7 @@ export const SOURCE_FETCH_LABELS: Record<DataSourceId, string> = {
   cost_centers: 'Cost Center',
 };
 
-export type DataStatusLevel = 'demo' | 'error' | 'warning';
+export type DataStatusLevel = 'demo' | 'error' | 'warning' | 'info';
 
 export interface DataStatusItem {
   /** 安定した識別子 (React key / テスト用) */
@@ -35,6 +36,8 @@ export interface DataStatusItem {
   level: DataStatusLevel;
   title: string;
   detail?: string;
+  /** 補足の参照先 (例: データ品質の履歴)。配信ルートからの相対パス */
+  link?: { path: string; label: string };
 }
 
 export interface DataStatusInput {
@@ -96,6 +99,66 @@ function describeSourceStatus(status: SourceStatus): DataStatusItem | null {
   return null;
 }
 
+const QUALITY_LEVEL_LABELS = { ok: '良好', warning: '注意', error: '異常' } as const;
+
+/** 品質の悪化・回復を、起点の時刻付きで説明する */
+function describeQualityChange(q: DataQualitySummary): string | null {
+  const since = formatStatusTimestamp(q.last_change_at);
+  const sinceText = since ? `${since} から` : '';
+  if (q.trend === 'degraded') return `前回 (${QUALITY_LEVEL_LABELS[q.previous_level ?? 'ok']}) から悪化しました。`;
+  if (q.trend === 'recovered') return `前回 (${QUALITY_LEVEL_LABELS[q.previous_level ?? 'ok']}) から回復しました。`;
+  if (q.level !== 'ok' && since) return `${sinceText}この状態が続いています。`;
+  return null;
+}
+
+/**
+ * データ品質レポート (P1-7) の状態。品質が ok で変化が無いときは何も出さない。
+ * 品質レポートが無いときは「—（理由）」で、情報が無いことを明示する (問題が無いとは言わない)。
+ */
+function describeDataQuality(indexMeta: IndexMetadata | null): DataStatusItem | null {
+  const metrics = indexMeta?.source_status?.find((s) => s.source === 'metrics');
+  const q = indexMeta?.data_quality;
+
+  if (!q) {
+    // 失敗は取得失敗のバナーが示す。対象外 (未設定) は品質を評価する対象が無い
+    if (!metrics || metrics.status === 'skipped' || metrics.status === 'failed') return null;
+    return {
+      id: 'data-quality-unknown',
+      level: 'info',
+      title: 'データ品質: —（品質レポートがありません）',
+      detail: 'この成果物は品質レポートの導入前に生成されたか、品質を評価できない実行で作られました。次回の収集から表示されます。',
+    };
+  }
+
+  const link = { path: q.history_file, label: '品質の履歴 (JSON)' };
+  const change = describeQualityChange(q);
+  const counts = [
+    q.missing_days_count > 0 ? `欠損日 ${q.missing_days_count} 日` : '',
+    q.out_of_range > 0 ? `範囲外 ${q.out_of_range} 件` : '',
+    q.quarantined > 0 ? `隔離 ${q.quarantined} 件` : '',
+    q.malformed_lines > 0 ? `破損行 ${q.malformed_lines} 行` : '',
+  ].filter(Boolean);
+
+  if (q.level === 'ok') {
+    if (q.trend !== 'recovered') return null;
+    return {
+      id: 'data-quality-recovered',
+      level: 'info',
+      title: 'データ品質: 回復しました',
+      detail: change ?? undefined,
+      link,
+    };
+  }
+
+  return {
+    id: 'data-quality',
+    level: q.level === 'error' ? 'error' : 'warning',
+    title: `データ品質: ${QUALITY_LEVEL_LABELS[q.level]}${counts.length ? ` (${counts.join('、')})` : ''}`,
+    detail: change ?? '詳細は品質の履歴を参照してください。',
+    link,
+  };
+}
+
 /**
  * 画面最上部のデータ状態バナーに表示する項目を組み立てる。
  * - DEMO データを表示しているとき (実データと誤認させない)
@@ -110,6 +173,8 @@ export function buildDataStatusItems(input: DataStatusInput): DataStatusItem[] {
       const item = describeSourceStatus(status);
       if (item) items.push(item);
     }
+    const quality = describeDataQuality(input.indexMeta);
+    if (quality) items.push(quality);
   }
 
   if (resolveIsDemoData(input)) {
@@ -122,6 +187,6 @@ export function buildDataStatusItems(input: DataStatusInput): DataStatusItem[] {
     });
   }
 
-  const order: Record<DataStatusLevel, number> = { error: 0, warning: 1, demo: 2 };
+  const order: Record<DataStatusLevel, number> = { error: 0, warning: 1, demo: 2, info: 3 };
   return items.sort((a, b) => order[a.level] - order[b.level]);
 }

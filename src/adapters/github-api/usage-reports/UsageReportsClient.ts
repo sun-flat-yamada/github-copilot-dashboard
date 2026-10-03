@@ -29,8 +29,10 @@ export interface UsersRangeResult {
   /** 日付 → 重複排除済みのユーザー行 (Enterprise の行を優先) */
   rowsByDay: Map<string, UserReportRow[]>;
   outcomes: DayOutcome[];
-  /** 検証に失敗して隔離した行数 */
+  /** 検証に失敗して隔離した行数 (範囲外の日付の行を含む) */
   quarantined: number;
+  /** quarantined のうち、要求した日と異なる日付 (範囲外) の行数 */
+  outOfRange: number;
   quarantineReasons: string[];
   /** NDJSON として壊れていた行数 */
   malformedLines: number;
@@ -89,13 +91,14 @@ export class UsageReportsClient {
     status: number;
     rows: UserReportRow[] | null;
     quarantined: number;
+    outOfRange: number;
     reasons: string[];
     malformedLines: number;
   }> {
     const { endpoint, params } = endpointFor(scope);
     const { status, body } = await this.fetcher.fetchRawAllowing<ReportLinks>(endpoint, params, { day }, [404]);
     if (body === null) {
-      return { status, rows: null, quarantined: 0, reasons: [], malformedLines: 0 };
+      return { status, rows: null, quarantined: 0, outOfRange: 0, reasons: [], malformedLines: 0 };
     }
 
     const links = Array.isArray(body.download_links)
@@ -107,6 +110,7 @@ export class UsageReportsClient {
 
     const rows: UserReportRow[] = [];
     let quarantined = 0;
+    let outOfRange = 0;
     let malformedLines = 0;
     const reasons: string[] = [];
 
@@ -121,13 +125,14 @@ export class UsageReportsClient {
           if (reasons.length < 3) reasons.push(result.reason);
         } else if (result.row.day.slice(0, 10) !== day) {
           quarantined++;
+          outOfRange++;
           if (reasons.length < 3) reasons.push('day: row day does not match the report day');
         } else {
           rows.push(result.row);
         }
       }
     }
-    return { status, rows, quarantined, reasons, malformedLines };
+    return { status, rows, quarantined, outOfRange, reasons, malformedLines };
   }
 
   /**
@@ -144,6 +149,7 @@ export class UsageReportsClient {
     const fetched: Fetched[] = [];
     const outcomes: DayOutcome[] = new Array(tasks.length);
     let quarantined = 0;
+    let outOfRange = 0;
     let malformedLines = 0;
     const quarantineReasons: string[] = [];
 
@@ -156,6 +162,7 @@ export class UsageReportsClient {
         try {
           const result = await this.fetchUsersDay(task.scope, task.day);
           quarantined += result.quarantined;
+          outOfRange += result.outOfRange;
           malformedLines += result.malformedLines;
           for (const r of result.reasons) {
             if (quarantineReasons.length < 3) quarantineReasons.push(`${scopeLabel(task.scope)} ${task.day} ${r}`);
@@ -194,6 +201,6 @@ export class UsageReportsClient {
       rowsByDay.set(task.day, list);
     }
 
-    return { rowsByDay, outcomes, quarantined, quarantineReasons, malformedLines, duplicatesCollapsed };
+    return { rowsByDay, outcomes, quarantined, outOfRange, quarantineReasons, malformedLines, duplicatesCollapsed };
   }
 }

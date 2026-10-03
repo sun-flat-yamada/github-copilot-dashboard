@@ -1,3 +1,4 @@
+import type { DataQualityHistory } from '../../domain/entities/data-quality.js';
 import { IStorageWriter } from '../../domain/ports/IStorageWriter.js';
 import {
   CopilotDailyMetrics,
@@ -51,6 +52,14 @@ export class ForkSafeStorageWriter implements IStorageWriter {
 
   saveRolling1YearTrend(data: RollingTrendDataset): void {
     this.storage.saveRolling1YearTrend(data);
+  }
+
+  saveDataQualityHistory(history: DataQualityHistory): void {
+    this.storage.saveDataQualityHistory(history);
+  }
+
+  loadDataQualityHistory(): DataQualityHistory | null {
+    return this.storage.loadDataQualityHistory();
   }
 
   saveIndex(metadata: IndexMetadata): void {

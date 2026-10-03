@@ -3,6 +3,7 @@ import * as assert from 'node:assert/strict';
 import { PipelineOrchestrator } from '../application/pipeline/PipelineOrchestrator.js';
 import { ICopilotDataSource } from '../domain/ports/ICopilotDataSource.js';
 import { IAttributeResolver } from '../domain/ports/IAttributeResolver.js';
+import type { DataQualityHistory, QualityObservations } from '../domain/entities/data-quality.js';
 import { IStorageWriter } from '../domain/ports/IStorageWriter.js';
 import {
   AnalysisScopeType,
@@ -89,6 +90,7 @@ class FakeDataSource implements ICopilotDataSource {
       statuses: SourceStatus[];
       issues?: DataFetchIssue[];
       profiles?: UserUsageProfile[];
+      quality?: QualityObservations | null;
     }
   ) {}
   async fetchMetrics() {
@@ -112,6 +114,9 @@ class FakeDataSource implements ICopilotDataSource {
   getSourceStatuses() {
     return this.data.statuses;
   }
+  getQualityObservations() {
+    return this.data.quality ?? null;
+  }
 }
 
 const emptyResolver: IAttributeResolver = {
@@ -126,6 +131,13 @@ class MemoryStorage implements IStorageWriter {
   errorLog: DataFetchIssue[] = [];
   rawSaves: Array<{ date: string; seats: CopilotSeatAssignment[]; costCenters: EnterpriseCostCenter[] }> = [];
   trend: RollingTrendDataset | null = null;
+  qualityHistory: DataQualityHistory | null = null;
+  saveDataQualityHistory(history: DataQualityHistory) {
+    this.qualityHistory = history;
+  }
+  loadDataQualityHistory() {
+    return this.qualityHistory;
+  }
 
   saveRawDailyData(date: string, _m: CopilotDailyMetrics, seats: CopilotSeatAssignment[], costCenters: EnterpriseCostCenter[]) {
     this.rawSaves.push({ date, seats, costCenters });
@@ -606,5 +618,63 @@ describe('PipelineOrchestrator: measured per-user profiles for live data (P1-1)'
       storage
     );
     assert.equal(storage.archives.length, 0);
+  });
+});
+
+describe('PipelineOrchestrator: data quality history (P1-7)', () => {
+  beforeEach(() => {
+    mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, 8, 10, 12, 0, 0) });
+  });
+  afterEach(() => {
+    mock.timers.reset();
+  });
+
+  const healthy = (quality: QualityObservations | null) =>
+    new FakeDataSource({
+      metrics: METRICS,
+      seats: SEATS,
+      quality,
+      statuses: [status('metrics', 'ok', 2), status('seats', 'ok', 3), status('cost_centers', 'skipped', 0)],
+    });
+  const obs = (extra: Partial<QualityObservations> = {}): QualityObservations => ({
+    requested_days: ['2026-09-09', '2026-09-10'],
+    available_days: ['2026-09-09', '2026-09-10'],
+    duplicates_collapsed: 0,
+    out_of_range: 0,
+    quarantined: 0,
+    malformed_lines: 0,
+    ...extra,
+  });
+
+  it('records a report per run and summarizes the change in index.json', async () => {
+    const storage = new MemoryStorage();
+    await runPipeline(healthy(obs()), storage);
+    assert.equal(storage.index!.data_quality?.level, 'ok');
+    assert.equal(storage.index!.data_quality?.trend, 'first');
+
+    await runPipeline(healthy(obs({ available_days: ['2026-09-10'], quarantined: 4 })), storage);
+    const summary = storage.index!.data_quality!;
+    assert.equal(summary.level, 'warning');
+    assert.equal(summary.trend, 'degraded');
+    assert.equal(summary.missing_days_count, 1);
+    assert.equal(summary.quarantined, 4);
+    assert.equal(storage.qualityHistory!.entries.length, 2);
+    assert.doesNotMatch(JSON.stringify(storage.qualityHistory), /alice|bob|carol/);
+  });
+
+  it('leaves the history and the summary untouched when nothing was collected (demo / unconfigured)', async () => {
+    const storage = new MemoryStorage();
+    await runPipeline(healthy(obs()), storage);
+    const before = storage.qualityHistory;
+    await runPipeline(healthy(null), storage);
+    assert.equal(storage.qualityHistory, before);
+    assert.equal(storage.index!.data_quality?.level, 'ok', 'the last known quality is kept');
+  });
+
+  it('does not write quality for mock data', async () => {
+    const storage = new MemoryStorage();
+    await runPipeline(healthy(obs()), storage, { isMock: true });
+    assert.equal(storage.qualityHistory, null);
+    assert.equal(storage.index!.data_quality, undefined);
   });
 });

@@ -197,6 +197,18 @@ The first thing a viewer must be able to tell is **whether the numbers are real,
    - The banner shows **「実データを表示」** only when demo was chosen by the user; when the data itself declares `is_mock_mode`, there is nothing to switch back to, so the button is not offered.
    - User uploads (`user_upload`) are always treated as real data.
 
+### 2.13a Data Quality in the Banner (P1-7)
+
+`buildDataStatusItems` also reads `index.json` `data_quality` (SDD-05 §2.5) for Live Metrics data:
+
+| Level | Trigger | Wording (excerpt) |
+|:--|:--|:--|
+| `warning` / `error` | latest level is not `ok` | "データ品質: 注意 (欠損日 N 日、隔離 N 件 …)" + "前回 (良好) から悪化しました。" or "{time} UTC からこの状態が続いています。" + link "品質の履歴 (JSON)" to `quality/history.json` |
+| `info` (slate, `Info`) | recovered from a worse level | "データ品質: 回復しました" + link |
+| `info` | metrics collected but no `data_quality` (artifact predates P1-7) | "データ品質: —（品質レポートがありません）" + the reason. Absence of information is never shown as "no problem" |
+
+Steady `ok` quality shows nothing. A failed or unconfigured source shows no quality item (the failure banner above already says why).
+
 ### 2.14 Missing Values, Estimates and Scope Notices (P0-4 / P0-5 / P0-6 / P0-9)
 
 Missing data is **`null`, shown as "—" with its reason — never `0`, never a plausible-looking constant** (SDD-06 §4.4).

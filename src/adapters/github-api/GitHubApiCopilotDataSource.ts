@@ -1,3 +1,4 @@
+import type { QualityObservations } from '../../domain/entities/data-quality.js';
 import { ICopilotDataSource } from '../../domain/ports/ICopilotDataSource.js';
 import {
   CopilotDailyMetrics,
@@ -51,6 +52,7 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
   private statuses = new Map<DataSourceId, SourceStatus>();
   /** 直近の fetchMetrics で取得したユーザー行 (日付 → 重複排除済み)。fetchUserProfiles が使う */
   private userRowsByDay: Map<string, UserReportRow[]> | null = null;
+  private qualityObservations: QualityObservations | null = null;
   private seatsNormalizers = new NormalizerRegistry<unknown, CopilotSeatAssignment>();
   private teamsNormalizers = new NormalizerRegistry<unknown, TeamDailyMetrics>();
 
@@ -79,6 +81,7 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
    */
   async fetchMetrics(): Promise<CopilotDailyMetrics[]> {
     this.userRowsByDay = null;
+    this.qualityObservations = null;
     if (!this.isConfigured()) {
       this.reportMissingConfig('metrics', 'config:copilot-metrics', 'Copilot Metrics');
       return [];
@@ -150,6 +153,14 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
       }
 
       this.userRowsByDay = result.rowsByDay;
+      this.qualityObservations = {
+        requested_days: [...days],
+        available_days: [...result.rowsByDay.keys()].sort(),
+        duplicates_collapsed: result.duplicatesCollapsed,
+        out_of_range: result.outOfRange,
+        quarantined: result.quarantined - result.outOfRange,
+        malformed_lines: result.malformedLines,
+      };
       const daily = buildAllDailyMetrics(result.rowsByDay);
       this.setStatus(
         'metrics',
@@ -337,6 +348,10 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
       this.recordIssue(`teams/${teamSlug}/copilot/metrics`, err);
       return [];
     }
+  }
+
+  getQualityObservations(): QualityObservations | null {
+    return this.qualityObservations;
   }
 
   /** Run Manifest に残す収集設定 (スラッグと日付のみ) */
