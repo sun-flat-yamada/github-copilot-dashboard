@@ -194,7 +194,15 @@ export const CostCenterBudgetCards: React.FC<CostCenterBudgetCardsProps> = ({ bu
                     {b.budget_utilization_percent}%
                   </span>
                 </div>
-                <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                <div
+                  role="progressbar"
+                  aria-label={`${b.cost_center_name} の予算消化率`}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.min(100, b.budget_utilization_percent)}
+                  aria-valuetext={`${b.budget_utilization_percent}% (${isExceeded ? '予算超過' : isWarning ? '注意' : '正常'})`}
+                  className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800"
+                >
                   <div
                     className={`h-full rounded-full transition-all ${
                       isExceeded
