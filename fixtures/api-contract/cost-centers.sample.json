@@ -1,0 +1,13 @@
+{
+  "costCenters": [
+    {
+      "id": "cc-0001",
+      "name": "Cost Center A",
+      "state": "active",
+      "resources": [
+        { "type": "Org", "name": "org-a" },
+        { "type": "User", "name": "user-a" }
+      ]
+    }
+  ]
+}
