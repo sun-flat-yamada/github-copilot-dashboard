@@ -7,7 +7,7 @@
 - **Document ID**: SPEC-COPILOT-011
 - **Status**: Approved / Active
 - **Target Version**: 2026.09-LTS
-- **Date**: 2026-09-12 (revised 2026-10-01: profile sources in §2.1 and the data-sufficiency rules in §6)
+- **Date**: 2026-09-12 (revised 2026-10-01: profile sources in §2.1 and the data-sufficiency rules in §6; revised 2026-10-03: diagnostic v2 in §7)
 
 ---
 
@@ -162,4 +162,36 @@ The diagnostic engine judges behaviour; a judgement made from invented inputs is
 - When Auto-collected Data has seats but no collected per-user daily history yet, the view says so instead of showing an empty diagnosis.
 
 ### 6.5 Peer benchmark
-Peer averages (acceptance rate, daily acceptances, heavy-model ratio) are computed from the actual profiles in the selected scope. With no comparable profile the benchmark is **omitted** (`peerBenchmarks` absent), never a fixed "typical" value.
+Peer averages (pooled acceptance rate, daily acceptances, reasoning-heavy model ratio; see §7.4) are computed from the actual profiles in the selected scope. With no comparable profile the benchmark is **omitted** (`peerBenchmarks` absent), never a fixed "typical" value.
+
+## 7. Diagnostic v2: Transparent Signals, Team-Level Default, Data Sufficiency (P3-4)
+
+Diagnostic v2 answers findings B-11 (hardcoded 2025 model IDs), B-12 (statistical validity) and D-04 (individual scoring of an uncalibrated metric). Implementation: `src/processor/diagnostic-config.ts`, `model-classification.ts`, `diagnostic-signals.ts`, `inefficiency-rules.ts`, `inefficiency-diagnostic.ts`.
+
+### 7.1 Model classification catalog
+- A model ID is normalized (lowercase, separators unified to `-`) and classified by family rules into a tier: `reasoning_heavy` (e.g. `o1`, `o3`, `*-opus-*`), `heavy` (`*-sonnet-*`, `gemini-*-pro`, `gpt-5`), `standard` (`gpt-4o`, `gpt-4.1`), `light` (`*-flash`, `*-haiku`, `*-mini`, `*-nano`) or `unknown`. A newly released model of a known family needs no code change.
+- `overkill_model_addiction` and `model_cost_mismatch` use tier ratios (heavy = `reasoning_heavy` + `heavy`). An `unknown` model counts as neither heavy nor light, and its estimated cost is flagged as assumed. `MODEL_ESTIMATED_CHAT_COST` is kept only as a deprecated table derived from the catalog.
+
+### 7.2 Transparent signals
+- Every pattern result carries `evidence[]`: for each rule the **input name, observed value, threshold, rationale** and whether it contributed (`met` / `not_met` / `reference`). The drill-down shows them as "入力値 / しきい値 / 根拠".
+- "Probability" is renamed **signal strength** (`signalStrengthPercent`, 0–100): a heuristic rule score, **not a probability**. It is shown as a band (`none` < 15 ≤ `weak` < 40 ≤ `medium` < 70 ≤ `strong`, configurable) plus the 0–100 value. `probabilityPercent` is kept as a deprecated alias with the same value.
+- The former "healthy bonus when the acceptance rate is 28% or more" is removed: it contradicted the Acceptance Rate Paradox policy (SDD-06 §4.2).
+
+### 7.3 Data sufficiency control
+- Each sample-based pattern has minimums in `DiagnosticConfig.minimums` (defaults: tab spamming ≥ 30 suggestions and ≥ 3 active days; overkill / context-blind chat ≥ 15 chats and ≥ 3 active days; model cost mismatch ≥ 10 chats and ≥ 3 active days; off-hours ≥ 30 actions and ≥ 3 active days; passive seat needs a window of ≥ 7 days). Boundary: `observed >= required` is sufficient.
+- Below the minimum the pattern is **not evaluable** (§6): no strength, `signalBand: 'unknown'`, and a reason such as "稼働日数: 2 / 必要 3 以上". `dataSufficiency.checks` lists each requirement with the observed and required values. Fixed small-sample values (such as 12%) are no longer shown.
+
+### 7.4 Window end, time zone and calendar
+- The analysis window ends on the **organization's latest data date** (or the `referenceDate` option), not on each user's last history day. A user who stopped working weeks ago therefore shows few active days instead of looking active.
+- The weekday of `YYYY-MM-DD` is computed as a UTC calendar date, so it does not depend on the time zone of the machine (`new Date('2026-09-05').getDay()` is Saturday in JST but Friday in America/Los_Angeles). Non-working days = non-working weekdays (default Saturday and Sunday) + the holiday calendar (default: Japanese national holidays of 2026). `timezone` (default `Asia/Tokyo`) resolves "today" when no data decides the window end.
+- The metric is "non-working-day activity" computed from **daily** data; it does not claim to detect hours of the day.
+- Peer averages use the same definition as the overall KPI: the pooled ratio (sum of acceptances / sum of suggestions), not the mean of individual rates.
+
+### 7.5 Team-level default, individual view and audience
+- The default view is **team level** (`diagnoseTeam`): per pattern, the number of members in each signal band and the share with a medium or strong signal. It contains no login, name or per-person value.
+- A team with fewer than `minTeamSize` members (default **5**) is not diagnosed ("構成員が 5 人未満…"), and a pattern cell with fewer than `minTeamSize` evaluated members is suppressed, so a small distribution cannot identify a person.
+- The **individual view stays** (decision #2 of the improvement plan) behind a toggle. It is for **in-company use only, by employees authorised to view it** (the deployment premise of SDD-01 §1.1), for coaching and support of the person; it must not be used for personnel evaluation or ranking. The view states this.
+
+### 7.6 Configuration and calibration plan
+- All thresholds (minimums, band boundaries, minimum team size, holidays, working weekdays, time zone) are in `DiagnosticConfig`; `resolveDiagnosticConfig(overrides)` merges overrides and falls back to the defaults for invalid values. The rule thresholds inside each pattern function are still code constants.
+- Status: **uncalibrated** (`calibration.status`, shown in the view). Calibration plan (`CALIBRATION_PLAN`): (1) collect ≥ 6 months of measurements and review the metric distributions per role/team; (2) collect ≥ 50 reviewer labels (valid / false positive / missed); (3) compare precision and recall while moving thresholds and update `DiagnosticConfig`; (4) after calibration, show the observed hit rate per band and switch the status to `calibrated`.
