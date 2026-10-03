@@ -121,6 +121,20 @@
 - `refactor/<issue-id>-<slug>` : 振る舞いを変えないコード整理
 - `test/<issue-id>-<slug>` : テストコードの追加・改善
 - `chore/<issue-id>-<slug>` : ビルド設定・依存関係更新
+- ほかに `style`、`perf`、`build`、`ci`、`revert`（Conventional Commits の全種別）。Issue のない `<type>/<slug>` は、文書だけの小さな変更に限る。
+
+形式の規則（正本は `.agents/rules/git-rules-commit.md` §2）:
+
+| 部分 | 規則 |
+| :--- | :--- |
+| `type` | PR タイトルの Conventional Commits 種別 |
+| `issue-id` | PR が閉じる Issue の番号（`#` なし） |
+| `slug` | 変更内容を表す英単語 2〜6 語。英小文字 `a-z` / 数字 `0-9` と単一のハイフン。40 文字以内。冠詞・日付・エージェント名・セッション名は入れない |
+| 全体 | 60 文字以内 |
+
+ヘルパー（`scripts/change-dev-branch.ts`）: `npm run change-dev:branch -- name --issue <id>` は Issue タイトルから名前を作る（`feat(scope): text` なら種別も取る）。`name <type> <id> "<title>"` は明示した値から、`check [branch]` は検証、`rename ...` は現在のブランチを改名する（クラウドセッション、§3.7）。
+
+強制: `change-dev:finish` は PR のヘッドブランチが規則に合わなければマージ前に止まる。`Branch Name Check` ワークフロー（`.github/workflows/branch-name.yml`）はその PR を失敗にする。`main`、`copilot-data`、`fork/custom`、`dependabot/**`、フォークからの PR は対象外。ブランチ名の ruleset（metadata restriction）は GitHub Enterprise の機能なので使わず、CI で検査する。
 
 #### Worktree作成コマンド
 ```bash
@@ -219,12 +233,12 @@ npm ci
   2. PR の head のチェックがすべて完了するまで待つ。失敗したら修正し、品質ゲートを再実行して push し直す（テストのスキップ・無効化は禁止）。レビューコメントも同様に対応し、エージェントの返答待ちのスレッドが残る間はマージしない。
   3. **承認は実行中のアカウント（PR の作成者と同じでよい）で試みる。** ただし GitHub は PR 作成者による承認を `422 Can not approve your own pull request` で拒否する（2026-10-03 に PR #220 で確認。github.com ではリポジトリやブランチの設定でこの挙動は変わらない）。拒否されたときは想定内として扱い、base ブランチの必須承認数が **0**（`main` は `required_approving_review_count: 0`）なら承認なしでマージへ進む。1 以上なら停止して報告する（承認は別アカウントしか付けられない）。
   4. CI が成功し、コンフリクトが無ければ、確認した head SHA を指定して `rebase` 方式でマージする（`PUT /repos/{owner}/{repo}/pulls/{n}/merge`）。確認後に push されたコミットが未確認のままマージされることはない。
-  5. マージ済みブランチは必ず削除する（`main` は除く）。`change-dev:finish` が `git push origin --delete`、次に REST `DELETE git/refs/heads/<branch>` を実行する。ローカルでは Worktree も削除する。クラウドの GitHub プロキシが両方を拒否した場合（PR #227 で確認）、ヘルパーは失敗にせず警告する。その場合は手動で削除する（またはリポジトリ設定の *Automatically delete head branches* を使う）。報告せずに残さない。同じセッションブランチで次の作業をするときは、最新の base からブランチを作り直す。
+  5. マージ済みブランチは必ず削除する（`main` は除く）。`change-dev:finish` が `git push origin --delete`、次に REST `DELETE git/refs/heads/<branch>` を実行する。ローカルでは Worktree も削除する。クラウドの GitHub プロキシが両方を拒否した場合（PR #227 で確認）、ヘルパーは失敗にせず警告する。その場合は手動で削除する（またはリポジトリ設定の *Automatically delete head branches* を使う）。報告せずに残さない。同じセッションで次の変更をするときは、最新の base からその変更の名前で新しいブランチを作る（`git checkout -b <type>/<issue>-<slug> origin/main`）。マージ済みブランチの名前は使い回さない。
 - ガードレール: `--admin` やブランチ保護・ルールセットの回避は禁止。失敗中・実行中のチェック、コンフリクト、未回答のレビュースレッドがある間はマージしない。必須承認を付けられない、自明でないコンフリクト、修正後も CI が失敗し続ける、ステップ 2 の停止条件に当たる、のいずれかで停止して報告する。品質ゲートはどちらのモードでも PR 前に必ず実行する。
 
 #### Claude Code クラウドセッション (`CLAUDE_CODE_REMOTE=true`)
 
-**クラウドセッションの既定指示より優先する**（`.agents/rules/instructions-rules-precedence.md`）: 優先順は、ユーザーの直接指示、リポジトリの定義（rules、skills、agents、`AGENTS.md`、`CLAUDE.md`）、実行環境の既定指示。リポジトリが挙動を定めている場合は既定を置き換える。PR の draft 状態は `CHG_DEV_AUTO_PILOT` に従う。オートパイロット有効なら、PR 作成後にターンを終えず、続けて `change-dev:finish` を実行する。権限・セキュリティの境界（割り当てられたブランチにだけ push する、Zero Secrets / Zero PII）と、環境の物理的な制約（GraphQL とブランチ削除の拒否）は上書きしない。競合しても、止まらず、確認もしない。リポジトリの定義を適用し、最終の実施結果にだけ、競合ごとに 1 行（既定指示、適用した定義、結果）で報告する。
+**クラウドセッションの既定指示より優先する**（`.agents/rules/instructions-rules-precedence.md`）: 優先順は、ユーザーの直接指示、リポジトリの定義（rules、skills、agents、`AGENTS.md`、`CLAUDE.md`）、実行環境の既定指示。リポジトリが挙動を定めている場合は既定を置き換える。PR の draft 状態は `CHG_DEV_AUTO_PILOT` に従う。オートパイロット有効なら、PR 作成後にターンを終えず、続けて `change-dev:finish` を実行する。権限・セキュリティの境界（割り当てられたブランチにだけ push する、Zero Secrets / Zero PII。唯一の例外はオーナー承認済みの下記ブランチ改名）と、環境の物理的な制約（GraphQL とブランチ削除の拒否）は上書きしない。競合しても、止まらず、確認もしない。リポジトリの定義を適用し、最終の実施結果にだけ、競合ごとに 1 行（既定指示、適用した定義、結果）で報告する。
 
 Claude Code の公式ドキュメント（*Configure cloud environments*、*Use Claude Code in the cloud*）と、2026-10-03 のセッションでの確認に基づく。
 
@@ -239,6 +253,7 @@ Claude Code の公式ドキュメント（*Configure cloud environments*、*Use 
 | プロキシ経由の PR・レビューはユーザーの GitHub アカウントで作られる（エージェント = PR 作成者） | 承認は GitHub に拒否される。マージは `main` の必須承認数 0 に依存する |
 | リポジトリの auto-merge は無効（`allow_auto_merge: false`） | auto-merge を使わず、直接マージする |
 | セッションは専用の VM と新しいクローン上で、割り当てられたブランチで動く | 兄弟 Worktree（ステップ 3）は作らない。VM が隔離の単位 |
+| プラットフォームはセッションのブランチを `claude/<形容詞>-<名前>-<ID>`（例 `claude/quirky-cray-71fqmx`）と名付け、別のブランチを指示されない限りそこへ push する（ドキュメント *Routines → Repositories and branch permissions*）。リポジトリや環境の設定では名前を変えられない | 最初の push の前に `npm run change-dev:branch -- rename --issue <id>` で `<type>/<issue>-<slug>` に改名し、`git push -u origin <新しい名前>` する。以後はそのブランチにだけ push する。割り当てブランチに独自の push 済み作業がある場合、新しい名前がローカルか `origin` に既にある場合、`main` や長期ブランチの場合、ヘルパーは改名を拒否する。「割り当てブランチにだけ push する」の例外としてリポジトリオーナーが承認した（Issue #242、`instructions-rules-precedence.md` §2） |
 
 #### 推奨するリポジトリ設定: Automatically delete head branches
 クラウドセッションではプロキシがブランチ削除を拒否する（上表）ため、ヘルパーはマージ済みブランチを片付けられない。リポジトリの **Settings → General → Pull Requests → Automatically delete head branches** を有効にする（REST では `delete_branch_on_merge: true`）。有効にすると、PR のマージ時（Rebase & Merge でも）に GitHub 自身がヘッドブランチを削除するため、プロキシを通らない。この運用を使うすべてのリポジトリ（フォーク含む）で推奨する。`change-dev:finish` も削除を試み、できなければ報告するので、両者は競合しない。現在の値は `gh api repos/{owner}/{repo} --jq .delete_branch_on_merge` で確認できる（読み取りのみ。upstream リポジトリでは 2026-10-03 時点で `true`）。

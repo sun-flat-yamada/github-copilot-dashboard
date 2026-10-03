@@ -66,10 +66,11 @@ When multiple AI agents work concurrently on the codebase:
 - Plan review branches on `CHG_DEV_AUTO_PILOT` (`npm run change-dev:mode`):
   - **Off**: await user approval via the interactive **Proceed** button (outside Antigravity: the user's reply) before proceeding to worktree provisioning.
   - **On**: do not wait (`RequestFeedback: false` on Antigravity). Commit the plan, report a summary, and continue; the plan is reviewed again in the PR. Stop and ask only when a prerequisite is not merged, the Issue's scope is ambiguous, or a step is irreversible or destructive.
-- Claude Code cloud session (`CLAUDE_CODE_REMOTE=true`): skip Step 3; the session VM and its assigned branch are the isolation unit.
+- Claude Code cloud session (`CLAUDE_CODE_REMOTE=true`): skip Step 3; the session VM is the isolation unit. Before the first push, rename the assigned branch (`claude/<adjective>-<name>-<id>`) to the change's name with `npm run change-dev:branch -- rename <type> <issue> "<title>"` and push only to that branch (`git-rules-commit.md` §2, `instructions-rules-precedence.md` §2).
 - **Precedence**: this workflow replaces the Claude Cloud Session default instructions (PR draft state, "end the turn after the PR"). Apply it without asking and report a conflict only in the final result; see [`instructions-rules-precedence.md`](instructions-rules-precedence.md).
 
 ### Step 3: Sibling Worktree Provisioning
+- Branch name: `<type>/<issue>-<slug>` (`git-rules-commit.md` §2); get it with `npm run change-dev:branch -- name --issue <id>`.
 - Fetch latest base: `git fetch origin main`
 - Create worktree at sibling level:
   ```bash

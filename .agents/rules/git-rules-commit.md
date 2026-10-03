@@ -28,8 +28,24 @@ alwaysApply: true
 Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
 
 ## 2. Branch Naming
-- `feat/<short-description>`, `fix/<short-description>`, `docs/<short-description>`, `refactor/<short-description>`, `chore/<short-description>`.
-- Kebab-case only. Sibling worktrees live at `../<repo>-worktrees/<branch>` (see `development-workflow.md`).
+A branch is named after the change it carries, so that `git branch -r`, the PR list and the history tell what it is for.
+
+```text
+<type>/<issue>-<slug>     e.g. feat/42-cost-center-export, fix/118-overview-section-header
+<type>/<slug>             only when there is no Issue (small documentation-only changes)
+```
+
+| Part | Rule |
+| :--- | :--- |
+| `type` | A Conventional Commits type (§1): `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`. Use the type of the PR title |
+| `issue` | The Issue number the PR closes, without `#` |
+| `slug` | 2-6 English words that describe the change, lowercase `a-z` / `0-9`, single hyphens, at most 40 characters; no articles, no dates, no agent or session names |
+| Total | At most 60 characters |
+
+- Generate and check the name with the helper instead of typing it: `npm run change-dev:branch -- name <type> <issue> "<title>"` (or `name --issue <n>`, which takes the type and title from the Issue) and `npm run change-dev:branch -- check [branch]`.
+- **Names that do not describe the change are not used for PRs**, in particular the names the Claude Code cloud platform assigns to a session (`claude/<adjective>-<name>-<id>`, `ccr-<hex>-<id>`). A cloud session renames its assigned branch before the first push (`npm run change-dev:branch -- rename ...`; see `development-workflow.md` and `instructions-rules-precedence.md` §2).
+- Enforcement: `change-dev:finish` stops on a non-conforming head branch, and the `Branch Name Check` workflow fails such a PR. Long-lived and bot branches (`main`, `copilot-data`, `fork/custom`, `dependabot/**`) and PRs from forks are exempt.
+- Sibling worktrees live at `../<repo>-worktrees/<branch with / replaced by ->` (see `development-workflow.md`).
 - Direct commits/pushes to `main` on upstream are forbidden (see `development-workflow.md`).
 
 ## 3. Language of Commits and Pull Requests

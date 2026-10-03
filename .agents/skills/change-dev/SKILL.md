@@ -191,6 +191,18 @@ gh issue create \
 ```
 Record the Issue number (e.g. `#42`).
 
+#### Branch name
+
+Name the branch after the change (`.agents/rules/git-rules-commit.md` §2):
+
+```bash
+npm run change-dev:branch -- name --issue 42                          # type + title from the Issue → feat/42-cost-center-export
+npm run change-dev:branch -- name feat 42 "Add cost center export"    # explicit
+npm run change-dev:branch -- check [branch]                           # validate (default: current branch)
+```
+
+`<type>/<issue>-<slug>`: a Conventional Commits type, the Issue number, and 2-6 lowercase English words (at most 40 characters; whole name at most 60). Pass `--slug` when the title is long or not in English. `change-dev:finish` and the `Branch Name Check` workflow refuse other names (except `main`, `copilot-data`, `fork/custom`, `dependabot/**` and fork PRs).
+
 ---
 
 ### Phase 2: Antigravity Implementation Plan & Task Orchestration (Pre-Execution Gate)
@@ -214,7 +226,16 @@ Before writing any application code or provisioning worktrees:
 ### Phase 3: Sibling Worktree Provisioning
 
 > [!NOTE]
-> **Claude Code cloud session** (`CLAUDE_CODE_REMOTE=true`): skip this phase. The session already runs in its own isolated VM with a fresh clone, on the branch the session was given; the VM is the isolation unit. Work on that branch and push only to it.
+> **Claude Code cloud session** (`CLAUDE_CODE_REMOTE=true`): skip the worktree. The session already runs in its own isolated VM with a fresh clone; the VM is the isolation unit. Rename the branch the session was given (below), work on it and push only to it.
+
+**Cloud session: rename the assigned branch before the first push.** The platform starts the session on `claude/<adjective>-<name>-<id>` (e.g. `claude/quirky-cray-71fqmx`), which says nothing about the change. Right after Phase 1 (before the plan commit is pushed):
+
+```bash
+npm run change-dev:branch -- rename --issue 42            # or: rename feat 42 "Add cost center export" / --slug <slug>
+git push -u origin feat/42-cost-center-export              # first push; from now on this is the session's branch
+```
+
+The helper refuses when the assigned branch already has pushed work of its own, when the new name exists locally or on `origin`, or when the current branch is `main` / a long-lived branch. This is the owner-approved exception to "push only to the assigned branch" (`.agents/rules/instructions-rules-precedence.md` §2); push only to the renamed branch afterwards. The unused assigned branch is not on `origin` in the normal case; if it is, report that it can be deleted (the proxy rejects deletion).
 
 To prevent multi-agent race conditions, file locking, and git index collisions, **never edit directly in the root working tree**. Worktrees are always provisioned in a **sibling directory** (`../<repo>-worktrees/<slug>`):
 
@@ -363,7 +384,7 @@ Opt-in mode that carries a change from **PR creation to Rebase & Merge completio
 4. **Approval with the same account**: the agent approves with the account it runs as, also when that account opened the PR. GitHub rejects an approval by the PR author with `422 Can not approve your own pull request` (verified on PR #220, 2026-10-03; no repository or branch setting changes this on github.com). The helper treats that response as expected and merges without an approval when the base branch requires **0** approvals (`main`: `required_approving_review_count: 0`). If the branch requires approvals, it stops and reports: only another account can supply them.
 5. **Rebase & Merge**: when CI is green and there is no conflict, merge with the `rebase` method at the checked head SHA (`PUT /repos/{owner}/{repo}/pulls/{n}/merge`, `merge_method=rebase`, `sha=<head>`), so a commit pushed after the check is never merged unchecked.
 6. **Cleanup**: always delete the merged branch (never `main`). `change-dev:finish` does it right after the merge: `git push origin --delete`, then REST `DELETE git/refs/heads/<branch>`. Locally also remove the worktree (Phase 7 step 2). If the cloud GitHub proxy rejects both (it did on PR #227), the helper warns instead of failing: report it and have the branch deleted manually, or enable *Automatically delete head branches* in the repository settings. **Recommended for every repository using this workflow**: with it on, GitHub deletes the head branch at merge itself (also for Rebase & Merge), bypassing the proxy. Check with `gh api repos/{owner}/{repo} --jq .delete_branch_on_merge` (read-only). Never leave an undeleted branch unreported. The VM is discarded with the session.
-7. **Next task on the same session branch**: after the merge, restart the branch from the latest base (`git fetch origin main && git checkout -B <branch> origin/main`) before new work; never stack new commits on merged history.
+7. **Next task in the same session**: after the merge, start the next change from the latest base under its own name (`git fetch origin main && git checkout -b <type>/<issue>-<slug> origin/main`); never stack new commits on merged history and never reuse the merged branch's name for a different change.
 
 ### Guardrails (never relaxed by Auto-Pilot)
 
@@ -385,7 +406,8 @@ Facts about the cloud environment (Claude Code docs *Configure cloud environment
 | The session VM sets `CLAUDE_CODE_REMOTE=true`; it is never `true` locally. | The helper switches to the cloud behavior on it. |
 | GitHub traffic goes through the **GitHub proxy**, which attaches the user's credential server-side. `gh` is pre-installed and REST calls (`gh api repos/{owner}/{repo}/...`) work without `gh auth login`; `gh auth status` reports the placeholder token as invalid, which is expected. | Use REST only. The helper calls `gh api`. |
 | The proxy **rejects GraphQL** (HTTP 403) and names REST fallbacks plus routes for what REST lacks: `POST /repos/{o}/{r}/pulls/{n}/ccr/ready_for_review`, `POST .../ccr/convert_to_draft`, `PUT`/`DELETE .../ccr/auto_merge`, `GET .../ccr/review_threads`. | `gh pr view / checks / ready / merge / review` do not work. Ready-for-review uses `ccr/ready_for_review`; the merge uses REST `PUT .../merge`. |
-| The proxy **rejects branch deletion** (git `--delete` and REST `DELETE git/refs`; verified on PR #227) and non-branch pushes (tags); it does not limit which branch a push updates. | The helper still tries to delete the merged branch, and when rejected reports that it must be deleted manually. Push only to the session's branch. |
+| The proxy **rejects branch deletion** (git `--delete` and REST `DELETE git/refs`; verified on PR #227) and non-branch pushes (tags); it does not limit which branch a push updates. | The helper still tries to delete the merged branch, and when rejected reports that it must be deleted manually. Push only to the session's branch (the renamed one). |
+| The platform names the session branch `claude/<adjective>-<name>-<id>` and pushes there unless the session is told to use another branch (docs: *Routines → Repositories and branch permissions*). | Rename it to `<type>/<issue>-<slug>` before the first push (`npm run change-dev:branch -- rename`, Phase 3). |
 | Environment variables come from the cloud environment's settings (`.env` format). `.env` is git-ignored and absent from a fresh clone. | Resolution stays environment setting, then `.env`, then `.env.example` (`true` here). To turn Auto-Pilot off for cloud sessions, set `CHG_DEV_AUTO_PILOT=false` in the cloud environment's variables. |
 | PR events (CI results, reviews, merge) wake a subscribed session. | Wait for `check_suite.completed`, then run `change-dev:finish`; do not poll with `sleep`. |
 | PRs and reviews created through the proxy act as the user's GitHub account, so the agent is the PR author. | GitHub rejects the approval (Behavior step 4); the merge relies on `main` requiring 0 approvals. |

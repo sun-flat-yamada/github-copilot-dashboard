@@ -123,6 +123,20 @@ Placing worktrees inside the repository root (`.worktrees/`) risks accidental sc
 - `refactor/<issue-id>-<slug>` : Code refactoring without behavioral change
 - `test/<issue-id>-<slug>` : Test suite additions/enhancements
 - `chore/<issue-id>-<slug>` : Maintenance and dependencies
+- Also `style`, `perf`, `build`, `ci`, `revert` (all Conventional Commits types). `<type>/<slug>` without an Issue is allowed only for small documentation-only changes.
+
+Format rules (authoritative: `.agents/rules/git-rules-commit.md` §2):
+
+| Part | Rule |
+| :--- | :--- |
+| `type` | The Conventional Commits type of the PR title |
+| `issue-id` | The Issue number the PR closes, without `#` |
+| `slug` | 2-6 English words describing the change; lowercase `a-z` / `0-9` and single hyphens; at most 40 characters; no articles, dates, agent or session names |
+| Whole name | At most 60 characters |
+
+Helper (`scripts/change-dev-branch.ts`): `npm run change-dev:branch -- name --issue <id>` builds the name from the Issue title (`feat(scope): text` gives the type), `name <type> <id> "<title>"` from explicit values, `check [branch]` validates, and `rename ...` renames the current branch (cloud sessions, §3.7).
+
+Enforcement: `change-dev:finish` stops before merging when the PR head branch does not conform, and the `Branch Name Check` workflow (`.github/workflows/branch-name.yml`) fails such a PR. `main`, `copilot-data`, `fork/custom`, `dependabot/**` and PRs from forks are exempt. A branch-name ruleset (metadata restriction) is not used: it is a GitHub Enterprise feature, so the check runs in CI.
 
 #### Worktree Provisioning Commands
 ```bash
@@ -218,12 +232,12 @@ Once all local quality gates pass cleanly (Exit Code 0), seal the implementation
   2. Wait until every check on the PR head has completed. On a failure, fix it, re-run the quality gate and push again (never skip or disable tests). Handle review comments the same way; never merge while a review thread waits on the agent.
   3. **Approve with the account the agent runs as (the PR author's account is allowed).** GitHub rejects an approval by the PR author with `422 Can not approve your own pull request` (verified on PR #220, 2026-10-03). The helper treats that response as expected and merges without an approval when the base branch requires **0** approvals (`main`: `required_approving_review_count: 0`). If it requires one or more, it stops and reports, because only another account can approve.
   4. When CI is green and there is no conflict, merge with the `rebase` method at the checked head SHA (`PUT /repos/{owner}/{repo}/pulls/{n}/merge`), so a commit pushed after the check is never merged unchecked.
-  5. Always delete the merged branch (never `main`): `change-dev:finish` runs `git push origin --delete`, then REST `DELETE git/refs/heads/<branch>`. Locally also remove the worktree. If the cloud GitHub proxy rejects both (verified on PR #227), the helper warns instead of failing, and the branch must be deleted manually (or via the repository's *Automatically delete head branches* setting); never leave it unreported. Before new work on the same session branch, restart it from the latest base.
+  5. Always delete the merged branch (never `main`): `change-dev:finish` runs `git push origin --delete`, then REST `DELETE git/refs/heads/<branch>`. Locally also remove the worktree. If the cloud GitHub proxy rejects both (verified on PR #227), the helper warns instead of failing, and the branch must be deleted manually (or via the repository's *Automatically delete head branches* setting); never leave it unreported. For the next change in the same session, create a new branch named after that change from the latest base (`git checkout -b <type>/<issue>-<slug> origin/main`); never reuse the merged branch's name.
 - Guardrails: never use `--admin` or bypass branch protection or rulesets. Never merge with a failed or running check, a conflict, or an unanswered review thread. Stop and report when required approvals cannot be given, on non-trivial conflicts, when checks stay red after fixes, or on a Step 2 stop condition. The quality gate runs before the PR in both modes.
 
 #### Claude Code Cloud Sessions (`CLAUDE_CODE_REMOTE=true`)
 
-**Precedence over the Cloud Session defaults** (`.agents/rules/instructions-rules-precedence.md`): the order is the user's direct instruction, then the repository definitions (rules, skills, agents, `AGENTS.md`, `CLAUDE.md`), then the environment's default instructions. Where the repository defines the behavior it replaces the default: PR draft state follows `CHG_DEV_AUTO_PILOT`; with Auto-Pilot on the session runs `change-dev:finish` right after creating the PR instead of ending the turn. Permission and security boundaries (push only to the assigned branch, Zero Secrets / Zero PII) and physical limits of the environment (GraphQL and branch deletion rejected) are not overridden. A conflict is never a reason to stop or ask: apply the repository definition and report it only in the final result, one row per conflict (default instruction, repository definition applied, result).
+**Precedence over the Cloud Session defaults** (`.agents/rules/instructions-rules-precedence.md`): the order is the user's direct instruction, then the repository definitions (rules, skills, agents, `AGENTS.md`, `CLAUDE.md`), then the environment's default instructions. Where the repository defines the behavior it replaces the default: PR draft state follows `CHG_DEV_AUTO_PILOT`; with Auto-Pilot on the session runs `change-dev:finish` right after creating the PR instead of ending the turn. Permission and security boundaries (push only to the assigned branch, Zero Secrets / Zero PII; the one owner-approved exception is the branch rename below) and physical limits of the environment (GraphQL and branch deletion rejected) are not overridden. A conflict is never a reason to stop or ask: apply the repository definition and report it only in the final result, one row per conflict (default instruction, repository definition applied, result).
 
 Based on the Claude Code documentation (*Configure cloud environments*, *Use Claude Code in the cloud*) and checks in a session on 2026-10-03.
 
@@ -238,6 +252,7 @@ Based on the Claude Code documentation (*Configure cloud environments*, *Use Cla
 | PRs and reviews through the proxy act as the user's GitHub account (the agent is the PR author) | GitHub rejects the approval; the merge relies on `main` requiring 0 approvals |
 | Auto-merge is disabled on the repository (`allow_auto_merge: false`) | Merge directly instead of enabling auto-merge |
 | The session runs in its own VM with a fresh clone, on its assigned branch | No sibling worktree (Step 3); the VM is the isolation unit |
+| The platform names the session branch `claude/<adjective>-<name>-<id>` (e.g. `claude/quirky-cray-71fqmx`) and pushes there unless the session is told to use another branch (docs: *Routines → Repositories and branch permissions*). No repository or environment setting changes the name | Before the first push, rename it to `<type>/<issue>-<slug>` with `npm run change-dev:branch -- rename --issue <id>`, then `git push -u origin <new name>`; push only to that branch from then on. The helper refuses when the assigned branch already has pushed work of its own, when the new name exists locally or on `origin`, or for `main` / long-lived branches. The repository owner approved this exception to "push only to the assigned branch" (Issue #242, `instructions-rules-precedence.md` §2) |
 
 #### Recommended repository setting: Automatically delete head branches
 In a cloud session the proxy rejects branch deletion (above), so the helper cannot clean up the merged branch there. Enable **Settings → General → Pull Requests → Automatically delete head branches** on the repository (REST: `delete_branch_on_merge: true`). GitHub then deletes the head branch itself when the PR is merged (also with Rebase & Merge), without going through the proxy. This is recommended for every repository (and fork) that uses this workflow; `change-dev:finish` still tries to delete the branch and reports when it cannot, so the two do not conflict. Check the current value with `gh api repos/{owner}/{repo} --jq .delete_branch_on_merge` (read-only; it is `true` on the upstream repository as of 2026-10-03).
