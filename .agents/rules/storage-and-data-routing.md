@@ -1,3 +1,18 @@
+---
+title: "Data Storage & Public Routing Rules"
+description: "Persistent copilot-data storage versus SPA distribution paths and fetch fallbacks."
+category: "rules"
+type: "specification"
+status: "active"
+date: 2026-10-03
+updated: 2026-10-03
+lang: "en"
+tags:
+  - "rules"
+  - "storage"
+  - "routing"
+alwaysApply: true
+---
 # 📦 Data Storage & Public Routing Rules for AI Agents
 
 All AI agents working on `github-copilot-dashboard` must understand the architectural distinction between persistent storage and public web distribution to prevent 404 routing bugs.

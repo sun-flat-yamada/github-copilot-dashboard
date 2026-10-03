@@ -1,3 +1,18 @@
+---
+title: "Model & Benchmark Synchronization Policy"
+description: "Dual synchronization of supported_models.md, benchmark script and frontend model registry."
+category: "rules"
+type: "specification"
+status: "active"
+date: 2026-10-03
+updated: 2026-10-03
+lang: "en"
+tags:
+  - "rules"
+  - "models"
+  - "benchmarks"
+alwaysApply: true
+---
 # 🤖 AI Model & Benchmark Synchronization Policy (.agents/rules/model-benchmark-management.md)
 
 All AI agents (Antigravity, Gemini, Claude Code, Cursor, Copilot Workspace, etc.) operating in this repository **MUST** adhere to this synchronization rule whenever AI models are added, updated, deprecated, or retired in GitHub Copilot.
@@ -45,7 +60,7 @@ When introducing a new model or updating an existing model:
 ## 3. Automated Ingestion & Agent Discipline
 
 1. **Benchmark Ingestion Agent Responsibility**:
-   - The dedicated benchmark ingestion agent (`.agents/benchmark-ingestion-agent.md`) and skill (`skills/benchmark-ingestion/SKILL.md`) **MUST** inspect `supported_models.md` and keep it synchronized when ingesting or updating model data.
+   - The dedicated benchmark ingestion agent (`.agents/benchmark-ingestion.agent.md`) and skill (`skills/benchmark-ingestion/SKILL.md`) **MUST** inspect `supported_models.md` and keep it synchronized when ingesting or updating model data.
 2. **Quality Gate Execution**:
    - Every change modifying models or benchmarks must pass the standard quality gate:
      ```bash

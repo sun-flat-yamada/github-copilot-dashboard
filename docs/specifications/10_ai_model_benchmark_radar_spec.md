@@ -274,7 +274,7 @@ The update lifecycle is structured into a primary orchestrator agent and special
 
 ```mermaid
 flowchart TD
-    Trigger(["🚀 Ingestion Trigger"]) --> Master[".agents/model-radar-pipeline-agent.md<br>(Pipeline Orchestrator)"]
+    Trigger(["🚀 Ingestion Trigger"]) --> Master[".agents/model-radar-pipeline.agent.md<br>(Pipeline Orchestrator)"]
     Master --> Ingest["1. benchmark-ingestion-agent<br>(skills/benchmark-ingestion)"]
     Master --> Buzz["2. sns-buzz-agent<br>(skills/sns-buzz-harvester)"]
     Master --> Preset["3. preset-curator-agent<br>(skills/preset-curator)"]
@@ -284,15 +284,15 @@ flowchart TD
 ```
 
 ### 7.1 Agents & Skills Division
-1. **Pipeline Orchestrator (`.agents/model-radar-pipeline-agent.md`)**:
+1. **Pipeline Orchestrator (`.agents/model-radar-pipeline.agent.md`)**:
    - Master conductor orchestrating the end-to-end update lifecycle.
-2. **Benchmark Ingestion (`.agents/benchmark-ingestion-agent.md` / `skills/benchmark-ingestion`)**:
+2. **Benchmark Ingestion (`.agents/benchmark-ingestion.agent.md` / `skills/benchmark-ingestion`)**:
    - Updates official pricing, context window sizes, and benchmark results.
-3. **SNS Buzz Harvester (`.agents/sns-buzz-agent.md` / `skills/sns-buzz-harvester`)**:
+3. **SNS Buzz Harvester (`.agents/sns-buzz.agent.md` / `skills/sns-buzz-harvester`)**:
    - Collects and distills authentic developer sentiment with explicit disclaimer notes.
-4. **Preset Curator (`.agents/preset-curator-agent.md` / `skills/preset-curator`)**:
+4. **Preset Curator (`.agents/preset-curator.agent.md` / `skills/preset-curator`)**:
    - Filters candidate models against uncompromising quality gates and extracts 3-tier cost variations.
-5. **Version Manager (`.agents/radar-version-agent.md` / `skills/radar-version-manager`)**:
+5. **Version Manager (`.agents/radar-version.agent.md` / `skills/radar-version-manager`)**:
    - Manages `yyyy-mm-dd-0001` incremental versioning and executes four-layer quality gate checks.
 
 ---

@@ -1,3 +1,18 @@
+---
+title: "Development Workflow & Worktree Policy"
+description: "Issue to sibling worktree to quality gate to PR to rebase merge lifecycle and direct-push permissions."
+category: "rules"
+type: "specification"
+status: "active"
+date: 2026-10-03
+updated: 2026-10-03
+lang: "en"
+tags:
+  - "rules"
+  - "workflow"
+  - "git"
+alwaysApply: true
+---
 # 🔄 Development Workflow & Multi-Agent Worktree Policy (.agents/rules/development-workflow.md)
 
 All AI agents (Antigravity, Gemini, Claude Code, Cursor, Copilot Workspace, etc.) operating in this repository **MUST** adhere to this development lifecycle rule when making changes.
