@@ -196,6 +196,26 @@ data/raw/landing/
 - **Not yet covered**: merging several runs into a longer history (backfill beyond one run's window), retention / pruning (SDD target: 60 months, Phase 4), and canonical-fact (`schema_version`) regeneration (P1-3).
 - `raw/` is never published: `pages:stage` allow-lists, and `pages:verify` forbids it in `dist/`.
 
+### 2.4 Canonical Fact Contract v1 (P1-3)
+
+Source-specific shapes (Reports `users-1-day`, seats, CSV, AI Credits) are mapped into versioned **canonical facts** (`src/domain/facts/`). API changes stay inside the ingestion layer; aggregation and views depend only on this contract (input of the Phase 2 Dataset layer).
+
+| Fact | Grain |
+| :--- | :--- |
+| `fact.usage_user_daily` | day × user (totals, `used_*` flags, `ai_credits_used`) |
+| `fact.usage_user_feature_daily` | day × user × feature × model (breakdown; axes the source lacks are `null`) |
+| `fact.usage_org_daily` | day × scope (Enterprise / Org): active / engaged users per surface |
+| `fact.seat_snapshot` | snapshot day × user (`plan_type` allows `unknown`) |
+| `fact.cost_line` | day × user (optional) × SKU × model (populated by P1-5) |
+
+Rules:
+
+- Every fact carries `schema_version` (literal, currently `1`) plus `source` (`api` / `csv` / `derived`) and `quality` (`measured` / `estimated` / `missing` / `demo`). A breaking change bumps the version.
+- **Missing is `null`, never `0`.** A row where every metric is `null` is `quality: "missing"`.
+- Totals and breakdowns are separate facts so that summing never double counts. A breakdown row uses the finest grain the source offers (model × feature, else feature).
+- `user_key` is resolved by the caller (a pseudonymous ID in anonymized mode); real names and emails are never written to facts.
+- Schemas are defined with zod (`schemas.ts`); JSON Schemas are generated into `docs/schemas/facts/` by `npm run schema:facts`. `npm test` fails when the committed files differ from the generated ones.
+
 ## 3. Metadata Index (`index.json`) Specification
 
 The entry metadata file loaded first by the dashboard SPA to provide available dates, months, archives, and default scope parameters.
