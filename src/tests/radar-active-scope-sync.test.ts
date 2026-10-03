@@ -8,7 +8,7 @@ import path from 'node:path';
 // 2. タグANDフィルター/スコープ変更など、分析対象データ (aggregatedData / monthlyReportData) が変化した際に
 //    その Top3 デフォルト選択が追従・再反映されること (ユーザーが手動選択した場合を除く)。
 test('AI Model Radar Active Scope Sync (Top3 default & filter reactivity) Tests', async (t) => {
-  const appPath = path.resolve(process.cwd(), 'dashboard/src/App.tsx');
+  const appPath = path.resolve(process.cwd(), 'dashboard/src/AppShell.tsx');
   const appContent = fs.readFileSync(appPath, 'utf-8');
 
   const viewPath = path.resolve(process.cwd(), 'dashboard/src/components/ModelRadarView.tsx');

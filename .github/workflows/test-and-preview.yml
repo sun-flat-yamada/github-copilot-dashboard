@@ -32,7 +32,7 @@ jobs:
       - name: Run TypeScript typecheck
         run: npm run typecheck
 
-      - name: Run ESLint (React Hooks rules)
+      - name: Run ESLint (React Hooks rules + TypeScript-oriented core rules)
         run: npm run lint
 
       - name: Run Unit Tests
@@ -47,3 +47,12 @@ jobs:
 
       - name: Build Dashboard SPA
         run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Generate DEMO data for the smoke tests
+        run: npm run demo:generate
+
+      - name: Run Playwright smoke tests
+        run: npm run e2e

@@ -202,7 +202,7 @@ describe('User Trend Viewer Active Source & Cross-View Consistency Tests', () =>
   });
 
   it('App.tsx computes reportBudgets and provides CostCenterBudgetCards in View 5 under monthly report', () => {
-    const appFile = path.resolve(projectRoot, 'dashboard/src/App.tsx');
+    const appFile = path.resolve(projectRoot, 'dashboard/src/AppShell.tsx');
     const content = fs.readFileSync(appFile, 'utf-8');
 
     // reportBudgets useMemo の存在確認

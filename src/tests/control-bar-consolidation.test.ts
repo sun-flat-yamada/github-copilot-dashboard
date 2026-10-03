@@ -5,7 +5,7 @@ import path from 'node:path';
 
 describe('Control Bar Consolidation & Filter Redundancy Removal (#108)', () => {
   const rootDir = process.cwd();
-  const appTsxPath = path.join(rootDir, 'dashboard/src/App.tsx');
+  const appTsxPath = path.join(rootDir, 'dashboard/src/AppShell.tsx');
   const overviewViewPath = path.join(rootDir, 'dashboard/src/views/overview/View.tsx');
   const groupingSelectorPath = path.join(rootDir, 'dashboard/src/components/GroupingSelector.tsx');
   const tagFilterBarPath = path.join(rootDir, 'dashboard/src/components/TagFilterBar.tsx');

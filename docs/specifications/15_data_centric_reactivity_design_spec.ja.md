@@ -95,6 +95,8 @@
   2. フィルターで対象がゼロ件になった場合でも例外（ゼロ除算等）を起こさないこと。
   3. フィルター未適用時は、元の（パース時点の）厳密な値が維持されること（回帰防止）。
 
+- **ソース文字列テストより挙動テスト (P2-6)**: UI の挙動は、ソース文字列への正規表現ではなく、画面を描画して操作するテストで守る。2 層ある: React Testing Library のテスト (`src/tests/ui/*.test.tsx`、`npm test` で実行。§8) と、Playwright スモーク (`e2e/*.spec.ts`、`npm run e2e` で実行。§8)。ソース文字列のテストは、見える挙動を持たない構造ルール (例: import の向き) に限って許容する。
+
 ### 3.6 フィルターエンジンの単一化と、概念ごとの単一定義 (P0-5 / P0-6)
 複数のモジュールが必要とする振る舞いは 1 か所に定義して import する。複製は必ずずれる (ケーススタディ C)。
 - **フィルターエンジン**: フィルター適用と全派生フィールドの再計算は `dashboard/src/query/filterEngine.ts` (`applyFilterCriteriaToLiveScope`、レポート版、`isFilterCriteriaActive`) に置く。コンポーネントやフックでフィルターを再実装しない。
@@ -133,9 +135,10 @@ Tagフィルター・スコープ・データソース切り替えに関わる�
 ケーススタディ C・D はレビューのチェックリストでは検出できなかった。機械で検出する。
 
 - **ルール** (`eslint.config.js`、flat config、`dashboard/src/**/*.{ts,tsx}` に適用): `react-hooks/rules-of-hooks: error` と `react-hooks/exhaustive-deps: error`。
-- **実行箇所**: ローカルの `npm run lint`、`.github/workflows/test-and-preview.yml` の専用ステップ「Run ESLint (React Hooks rules)」、および `npm test` 内の `src/tests/lint-react-hooks.test.ts`。したがって、文書化済みの 5 段階の品質ゲート (`fork:verify → typecheck → test → secret-scan → build`) が 6 段目を足さずにこれを強制する。
+- **実行箇所**: ローカルの `npm run lint`、`.github/workflows/test-and-preview.yml` の専用ステップ「Run ESLint (React Hooks rules + TypeScript-oriented core rules)」、および `npm test` 内の `src/tests/lint-react-hooks.test.ts`。したがって、文書化済みの 5 段階の品質ゲート (`fork:verify → typecheck → test → secret-scan → build`) が 6 段目を足さずにこれを強制する。
 - **抑止**: 意図的な省略は `// eslint-disable-next-line react-hooks/exhaustive-deps` に**理由を書いたコメントを添えて**記す (例: `useDashboardData` のレポート取得 effect は、選択レポート月が変わったときだけ実行する必要があり、`currentReportData` を依存に加えると無限ループになる)。理由の無い抑止はレビューの指摘事項とする。
-- **パーサー**: TypeScript は Babel (`@babel/eslint-parser` + `@babel/preset-typescript`) で構文解析する。本リポジトリは TypeScript 7 (ネイティブ版) を使っており、`typescript-eslint` が必要とする JavaScript API が提供されない。型情報を使うルール (例: `no-floating-promises`) の導入にはパーサーの選定が先に必要で、改善計画 (`.devs/changes/2026-10-01_DashboardReviewAndImprovementPlan`、P2-6) の Phase 2 の判断に委ねる。
+- **パーサー**: TypeScript は Babel (`@babel/eslint-parser` + `@babel/preset-typescript`) で構文解析する。本リポジトリは TypeScript 7 (ネイティブ版) を使っており、`typescript-eslint` が必要とする JavaScript API が提供されない。
+- **typescript-eslint の対応状況 (P2-6 で再確認)**: 最新の typescript-eslint (8.x) は peerDependencies に `typescript >=4.8.4 <6.1.0` を宣言しており、TypeScript 7 では使えない。TypeScript 7 に対応するまで、型情報を使うルール (例: `no-floating-promises`) は導入**しない**。代わりに、型情報を要しない次の規則を同じ flat config で強制する: ESLint コア規則 `eqeqeq` (`null` は許可)・`no-var`・`prefer-const`・`no-debugger`、および Babel パーサーが生成する TS ノードに対する `no-restricted-syntax` セレクター (非 null アサーションの連鎖 `x!!`、`Function` 型)。型検査は引き続き `tsc --noEmit` (`strict`・`noUnusedLocals`・`noUnusedParameters`) が担う。typescript-eslint が TypeScript 7 に対応したら、このファイルのパーサーを差し替え、推奨の型付きルール一式を加える。
 
 ---
 
@@ -187,3 +190,18 @@ index.json / スコープ JSON / レポート JSON
 | Query 結果を使うビュー: `ActiveDataSelector` (該当件数)、`DataSelectionModal` (プレビュー件数) | 完了 (P2-2)。どちらも独自にユーザー数を数えており、元データも異なっていた (セレクターはフィルター後のデータ、モーダルの母数は未フィルターのデータ) |
 | 残りのビューは hook の再集計済みデータを参照 | 段階移行。Metric Registry + 品質属性: 概要 KPI カードは完了 (P2-3、SDD-07 §2.14a)、View Registry を描画の唯一の入口にし `App.tsx` の分岐を撤去 (P2-4、SDD-07 §2.14b) |
 | デッドコードと層違反 | 完了 (P2-5): DataStore 経路と付録 C の未参照モジュールを削除。`src/tests/layer-boundaries.test.ts` が `src/**` から `dashboard/` への import を検出して失敗させる (SDD-02 §3.1) |
+
+---
+
+## 8. 挙動テスト: React Testing Library と Playwright (P2-6)
+
+| 層 | 場所 | 実行 | 守るもの |
+|:--|:--|:--|:--|
+| React Testing Library (jsdom) | `src/tests/ui/app-behavior.test.tsx` | `npm test` (品質ゲートの一部) | Cost Center フィルターの適用で、その母集団だけで KPI が再計算される / 品質属性 (実測・推定・デモのバッジ、欠損は理由つきの「—」で `0` を出さない) / データ状態バナー (デモバナーと「実データを表示」切替、取得失敗ソースを `role="alert"` で通知、実データが無いときはデモを案内するが黙って読み込まない) |
+| Playwright スモーク (Chromium) | `e2e/smoke.spec.ts` | `npm run e2e`。`.github/workflows/test-and-preview.yml` の CI ステップ | フィルター → KPI 変化 (と解除)、デモバナーとデモバッジ、データセレクターからの過去月の表示 |
+
+- **Vite なしでの描画**: `import.meta.glob` (View Registry の自動収集) は Vite でしか動かない。そのためアプリ本体を `AppShell` (`dashboard/src/AppShell.tsx`) とし、`ViewRegistry` を受け取る形にした。`App.tsx` は `defaultViewRegistry` を渡し、テストは同じ探索規則の `discoverViewRegistry()` (`src/tests/ui/test-harness.ts`) で作った Registry を渡す。テストで `App` を描画しない。
+- **データ**: RTL テストは固定の 13 ユーザーのデータセット (`src/tests/fixtures/auto-collected-data-fixtures.ts`) を `fetch` スタブ (`installFakeDataServer`) で返す。未登録の URL は静的ホストと同じく 404 を返し、これで「デモへの黙った切替が無い」ことを検証する。Playwright は `npm run demo:generate` で生成したデモデータ (git 管理外) を `?demo=true` で開く。
+- **jsdom の準備**: `src/tests/ui/dom-setup.ts` を UI テストの最初の import にする (RTL は import 時に `document` を参照する)。
+- **ブラウザ**: Playwright は事前インストール済みの Chromium (`PLAYWRIGHT_BROWSERS_PATH/chromium` または `PLAYWRIGHT_CHROMIUM_EXECUTABLE`) を使い、ダウンロードしない。事前インストールの無い CI では `npx playwright install --with-deps chromium` を実行する。
+- **置き換えたソース文字列テスト** (P2-6): `data-status-banner.test.ts` の「App wiring」2 件 (バナーがコンテンツの上に描画される / デモが明示操作として提示される) と、`dashboard-data-stability.test.ts` の `activeDataIsDemoSourced` の受け渡しテストを削除した。同じ挙動を、描画した画面で検証するようになったため。`App.tsx` を読んでいた残りのソース文字列テストは `AppShell.tsx` へ向け直しており、各画面に挙動テストが加わるにつれて段階的に置き換える。

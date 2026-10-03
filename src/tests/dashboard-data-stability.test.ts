@@ -5,7 +5,7 @@ import path from 'node:path';
 
 test('Dashboard Data Stability & Infinite Loop Prevention Tests', async (t) => {
   const hookFilePath = path.resolve(process.cwd(), 'dashboard/src/hooks/useDashboardData.ts');
-  const appFilePath = path.resolve(process.cwd(), 'dashboard/src/App.tsx');
+  const appFilePath = path.resolve(process.cwd(), 'dashboard/src/AppShell.tsx');
 
   assert.ok(fs.existsSync(hookFilePath), 'useDashboardData.ts must exist');
   assert.ok(fs.existsSync(appFilePath), 'App.tsx must exist');
@@ -141,16 +141,7 @@ test('Dashboard Data Stability & Infinite Loop Prevention Tests', async (t) => {
     );
   });
 
-  await t.test('verifies App.tsx wires activeDataIsDemoSourced from the hook into DashboardHeader', () => {
-    assert.ok(
-      appContent.includes('activeDataIsDemoSourced,'),
-      'App.tsx must destructure activeDataIsDemoSourced from useDashboardData'
-    );
-    assert.ok(
-      appContent.includes('activeDataIsDemoSourced={activeDataIsDemoSourced}'),
-      'App.tsx must pass activeDataIsDemoSourced through to DashboardHeader'
-    );
-  });
+  // App → DashboardHeader への activeDataIsDemoSourced の受け渡しは、デモバナーの挙動テスト (ui/app-behavior.test.tsx) が検証する
 
   await t.test('verifies App.tsx renders MonthlyReportView without destructive unmounting during background fetch', () => {
     // When reportLoading is true but currentReportData exists, App should NOT destroy MonthlyReportView
