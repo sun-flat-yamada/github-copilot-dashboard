@@ -196,6 +196,25 @@ range     = actual_to_date + (mean +/- stdev) * remaining_days   (lower bound: a
 
 Missing days (`null`) are not observed days and are never treated as 0. Confidence: **high** = 21+ observed days, coefficient of variation <= 0.2 and coverage >= 90%; **medium** = 14+ days, CV <= 0.5 and coverage >= 70%; otherwise **low**. Two series are forecast: daily seat cost (`daily_trends.daily_cost_usd`, `spend_forecast`) and AI Credits consumption (`daily_trends.ai_credits_used`, `credits_forecast`). Seat cost is prorated daily and nearly constant, so the forecast is informative mainly for AI Credits. `daily_trends` has no per-user measurements, so the forecast keeps the company-wide values while a filter is active and is labelled as such (§4.4-5).
 
+### 4.6 1-Year Trend, Month Close and Year-over-Year (P3-6 / B-01)
+
+Pure functions in `src/processor/yearly-trend.ts` (the current time is injected; dates are UTC).
+
+**Month close rule.** Until the monthly close (P4-2: frozen snapshot, checksum, revisions) exists, the close is derived from the calendar: a month is **closed (確定)** from the **5th business day of the next month** (Monday to Friday; public holidays are not considered), **provisional (暫定)** before that, including the current month. The close day itself is closed. *Closed only means the close day has passed*; numeric immutability comes with P4-2. The rule (`MONTH_CLOSE_BUSINESS_DAYS = 5`) is declared in one place and written into the dataset as `close_rule`.
+
+**Series.** 12 consecutive calendar months ending at the latest recorded month. A month with no stored aggregate is `missing` (null values), never 0. A month that exists but has no measured usage keeps `acceptance_rate` / `total_chats` as null.
+
+**Year-over-year** compares a month with the same month of the previous year, per metric (`total_spend_usd`, `total_seats`, `active_seats`, `acceptance_rate`, `total_chats`, `total_ai_credits_used`): difference (`current - previous`; for ratios the difference in ratio) and change ratio (`/ previous`).
+
+| Condition | Result |
+|:--|:--|
+| The month has no stored aggregate | "—（この月の保存済み集計がない）" |
+| The month exists but the metric is not measured | "—（当月の指標を取得できていない）" |
+| The previous-year month has no data | "—（前年同月のデータなし）"; never compared against 0 |
+| The previous-year value is 0 | Difference only; no change ratio ("前年同月が 0 のため変化率は算出しない") |
+
+The catalog entries are `yoy_spend_change` and `yoy_active_seats_change`.
+
 ---
 
 ## 5. Usage Insights per User (usage, tokens, unit cost, session-bloat signals)
