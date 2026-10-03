@@ -88,6 +88,16 @@ function createFakeGitHub(overrides: { failSeats?: boolean } = {}) {
       return json({ total_seats: 2, seats: [rawSeat('alice', 1), rawSeat('bob', 2)] });
     }
     if (url.pathname.endsWith('/settings/billing/cost-centers')) return json({ costCenters: [] });
+    if (url.pathname.endsWith('/settings/billing/ai_credit/usage')) {
+      const [year, month, day] = ['year', 'month', 'day'].map((k) => Number(url.searchParams.get(k)));
+      return json({
+        timePeriod: { year, month, day },
+        enterprise: 'acme-ent',
+        usageItems: [
+          { product: 'Copilot', sku: 'Copilot AI Credits', model: 'gpt-5', unitType: 'credits', pricePerUnit: 0.01, grossQuantity: 100, grossAmount: 1, discountQuantity: 0, discountAmount: 0, netQuantity: 100, netAmount: 1 },
+        ],
+      });
+    }
     return new Response('not found', { status: 404 });
   }) as typeof fetch;
   return { fetchImpl, callCount: () => calls, signedSeen };
@@ -206,8 +216,8 @@ describe('Raw Landing: record a run, replay it (P1-2)', () => {
     assert.deepEqual(manifest.config.report_days, DAYS);
     const byOutcome = (o: string) => manifest.entries.filter((e) => e.outcome === o).length;
     assert.equal(byOutcome('empty'), 1, 'the 2026-09-08 report is 404 (empty)');
-    // 2 日分の users-1-day (links) + 2 日分の NDJSON + seats + cost centers
-    assert.equal(byOutcome('ok'), 6);
+    // 2 日分の users-1-day (links) + 2 日分の NDJSON + seats + cost centers + 日数分の AI credit usage
+    assert.equal(byOutcome('ok'), 6 + DAYS.length);
     assert.deepEqual(
       manifest.entries.map((e) => e.request),
       [...manifest.entries.map((e) => e.request)].sort((a, b) => a.localeCompare(b))

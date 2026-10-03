@@ -137,6 +137,10 @@ export class PipelineOrchestrator {
       this.dataSource.fetchCostCenters(),
     ]);
 
+    // AI Credits 利用量 (Enterprise 単位の Billing API)。取得結果の消費 (集計) は Phase 2。ここでは収集と状態の記録まで
+    const aiCreditLines =
+      !this.isMock && this.dataSource.fetchAiCreditUsage ? await this.dataSource.fetchAiCreditUsage() : [];
+
     // Raw Landing: 収集した応答の台帳 (Run Manifest) を確定する。書けなかった run は再処理できないので、index に印を付けない
     const landed = this.runInfo?.finishLanding ? this.runInfo.finishLanding() : this.runInfo !== undefined;
     if (this.runInfo?.finishLanding && landed) {
@@ -144,7 +148,8 @@ export class PipelineOrchestrator {
     }
 
     console.log(
-      `✅ Data Fetched: ${metrics.length} daily metric records, ${seats.length} seats, ${costCenters.length} cost centers.`
+      `✅ Data Fetched: ${metrics.length} daily metric records, ${seats.length} seats, ${costCenters.length} cost centers` +
+        (aiCreditLines.length > 0 ? `, ${aiCreditLines.length} AI credit usage lines.` : '.')
     );
 
     // 「取得失敗」と「データなし」を区別する。失敗したソースは前回成功データ (Last-known-good) を
@@ -155,6 +160,8 @@ export class PipelineOrchestrator {
         statusOrInferred(reported, 'metrics', metrics.length, nowIso),
         statusOrInferred(reported, 'seats', seats.length, nowIso),
         statusOrInferred(reported, 'cost_centers', costCenters.length, nowIso),
+        // 報告したときだけ載せる (モック・未対応の実装では項目を増やさない)
+        ...reported.filter((s) => s.source === 'ai_credits'),
       ],
       previousIndex
     );

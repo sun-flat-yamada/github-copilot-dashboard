@@ -26,6 +26,7 @@ export const SOURCE_FETCH_LABELS: Record<DataSourceId, string> = {
   metrics: '利用状況メトリクス',
   seats: 'シート割り当て',
   cost_centers: 'Cost Center',
+  ai_credits: 'AI Credits 利用量',
 };
 
 export type DataStatusLevel = 'demo' | 'error' | 'warning' | 'info';
