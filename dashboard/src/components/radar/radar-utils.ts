@@ -23,7 +23,7 @@ export function computeModelUsage(
   const rawCounts: Record<string, number> = {};
   let totalRequests = 0;
 
-  // A. Live Metrics (aggregatedData) から集計
+  // A. 自動定期収集データ (aggregatedData) から集計
   if (aggregatedData?.user_profiles && aggregatedData.user_profiles.length > 0) {
     for (const p of aggregatedData.user_profiles) {
       if (p.model_usage_totals) {
@@ -36,7 +36,7 @@ export function computeModelUsage(
     }
   }
 
-  // B. Monthly Report (monthlyReportData) から集計 (Live Metricsが空または未連携の場合の補完)
+  // B. Monthly Report (monthlyReportData) から集計 (自動収集データが空または未連携の場合の補完)
   if (totalRequests === 0 && monthlyReportData?.model_breakdown) {
     for (const m of monthlyReportData.model_breakdown) {
       const normId = normalizeModelId(m.model_name);

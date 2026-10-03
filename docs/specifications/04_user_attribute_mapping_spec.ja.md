@@ -240,7 +240,7 @@ DEMO / Mock モード実行時や、公開フォーク環境において、本�
 ### 7.2 アーキテクチャと仕様
 1. **リポジトリ内フィクスチャ**:
    - `fixtures/demo/copilot-user-mapping.demo.json.gpg`
-   - 94名の合成モックユーザー（Live Metrics 85名 + Monthly Usage Report ユーザー）を完全網羅。
+   - 94名の合成モックユーザー（自動収集データ 85名 + Monthly Usage Report ユーザー）を完全網羅。
    - AES256 GPG対称暗号化（デフォルトパスフレーズ: `copilot-demo-secret-passphrase-2026`）。
 2. **自動配置・デプロイ**:
    - `scripts/generate-demo-data.ts` 実行時に暗号化ファイルを `data/demo/config/` および `dashboard/public/data/demo/config/` へ自動配置。

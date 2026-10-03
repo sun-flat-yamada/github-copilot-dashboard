@@ -69,7 +69,7 @@ Remove-Item -Recurse -Force github-copilot-dashboard.git
 
 #### 3.1.1 Initializing DEMO Data in Standard GitHub Forks (Copy main only)
 When creating a fork via GitHub's Web UI, "Copy the main branch only" is enabled by default. Consequently, the newly created fork lacks the `copilot-data` orphan branch.
-To seed your fork's `copilot-data` branch with the full 2026 LTS Live Metrics DEMO dataset in a single command, run:
+To seed your fork's `copilot-data` branch with the full 2026 LTS Auto-collected DEMO dataset in a single command, run:
 
 ```bash
 # Fetch upstream DEMO data and push it directly to your fork's copilot-data branch

@@ -225,5 +225,16 @@ describe('Data Selection & Hierarchical AND Filtering Tests', () => {
       assert.match(content, /onApplyFilterCriteria=\{setFilterCriteria\}/);
       assert.match(content, /onResetFilterCriteria=\{resetFilterCriteria\}/);
     });
+
+    it('verifies that legacy "Live Metrics" term has been replaced across UI headers and data hooks', () => {
+      const headerPath = path.resolve(process.cwd(), 'dashboard/src/components/layout/DashboardHeader.tsx');
+      const headerContent = fs.readFileSync(headerPath, 'utf-8');
+      assert.doesNotMatch(headerContent, /Live Metrics/i);
+
+      const deepAnalysisHookPath = path.resolve(process.cwd(), 'dashboard/src/hooks/useDeepAnalysisData.ts');
+      const deepAnalysisHookContent = fs.readFileSync(deepAnalysisHookPath, 'utf-8');
+      assert.doesNotMatch(deepAnalysisHookContent, /Live Metrics \(確定テレメトリ\)/);
+      assert.match(deepAnalysisHookContent, /自動収集データ \(確定テレメトリ\)/);
+    });
   });
 });

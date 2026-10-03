@@ -16,7 +16,7 @@
 To delve deeper into GitHub Copilot utilization patterns and empower organizational productivity and optimization, this specification defines the dedicated **Deep Analytics View**.
 
 ### 1.1 Background & Purpose
-Standard dashboard views (Live Metrics, Monthly Report, Model Radar) focus on macro-level summaries across organizations, cost centers, and models. The Deep Analytics View addresses micro-level challenges:
+Standard dashboard views (Auto-collected Data, Monthly Report, Model Radar) focus on macro-level summaries across organizations, cost centers, and models. The Deep Analytics View addresses micro-level challenges:
 - **Micro-Level Behavioral Diagnostics**: Early detection of anti-patterns where individual developers struggle to benefit from AI assistance or waste engineering time.
 - **Continuous Analytical Extensibility**: A pluggable, registry-based architecture accommodating modular diagnostic engines (e.g., prompt churn, model efficiency matrices, peer gap benchmarks).
 
@@ -28,7 +28,7 @@ Standard dashboard views (Live Metrics, Monthly Report, Model Radar) focus on ma
 - Adds the dedicated **"Deep Analytics"** (`deep_analysis`) view to the top `ViewNavigation` bar.
 - Icon: `BrainCircuit`. One-click transition to the deep analytics hub.
 - **Active Data Source Integration**:
-  - **Live Metrics**: Analyzes granular telemetry (prompt frequency, suggestions, acceptances, and daily history) for the currently selected scope.
+  - **Auto-collected Data**: Analyzes granular telemetry (prompt frequency, suggestions, acceptances, and daily history) for the currently selected scope.
   - **Monthly Usage Report**: Uses the stored monthly deep-analysis archive (`data/processed/deep-analysis/{YYYY-MM}.json`) when it exists (measured telemetry). A monthly CSV carries no per-user daily telemetry, so without an archive the view states "monthly aggregate only — daily diagnosis not available" and why; **no per-user profile is synthesized from the CSV** (the former `adaptReportToProfiles` was removed, see §6.4).
   - **User Upload**: An uploaded CSV is a monthly aggregate as well and gets the same "monthly aggregate only" notice instead of an estimated diagnosis.
   - **Tag AND Filtering**: Synchronizes with global tag filters to restrict the diagnostic cohort to matching developers.
@@ -157,9 +157,9 @@ The diagnostic engine judges behaviour; a judgement made from invented inputs is
 - A not-evaluable pattern card shows "判定不能 (データ不足)" and the reason instead of a probability, and it is excluded from the "N 件 要注意" (patterns needing attention) counts in `HealthScoreCard` and the drill-down panel.
 
 ### 6.4 Profiles come from measurements only
-- Per-user profiles (`UserUsageProfile`) come from Live Metrics `user_profiles` or from the stored `deep-analysis/{YYYY-MM}.json` archive. They are resolved by the pure function `resolveDeepAnalysisProfiles`.
+- Per-user profiles (`UserUsageProfile`) come from Auto-collected Data `user_profiles` or from the stored `deep-analysis/{YYYY-MM}.json` archive. They are resolved by the pure function `resolveDeepAnalysisProfiles`.
 - A monthly report (CSV) and an uploaded CSV are aggregates without per-user daily telemetry. They yield **no profiles**; the source indicator reads "月次集計のみ・日次診断不可" with the explanation "月次レポート (CSV) にはユーザー別の日次利用実績が含まれないため…". The former synthesis of daily histories from a monthly total (and its estimated "pro-rated" mode) was removed.
-- When Live Metrics has seats but no collected per-user daily history yet, the view says so instead of showing an empty diagnosis.
+- When Auto-collected Data has seats but no collected per-user daily history yet, the view says so instead of showing an empty diagnosis.
 
 ### 6.5 Peer benchmark
 Peer averages (acceptance rate, daily acceptances, heavy-model ratio) are computed from the actual profiles in the selected scope. With no comparable profile the benchmark is **omitted** (`peerBenchmarks` absent), never a fixed "typical" value.

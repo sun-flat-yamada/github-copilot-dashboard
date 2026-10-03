@@ -19,7 +19,7 @@ The dashboard is designed as a responsive Single Page Application (SPA) optimize
 
 ```
 +------------------------------------------------------------------------------------------------------+
-|  GitHub Copilot Analytics [ℹ️ About] [Active Data: Live Metrics ▼]   [🔗 Repo: owner/name] [⋮ Menu] [⚠️] |
+|  GitHub Copilot Analytics [ℹ️ About] [Active Data: Auto-collected Data ▼]   [🔗 Repo: owner/name] [⋮ Menu] [⚠️] |
 +------------------------------------------------------------------------------------------------------+
 | [Navigation: 6 Analysis Views]                                                                 |
 |  [Overview] [Users (Rankings Consolidated)] [Trends] [Budget] [Deep Analytics] [Model Radar] |
@@ -54,7 +54,7 @@ The dashboard is designed as a responsive Single Page Application (SPA) optimize
 
 ### 2.1 Header Active Data Selector (`ActiveDataSelector`)
 The center of the header prominently displays the currently active dataset, allowing instantaneous switching via modal dialog:
-1. **Live Metrics (API-Synced Auto Collection)**:
+1. **Auto-collected Data (API-Synced Auto Collection)**:
    - Scope switching across rolling past 1 year (12 months), rolling past 30 days daily, and 30-day aggregated preset.
 2. **Monthly Usage Report**:
    - Switching among immutable monthly usage reports (CSV-derived) persisted on the `copilot-data` branch.
@@ -115,7 +115,7 @@ Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint 
 - **Compact Style Padding & Non-Wrapping Horizontal Scroll**: Cell padding across headers and rows is refined to a compact design (`py-2 px-2.5`), preventing automatic line breaks (`whitespace-nowrap min-w-max`) when viewing on narrow viewports. Horizontal overflow scrolling (`overflow-x-auto`) preserves table geometry across any resolution.
 - **3-Axis & Group Integration**: Seamlessly sorts members across Cost Centers, Organizations, and User Defined Groups (`ユーザー定義Gr`).
 - **Metric Sorting**: One-click interactive sorting by user handle, display name, department/group, tags, cost center, organization, acceptances, suggestions, chat turns, Inline Completion Acceptance Rate, incurred cost, excess billing, or inactive days.
-- **User Selection & Inline Drill-down Analysis (`UserDrilldownPanel`)**: Clicking any user row or clicking the "Drilldown" button expands a comprehensive diagnostic panel directly beneath the row without navigating away. Allows instant 360-degree micro-analysis of FinOps costs (monthly/daily/excess billing), productivity KPIs, daily trends with AI model breakdown charts, overall AI health score (0-100), and 5 anti-pattern diagnostic evaluations with actionable prescriptions while preserving table context. Fully compatible with Live Metrics, Monthly Usage Report, and User Upload (CSV) data sources.
+- **User Selection & Inline Drill-down Analysis (`UserDrilldownPanel`)**: Clicking any user row or clicking the "Drilldown" button expands a comprehensive diagnostic panel directly beneath the row without navigating away. Allows instant 360-degree micro-analysis of FinOps costs (monthly/daily/excess billing), productivity KPIs, daily trends with AI model breakdown charts, overall AI health score (0-100), and 5 anti-pattern diagnostic evaluations with actionable prescriptions while preserving table context. Fully compatible with Auto-collected Data, Monthly Usage Report, and User Upload (CSV) data sources.
 - **Direct Navigation**: Direct transitions to individual model trends (`trend`) and deep diagnostics (`deep_analysis`) from row actions or within the drilldown panel.
 
 ### 2.8 Cost Center Budget Cards
@@ -186,7 +186,7 @@ The first thing a viewer must be able to tell is **whether the numbers are real,
 1. **Banner items** (built by `buildDataStatusItems`, ordered error → warning → demo):
    | Level | Trigger | Wording (excerpt) |
    |:--|:--|:--|
-   | `error` (red, `AlertCircle`, `role="alert"`) | `index.json` `source_status[]` has `status: failed` for a source of the active Live Metrics data | "{source}の取得に失敗しました" + "前回成功 (YYYY-MM-DD HH:MM UTC) のデータを表示しています。最新の値ではありません。" or, if it never succeeded, "該当する値は「—（未取得）」と表示されます" (+ cause) |
+   | `error` (red, `AlertCircle`, `role="alert"`) | `index.json` `source_status[]` has `status: failed` for a source of the active Auto-collected Data | "{source}の取得に失敗しました" + "前回成功 (YYYY-MM-DD HH:MM UTC) のデータを表示しています。最新の値ではありません。" or, if it never succeeded, "該当する値は「—（未取得）」と表示されます" (+ cause) |
    | `warning` (yellow, `AlertTriangle`) | `status: partial` | "{source}の一部を取得できませんでした" + number of quarantined records excluded from the aggregation |
    | `demo` (amber, `FlaskConical`) | The active data is demo data (see 3 below) | "デモ（架空）データを表示しています" |
    - `ok` and `skipped` (not configured, not a fault) sources show nothing.
@@ -199,7 +199,7 @@ The first thing a viewer must be able to tell is **whether the numbers are real,
 
 ### 2.13a Data Quality in the Banner (P1-7)
 
-`buildDataStatusItems` also reads `index.json` `data_quality` (SDD-05 §2.5) for Live Metrics data:
+`buildDataStatusItems` also reads `index.json` `data_quality` (SDD-05 §2.5) for Auto-collected Data:
 
 | Level | Trigger | Wording (excerpt) |
 |:--|:--|:--|
@@ -263,13 +263,13 @@ The View Registry is the **only entry point for rendering a view**. `App.tsx` ha
 - Live-metrics rows (Reports API) carry no token data, so the token columns show "—" with the reason; the signals are still computed from the daily history (S3 / S4 and, where available, others) with the same functions (§2.16).
 
 ### 2.16 One User Detail Format for Every Data Source and View
-The user detail table has **one format**, whatever the data source (live metrics, monthly report, uploaded CSV) and whatever view hosts it (Overview, Users, Budget, monthly report view).
+The user detail table has **one format**, whatever the data source (auto-collected data, monthly report, uploaded CSV) and whatever view hosts it (Overview, Users, Budget, monthly report view).
 
 - **One component**: `UserDetailTable` is the only user detail table (`MonthlyReportUserTable` was removed). Call sites pass `data` (live) or `reportData` (monthly report); they differ only in the filter axis (`grouping`) and the callbacks.
 - **One row model**: `buildLiveRows` / `buildReportRows` (`src/adapters/presenters/UserDetailRows.ts`) turn each source into `UserDetailRow`. Both produce **exactly the same keys**; a value the source does not have is `null` (or `false`), never 0.
 - **Same columns, same order, same meaning**: `#`, User, Display Name, ユーザー定義Gr, Tag, Cost Center, Organization, Plan, Status, Primary Model, Requests, Suggestions, Acceptances, Inline Acceptance Rate, AI Chats, Tokens, Cost per 1M Tokens, Signal, Usage Cost, Excess Billing, Last Activity, Actions (22 columns, `USER_DETAIL_COLUMN_COUNT`). The CSV export has the same columns for every source.
 - **Unavailable cells**: shown as "—" with the reason in the tooltip (e.g. "シート情報は月次レポートに含まれません", "トークン列のないデータです"). Columns are never hidden per source, so the table does not change shape when the source changes. The status filter is the one exception: it is shown only when the data has seat status.
 - **Cost columns**: live shows the seat cost for the scope (daily / monthly / period); the monthly report shows the usage amount (gross) and the billable amount (net). The header states the unit (`利用費用 (月額)` / `利用費用 (月次)`). Live still shows the same value in both cost columns (pre-existing behaviour; the Reports API has no per-user billable amount).
-- **Signals for live data**: computed by the same functions (SDD-06 §5) from the daily history of the measured profile; tokens are absent there, so S1 / S2 / S5 are "データ不足". The badge tooltip lists the signals that could not be evaluated, so "特記なし" is not read as "everything was checked".
+- **Signals for auto-collected data**: computed by the same functions (SDD-06 §5) from the daily history of the measured profile; tokens are absent there, so S1 / S2 / S5 are "データ不足". The badge tooltip lists the signals that could not be evaluated, so "特記なし" is not read as "everything was checked".
 - **Behavioural test**: `src/tests/user-detail-table-unified.test.ts` renders both sources and asserts identical headers and cell counts.
 

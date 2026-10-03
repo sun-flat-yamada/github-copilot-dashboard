@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
 
 console.log('=====================================================');
-console.log('🚀 Generating Live Metrics DEMO Data Partition (2026.09 LTS)...');
+console.log('🚀 Generating Auto-collected DEMO Data Partition (2026.09 LTS)...');
 console.log('=====================================================');
 
 try {

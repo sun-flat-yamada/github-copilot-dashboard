@@ -134,7 +134,7 @@ copilot-data (Orphan Data Branch)
 - **What counts as DEMO**: the data is treated as DEMO only when it was loaded from the `data/demo/` path **or** its `index.json` declares `is_mock_mode: true` (data generated with `MOCK_MODE`). Repository owner names, zero seats or zero days of data never imply DEMO; a failed or unconfigured live collection is not demo data. While DEMO data is shown, a banner at the top of the screen says so.
 - **Interactive Switching**: The header DEMO/LIVE badge toggles to the other mode explicitly (clicking the DEMO badge returns to live data; clicking LIVE selects the demo data).
 - **Pipeline & Tooling**:
-  - `npm run demo:generate`: Generates/updates the complete 2026 LTS Live Metrics DEMO bundle under `data/demo/` and `dashboard/public/data/demo/`.
+  - `npm run demo:generate`: Generates/updates the complete 2026 LTS Auto-collected DEMO bundle under `data/demo/` and `dashboard/public/data/demo/`.
   - `npm run demo:sync [-- --push]`: Safely commits and syncs `data/demo/` to the `copilot-data` branch in an isolated temporary worktree.
 
 ### 2.2 Dual Hierarchy Convention: Persistent Storage (`processed/`) vs. SPA Distribution Root
@@ -329,7 +329,7 @@ When `COPILOT_ENTERPRISE`/`COPILOT_ORGS` are unset, or the configured credential
 }
 ```
 
-- `default_scopes.latest_day`/`latest_month`/`latest_range` are simply omitted (not fabricated with a placeholder date) when no live metrics exist.
+- `default_scopes.latest_day`/`latest_month`/`latest_range` are simply omitted (not fabricated with a placeholder date) when no auto-collected metrics exist.
 - `available_reports` reflects any independently-imported Monthly Usage Report CSVs (`npm run import:report`) even when `available_months`/`available_days` are empty — CSV-based reporting has no dependency on Copilot Metrics/Seats credentials.
 - The dashboard SPA (`dashboard/src/App.tsx`) detects this state (`noLiveData`) and renders an informational banner explaining that credential-independent features (CSV reports, AI Model Benchmarks) remain available, instead of silently defaulting to a hardcoded fallback month or crashing. The banner offers an explicit **"Show demo data"** button; the SPA never switches to demo data on its own.
 - Each source then has `source_status` `skipped` (not configured) or `failed` (e.g. the token is missing) — both are distinguishable from "collected, and there is simply nothing".

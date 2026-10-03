@@ -76,7 +76,7 @@ The system must allow seamless switching and analysis of usage data and costs ac
 ### FR-3: Multi-Source & Multi-Scope Analysis Switching
 The aggregation engine and dashboard must support rapid switching between data sources and time scopes:
 1. **Active Data Source Switching (`ActiveDataSelector`)**:
-   - **Live Metrics (API-Synced Auto Collection)**: Rolling past 1 year (12 months) and rolling past 30 days daily metrics.
+   - **Auto-collected Data (API-Synced Auto Collection)**: Rolling past 1 year (12 months) and rolling past 30 days daily metrics.
    - **Monthly Usage Report**: Immutable persisted monthly usage reports (CSV-derived).
    - **User Upload File (On-demand)**: In-browser memory analysis of user-provided CSV/JSON reports (Zero-Leakage).
 2. **Time Scope Switching**:
@@ -130,7 +130,7 @@ The aggregation engine and dashboard must support rapid switching between data s
 ### FR-12: Cross-View Data-Centric Reactivity
 - Every analysis View (FR-8) must render its displayed content (KPI figures, default selections, charts, derived usage percentages, etc.) as a **pure function of "the analysis target data the user currently has actively selected"** — i.e., the combination of the active data source type (FR-3-1) × time/group scope (FR-3-2) × Tag AND filter (FR-6).
 - When a View is already mounted and visible and the user changes only the scope or tag filter (without revisiting the View tab itself), that View's displayed content, default selections, and derived aggregates **must immediately recompute and track the change without requiring a remount**. Implementations that "compute once on first render and never again" violate this requirement.
-- When a computed value has a cross-data-source fallback path (e.g., falling back to Monthly Usage Report aggregates when Live Metrics data is empty), **the fallback path must equally honor the active filters**. Being a "fallback" path is never a valid excuse for ignoring filter state.
+- When a computed value has a cross-data-source fallback path (e.g., falling back to Monthly Usage Report aggregates when Auto-collected Data is empty), **the fallback path must equally honor the active filters**. Being a "fallback" path is never a valid excuse for ignoring filter state.
 - The detailed design policy, implementation conventions, and known anti-patterns for satisfying this requirement are defined in [SDD-15: Data-Centric Reactivity Design Specification](15_data_centric_reactivity_design_spec.md).
 
 ### FR-13: FinOps Dynamic Multi-Currency & Enterprise Agreement (EA) Pricing

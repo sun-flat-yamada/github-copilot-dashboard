@@ -257,7 +257,7 @@ Configure either variable under **Settings** > **Secrets and variables** > **Act
 - `COPILOT_ORGS`: Or specify a comma-separated list of organization names (e.g. `org-core,org-ai-labs`).
 
 ### Mock Mode & DEMO Data Setup for Forks
-- **Instant DEMO Data Setup for Downstream Forks**: If you forked the repository with GitHub's default setting ("Copy the main branch only"), your fork will not initially include the `copilot-data` orphan branch. You can import the full 2026 LTS Live Metrics DEMO dataset with a single command:
+- **Instant DEMO Data Setup for Downstream Forks**: If you forked the repository with GitHub's default setting ("Copy the main branch only"), your fork will not initially include the `copilot-data` orphan branch. You can import the full 2026 LTS Auto-collected DEMO dataset with a single command:
   ```bash
   # Fetch and unpack DEMO data from upstream copilot-data
   npm run demo:setup

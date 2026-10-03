@@ -14,11 +14,11 @@ export const DEMO_MAPPING_GPG_RELATIVE_PATH = 'fixtures/demo/copilot-user-mappin
 
 /**
  * 2026 LTS DEMO データセット専用のユーザーマッピング一覧を生成 (v2.0 Schema)
- * (Live Metrics 85名 + Monthly Usage Report ユーザーを完全網羅)
+ * (自動定期収集データ 85名 + Monthly Usage Report ユーザーを完全網羅)
  */
 export function buildDemoUserMappings(): UserAttributeMappingV2[] {
   const mappings: UserAttributeMappingV2[] = [
-    // Live Metrics 主要コアメンバー
+    // 自動定期収集データ 主要コアメンバー
     {
       github_user: 'taro-tanaka',
       display_name: '田中 太郎',

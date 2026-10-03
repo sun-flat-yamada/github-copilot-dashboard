@@ -52,7 +52,7 @@ export interface ResolveDeepAnalysisProfilesParams {
  * アクティブなデータソースから、ディープ分析・ユーザー別推移に使うプロファイル群と
  * データソース情報を導出する (React に依存しない純粋関数)。
  *
- * 実測のあるプロファイル (Live Metrics / 保存済み月次アーカイブ) だけを返し、月次レポート (CSV の集計) や
+ * 実測のあるプロファイル (自動定期収集データ / 保存済み月次アーカイブ) だけを返し、月次レポート (CSV の集計) や
  * アップロードデータからは個人別のプロファイルを合成しない。
  */
 export function resolveDeepAnalysisProfiles({
@@ -67,7 +67,7 @@ export function resolveDeepAnalysisProfiles({
   profiles: UserUsageProfile[];
   sourceInfo: DeepAnalysisDataSourceInfo;
 } {
-  // A. Live Metrics
+  // A. 自動定期収集データ
   if (activeSource === 'live_metrics') {
     const rawProfiles = currentData?.user_profiles || [];
     const totalUsers = currentData?.users?.length || rawProfiles.length;
@@ -83,7 +83,7 @@ export function resolveDeepAnalysisProfiles({
       profiles: filteredProfiles,
       sourceInfo: {
         sourceType: 'live_metrics',
-        label: 'Live Metrics (確定テレメトリ)',
+        label: '自動収集データ (確定テレメトリ)',
         isEstimated: false,
         monthOrFileName: currentData?.scope_key || 'live',
         totalUsers,

@@ -74,7 +74,7 @@ function usersOf(dataset: QueryDataset): FilterableUser[] {
     : (dataset.data as MonthlyReportAggregatedData).user_details.map(toFilterable);
 }
 
-/** Live Metrics にフィルターを適用する (全派生フィールドを再集計) */
+/** 自動定期収集データにフィルターを適用する (全派生フィールドを再集計) */
 export function queryLiveScope(data: ScopeAggregatedData, criteria: FilterCriteria): ScopeAggregatedData {
   return applyFilterCriteriaToLiveScope(data, criteria);
 }

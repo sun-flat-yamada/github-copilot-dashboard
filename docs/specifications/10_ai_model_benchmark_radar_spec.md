@@ -64,14 +64,14 @@ flowchart TD
 
 ### 2.3 Knowledge Model Retention & 0% Share Rendering
 - **Persistent Knowledge Retention**:
-  Even when analyzed datasets (Live Metrics or Monthly CSV) contain zero requests for a given model, all knowledge-base models remain selectable and visible across model chips, presets, and comparison tables.
+  Even when analyzed datasets (Auto-collected Data or Monthly CSV) contain zero requests for a given model, all knowledge-base models remain selectable and visible across model chips, presets, and comparison tables.
 - **0% Share for Unused Models**:
   Models with zero internal request volume display an enterprise share of **`0%` (0 req)**, labeled with an "Exploratory / Evaluation Knowledge" badge to guide trial adoption.
 - **Identifier Normalization (`normalizeModelId`)**:
   Normalizes label variations (e.g., `Claude 3.7 Sonnet`, `GPT-4o mini`, `o1 (Reasoning)`, `Gemini 2.0 Flash`) to standard knowledge IDs (`claude-3-7-sonnet`, `gpt-4o-mini`, `o1`, `gemini-2-0-flash`).
 - **Tag/Scope Filter Reactivity (`Usage Share (%)` Recomputation)**:
   Whenever the Tag filter or scope (target month, organization, etc.) changes, each model's usage volume and usage share (%) are always recomputed strictly from the currently "active analysis target data" (an applied example of [SDD-01 FR-9](01_requirements_specification.md) / [SDD-15: Data-Centric Reactivity Design Specification](15_data_centric_reactivity_design_spec.md)).
-  - **Live Metrics**: Since per-user, per-model request counts (`model_usage_totals`) are retained, the breakdown is recomputed exactly from the user set after the tag AND-filter is applied.
+  - **Auto-collected Data**: Since per-user, per-model request counts (`model_usage_totals`) are retained, the breakdown is recomputed exactly from the user set after the tag AND-filter is applied.
   - **Monthly Usage Report / Uploaded Data**: User records retain only a single `primary_model` per user (no per-model breakdown per user), so when a tag filter is applied, `model_breakdown` is recomputed as an approximation that attributes each filtered user's full request count to their `primary_model`. When no tags are selected, the original precise breakdown computed at parse time is used unchanged.
 
 ### 2.4 Quick Navigation in Model Details Card

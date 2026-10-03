@@ -135,7 +135,7 @@ copilot-data (独立データ永続化ブランチ)
 - **DEMO とみなす条件**: データが `data/demo/` のパスから読み込まれた、**または** その `index.json` が `is_mock_mode: true`（`MOCK_MODE` で生成されたデータ）を宣言している場合に限る。リポジトリの所有者名、シート数 0、データ日数 0 などからは DEMO と推測しない。取得に失敗した・未設定の実運用データはデモデータではない。DEMO データの表示中は、画面最上部のバナーでその旨を示す。
 - **ヘッダーバッジ対話切替**: ヘッダー上のバッジは、反対のモードへ明示的に切り替える（`DEMO (Mock)` をクリックすると実データへ、`LIVE` をクリックするとデモデータへ）。
 - **データ生成・同期コマンド**:
-  - `npm run demo:generate`: 2026年最新仕様の完全なLive Metrics DEMOデータセットを `data/demo/` および `dashboard/public/data/demo/` に生成。
+  - `npm run demo:generate`: 2026年最新仕様の完全な自動収集DEMOデータセット（Auto-collected DEMO Dataset）を `data/demo/` および `dashboard/public/data/demo/` に生成。
   - `npm run demo:sync [-- --push]`: 隔離された一時ワークツリーを経由して `data/demo/` を `copilot-data` ブランチへ安全にコミット・反映（`main` ブランチは一切無変更）。
 
 ### 2.2 永続ストレージ階層 (`processed/`) と SPA公開パスの二重構造および同期規約 (ナレッジ・再発防止)
