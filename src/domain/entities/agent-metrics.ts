@@ -57,6 +57,21 @@ export interface FeatureEngagementMetric {
 
 export type AdoptionPhase = 'no_cohort' | 'code_first' | 'agent_first' | 'multi_agent';
 
+/** Measured usage days of one user inside the adoption window (null: the signal is not in the data) */
+export interface AdoptionInputs {
+  windowStart: string;
+  windowEnd: string;
+  windowDays: number;
+  /** Days of the window covered by the collected data (dataset-wide, not per user) */
+  observedDays: number;
+  activeDays: number;
+  completionDays: number;
+  chatDays: number;
+  /** Days with agent usage. null when the report does not carry the agent flag (unknown, not zero) */
+  agentDays: number | null;
+  cliDays: number;
+}
+
 export interface AdoptionPhaseMetrics {
   users_in_phase_28d: {
     no_cohort: number;
@@ -64,7 +79,10 @@ export interface AdoptionPhaseMetrics {
     agent_first: number;
     multi_agent: number;
   };
+  /** Number of classified users (the denominator of the distribution) */
   total_evaluated_users: number;
+  /** Users who could not be classified (insufficient data). Not counted in any phase */
+  unclassified_users?: number;
 }
 
 export interface AgentPrMetrics {

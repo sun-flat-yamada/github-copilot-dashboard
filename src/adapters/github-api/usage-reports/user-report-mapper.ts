@@ -3,6 +3,8 @@ import {
   UserModelDailyUsage,
   UserUsageProfile,
 } from '../../../domain/entities/copilot.js';
+import type { AdoptionInputs } from '../../../domain/entities/agent-metrics.js';
+import { AdoptionPhaseRule, ADOPTION_RULE_V2 } from '../../../domain/rules/AdoptionPhaseRule.js';
 import { BASELINE_PRICING } from '../../../domain/pricing/pricing-catalog.js';
 import { UserReportRow } from './user-report-schema.js';
 
@@ -27,6 +29,12 @@ export const CLI_FEATURE = 'copilot_cli';
 
 const isChatFeature = (feature: string): boolean => feature.startsWith('chat_');
 const num = (v: number | undefined): number => v ?? 0;
+
+function shiftDay(day: string, delta: number): string {
+  const d = new Date(`${day}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + delta);
+  return d.toISOString().slice(0, 10);
+}
 
 function round(value: number, digits = 4): number {
   return Number(value.toFixed(digits));
@@ -243,6 +251,17 @@ export function buildUserProfiles(rowsByDay: Map<string, UserReportRow[]>): User
   }
 
   const creditUnitPrice = BASELINE_PRICING.creditUnitPriceUsd;
+
+  // 採用成熟度 v2 の窓: 組織全体の最新日を終端とする直近 N 日 (ユーザーごとの履歴末尾ではない)
+  const allDays = Array.from(rowsByDay.keys()).sort();
+  const windowEnd = allDays[allDays.length - 1];
+  const windowStart = windowEnd ? shiftDay(windowEnd, -(ADOPTION_RULE_V2.windowDays - 1)) : '';
+  const observedDays = allDays.filter((d) => d >= windowStart && d <= windowEnd).length;
+  // どの行にも used_agent が無ければ Agent 利用は「不明」(0 ではない)
+  const agentSignalKnown = Array.from(rowsByDay.entries()).some(
+    ([d, rows]) => d >= windowStart && rows.some((r) => r.used_agent !== undefined)
+  );
+
   const profiles: UserUsageProfile[] = [];
 
   for (const { login, days } of byUser.values()) {
@@ -260,9 +279,17 @@ export function buildUserProfiles(rowsByDay: Map<string, UserReportRow[]>): User
     let totalCost = 0;
     let credits28 = 0;
     let credits28Known = false;
+    const win = { active: 0, completion: 0, chat: 0, agent: 0, cli: 0 };
 
     for (const { day, row } of days) {
       const s = userDayStats(row);
+      if (day >= windowStart && day <= windowEnd) {
+        if (s.engaged || row.used_agent || row.used_chat || row.used_cli) win.active++;
+        if (s.suggestions > 0) win.completion++;
+        if (s.chats > 0 || row.used_chat) win.chat++;
+        if (row.used_agent) win.agent++;
+        if (s.cli > 0 || row.used_cli) win.cli++;
+      }
       const breakdown: Record<string, number> = {};
       for (const [model, interactions] of s.models) {
         breakdown[model] = interactions;
@@ -291,6 +318,19 @@ export function buildUserProfiles(rowsByDay: Map<string, UserReportRow[]>): User
       }
     }
 
+    const inputs: AdoptionInputs = {
+      windowStart,
+      windowEnd,
+      windowDays: ADOPTION_RULE_V2.windowDays,
+      observedDays,
+      activeDays: win.active,
+      completionDays: win.completion,
+      chatDays: win.chat,
+      agentDays: agentSignalKnown ? win.agent : null,
+      cliDays: win.cli,
+    };
+    const adoption = AdoptionPhaseRule.evaluate(inputs);
+
     profiles.push({
       login,
       display_name: login,
@@ -307,6 +347,10 @@ export function buildUserProfiles(rowsByDay: Map<string, UserReportRow[]>): User
       model_usage_totals: modelTotals,
       daily_history: history,
       ...(credits28Known ? { ai_credits_used_28d: round(credits28, 4) } : {}),
+      adoption_inputs: inputs,
+      ...(adoption.status === 'classified'
+        ? { ai_adoption_phase: adoption.phase }
+        : { adoption_unclassified_reason: adoption.reason }),
     });
   }
 

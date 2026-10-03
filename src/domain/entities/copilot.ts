@@ -94,6 +94,7 @@ import {
   FeatureEngagementMetric,
   AdoptionPhase,
   AdoptionPhaseMetrics,
+  AdoptionInputs,
   AgentPrMetrics,
   DiversityUsageMetrics,
 } from './agent-metrics.js';
@@ -256,6 +257,10 @@ export interface UserUsageProfile {
   tags?: string[];
   ai_credits_used_28d?: number;
   ai_adoption_phase?: AdoptionPhase;
+  /** Measured usage days the adoption phase (rule v2) was derived from */
+  adoption_inputs?: AdoptionInputs;
+  /** Why the adoption phase was not determined (insufficient data). Set only when ai_adoption_phase is absent */
+  adoption_unclassified_reason?: string;
   total_agent_sessions?: number;
   completed_agent_sessions?: number;
   ai_credits_limit_monthly?: number;
