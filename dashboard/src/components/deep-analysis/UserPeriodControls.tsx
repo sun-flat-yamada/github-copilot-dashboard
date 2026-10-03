@@ -9,6 +9,8 @@ import { User, Calendar, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-r
 interface UserPeriodControlsProps {
   profiles: UserUsageProfile[];
   currentProfile: UserUsageProfile;
+  /** チーム表示では個人の選択を出さず、対象区間のみを表示する */
+  hideUserSelect?: boolean;
   selectedLogin: string;
   onSelectLogin: (login: string) => void;
   periodScope: AnalysisPeriodScopeType;
@@ -22,6 +24,7 @@ interface UserPeriodControlsProps {
 export const UserPeriodControls: React.FC<UserPeriodControlsProps> = ({
   profiles,
   currentProfile,
+  hideUserSelect = false,
   selectedLogin,
   onSelectLogin,
   periodScope,
@@ -73,6 +76,7 @@ export const UserPeriodControls: React.FC<UserPeriodControlsProps> = ({
     <>
       <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 shadow-lg flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         {/* ユーザー選択 & 左右送りコントロール */}
+        {!hideUserSelect && (
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <label className="text-xs font-semibold text-slate-300 flex items-center space-x-1.5 shrink-0">
             <User className="w-4 h-4 text-indigo-400" />
@@ -146,6 +150,7 @@ export const UserPeriodControls: React.FC<UserPeriodControlsProps> = ({
             </span>
           </div>
         </div>
+        )}
 
         {/* 対象区間の切り替えコントロール */}
         <div className="flex flex-wrap items-center gap-2">

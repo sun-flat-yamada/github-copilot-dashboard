@@ -47,7 +47,10 @@ test('Acceptance Rate & Autopilot/CLI Refinement: Agent/CLI-driven user suppress
     ],
   };
 
-  const diagnosis = InefficiencyDiagnosticEngine.diagnoseUser(autopilotUserProfile, 'today');
+  // 診断 v2: 最小稼働日数 (3 日) を満たすよう、同じ 1 日分の実績を 3 日に展開する
+  autopilotUserProfile.daily_history = [8, 9, 10].map((d) => ({ ...autopilotUserProfile.daily_history![0], date: `2026-09-${String(d).padStart(2, '0')}` }));
+
+  const diagnosis = InefficiencyDiagnosticEngine.diagnoseUser(autopilotUserProfile, '7d');
   const tabSpamPattern = diagnosis.patterns.find((p) => p.id === 'tab_spamming_roulette');
 
   assert.ok(tabSpamPattern, 'tab_spamming_roulette pattern should be evaluated');
@@ -116,7 +119,10 @@ test('Acceptance Rate & Autopilot/CLI Refinement: Non-agent manual spammer still
     ],
   };
 
-  const diagnosis = InefficiencyDiagnosticEngine.diagnoseUser(manualSpammerProfile, 'today');
+  // 診断 v2: 最小稼働日数 (3 日) を満たすよう、同じ 1 日分の実績を 3 日に展開する
+  manualSpammerProfile.daily_history = [8, 9, 10].map((d) => ({ ...manualSpammerProfile.daily_history![0], date: `2026-09-${String(d).padStart(2, '0')}` }));
+
+  const diagnosis = InefficiencyDiagnosticEngine.diagnoseUser(manualSpammerProfile, '7d');
   const tabSpamPattern = diagnosis.patterns.find((p) => p.id === 'tab_spamming_roulette');
 
   assert.ok(tabSpamPattern);
