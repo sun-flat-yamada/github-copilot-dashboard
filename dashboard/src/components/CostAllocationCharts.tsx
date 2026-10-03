@@ -1,9 +1,9 @@
 import React from 'react';
 import { GroupingDimension, ScopeAggregatedData } from '../../../src/types/copilot';
+import { AccessibleChart } from './common/AccessibleChart';
+import { RankedBarChart } from './common/RankedBarChart';
+import { rankWithOther } from '../utils/chart-series';
 import {
-  PieChart,
-  Pie,
-  Cell,
   Tooltip,
   ResponsiveContainer,
   BarChart,
@@ -20,16 +20,9 @@ interface CostAllocationChartsProps {
   onGroupingChange?: (grouping: GroupingDimension) => void;
 }
 
-const COLORS = [
-  '#8957e5', // purple
-  '#2f81f7', // blue
-  '#3fb950', // green
-  '#d29922', // yellow/amber
-  '#f85149', // red
-  '#db61a2', // pink
-  '#7ee787', // light green
-  '#a371f7', // light purple
-];
+/** 多数グループは上位 N + その他へ集約する (ドーナツは大小比較が困難: D-03) */
+const TOP_N_GROUPS = 8;
+
 
 export const CostAllocationCharts: React.FC<CostAllocationChartsProps> = ({
   data,
@@ -85,9 +78,11 @@ export const CostAllocationCharts: React.FC<CostAllocationChartsProps> = ({
     }))
     .sort((a, b) => b.cost - a.cost);
 
+  const rankedCost = rankWithOther(chartData, (g) => ({ name: g.name, value: g.cost }), TOP_N_GROUPS);
+
   return (
     <div className="flex flex-col space-y-6 w-full">
-      {/* 1. コスト内訳 ドーナツチャート */}
+      {/* 1. コスト内訳 ソート済み横棒 (上位 N + その他) */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <h3 className="text-sm font-semibold text-slate-200">
@@ -144,76 +139,17 @@ export const CostAllocationCharts: React.FC<CostAllocationChartsProps> = ({
           </div>
         </div>
 
-        <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={90}
-                paddingAngle={4}
-                dataKey="cost"
-              >
-                {chartData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                content={({ active, payload }) => {
-                  if (!active || !payload || !payload.length) return null;
-                  const d = payload[0].payload;
-                  return (
-                    <div className="bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs shadow-xl text-slate-200 space-y-1">
-                      <p className="font-semibold text-white mb-1.5">{d.name}</p>
-                      <div className="flex justify-between space-x-4">
-                        <span className="text-slate-400">利用費用:</span>
-                        <span className="font-mono font-bold text-slate-100">${Number(d.cost || 0).toLocaleString()}</span>
-                      </div>
-                      {d.netCost !== undefined && (
-                        <div className="flex justify-between space-x-4">
-                          <span className="text-amber-400">超過請求費用:</span>
-                          <span className="font-mono font-bold text-amber-300">${Number(d.netCost || 0).toLocaleString()}</span>
-                        </div>
-                      )}
-                      {d.limit !== undefined && d.limit > 0 && (
-                        <div className="flex justify-between space-x-4 text-slate-400">
-                          <span>Limit設定値:</span>
-                          <span className="font-mono">${Number(d.limit || 0).toLocaleString()}</span>
-                        </div>
-                      )}
-                      <p className="text-[10px] text-slate-500 pt-1 border-t border-slate-800/80">
-                        稼働 {d.activeSeats} / 総シート {d.seats} 席
-                      </p>
-                    </div>
-                  );
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* 凡例リスト */}
-        <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-          {chartData.slice(0, 6).map((item, idx) => (
-            <div key={item.name} className="flex items-center justify-between space-x-2 truncate">
-              <div className="flex items-center space-x-1.5 truncate">
-                <span
-                  className="w-2.5 h-2.5 rounded-full shrink-0"
-                  style={{ backgroundColor: COLORS[idx % COLORS.length] }}
-                />
-                <span className="text-slate-300 truncate font-medium">{item.name}</span>
-              </div>
-              <div className="flex items-center space-x-1 font-mono text-slate-400 shrink-0">
-                <span>${item.cost.toLocaleString()}</span>
-                {item.netCost !== undefined && (
-                  <span className="text-[10px] text-amber-400" title="超過請求費用">(${item.netCost.toLocaleString()})</span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+        <RankedBarChart
+          testId="cost-ranked-bar"
+          title={`${groupingLabel} 別 コスト内訳`}
+          valueLabel="利用費用 (USD)"
+          rows={rankedCost}
+          formatValue={(v) => `$${v.toLocaleString()}`}
+          describe={(r) => {
+            const d = chartData.find((c) => c.name === r.name);
+            return d ? `超過請求 $${Number(d.netCost || 0).toLocaleString()}、稼働 ${d.activeSeats} / 総シート ${d.seats} 席` : `${r.count} グループの合計`;
+          }}
+        />
       </div>
 
       {/* 2. グループ別 シート数 & 遊休シート比較 */}
@@ -225,39 +161,63 @@ export const CostAllocationCharts: React.FC<CostAllocationChartsProps> = ({
           <span className="text-xs text-slate-400">稼働 vs 遊休シート</span>
         </div>
 
+        <AccessibleChart
+          testId="seat-status-chart"
+          title={`${groupingLabel} 別 ライセンス稼働状況`}
+          summary={`${chartData.length} グループの稼働・遊休・導入期間シート数。稼働は無地、遊休は斜線、導入期間は水玉で区別。`}
+          columns={[
+            { key: 'name', label: 'グループ' },
+            { key: 'active', label: '稼働シート' },
+            { key: 'idle', label: '遊休シート' },
+            { key: 'onboarding', label: '導入期間' },
+            { key: 'total', label: '総シート' },
+          ]}
+          rows={chartData.map((d) => ({ name: d.name, active: d.activeSeats, idle: d.idleSeats, onboarding: d.onboardingSeats, total: d.seats }))}
+        >
         <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={chartData}
-              layout="vertical"
-              margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#21262d" />
-              <XAxis type="number" stroke="#8b949e" fontSize={11} />
-              <YAxis
-                type="category"
-                dataKey="name"
-                stroke="#8b949e"
-                fontSize={11}
-                width={100}
-                tickFormatter={(val) => (val.length > 10 ? val.substring(0, 10) + '...' : val)}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#161b22',
-                  borderColor: '#30363d',
-                  borderRadius: '8px',
-                  color: '#f0f6fc',
-                  fontSize: '12px',
-                }}
-              />
-              <Legend wrapperStyle={{ fontSize: '11px', color: '#8b949e' }} />
-              <Bar dataKey="activeSeats" name="稼働シート" stackId="a" fill="#3fb950" />
-              <Bar dataKey="idleSeats" name="遊休シート" stackId="a" fill="#d29922" />
-              <Bar dataKey="onboardingSeats" name="導入期間 (遊休に含まない)" stackId="a" fill="#38bdf8" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={chartData}
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+              >
+                <defs>
+                  <pattern id="seat-pattern-idle" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                    <rect width="6" height="6" fill="#d29922" />
+                    <rect width="2.5" height="6" fill="#0d1117" fillOpacity="0.55" />
+                  </pattern>
+                  <pattern id="seat-pattern-onboarding" width="6" height="6" patternUnits="userSpaceOnUse">
+                    <rect width="6" height="6" fill="#38bdf8" />
+                    <circle cx="3" cy="3" r="1.3" fill="#0d1117" fillOpacity="0.6" />
+                  </pattern>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#21262d" />
+                <XAxis type="number" stroke="#8b949e" fontSize={11} />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  stroke="#8b949e"
+                  fontSize={11}
+                  width={100}
+                  tickFormatter={(val) => (val.length > 10 ? val.substring(0, 10) + '...' : val)}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#161b22',
+                    borderColor: '#30363d',
+                    borderRadius: '8px',
+                    color: '#f0f6fc',
+                    fontSize: '12px',
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: '11px', color: '#8b949e' }} />
+                <Bar dataKey="activeSeats" name="稼働シート" stackId="a" fill="#3fb950" />
+                <Bar dataKey="idleSeats" name="遊休シート" stackId="a" fill="url(#seat-pattern-idle)" />
+                <Bar dataKey="onboardingSeats" name="導入期間 (遊休に含まない)" stackId="a" fill="url(#seat-pattern-onboarding)" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </AccessibleChart>
 
         <div className="mt-2 text-xs text-slate-400 text-center">
           各グループの総ライセンス数に対するアクティブ利用率の比較
