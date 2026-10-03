@@ -1,3 +1,4 @@
+import type { DataQualityHistory } from '../domain/entities/data-quality.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import {
@@ -122,6 +123,26 @@ export class ForkSafeStorage {
       this.ensureDirectory(this.publicDir);
       fs.writeFileSync(path.join(this.publicDir, 'index.json'), JSON.stringify(metadata, null, 2), 'utf-8');
     }
+  }
+
+  /**
+   * データ品質レポートの履歴 (processed/quality/history.json) を保存する。
+   * 件数・日付・ソース名のみで個人情報を含まないため、配信用にも複製する。
+   */
+  public saveDataQualityHistory(history: DataQualityHistory): void {
+    const targetDir = path.join(this.baseDir, 'processed', 'quality');
+    this.ensureDirectory(targetDir);
+    const body = JSON.stringify(history, null, 2);
+    fs.writeFileSync(path.join(targetDir, 'history.json'), body, 'utf-8');
+    if (this.publicDir) {
+      const publicTargetDir = path.join(this.publicDir, 'quality');
+      this.ensureDirectory(publicTargetDir);
+      fs.writeFileSync(path.join(publicTargetDir, 'history.json'), body, 'utf-8');
+    }
+  }
+
+  public loadDataQualityHistory(): DataQualityHistory | null {
+    return this.readJson<DataQualityHistory>(path.join(this.baseDir, 'processed', 'quality', 'history.json'));
   }
 
   /**

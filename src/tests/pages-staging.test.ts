@@ -33,6 +33,7 @@ describe('Pages staging: real processed data (past months included) reaches the 
     write(path.join(dataDir, 'processed/deep-analysis/2026-08.json')); // 過去月
     write(path.join(dataDir, 'processed/trends/rolling-1year.json'));
     write(path.join(dataDir, 'processed/custom/latest-30d.json'));
+    write(path.join(dataDir, 'processed/quality/history.json')); // データ品質の履歴 (件数・日付のみ)
     write(path.join(dataDir, 'processed/daily/2026-09-10.json'));
     write(path.join(dataDir, 'processed/daily/2026-09-09.json'));
     write(path.join(dataDir, 'processed/daily/2026-01-05.json')); // index に載っていない古い日 (UI から参照されない)
@@ -60,6 +61,7 @@ describe('Pages staging: real processed data (past months included) reaches the 
       'monthly/2026-07.json',
       'monthly/2026-08.json',
       'monthly/2026-09.json',
+      'quality/history.json',
       'reports/2026-08.json',
       'trends/rolling-1year.json',
     ]);
@@ -67,7 +69,7 @@ describe('Pages staging: real processed data (past months included) reaches the 
 
   it('copies past months and never copies raw data, original CSVs, the encrypted mapping or demo', () => {
     const { copied } = stageData(dataDir, publicDir);
-    assert.equal(copied, 12);
+    assert.equal(copied, 13);
 
     assert.ok(fs.existsSync(path.join(publicDir, 'monthly/2026-08.json')), 'a past month must be staged (it used to 404 on Pages)');
     assert.ok(fs.existsSync(path.join(publicDir, 'deep-analysis/2026-08.json')));

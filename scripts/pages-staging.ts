@@ -28,7 +28,7 @@ export interface StagingEntry {
 }
 
 /** processed/ 直下で配信ルートへ展開するディレクトリ (daily は別扱い) */
-export const STAGED_PROCESSED_DIRS = ['monthly', 'reports', 'deep-analysis', 'trends', 'custom'] as const;
+export const STAGED_PROCESSED_DIRS = ['monthly', 'reports', 'deep-analysis', 'trends', 'custom', 'quality'] as const;
 
 /** 配信物に含めてはならないトップレベルのパス (dist/data/ からの相対) */
 export const FORBIDDEN_DIST_PATHS = ['raw', 'config', path.join('reports', 'monthly')] as const;
