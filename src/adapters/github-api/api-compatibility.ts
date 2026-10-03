@@ -16,6 +16,11 @@ export const API_COMPATIBILITY_TABLE: Record<string, ApiVersionEntry> = {
     status: 'current',
     headerKey: 'X-GitHub-Api-Version',
   },
+  '2022-11-28': {
+    version: '2022-11-28',
+    status: 'current',
+    headerKey: 'X-GitHub-Api-Version',
+  },
   '2025-09-01': {
     version: '2025-09-01',
     status: 'deprecated',
