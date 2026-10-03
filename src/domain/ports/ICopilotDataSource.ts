@@ -7,6 +7,7 @@ import {
   DataFetchIssue,
   SourceStatus,
 } from '../entities/copilot.js';
+import type { CostLine } from '../facts/schemas.js';
 import type { QualityObservations } from '../entities/data-quality.js';
 import { TeamDailyMetrics } from '../entities/agent-metrics.js';
 
@@ -23,6 +24,11 @@ export interface ICopilotDataSource {
   fetchSeats(): Promise<CopilotSeatAssignment[]>;
   fetchCostCenters(): Promise<EnterpriseCostCenter[]>;
   fetchCostCenterBudgets(): Promise<CostCenterBudget[]>;
+  /**
+   * Billing の AI credit usage (Enterprise 単位) を正準の費用行として返す (P1-5)。
+   * 状態は getSourceStatuses() の 'ai_credits' に反映する。未対応の実装・モックでは未定義。
+   */
+  fetchAiCreditUsage?(): Promise<CostLine[]>;
   fetchUserProfiles(): Promise<UserUsageProfile[]>;
   fetchTeamMetrics?(teamSlug: string): Promise<TeamDailyMetrics[]>;
   getIssues(): DataFetchIssue[];

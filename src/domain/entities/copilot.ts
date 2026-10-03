@@ -40,7 +40,7 @@ export interface DataFetchIssue {
  * パイプラインが収集する外部ソースの識別子。
  * ソースごとに独立して縮退 (Last-known-good 維持) する単位。
  */
-export type DataSourceId = 'metrics' | 'seats' | 'cost_centers';
+export type DataSourceId = 'metrics' | 'seats' | 'cost_centers' | 'ai_credits';
 
 /**
  * - 'ok': 取得成功

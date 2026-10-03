@@ -1,5 +1,6 @@
 import type { CopilotDailyMetrics, CopilotSeatAssignment } from '../entities/copilot.js';
 import {
+  CostLine,
   FACT_SCHEMA_VERSION,
   SeatSnapshot,
   UsageOrgDaily,
@@ -133,6 +134,45 @@ export function toSeatSnapshot(
     created_at: seat.created_at ?? null,
     last_activity_at: seat.last_activity_at ?? null,
     pending_cancellation_date: seat.pending_cancellation_date?.slice(0, 10) ?? null,
+    source: 'api',
+    quality: 'measured',
+  };
+}
+
+/** AI credit usage の 1 明細 (AiCreditUsageItem) のうち、写像に必要な部分 */
+export interface CostItemInput {
+  sku: string;
+  model: string;
+  unitType: string;
+  pricePerUnit: number;
+  grossQuantity: number;
+  grossAmount: number;
+  discountAmount: number;
+  netAmount: number;
+}
+
+const blankToNull = (v: string): string | null => (v.trim() === '' ? null : v);
+
+/**
+ * Billing の使用量明細 → fact.cost_line。ユーザー別に取得していないため user_key は null。
+ * quantity は grossQuantity (gross の金額と対応する数量)。単位 (unit_type) はそのまま残し、
+ * 異なる単位を合算しない。応答に通貨が無いため currency は null (通貨を断定しない)。
+ */
+export function toCostLine(day: string, item: CostItemInput): CostLine {
+  return {
+    schema_version: FACT_SCHEMA_VERSION,
+    day: day.slice(0, 10),
+    user_key: null,
+    sku: item.sku,
+    model: blankToNull(item.model),
+    quantity: item.grossQuantity,
+    unit_type: blankToNull(item.unitType),
+    unit_price: item.pricePerUnit,
+    gross: item.grossAmount,
+    discount: item.discountAmount,
+    net: item.netAmount,
+    currency: null,
+    pricing_version: null,
     source: 'api',
     quality: 'measured',
   };
