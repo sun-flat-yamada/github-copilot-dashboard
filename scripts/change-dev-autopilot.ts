@@ -17,6 +17,7 @@
 
 import { execFileSync } from 'child_process';
 import { checkPlanFirst } from './plan-first-check.js';
+import { validateBranchName } from './change-dev-branch.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -327,6 +328,14 @@ async function finish(prArg: string | undefined, flags: Set<string>): Promise<nu
     return 1;
   }
   console.log(`✅ ${planCheck.message}`);
+
+  // ブランチ名の検査 (`<type>/<issue>-<slug>`)。クラウドの既定名 `claude/<adj>-<name>-<id>` のままのヘッドはマージしない。
+  const branchCheck = validateBranchName(pull.headRef);
+  if (branchCheck.status === 'invalid') {
+    console.error(`🛑 branch name check failed: ${branchCheck.reasons.join('; ')}`);
+    return 1;
+  }
+  console.log(`✅ branch name: ${pull.headRef}`);
 
   if (pull.draft) {
     console.log(`📝 PR #${pr} is a draft → marking ready for review`);
