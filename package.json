@@ -55,7 +55,9 @@
     "pages:verify": "tsx scripts/pages-staging.ts verify",
     "worktree:add": "tsx scripts/worktree-manage.ts add",
     "worktree:list": "tsx scripts/worktree-manage.ts list",
-    "worktree:clean": "tsx scripts/worktree-manage.ts clean"
+    "worktree:clean": "tsx scripts/worktree-manage.ts clean",
+    "change-dev:mode": "tsx scripts/change-dev-autopilot.ts mode",
+    "change-dev:finish": "tsx scripts/change-dev-autopilot.ts finish"
   },
   "dependencies": {
     "@duckdb/duckdb-wasm": "1.32.0",
