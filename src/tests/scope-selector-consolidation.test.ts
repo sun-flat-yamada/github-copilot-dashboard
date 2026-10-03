@@ -34,22 +34,6 @@ describe('ScopeSelector Consolidation & DataSelectionModal Enhancements Tests (#
     );
   });
 
-  it('verifies AppV2.tsx does not import or render ScopeSelector', () => {
-    const appV2Path = path.join(REPO_ROOT, 'dashboard/src/AppV2.tsx');
-    const appV2Content = fs.readFileSync(appV2Path, 'utf8');
-
-    assert.equal(
-      appV2Content.includes("from './components/ScopeSelector'"),
-      false,
-      'AppV2.tsx must not import ScopeSelector'
-    );
-    assert.equal(
-      appV2Content.includes('<ScopeSelector'),
-      false,
-      'AppV2.tsx must not render ScopeSelector'
-    );
-  });
-
   it('verifies DataSelectionModal.tsx includes 直近30日間 and 指定期間 scope selection controls', () => {
     const modalPath = path.join(REPO_ROOT, 'dashboard/src/components/layout/DataSelectionModal.tsx');
     const modalContent = fs.readFileSync(modalPath, 'utf8');

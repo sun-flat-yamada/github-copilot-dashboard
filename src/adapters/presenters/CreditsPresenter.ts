@@ -1,5 +1,5 @@
 import { ScopeAggregatedData, MonthlyReportAggregatedData } from '../../domain/entities/copilot.js';
-import { CreditsAnalysisResult } from '../../application/store/derived/nodes/creditsAnalysis.js';
+import { CreditsAnalysisResult } from '../../domain/entities/analysis-results.js';
 import { BillingConfigLoader } from '../storage/BillingConfigLoader.js';
 import { calculateDualCreditRate } from '../../domain/entities/billing-config.js';
 import { Money } from '../../domain/value-objects/Money.js';

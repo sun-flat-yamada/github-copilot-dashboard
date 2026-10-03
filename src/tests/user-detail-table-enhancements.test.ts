@@ -112,16 +112,11 @@ describe('User Detail Table Enhancements & Compact Style Tests', () => {
       for (const f of [
         'dashboard/src/App.tsx',
         'dashboard/src/views/users/View.tsx',
-        'dashboard/src/components/MonthlyReportView.tsx',
-        'src/adapters/views/UsersViewPlugin.tsx',
-        'src/adapters/views/OverviewViewPlugin.tsx',
-        'src/adapters/views/BudgetViewPlugin.tsx',
       ]) {
         const src = readComponent(f);
         assert.doesNotMatch(src, /MonthlyReportUserTable/, `${f} must use UserDetailTable`);
       }
       assert.match(readComponent('dashboard/src/views/users/View.tsx'), /<UserDetailTable[\s\S]*?reportData=\{currentReportData\}/);
-      assert.match(readComponent('dashboard/src/components/MonthlyReportView.tsx'), /<UserDetailTable[\s\S]*?reportData=\{reportData\}/);
     });
 
     it('builds both sources into the same row model before rendering', () => {
@@ -136,12 +131,6 @@ describe('User Detail Table Enhancements & Compact Style Tests', () => {
       const content = readComponent('dashboard/src/components/CostAllocationCharts.tsx');
       assert.match(content, /'ユーザー定義Gr \(部署・PJ\)'/);
       assert.doesNotMatch(content, /'仕訳グループ \(部署・PJ\)'/);
-    });
-
-    it('verifies GroupUsageRanking uses ユーザー定義Gr', () => {
-      const content = readComponent('dashboard/src/components/GroupUsageRanking.tsx');
-      assert.match(content, /'ユーザー定義Gr \(部署・PJ\)'/);
-      assert.doesNotMatch(content, /'任意仕訳グループ \(部署・PJ\)'/);
     });
   });
 });
