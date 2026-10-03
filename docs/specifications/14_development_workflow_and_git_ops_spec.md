@@ -232,6 +232,9 @@ Based on the Claude Code documentation (*Configure cloud environments*, *Use Cla
 | Auto-merge is disabled on the repository (`allow_auto_merge: false`) | Merge directly instead of enabling auto-merge |
 | The session runs in its own VM with a fresh clone, on its assigned branch | No sibling worktree (Step 3); the VM is the isolation unit |
 
+#### Recommended repository setting: Automatically delete head branches
+In a cloud session the proxy rejects branch deletion (above), so the helper cannot clean up the merged branch there. Enable **Settings → General → Pull Requests → Automatically delete head branches** on the repository (REST: `delete_branch_on_merge: true`). GitHub then deletes the head branch itself when the PR is merged (also with Rebase & Merge), without going through the proxy. This is recommended for every repository (and fork) that uses this workflow; `change-dev:finish` still tries to delete the branch and reports when it cannot, so the two do not conflict. Check the current value with `gh api repos/{owner}/{repo} --jq .delete_branch_on_merge` (read-only; it is `true` on the upstream repository as of 2026-10-03).
+
 #### Why Rebase & Merge?
 - **Linear History**: Eliminates noisy `Merge branch 'main' into ...` commits, creating a clean chronological progression.
 - **Reliable `git bisect`**: Zero merge bubbles guarantee quick and accurate root-cause regression hunting.
