@@ -1,6 +1,6 @@
 ---
-title: "Gemini / Antigravity Configuration for github-copilot-dashboard"
-description: "Context rules, command shortcuts and directives for Gemini CLI and Antigravity."
+title: "Claude Code Configuration for github-copilot-dashboard"
+description: "Context rules, command shortcuts and directives for Claude Code."
 category: "meta"
 type: "configuration"
 status: "active"
@@ -13,9 +13,7 @@ tags:
   - "configuration"
 ---
 
-# Project Guardrails & Instructions for AI Agents (Antigravity / Gemini)
-
-Welcome to `github-copilot-dashboard`. All AI coding assistants (Antigravity, Gemini, Claude Code, Cursor, Copilot Workspace) must follow these directives. Detailed rules are imported from `.agents/rules/`.
+# Claude Code Configuration for github-copilot-dashboard
 
 ## Global Rules & Context
 @AGENTS.md
@@ -38,9 +36,8 @@ Welcome to `github-copilot-dashboard`. All AI coding assistants (Antigravity, Ge
 - `/plan`: Write an implementation plan before any significant code change.
 
 ## Directives
-- **Zero Secrets / Zero PII**: Never output or commit real API tokens or real user identities; user mappings are injected via `COPILOT_USER_MAPPING`.
-- **Fork-Safe Storage**: Metric/seat data lives only in the `copilot-data` orphan branch; upstream `main` stays 100% clean code.
-- **SDD**: Align architectural decisions with `docs/specifications/` and update them in tandem.
-- **Quality Gate**: Run `/gate` before proposing changes.
-- **Output Language**: Reply and write PR descriptions in Japanese; commits, code and comments in English.
-- **Naming**: `*.agent.md` suffix for agent definitions; no `agent-` prefix.
+- **Zero Secrets / Zero PII**: Never output or commit API keys, tokens, private credentials or real user identities.
+- **Quality Gate**: Run `/gate` (see `quality-rules-gate.md`) before committing; `npm run secret-scan` is mandatory.
+- **Worktree Isolation**: Do not edit the root workspace in multi-agent development; follow `development-workflow.md`. Never push directly to upstream `main`.
+- **Output Language**: Reply to the user and write PR descriptions in Japanese; commit messages, code, identifiers and comments stay in English. Details: `language-rules-output.md`.
+- **Naming**: Agent definitions use the `*.agent.md` suffix and never an `agent-` prefix. Details: `naming-rules-general.md`.

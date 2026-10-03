@@ -329,7 +329,7 @@ $$\text{Version} = \text{yyyy-mm-dd-xxxx}$$
 
 ```mermaid
 flowchart TD
-    Trigger(["🚀 更新指示"]) --> Master[".agents/model-radar-pipeline-agent.md<br>(統括オーケストレーター)"]
+    Trigger(["🚀 更新指示"]) --> Master[".agents/model-radar-pipeline.agent.md<br>(統括オーケストレーター)"]
     Master --> Ingest["1. benchmark-ingestion-agent<br>(skills/benchmark-ingestion)"]
     Master --> Buzz["2. sns-buzz-agent<br>(skills/sns-buzz-harvester)"]
     Master --> Preset["3. preset-curator-agent<br>(skills/preset-curator)"]
@@ -339,15 +339,15 @@ flowchart TD
 ```
 
 ### 7.1 分割エージェント & スキル一覧
-1. **起点オーケストレーター (`.agents/model-radar-pipeline-agent.md`)**:
+1. **起点オーケストレーター (`.agents/model-radar-pipeline.agent.md`)**:
    - 一連の更新作業全体の進行管理、依存ステップ制御、最終整合性確認。
-2. **ベンチマーク取り込み (`.agents/benchmark-ingestion-agent.md` / `skills/benchmark-ingestion`)**:
+2. **ベンチマーク取り込み (`.agents/benchmark-ingestion.agent.md` / `skills/benchmark-ingestion`)**:
    - GitHub Copilot公式ドキュメント（supported-models, models-and-pricing）、SWE-bench Verified、LMSYS Arena、Artificial Analysis からの最新指標・単価仕様の取り込み。
-3. **SNS評判再収集 (`.agents/sns-buzz-agent.md` / `skills/sns-buzz-harvester`)**:
+3. **SNS評判再収集 (`.agents/sns-buzz.agent.md` / `skills/sns-buzz-harvester`)**:
    - 現場エンジニアの実感・SNS評判・注意点（※ SNSの噂）の収集・要約・反映。
-4. **比較プリセット選定 (`.agents/preset-curator-agent.md` / `skills/preset-curator`)**:
+4. **比較プリセット選定 (`.agents/preset-curator.agent.md` / `skills/preset-curator`)**:
    - 「最高水準レベル（品質ゲート）は譲らず、コストバリエーション上位3選」アルゴリズムに基づくプリセット更新。
-5. **バージョン管理・検証 (`.agents/radar-version-agent.md` / `skills/radar-version-manager`)**:
+5. **バージョン管理・検証 (`.agents/radar-version.agent.md` / `skills/radar-version-manager`)**:
    - `yyyy-mm-dd-0001` インクリメンタル採番、データセット生成、4重品質ゲート検証。
 
 ---
