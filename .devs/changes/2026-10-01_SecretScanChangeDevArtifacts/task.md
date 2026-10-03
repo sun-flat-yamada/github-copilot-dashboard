@@ -1,7 +1,7 @@
 # Task: Secret scan coverage for change-dev artifacts (`.devs/changes/`)
 
 - [x] Phase 1: Issue Definition & Scoping <!-- id: 0 -->
-  - [x] Scope taken from the change request (goal, context, what to change, done-when); no issue filed
+  - [x] Scope taken from the change request (goal, context, what to change, done-when); [#171](https://github.com/sun-flat-yamada/github-copilot-dashboard/issues/171) filed on 2026-10-03, after the merge, as a record of this fix
 - [x] Phase 2: Implementation Plan formulated & approved <!-- id: 1 -->
   - [x] `implementation_plan.md` written
   - [x] No interactive Proceed gate in this environment: the change request fixes the scope, and the plan is reviewed with the PR
