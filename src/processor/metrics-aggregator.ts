@@ -247,13 +247,16 @@ export class MetricsAggregator {
       agent_first: 0,
       multi_agent: 0,
     };
+    // 判定できなかったユーザー (データ不足) は no_cohort に数えず、判定不能として別計上する (SDD-11 §8)
+    let unclassifiedUsers = 0;
     for (const p of userProfiles) {
       if (p.ai_adoption_phase && phaseCounts[p.ai_adoption_phase] !== undefined) {
         phaseCounts[p.ai_adoption_phase]++;
       } else {
-        phaseCounts.no_cohort++;
+        unclassifiedUsers++;
       }
     }
+    const classifiedUsers = userProfiles.length - unclassifiedUsers;
 
     const peakEngagedAgentUsers = Math.max(...sortedMetrics.map((m) => m.copilot_ide_agent?.total_engaged_users ?? 0), 0);
 
@@ -303,7 +306,8 @@ export class MetricsAggregator {
       } : undefined,
       adoption_distribution: userProfiles.length > 0 ? {
         users_in_phase_28d: phaseCounts,
-        total_evaluated_users: userProfiles.length,
+        total_evaluated_users: classifiedUsers,
+        unclassified_users: unclassifiedUsers,
       } : undefined,
       // 実測のない AI PR マージ率 / コードチャーン率は、固定値で埋めず出力しない
       outcome_indicators: totalPrCount > 0 ? {

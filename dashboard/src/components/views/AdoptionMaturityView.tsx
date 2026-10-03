@@ -88,7 +88,7 @@ export const AdoptionMaturityView: React.FC<AdoptionMaturityViewProps> = ({ view
     );
   }
 
-  const { totalEvaluatedUsers, stages, teamBreakdown } = viewModel;
+  const { totalEvaluatedUsers, stages, teamBreakdown, unclassifiedUsers, unclassifiedReasons, rule } = viewModel;
 
   const handleSort = (key: TeamBreakdownSortKey) => {
     if (sortKey === key) {
@@ -189,6 +189,39 @@ export const AdoptionMaturityView: React.FC<AdoptionMaturityViewProps> = ({ view
         </div>
       </div>
 
+      {/* 1b. Data sufficiency & rule (v2) */}
+      {unclassifiedUsers > 0 && (
+        <div role="note" className="bg-amber-950/30 border border-amber-800/50 rounded-xl p-4 text-xs text-amber-200">
+          <p className="font-semibold flex items-center gap-1.5">
+            <HelpCircle className="w-4 h-4" />
+            <MetricLabel metricId="adoption_unclassified_users" className="" />: {unclassifiedUsers.toLocaleString()} 名
+          </p>
+          <p className="mt-1 text-amber-300/90">
+            データ不足のため判定していません。成熟度の分布と各率は、判定済みの {totalEvaluatedUsers.toLocaleString()} 名のみを対象にしています。
+          </p>
+          {unclassifiedReasons.length > 0 && (
+            <ul className="mt-1 list-disc list-inside text-amber-300/80">
+              {unclassifiedReasons.map((r) => (
+                <li key={r}>{r}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+      <details className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs text-slate-300">
+        <summary className="cursor-pointer font-semibold text-slate-200">
+          判定基準 (v{rule.version}・直近 {rule.windowDays} 日・実測ベース)
+        </summary>
+        <ul className="mt-2 list-disc list-inside space-y-1 text-slate-400">
+          {rule.criteria.map((c) => (
+            <li key={c}>{c}</li>
+          ))}
+        </ul>
+        <p className="mt-2 text-slate-500">
+          しきい値は未較正のヒューリスティックです。個人別の分類は、閲覧権限のある社員のみが利用できます (社内限定)。
+        </p>
+      </details>
+
       {/* 2. Cumulative Maturity Progress Bar */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
         <h4 className="text-sm font-semibold text-slate-200 mb-3 flex items-center gap-2">
@@ -280,7 +313,7 @@ export const AdoptionMaturityView: React.FC<AdoptionMaturityViewProps> = ({ view
               <span>チーム / 部署別 成熟度ステージ分布</span>
             </h4>
             <span className="text-xs text-slate-400">
-              全 {teamBreakdown.length} チーム
+              全 {teamBreakdown.length} 行 (判定済みの実人数・{rule.minTeamSize} 人未満は合算)
             </span>
           </div>
 
@@ -353,10 +386,29 @@ export const AdoptionMaturityView: React.FC<AdoptionMaturityViewProps> = ({ view
                   const pAgent = ((team.stages.agent_first / safeUsers) * 100);
                   const pMulti = ((team.stages.multi_agent / safeUsers) * 100);
 
+                  if (team.suppressed) {
+                    return (
+                      <tr key={team.teamName} className="text-slate-500">
+                        <td className="py-3 px-4 font-semibold">{team.teamName}</td>
+                        <td colSpan={6} className="py-3 px-4">{team.suppressedReason}</td>
+                      </tr>
+                    );
+                  }
+
                   return (
                     <tr key={team.teamName} className="hover:bg-slate-800/40 transition-colors">
-                      <td className="py-3 px-4 font-semibold text-white">{team.teamName}</td>
-                      <td className="py-3 px-4 text-right font-mono">{team.totalUsers} 名</td>
+                      <td className="py-3 px-4 font-semibold text-white">
+                        {team.teamName}
+                        {team.aggregated && team.teamCount !== undefined && (
+                          <span className="ml-2 text-[10px] font-normal text-slate-400">{team.teamCount} チーム</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-right font-mono">
+                        {team.totalUsers} 名
+                        {team.unclassifiedUsers > 0 && (
+                          <span className="block text-[10px] text-amber-400">判定不能 {team.unclassifiedUsers} 名</span>
+                        )}
+                      </td>
                       <td className="py-3 px-4 w-44">
                         <div className="w-full bg-slate-950 rounded-full h-2 flex overflow-hidden border border-slate-800">
                           <div style={{ width: `${pNo}%` }} className="h-full bg-slate-500" title={`No Cohort: ${team.stages.no_cohort}名`} />
