@@ -1,4 +1,4 @@
-import { RawApiFetcher } from '../RawApiFetcher.js';
+import { RawApiClient } from '../RawApiClient.js';
 import { parseNdjson } from './ndjson.js';
 import { UserReportRow, validateUserReportRow } from './user-report-schema.js';
 import { userKey } from './user-report-mapper.js';
@@ -75,7 +75,7 @@ export class UsageReportsClient {
   private concurrency: number;
 
   constructor(
-    private readonly fetcher: RawApiFetcher,
+    private readonly fetcher: RawApiClient,
     options: { concurrency?: number } = {}
   ) {
     this.concurrency = Math.max(1, options.concurrency ?? DEFAULT_CONCURRENCY);

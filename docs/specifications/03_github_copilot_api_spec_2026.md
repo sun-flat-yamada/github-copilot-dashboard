@@ -28,6 +28,7 @@ All API requests must supply the following HTTP headers:
 
 **Failure vs. empty**: every `fetch*` of the data source returns an array and never throws; failures are expressed by the per-source status (`ok` / `partial` / `failed` / `skipped`, SDD-05 §3) plus `DataFetchIssue`s. Callers must not infer "failure" or "no data" from an empty array.
 
+**Client contract and recording**: sources call the API only through `RawApiClient` (`fetchRaw` / `fetchRawAllowing` / `fetchPaginated` / `downloadSigned`). In live runs every response is landed immutably with a Run Manifest (SDD-05 §2.3) and can be replayed offline (`npm run pipeline:reprocess`, SDD-02 §2.8). Signed report URLs are recorded without their signature.
 ---
 
 ## 2. Copilot Metrics & Reports API

@@ -40,6 +40,17 @@ export interface PipelineOrchestratorDependencies {
    * 有効なときは秘密鍵 (ANONYMIZE_SECRET) が必須で、無い場合は run() が例外で停止する。
    */
   anonymize?: boolean;
+  /**
+   * この実行の Raw Landing 上の識別 (P1-2)。ライブ収集では録画した run、再処理では再生元の run。
+   * 無い場合 (モック・匿名化で Raw を保存しない運用) は index.json に run を残さない。
+   */
+  run?: {
+    runId: string;
+    /** 再処理 (Raw Landing の再生) のとき true */
+    reprocessed?: boolean;
+    /** 収集 (fetch*) の完了後に 1 回呼ぶ。Run Manifest の書き出し。書けなかった場合は false を返す */
+    finishLanding?: () => boolean;
+  };
 }
 
 /** 設定 (環境変数 / 設定ファイル) の不備を、画面から気付けるよう issue として表す */
@@ -61,6 +72,7 @@ export class PipelineOrchestrator {
   private storage: IStorageWriter;
   private isMock: boolean;
   private anonymize: boolean;
+  private runInfo?: PipelineOrchestratorDependencies['run'];
 
   constructor(deps: PipelineOrchestratorDependencies) {
     this.dataSource = deps.dataSource;
@@ -68,6 +80,7 @@ export class PipelineOrchestrator {
     this.storage = deps.storage;
     this.isMock = deps.isMock ?? false;
     this.anonymize = deps.anonymize ?? process.env.ANONYMIZE_USERS === 'true';
+    this.runInfo = deps.run;
   }
 
   async run(): Promise<void> {
@@ -123,6 +136,12 @@ export class PipelineOrchestrator {
       this.dataSource.fetchCostCenters(),
     ]);
 
+    // Raw Landing: 収集した応答の台帳 (Run Manifest) を確定する。書けなかった run は再処理できないので、index に印を付けない
+    const landed = this.runInfo?.finishLanding ? this.runInfo.finishLanding() : this.runInfo !== undefined;
+    if (this.runInfo?.finishLanding && landed) {
+      console.log(`🗄️  Raw landing: run ${this.runInfo.runId} stored (reprocess with \`npm run pipeline:reprocess\`).`);
+    }
+
     console.log(
       `✅ Data Fetched: ${metrics.length} daily metric records, ${seats.length} seats, ${costCenters.length} cost centers.`
     );
@@ -175,7 +194,8 @@ export class PipelineOrchestrator {
     }
 
     // 3. Rawパーティション保存
-    if (hasLiveMetrics && seatsUsable) {
+    // (再処理では既存の Raw パーティションを書き換えない)
+    if (hasLiveMetrics && seatsUsable && !this.runInfo?.reprocessed) {
       const latestMetric = sortedMetrics[sortedMetrics.length - 1];
       // 匿名化モードでは、Raw パーティションにもログイン名・ユーザー ID・アバター URL を残さない
       // (Raw は copilot-data ブランチに保存され、リポジトリが公開なら公開される)
@@ -402,6 +422,9 @@ export class PipelineOrchestrator {
         is_fork: process.env.IS_FORK === 'true',
       },
       generated_at: nowIso,
+      ...(this.runInfo && landed
+        ? { run: { run_id: this.runInfo.runId, ...(this.runInfo.reprocessed ? { reprocessed: true } : {}) } }
+        : {}),
       data_retention_days: 365,
       available_months: rolling12Months,
       all_recorded_months: allRecordedMonths,

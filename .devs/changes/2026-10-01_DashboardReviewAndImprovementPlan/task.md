@@ -8,7 +8,7 @@
   - [x] User Review Required の判断事項 1〜7 への回答 — すべて回答済み（計画書「判断結果」。#5 は PAT のみ）
 - [/] Phase 3: Sibling Worktree Provisioning & Implementation <!-- id: 2 -->
   - [x] Phase 0 止血（P0-1〜P0-11）— 実装済み（レビュー待ち）。成果物: [../2026-10-01_DashboardPhase0Stabilization/](../2026-10-01_DashboardPhase0Stabilization/)、Issue: [sun-flat-yamada/github-copilot-dashboard#160](https://github.com/sun-flat-yamada/github-copilot-dashboard/issues/160)
-  - [ ] Phase 1 取得基盤（P1-1〜P1-7）— User Review Required の判断待ち（特に 3. データの公開範囲、5. 収集スコープと認証）
+  - [/] Phase 1 取得基盤（P1-1〜P1-7）— 判断は回答済み。P1-1（#164）、P1-6（#165）完了、P1-2 は PR C で実装。残りは P1-3 / P1-4 / P1-5 / P1-7。成果物: [../2026-10-01_DashboardPhase1Collection/](../2026-10-01_DashboardPhase1Collection/)、Issue: [sun-flat-yamada/github-copilot-dashboard#163](https://github.com/sun-flat-yamada/github-copilot-dashboard/issues/163)
   - [ ] Phase 2 フロントエンド収束（P2-1〜P2-7）— 判断事項 1（収束先）、4（ブラウザ内クエリ方式）の判断待ち
   - [ ] Phase 3 分析手法・可視化（P3-1〜P3-8）— 判断事項 2（個人単位診断の扱い）の判断待ち
   - [ ] Phase 4 監査・レポート（P4-1〜P4-7）— 判断事項 6（監査要件）の判断待ち
