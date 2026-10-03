@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert';
 import { CreditsPresenter } from '../../../adapters/presenters/CreditsPresenter.js';
-import { CreditsAnalysisResult } from '../../../application/store/derived/nodes/creditsAnalysis.js';
+import { CreditsAnalysisResult } from '../../../domain/entities/analysis-results.js';
 
 test('CreditsPresenter: transforms analysis result into view model', () => {
   const analysis: CreditsAnalysisResult = {

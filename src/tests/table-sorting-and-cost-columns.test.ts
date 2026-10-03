@@ -49,24 +49,6 @@ describe('Table Sorting & Separate Cost/Overage Columns Contract Tests', () => {
     });
   });
 
-  describe('GroupUsageRanking', () => {
-    const content = readComponent('dashboard/src/components/GroupUsageRanking.tsx');
-
-    it('separates usage cost and excess billing into two distinct columns', () => {
-      assert.match(content, /利用料金\s*\(USD\)/);
-      assert.match(content, /超過請求\s*\(USD\)/);
-    });
-
-    it('implements interactive sorting for both cost and excess', () => {
-      assert.match(content, /type SortMetric\s*=/);
-      assert.match(content, /'cost'/);
-      assert.match(content, /'excess'/);
-      assert.match(content, /handleSort\('cost'\)/);
-      assert.match(content, /handleSort\('excess'\)/);
-      assert.match(content, /colSpan=\{10\}/);
-    });
-  });
-
   describe('AdoptionMaturityView', () => {
     const content = readComponent('dashboard/src/components/views/AdoptionMaturityView.tsx');
 

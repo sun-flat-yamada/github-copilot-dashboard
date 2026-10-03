@@ -134,12 +134,12 @@ A run must never publish "empty" as if it were a measurement. The pipeline (`Pip
 
 | Element | Target (§3–§4) | Production path today |
 |:--|:--|:--|
-| SPA state | `DataStore` + `DerivedDataGraph` | `dashboard/src/main.tsx` always renders `App.tsx`; data is loaded by the Dataset Loader (`dashboard/src/dataset/`) and filtered by the Query layer (`dashboard/src/query/`), driven by `useDashboardData` (SDD-15 §7). `AppV2.tsx` is not mounted (`VITE_USE_NEW_STORE` does not change `App`). |
-| Views | 9 `ViewPlugin`s mediated by the registry | The registry supplies navigation metadata; rendering is done by conditionals in `App.tsx`. |
-| Presenters | All views | Only the Credits / Agent / Adoption presenters are used by `App.tsx`. |
+| SPA state | Dataset Loader + Query layer | As described: `main.tsx` renders `App.tsx`; `useDashboardData` binds the Dataset Loader (`dashboard/src/dataset/`) and the Query layer (`dashboard/src/query/`) (SDD-15 §7). The DataStore path was removed in P2-5. |
+| Views | View Registry | `dashboard/src/views/` is the only rendering entry. |
+| Presenters | Dataset-driven view models | The Credits / Agent / Adoption presenters are used by the views; the others are pure view-model helpers kept with their tests. |
 | Pipeline | `createPipelineApp` → `PipelineOrchestrator` | As described (this is the live path). |
 
-Converging the front end on one architecture (and the Dataset Loader / Query layer) is **Phase 2 of the improvement plan** and the decision is recorded in [ADR-0001](../adr/0001-single-frontend-architecture.md) (hook path → Dataset + Registry; the DataStore path is removed, `VITE_USE_NEW_STORE` in P2-5). Until the migration lands, the rules of SDD-15 (single filter engine, one definition per concept, lint-enforced hook rules) apply to the live path.
+Converging the front end on one architecture (and the Dataset Loader / Query layer) is **Phase 2 of the improvement plan** and the decision is recorded in [ADR-0001](../adr/0001-single-frontend-architecture.md) (hook path → Dataset + Registry; the DataStore path and `VITE_USE_NEW_STORE` were removed in P2-5). The rules of SDD-15 (single filter engine, one definition per concept, lint-enforced hook rules) apply to the live path.
 
 ### 2.8 Raw Landing & Reprocess (P1-2)
 
@@ -163,15 +163,13 @@ In 2026.09 LTS, a 4-layer Clean Architecture has been introduced to maximize mai
 flowchart TD
     subgraph Domain["1. Domain Layer (Pure TS, Zero Dependencies)"]
         Entities["Entities\n- copilot.ts / deep-analysis.ts\n- model-benchmark.ts / views.ts"]
-        VO["Value Objects\n- Money / HealthScore / DateRange"]
+        VO["Value Objects\n- Money / HealthScore"]
         Rules["Business Rules\n- SeatClassification / BudgetUtilization\n- AdoptionPhaseRule / SeatBillingRule"]
-        Ports["Ports (Interfaces)\n- ICopilotDataSource / IStorageWriter\n- IAttributeResolver / IMetricsRepository\n- IViewPluginManifest"]
+        Ports["Ports (Interfaces)\n- ICopilotDataSource / IStorageWriter\n- IAttributeResolver / IMetricsRepository"]
     end
 
     subgraph Application["2. Application Layer (Use Cases & State)"]
-        Services["Application Services\n- ScopeManager / FilterService\n- CacheService / DiagnosticService\n- DemoModeService / AdoptionPhaseService"]
-        Store["Reactive DataStore & DerivedDataGraph\n- DataStore / Reducer / State\n- DAG (Topological Sort & Memoization)"]
-        Views["View System\n- ViewPluginRegistry / ViewOrchestrator"]
+        Services["Application Services\n- ScopeManager / CacheService\n- CreditsBillingService / DemoModeService"]
         Pipeline["Pipeline\n- PipelineOrchestrator"]
     end
 
@@ -180,11 +178,10 @@ flowchart TD
         DataSources["Data Sources\n- GitHubApiCopilotDataSource\n- MockCopilotDataSource\n- StaticJsonMetricsRepository"]
         StorageAdapters["Storage Adapters\n- ForkSafeStorageWriter\n- AttributeResolverAdapter / DemoAttributeResolver"]
         Presenters["Presenters (DOM-Independent Pure TS)\n- Overview / Users / Trend\n- Budget / DeepAnalysis / ModelRadar\n- Credits / Agent / Adoption"]
-        ViewPlugins["View Plugins (9 Total)\n- Overview / Users / Trend\n- Budget / DeepAnalysis / ModelRadar\n- Credits / Agent / Adoption"]
     end
 
     subgraph Frameworks["4. Frameworks & Drivers (React & CLI)"]
-        ReactUI["React Dashboard SPA\n- DashboardProvider / useStoreSelector\n- useStoreDispatch / useViewPlugin\n- App.tsx / AppV2.tsx"]
+        ReactUI["React Dashboard SPA (dashboard/)\n- App.tsx / View Registry (dashboard/src/views)\n- Dataset Loader / Query layer"]
         CLI["CLI Entrypoint\n- run-pipeline.ts -> createPipelineApp()"]
     end
 
@@ -196,35 +193,34 @@ flowchart TD
 
 ### 3.1 Layer Responsibilities
 1. **Domain Layer (`src/domain/`)**: Pure business models, immutable value objects (`Money`, `HealthScore`), business rules, and abstract port interfaces with zero dependencies on frameworks or third-party libraries.
-2. **Application Layer (`src/application/`)**: Use cases, unidirectional state management (`DataStore`), topologically sorted computation graph (`DerivedDataGraph`), and view lifecycle management (`ViewOrchestrator`).
-3. **Interface Adapters (`src/adapters/`)**: External API resilience (`RawApiFetcher`, Zod Schemas), storage adapters, pure presentation logic (`Presenters`), and view plugins.
-4. **Frameworks & Drivers (`src/frameworks/`, `dashboard/`, `src/cli/`)**: React Context provider (`DashboardProvider`), custom reactive hooks (`useViewPlugin`, `useStoreSelector`), and CLI entrypoints.
+2. **Application Layer (`src/application/`)**: Use cases (`ScopeManager`, `CreditsBillingService`, `PipelineOrchestrator`, ...). It holds no front-end state; the SPA state lives in `dashboard/src/` (Dataset Loader, Query layer, View Registry).
+3. **Interface Adapters (`src/adapters/`)**: External API resilience (`RawApiFetcher`, Zod Schemas), storage adapters, and pure presentation logic (`Presenters`). It must not import from `dashboard/`.
+4. **Frameworks & Drivers (`dashboard/`, `src/cli/`)**: the React SPA and CLI entrypoints.
+
+**Import direction** is enforced by `src/tests/layer-boundaries.test.ts`: `src/**` never imports from `dashboard/` (the SPA depends on `src/`, not the reverse), and `src/domain/**` never imports from `application/`, `adapters/` or `frameworks/`. Known remaining violation to fix separately (C-07): `CreditsBillingService` → `BillingConfigLoader` (application → adapter).
 
 ---
 
-## 4. Frontend State Management Principle (Reactive DataStore & View Plugins)
+## 4. Frontend State Management Principle (Dataset Loader, Query Layer & View Registry)
 
-### 4.1 Reactive DataStore & DerivedDataGraph
-The dashboard state is managed via `DataStore` and evaluated incrementally through `DerivedDataGraph`.
-- **Topological Sorting & Cycle Detection**: Derived nodes (`filteredScopeData`, `filteredReportData`, `diagnosticResults`, etc.) are computed in strictly dependency-ordered sequence.
-- **Input Hash Memoization**: Computations are cached based on input state hashes, preventing redundant calculations across view switches.
+### 4.1 Single Rendering Path
+The dashboard has one path: `main.tsx` → `App.tsx` → View Registry (`dashboard/src/views/`). Data is loaded by the Dataset Loader (`dashboard/src/dataset/`) and filtered by the Query layer (`dashboard/src/query/`), driven by `useDashboardData` (SDD-15 §7). The former DataStore / `DerivedDataGraph` path (`AppV2.tsx`, `src/application/store/**`, `src/frameworks/**`, `src/adapters/views/**`, `VITE_USE_NEW_STORE`) was removed in P2-5 ([ADR-0001](../adr/0001-single-frontend-architecture.md) §5).
 
-### 4.2 View Plugin System & Presenter Separation
-All 9 analysis views (Overview, Users, Trend, Budget, DeepAnalysis, ModelRadar, Credits, Agent, Adoption) implement `IViewPluginManifest` and decouple presentation formatting from UI rendering:
-- **ViewOrchestrator**: Validates rendering prerequisites (`canRender`) and data completeness (`requiredDerivedData`) before activating views.
+### 4.2 View Registry & Presenter Separation
+The analysis views are registered in `dashboard/src/views/defaultRegistry.ts` (a manifest plus a component per view). Presentation formatting is decoupled from UI rendering:
 - **Presenter**: Transforms raw aggregates into display-ready view models completely outside the React render loop, enabling rapid headless unit testing.
 
 ### 4.3 FinOps Permanent USD Primary & Optional Sub-Currency Subsystem
 Provides enterprise billing computation with permanent USD primary display and localized secondary currency support:
 - **Permanent USD Primary & Dual Display**: Enforces permanent USD ($) primary display across all 9 analysis views, KPI summary cards, charts, and user tables, with optional secondary sub-currency display in parentheses (e.g. `$2,975.00 (¥461,125)`).
-- **`CurrencyContext` & `CurrencySelector`**: Header dropdown enables real-time sub-currency switching (USD Only / USD + JPY / USD + EUR) with localStorage persistence.
+- **`CurrencyContext` & the header settings menu**: The menu enables real-time sub-currency switching (USD Only / USD + JPY / USD + EUR) with localStorage persistence.
 - **`EnterpriseBillingConfig`**: Manages base USD currency, optional `subCurrency` (JPY/EUR), conversion rates, volume discount percentages (0-100%), and direct enterprise contract rates (`customPricePerCredit`: e.g. `1.273 JPY / AIC`, `customSeatPricing`). Direct contract rates override calculated rates with top priority.
 - **`Money` Value Object**: Provides unified dual-currency formatting (`formatWithSubCurrency`), structured output (`formatDual`), arbitrary precision, and discount application.
 - **`BillingConfigLoader`**: Safely parses configuration from environment variable `COPILOT_BILLING_CONFIG` or `data/config/billing.json`, falling back to standard USD rules when omitted.
 
 ### 4.4 Frontend Code Splitting & Performance Architecture
 Maximizes initial page load performance via architectural bundle decomposition:
-- **Strict Browser Repository Isolation**: Physically separates `HttpJsonMetricsRepository` (pure `fetch` client) from `FsJsonMetricsRepository` (Node.js `fs` client), eliminating Node.js polyfill leaks and eradicating Vite externalization warnings.
+- **Strict Browser Repository Isolation**: Physically separates `HttpJsonMetricsRepository` (pure `fetch` client) from the Node.js `fs`-based repositories, eliminating Node.js polyfill leaks and eradicating Vite externalization warnings.
 - **On-Demand View Lazy Loading**: Asynchronously splits heavy analytical views (Model Radar, Deep Analysis, Credits, Agent Activity, Adoption Maturity) via `React.lazy` and `<Suspense>`.
 - **UI Skeleton Protection**: Employs an animated pulsing skeleton component (`ViewSkeleton`) to prevent layout shifts during async chunk arrival.
 - **Rollup Chunk Partitioning**: Groups vendor dependencies into `vendor-react`, `vendor-charts`, `vendor-icons`, and `vendor-zod`, keeping the initial entry chunk at **< 300 kB (< 80 kB gzip)**.
@@ -251,28 +247,21 @@ Enforces AES-256 symmetric GPG encryption for enterprise user mappings exceeding
 ├── src/
 │   ├── domain/                         # Layer 1: Domain
 │   │   ├── entities/                   # Domain entities (copilot, views, billing-config, etc.)
-│   │   ├── value-objects/              # Value objects (Money, HealthScore, DateRange)
+│   │   ├── value-objects/              # Value objects (Money, HealthScore)
 │   │   ├── pricing/                    # Pricing catalog (the single source of prices)
 │   │   ├── constants/                  # unassigned.ts (filter sentinel), filter-scope.ts (non-filterable sections)
 │   │   ├── rules/                      # Business rules (SeatClassification, AdoptionPhase, etc.)
 │   │   └── ports/                      # Port interfaces (ICopilotDataSource, IStorageWriter, etc.)
 │   ├── application/                    # Layer 2: Application
-│   │   ├── store/                      # DataStore, Reducer, State, DerivedDataGraph
-│   │   ├── services/                   # ScopeManager, FilterService, CreditsBillingService, etc.
-│   │   ├── views/                      # ViewPluginRegistry, ViewOrchestrator
+│   │   ├── services/                   # ScopeManager, CacheService, CreditsBillingService, etc.
 │   │   └── pipeline/                   # PipelineOrchestrator, source-status.ts (per-source degradation)
 │   ├── adapters/                       # Layer 3: Adapters
 │   │   ├── github-api/                 # ACL, RawApiFetcher, Normalizers, Zod Schemas
-│   │   ├── storage/                    # HttpJsonMetricsRepository, FsJsonMetricsRepository, BillingConfigLoader
+│   │   ├── storage/                    # HttpJsonMetricsRepository, BillingConfigLoader
 │   │   ├── presenters/                 # Overview, Users, Trend, Budget, DeepAnalysis, ModelRadar, Credits, Agent, Adoption
-│   │   ├── views/                      # ViewPlugin manifests & lazy component loaders (9 plugins)
 │   │   └── composition-root.ts         # Backend Composition Root (createPipelineApp)
 │   ├── collector/                      # Collection helpers: attribute-resolver.ts, pseudonymizer.ts (browser-safe, no static Node imports)
 │   ├── processor/                      # Aggregation: metrics-aggregator, billing-calculator, report-parser, rolling-trend, scope-merge, inefficiency-*
-│   ├── frameworks/                     # Layer 4: Frameworks
-│   │   ├── react/                      # DashboardProvider, useStoreSelector, useViewPlugin
-│   │   ├── composition-root.ts         # Frontend Composition Root (injects HttpJsonMetricsRepository)
-│   │   └── cli-composition-root.ts     # CLI Composition Root (injects FsJsonMetricsRepository)
 │   └── cli/
 │       └── run-pipeline.ts             # CLI entrypoint via createPipelineApp
 ├── dashboard/                          # Frontend SPA (Vite + React + Tailwind)

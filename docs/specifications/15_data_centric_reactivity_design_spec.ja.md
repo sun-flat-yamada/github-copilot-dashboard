@@ -186,3 +186,4 @@ index.json / スコープ JSON / レポート JSON
 | hook のフィルター・選択肢を Query 層経由に | 完了 (P2-2) |
 | Query 結果を使うビュー: `ActiveDataSelector` (該当件数)、`DataSelectionModal` (プレビュー件数) | 完了 (P2-2)。どちらも独自にユーザー数を数えており、元データも異なっていた (セレクターはフィルター後のデータ、モーダルの母数は未フィルターのデータ) |
 | 残りのビューは hook の再集計済みデータを参照 | 段階移行。Metric Registry + 品質属性: 概要 KPI カードは完了 (P2-3、SDD-07 §2.14a)、View Registry を描画の唯一の入口にし `App.tsx` の分岐を撤去 (P2-4、SDD-07 §2.14b) |
+| デッドコードと層違反 | 完了 (P2-5): DataStore 経路と付録 C の未参照モジュールを削除。`src/tests/layer-boundaries.test.ts` が `src/**` から `dashboard/` への import を検出して失敗させる (SDD-02 §3.1) |

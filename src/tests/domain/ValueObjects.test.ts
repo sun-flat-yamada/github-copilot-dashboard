@@ -1,6 +1,5 @@
 import { describe, it } from 'node:test';
 import * as assert from 'node:assert/strict';
-import { DateRange } from '../../domain/value-objects/DateRange.js';
 import { Money } from '../../domain/value-objects/Money.js';
 import { HealthScore } from '../../domain/value-objects/HealthScore.js';
 import { DomainError } from '../../domain/value-objects/DomainError.js';
@@ -12,44 +11,6 @@ describe('Domain Value Objects Tests', () => {
       assert.equal(err.name, 'DomainError');
       assert.equal(err.message, 'Test error');
       assert.ok(err instanceof Error);
-    });
-  });
-
-  describe('DateRange', () => {
-    it('creates valid date range and calculates days count', () => {
-      const range = new DateRange('2026-09-01', '2026-09-10');
-      assert.equal(range.start, '2026-09-01');
-      assert.equal(range.end, '2026-09-10');
-      assert.equal(range.daysCount, 10);
-    });
-
-    it('throws DomainError when start > end', () => {
-      assert.throws(() => new DateRange('2026-09-15', '2026-09-10'), {
-        name: 'DomainError',
-      });
-    });
-
-    it('throws DomainError when dates are empty', () => {
-      assert.throws(() => new DateRange('', '2026-09-10'), {
-        name: 'DomainError',
-      });
-    });
-
-    it('correctly checks contains', () => {
-      const range = new DateRange('2026-09-01', '2026-09-10');
-      assert.equal(range.contains('2026-09-05'), true);
-      assert.equal(range.contains('2026-09-01'), true);
-      assert.equal(range.contains('2026-09-10'), true);
-      assert.equal(range.contains('2026-08-31'), false);
-      assert.equal(range.contains('2026-09-11'), false);
-    });
-
-    it('correctly checks equality', () => {
-      const range1 = new DateRange('2026-09-01', '2026-09-10');
-      const range2 = new DateRange('2026-09-01', '2026-09-10');
-      const range3 = new DateRange('2026-09-01', '2026-09-15');
-      assert.equal(range1.equals(range2), true);
-      assert.equal(range1.equals(range3), false);
     });
   });
 
