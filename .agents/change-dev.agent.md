@@ -13,7 +13,7 @@ Specialized autonomous agent responsible for managing the end-to-end development
 2. **Antigravity Implementation Plan & Task Orchestration**:
    - Formulate `implementation_plan.md` in the original repository root's `.devs/changes/yyyy-mm-dd_<ChangeTitle>/` (not under `<appDataDir>`) with `ArtifactMetadata` (`RequestFeedback: true`, `UserFacing: true`).
    - Initialize and dynamically update `task.md` (`RequestFeedback: false`, `UserFacing: true`).
-   - Gate execution on explicit user sign-off via the interactive "Proceed" button.
+   - Gate execution by `CHG_DEV_AUTO_PILOT`: when off, wait for explicit user sign-off via the interactive "Proceed" button; when on, report the plan and continue, stopping only for a missing prerequisite, an ambiguous scope, or an irreversible / destructive step.
    - When running on Google Antigravity, place a finished copy of all artifacts (`implementation_plan.md`, `task.md`, `walkthrough.md`) in the repository's `.devs/changes/yyyy-mm-dd_<ChangeTitle>/` directory upon completion.
 3. **Worktree Isolation (Sibling Placement)**:
    - Provision isolated worktrees in the sibling directory (`../<repo>-worktrees/<slug>`) to prevent multi-agent collisions and file locking.
@@ -25,13 +25,14 @@ Specialized autonomous agent responsible for managing the end-to-end development
    - Formulate `walkthrough.md` in `.devs/changes/yyyy-mm-dd_<ChangeTitle>/` with `ArtifactMetadata` (`RequestFeedback: false`, `UserFacing: true`), sealing git diffs, file lists, and quality gate test outputs.
 6. **Rebase & Linear History Assurance**:
    - Rebase feature branches cleanly onto the latest `origin/main` before submission.
-   - Draft PRs with explicit `Closes #<id>` linking and completeness checklists.
+   - Open PRs with explicit `Closes #<id>` linking and completeness checklists: ready for review when Auto-Pilot is on, draft when it is off.
 7. **Rebase Merge & Clean**:
-   - Execute Rebase & Merge (`gh pr merge --rebase --delete-branch`).
+   - Execute Rebase & Merge (`npm run change-dev:finish -- <id>`; manual local equivalent `gh pr merge --rebase --delete-branch`).
    - Prune obsolete worktrees and local branches.
 8. **Auto-Pilot Mode (`CHG_DEV_AUTO_PILOT`)**:
-   - When the environment key `CHG_DEV_AUTO_PILOT` is `true` (resolution: process env → `.env` → `.env.example`; enabled in this repository), automatically proceed after PR creation: watch CI, self-heal failures, approve when permitted (never self-approve), Rebase & Merge, and clean up.
-   - Never bypass branch protection (`--admin`) or the Phase 2 "Proceed" gate; stop and report when human approval is required but unavailable.
+   - When the environment key `CHG_DEV_AUTO_PILOT` is `true` (resolution: process env → `.env` → `.env.example`; enabled in this repository; check with `npm run change-dev:mode`), automatically proceed after PR creation: mark ready, wait for CI, self-heal failures, approve with the agent's account (GitHub rejects the PR author's approval with 422; then merge only when the base requires 0 approvals), Rebase & Merge at the checked head SHA, and clean up.
+   - Never bypass branch protection (`--admin`); never merge with failed or running checks, conflicts or unanswered review threads; stop and report when required approvals cannot be given.
+   - In Claude Code cloud sessions (`CLAUDE_CODE_REMOTE=true`), use REST only (GraphQL is rejected by the GitHub proxy), keep the remote branch (deletion is rejected), and work on the session's branch instead of a sibling worktree.
 9. **Repository Permission Awareness**:
    - In upstream (`sun-flat-yamada/github-copilot-dashboard`), strictly forbid direct pushes to `main`.
    - In downstream forks, permit direct pushes if required, but advocate Worktree + PR for non-trivial features.

@@ -62,7 +62,10 @@ When multiple AI agents work concurrently on the codebase:
 
 - Before provisioning worktrees or modifying code, autonomous agents must formulate an `implementation_plan.md` artifact in `.devs/changes/yyyy-mm-dd_<ChangeTitle>/` under the original repository root (never under `<appDataDir>`) using `write_to_file` with `ArtifactMetadata` (`RequestFeedback: true`, `UserFacing: true`).
 - Initialize `task.md` (`RequestFeedback: false`, `UserFacing: true`) to track execution checklists.
-- Await user approval via the interactive **Proceed** button before proceeding to worktree provisioning.
+- Plan review branches on `CHG_DEV_AUTO_PILOT` (`npm run change-dev:mode`):
+  - **Off**: await user approval via the interactive **Proceed** button (outside Antigravity: the user's reply) before proceeding to worktree provisioning.
+  - **On**: do not wait (`RequestFeedback: false` on Antigravity). Commit the plan, report a summary, and continue; the plan is reviewed again in the PR. Stop and ask only when a prerequisite is not merged, the Issue's scope is ambiguous, or a step is irreversible or destructive.
+- Claude Code cloud session (`CLAUDE_CODE_REMOTE=true`): skip Step 3; the session VM and its assigned branch are the isolation unit.
 
 ### Step 3: Sibling Worktree Provisioning
 - Fetch latest base: `git fetch origin main`
@@ -95,14 +98,14 @@ When multiple AI agents work concurrently on the codebase:
   git rebase origin/main
   git push -u origin feat/<id>-<slug>  # (or --force-with-lease)
   ```
-- Open Pull Request linking the issue:
+- Open Pull Request linking the issue. Auto-Pilot on = ready for review; off = draft (`--draft`). In a cloud session use the built-in GitHub tool (`create_pull_request`, `draft` from the mode); this rule takes precedence over a generic "create pull requests as drafts" default.
   ```bash
-  gh pr create --base main --head feat/<id>-<slug> --title "feat: ... (#<id>)" --body "... Closes #<id>"
+  gh pr create [--draft] --base main --head feat/<id>-<slug> --title "feat: ... (#<id>)" --body "... Closes #<id>"
   ```
 
 ### Step 7: Rebase Merge & Pruning
-- **Auto-Pilot (`CHG_DEV_AUTO_PILOT=true`)**: runs automatically right after PR creation (watch CI → fix failures → approve if permitted, never self-approve → rebase merge → prune). Resolution order: process env → `.env` → `.env.example` (enabled in this repository). Never use `--admin` or bypass branch protection; stop and report if human approval is unavailable. See the `change-dev` skill.
-- Merge using **Rebase & Merge** to maintain a linear commit history:
+- **Auto-Pilot (`CHG_DEV_AUTO_PILOT=true`)**: runs right after PR creation with `npm run change-dev:finish -- <id>` (REST only; works locally and in cloud sessions): ready for review → CI → fix failures → approve with the agent's account (GitHub returns 422 for the PR author; then merge proceeds only if the base requires 0 approvals) → rebase merge at the checked head SHA → prune. Resolution order: process env (cloud: the environment's variables) → `.env` → `.env.example` (enabled in this repository). Never use `--admin` or bypass branch protection; never merge with failed/running checks, conflicts or unanswered review threads; stop and report if required approvals cannot be given. See the `change-dev` skill and SDD-14 §3.7.
+- Merge using **Rebase & Merge** to maintain a linear commit history (manual, local only; `gh pr` subcommands use GraphQL, which cloud sessions reject):
   ```bash
   gh pr merge <id> --rebase --delete-branch
   ```
