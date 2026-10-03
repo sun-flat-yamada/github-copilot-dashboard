@@ -1,7 +1,10 @@
 import { ScopeAggregatedData, MonthlyReportAggregatedData } from '../../domain/entities/copilot.js';
 import { CreditsAnalysisResult } from '../../domain/entities/analysis-results.js';
-import { BillingConfigLoader } from '../storage/BillingConfigLoader.js';
-import { calculateDualCreditRate } from '../../domain/entities/billing-config.js';
+import {
+  DEFAULT_BILLING_CONFIG,
+  calculateDualCreditRate,
+  type EnterpriseBillingConfig,
+} from '../../domain/entities/billing-config.js';
 import { Money } from '../../domain/value-objects/Money.js';
 import {
   computeCreditsPoolUtilizationPercent,
@@ -36,6 +39,8 @@ export interface CreditsViewModel {
 }
 
 export interface CreditsPresenterInput {
+  /** 請求設定。ブラウザは Node 側ローダー (fs / zod) を使えないため、未指定なら価格カタログの既定値 */
+  billingConfig?: EnterpriseBillingConfig;
   currentData?: ScopeAggregatedData | null;
   currentReportData?: MonthlyReportAggregatedData | null;
   creditsAnalysis?: CreditsAnalysisResult | null;
@@ -46,7 +51,7 @@ export class CreditsPresenter {
     const { currentData, creditsAnalysis } = input;
     const hasData = Boolean(creditsAnalysis || currentData?.credits_summary || currentData?.users);
 
-    const billingConfig = BillingConfigLoader.load();
+    const billingConfig = input.billingConfig ?? DEFAULT_BILLING_CONFIG;
     const subCurrency = billingConfig.subCurrency ?? (billingConfig.currency.code !== 'USD' ? billingConfig.currency : null);
     const dualRate = calculateDualCreditRate(billingConfig);
     const sym = '$';

@@ -177,7 +177,7 @@ index.json / scope JSON / report JSON
 
 ### 7.3 DuckDB-WASM (lazy)
 
-- DuckDB-WASM is the Query layer's SQL engine (improvement plan decision #4). Only `dashboard/src/query/duckdb/duckdbLoader.ts` imports it, and callers must `import()` it dynamically; nothing imports it statically and the Query index does not re-export it (`src/tests/query-layer.test.ts` enforces this). It therefore never enters the initial bundle: the build emits it as a separate chunk plus the wasm / worker files, fetched only on first use. The bundle budget is P2-7.
+- DuckDB-WASM is the Query layer's SQL engine (improvement plan decision #4). Only `dashboard/src/query/duckdb/duckdbLoader.ts` imports it, and callers must `import()` it dynamically; nothing imports it statically and the Query index does not re-export it (`src/tests/query-layer.test.ts` enforces this). It therefore never enters the initial bundle: the build emits it as a separate chunk plus the wasm / worker files, fetched only on first use. The bundle budget is enforced by P2-7 (§9).
 - Only the exception-handling (`eh`) build (about 34 MB wasm) is shipped; every current major browser supports it.
 - Until the first view needs SQL aggregation (user x day facts, P1-3), no view references the loader, and the build output does not contain it.
 
@@ -205,3 +205,10 @@ index.json / scope JSON / report JSON
 - **jsdom setup**: `src/tests/ui/dom-setup.ts` must be the first import of a UI test (RTL reads `document` at import time).
 - **Browser**: Playwright uses the pre-installed Chromium (`PLAYWRIGHT_BROWSERS_PATH/chromium` or `PLAYWRIGHT_CHROMIUM_EXECUTABLE`) and never downloads one; CI, which has none, runs `npx playwright install --with-deps chromium`.
 - **Replaced source-text tests** (P2-6): in `data-status-banner.test.ts` the two "App wiring" tests (banner rendered above the content; demo offered as an explicit action), and in `dashboard-data-stability.test.ts` the `activeDataIsDemoSourced` wiring test, were deleted — the same behaviour is now asserted on the rendered screen. The remaining source-text tests that read `App.tsx` were re-pointed to `AppShell.tsx` and are replaced step by step as their screens gain behaviour tests.
+
+## 9. Bundle Budget and Browser-Safe Imports (P2-7)
+
+- **Budget**: the main chunk (the module script in `dist/index.html`) must be <= 300 kB (decimal, as Vite reports it). `scripts/check-bundle.ts` enforces it at the end of `npm run build`; CI (`test-and-preview.yml`, `copilot-analysis-cron.yml`) therefore fails on a violation. Lazy chunks are not counted against it. Raising the budget is not the fix: lazy-load the code.
+- **No `fs` / zod in the browser**: the gate also fails if any emitted chunk contains zod or a Node built-in stub (`__vite-browser-external`). `src/tests/scripts/bundle-budget.test.ts` additionally walks every import reachable from `dashboard/src/main.tsx` and fails on a Node built-in or zod import (`import type` is erased and allowed). Server-side code (`BillingConfigLoader`, the GitHub API zod schemas, `ForkSafeStorage`) must not be imported from browser code. Presenters take the billing config as an input and default to the price catalog.
+- **Lazy loading**: every View manifest uses `React.lazy(() => import('./View'))`, which also defers the chart vendor chunk (`recharts`) until a view needs it. DuckDB-WASM stays behind a dynamic `import()` (§7.3).
+- **Result** (at the time of P2-7): the main chunk went from 330 kB to about 153 kB.
