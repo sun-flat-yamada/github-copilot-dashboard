@@ -8,6 +8,7 @@ import {
   InefficiencyPatternId,
 } from '../../../src/types/deep-analysis';
 import { InefficiencyDiagnosticEngine } from '../../../src/processor/inefficiency-diagnostic';
+import { SIGNAL_BAND_LABELS } from '../../../src/processor/diagnostic-signals';
 import { User, Database, CheckCircle2, AlertCircle } from 'lucide-react';
 import { MethodSelector } from './deep-analysis/MethodSelector';
 import { UserPeriodControls } from './deep-analysis/UserPeriodControls';
@@ -15,6 +16,7 @@ import { HealthScoreCard } from './deep-analysis/HealthScoreCard';
 import { PatternAccordionItem } from './deep-analysis/PatternAccordionItem';
 import { PatternDrilldownChart } from './deep-analysis/PatternDrilldownChart';
 import { PrescriptionList } from './deep-analysis/PrescriptionList';
+import { TeamDiagnosticPanel } from './deep-analysis/TeamDiagnosticPanel';
 
 interface DeepAnalysisViewProps {
   aggregatedData?: ScopeAggregatedData | null;
@@ -100,6 +102,9 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
   });
   const [isCustomPickerOpen, setIsCustomPickerOpen] = useState(false);
 
+  // 3.5 表示単位: 既定はチーム単位。個人表示は閲覧権限のある社員向け (SDD-11 §4.5)
+  const [viewMode, setViewMode] = useState<'team' | 'individual'>('team');
+
   // 4. ドリルダウン展開中パターン
   const [expandedPatternId, setExpandedPatternId] = useState<InefficiencyPatternId | null>(
     'tab_spamming_roulette'
@@ -120,6 +125,15 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
       profiles
     );
   }, [currentProfile, periodScope, customRange, profiles]);
+
+  const teamResult = useMemo(() => {
+    if (profiles.length === 0) return null;
+    return InefficiencyDiagnosticEngine.diagnoseTeam(
+      profiles,
+      periodScope,
+      periodScope === 'custom' ? customRange : undefined
+    );
+  }, [profiles, periodScope, customRange]);
 
   const handleTogglePatternExpand = (patternId: InefficiencyPatternId) => {
     setExpandedPatternId((prev) => (prev === patternId ? null : patternId));
@@ -191,35 +205,95 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
         onSelectMethod={setSelectedMethodId}
       />
 
-      {/* 2. 共通操作バー: 診断対象ユーザー & 対象区間セレクター */}
-      <UserPeriodControls
-        profiles={profiles}
-        currentProfile={currentProfile}
-        selectedLogin={selectedLogin}
-        onSelectLogin={handleSelectLogin}
-        periodScope={periodScope}
-        onSelectPeriodScope={(scope) => {
-          setPeriodScope(scope);
-          if (scope !== 'custom') setIsCustomPickerOpen(false);
-        }}
-        customRange={customRange}
-        onCustomRangeChange={setCustomRange}
-        isCustomPickerOpen={isCustomPickerOpen}
-        onToggleCustomPicker={() => setIsCustomPickerOpen(!isCustomPickerOpen)}
-      />
+      {/* 2. 表示単位の切り替え (既定: チーム単位) */}
+      <div
+        role="group"
+        aria-label="診断の表示単位"
+        className="flex flex-wrap items-center gap-3 px-4 py-3 bg-slate-900/90 border border-slate-800 rounded-xl"
+      >
+        <span className="text-xs font-semibold text-slate-300">表示単位:</span>
+        {(['team', 'individual'] as const).map((mode) => (
+          <button
+            key={mode}
+            type="button"
+            aria-pressed={viewMode === mode}
+            data-testid={`diagnostic-view-${mode}`}
+            onClick={() => setViewMode(mode)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold border cursor-pointer transition-all ${
+              viewMode === mode
+                ? 'bg-indigo-600 text-white border-indigo-400'
+                : 'bg-slate-950 text-slate-300 border-slate-700 hover:text-white'
+            }`}
+          >
+            {mode === 'team' ? 'チーム単位 (既定)' : '個人単位'}
+          </button>
+        ))}
+        <span className="text-[11px] text-slate-400">
+          しきい値は未較正のヒューリスティックです。シグナル強度は確率ではありません。
+        </span>
+      </div>
 
-      {/* 3. 診断サマリー & 総合健全度スコアメーター */}
-      <HealthScoreCard diagnosticResult={diagnosticResult} />
+      {viewMode === 'team' ? (
+        <>
+          <UserPeriodControls
+            profiles={profiles}
+            currentProfile={currentProfile}
+            hideUserSelect
+            selectedLogin={selectedLogin}
+            onSelectLogin={handleSelectLogin}
+            periodScope={periodScope}
+            onSelectPeriodScope={(scope) => {
+              setPeriodScope(scope);
+              if (scope !== 'custom') setIsCustomPickerOpen(false);
+            }}
+            customRange={customRange}
+            onCustomRangeChange={setCustomRange}
+            isCustomPickerOpen={isCustomPickerOpen}
+            onToggleCustomPicker={() => setIsCustomPickerOpen(!isCustomPickerOpen)}
+          />
+          {teamResult && <TeamDiagnosticPanel result={teamResult} />}
+        </>
+      ) : (
+        <>
+          <p
+            className="text-xs text-amber-200 bg-amber-950/50 border border-amber-800/70 rounded-xl px-4 py-3 leading-relaxed"
+            role="note"
+            data-testid="individual-view-notice"
+          >
+            個人単位の診断は社内限定で、閲覧権限のある社員向けです。本人へのコーチング・支援を目的とし、人事評価や順位付けには使用しないでください。
+          </p>
 
-      {/* 4. 非効率パターン判定 & 兆候確率 */}
-      <PatternAccordionItem
-        patterns={patterns}
-        expandedPatternId={expandedPatternId}
-        onTogglePatternExpand={handleTogglePatternExpand}
-      />
+          {/* 共通操作バー: 診断対象ユーザー & 対象区間セレクター */}
+          <UserPeriodControls
+            profiles={profiles}
+            currentProfile={currentProfile}
+            selectedLogin={selectedLogin}
+            onSelectLogin={handleSelectLogin}
+            periodScope={periodScope}
+            onSelectPeriodScope={(scope) => {
+              setPeriodScope(scope);
+              if (scope !== 'custom') setIsCustomPickerOpen(false);
+            }}
+            customRange={customRange}
+            onCustomRangeChange={setCustomRange}
+            isCustomPickerOpen={isCustomPickerOpen}
+            onToggleCustomPicker={() => setIsCustomPickerOpen(!isCustomPickerOpen)}
+          />
+
+          {/* 診断サマリー & 総合健全度スコアメーター */}
+          <HealthScoreCard diagnosticResult={diagnosticResult} />
+
+          {/* 非効率パターン判定 & シグナル強度 */}
+          <PatternAccordionItem
+            patterns={patterns}
+            expandedPatternId={expandedPatternId}
+            onTogglePatternExpand={handleTogglePatternExpand}
+          />
+        </>
+      )}
 
       {/* 5. ドリルダウン深掘り分析パネル */}
-      {expandedPatternId && activePattern && (
+      {viewMode === 'individual' && expandedPatternId && activePattern && (
         <div className="bg-slate-900 border-2 border-indigo-500/60 rounded-2xl p-6 shadow-2xl space-y-6 animate-fadeIn">
           {/* ドリルダウン ヘッダー */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
@@ -240,7 +314,7 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
 
             <div className="flex items-center space-x-3 shrink-0">
               <div className="text-right">
-                <span className="text-[10px] text-slate-400 block">判定兆候確率</span>
+                <span className="text-[10px] text-slate-400 block">シグナル強度 (確率ではありません)</span>
                 {activePattern.evaluable === false ? (
                   <span className="text-2xl font-black text-slate-500">—</span>
                 ) : (
@@ -253,7 +327,10 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
                         : 'text-emerald-400'
                     }`}
                   >
-                    {activePattern.probabilityPercent}%
+                    {SIGNAL_BAND_LABELS[activePattern.signalBand ?? 'none']}
+                    <span className="text-xs font-mono font-semibold text-slate-400 ml-1.5">
+                      {activePattern.probabilityPercent}/100
+                    </span>
                   </span>
                 )}
               </div>
@@ -263,43 +340,64 @@ export const DeepAnalysisView: React.FC<DeepAnalysisViewProps> = ({
           {/* 判定要因 (Contributing Factors) カード一覧 */}
           <div>
             <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2.5">
-              判定根拠・要因指標 (Contributing Factors)
+              シグナルのルール (入力値・しきい値・根拠)
             </h4>
             {activePattern.evaluable === false && (
               <p className="text-xs text-slate-300 bg-slate-950/80 border border-slate-800 rounded-xl p-3.5" data-testid="pattern-insufficient-data">
                 判定不能 (データ不足): {activePattern.insufficientDataReason ?? '判定に必要な実測値が収集されていません'}
               </p>
             )}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {activePattern.contributingFactors.map((factor, idx) => (
+            {activePattern.dataSufficiency && activePattern.dataSufficiency.checks.length > 0 && (
+              <ul
+                className="flex flex-wrap gap-2 mb-3 text-[11px] text-slate-300"
+                aria-label="データ充足度"
+                data-testid="pattern-sufficiency"
+              >
+                {activePattern.dataSufficiency.checks.map((c) => (
+                  <li
+                    key={c.name}
+                    className={`px-2 py-1 rounded border font-mono ${
+                      c.met ? 'border-emerald-800 bg-emerald-950/60' : 'border-rose-800 bg-rose-950/60'
+                    }`}
+                  >
+                    {c.met ? '充足' : '不足'} · {c.name}: {c.observed} / 必要 {c.required} 以上
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3" data-testid="pattern-evidence">
+              {(activePattern.evidence ?? []).map((rule, idx) => (
                 <div
                   key={idx}
                   className="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between"
                 >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-bold text-slate-200">
-                      {factor.metricName}
-                    </span>
+                  <div className="flex items-center justify-between mb-1 gap-2">
+                    <span className="text-xs font-bold text-slate-200">{rule.input}</span>
                     <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                        factor.severity === 'danger'
-                          ? 'bg-rose-950 text-rose-300 border border-rose-800'
-                          : factor.severity === 'warning'
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 ${
+                        rule.status === 'met'
                           ? 'bg-amber-950 text-amber-300 border border-amber-800'
-                          : factor.severity === 'good'
+                          : rule.status === 'not_met'
                           ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
                           : 'bg-slate-800 text-slate-300'
                       }`}
                     >
-                      実測: {factor.currentValueFormatted}
+                      {rule.status === 'met' ? 'ルール成立' : rule.status === 'not_met' ? '不成立' : '参考'}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                    {factor.description}
+                  <dl className="text-[11px] text-slate-300 mt-1 space-y-0.5 font-mono">
+                    <div>
+                      <dt className="inline text-slate-500">入力値: </dt>
+                      <dd className="inline">{rule.value}</dd>
+                    </div>
+                    <div>
+                      <dt className="inline text-slate-500">しきい値: </dt>
+                      <dd className="inline">{rule.threshold}</dd>
+                    </div>
+                  </dl>
+                  <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
+                    根拠: {rule.rationale}
                   </p>
-                  <span className="text-[10px] text-slate-500 mt-2 font-mono">
-                    推奨閾値: {factor.recommendedThresholdFormatted}
-                  </span>
                 </div>
               ))}
             </div>

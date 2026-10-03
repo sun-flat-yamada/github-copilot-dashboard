@@ -12,10 +12,23 @@ import {
   DiagnosticPeriodInfo,
   UserDiagnosticDrilldown,
   UserDiagnosticResult,
+  InefficiencyPatternResult,
+  TeamDiagnosticResult,
+  TeamPatternSummary,
 } from '../types/deep-analysis.js';
 
+import { classifyModel, countByTier } from './model-classification.js';
+import {
+  CALIBRATION_PLAN,
+  DEFAULT_DIAGNOSTIC_CONFIG,
+  DiagnosticConfig,
+  DiagnosticPatternKey,
+  resolveReferenceDate,
+} from './diagnostic-config.js';
+import { assessDataSufficiency, withSignalFields } from './diagnostic-signals.js';
 import {
   MODEL_ESTIMATED_CHAT_COST,
+  insufficientDataResult,
   diagnoseTabSpamming,
   diagnoseOverkillModel,
   diagnoseContextBlindChat,
@@ -51,12 +64,12 @@ export const ANALYSIS_METHODS_REGISTRY: AnalysisMethodDefinition[] = [
     id: 'inefficient_usage_diagnostic',
     title: 'AI活用非効率パターン診断',
     shortTitle: '非効率利用診断',
-    subtitle: '個人の利用傾向から典型的な非効率アンチパターンの兆候を確率%で判定',
+    subtitle: '利用傾向から典型的な非効率アンチパターンの兆候を、入力値・しきい値・根拠つきのシグナル強度で提示 (既定はチーム単位)',
     category: 'behavioral',
     status: 'active',
     badge: '推奨',
     description:
-      'GitHub Copilotの日常的な利用履歴（Inline補完受諾率、チャット利用頻度、モデル選択バランス、稼働日分布）から、時間を浪費したり高コストモデルを過剰利用しているアンチパターン兆候を多角的にスコアリングします。',
+      'GitHub Copilotの日常的な利用履歴（Inline補完受諾率、チャット利用頻度、モデル選択バランス、稼働日分布）から、時間を浪費したり高コストモデルを過剰利用しているアンチパターン兆候を多角的にスコアリングします。強度は確率ではなく未較正のルール成立度の目安で、データが不足する場合は判定しません。',
   },
   {
     id: 'model_cost_efficiency',
@@ -112,6 +125,13 @@ export interface AutonomyAnalysisMetrics {
   longAutonomyRatioPercent: number; // 0 - 100%
   shortAutonomyRatioPercent: number; // 0 - 100%
   offloadStyle: 'smart_offload' | 'firefighting_struggle' | 'balanced_standard';
+}
+
+export interface DiagnoseOptions {
+  /** Diagnostic configuration (thresholds, calendar, time zone). Defaults to DEFAULT_DIAGNOSTIC_CONFIG */
+  config?: DiagnosticConfig;
+  /** End of the analysis window (YYYY-MM-DD). Defaults to the latest date in the organization's data */
+  referenceDate?: string;
 }
 
 export class InefficiencyDiagnosticEngine {
@@ -201,12 +221,22 @@ export class InefficiencyDiagnosticEngine {
     profile: UserUsageProfile,
     scopeType: AnalysisPeriodScopeType = '30d',
     customRange?: CustomDateRange,
-    allProfiles: UserUsageProfile[] = []
+    allProfiles: UserUsageProfile[] = [],
+    options: DiagnoseOptions = {}
   ): UserDiagnosticResult {
+    const config = options.config ?? DEFAULT_DIAGNOSTIC_CONFIG;
+    // 分析窓の終端は組織全体の最新日。ユーザー自身の履歴末尾にすると、直近不在のユーザーも「活動的」に見える
+    const referenceDate =
+      options.referenceDate ??
+      resolveReferenceDate(
+        [profile.daily_history || [], ...allProfiles.map((p) => p.daily_history || [])],
+        config
+      );
     const { filteredHistory, periodInfo } = this.filterDailyHistory(
       profile.daily_history || [],
       scopeType,
-      customRange
+      customRange,
+      referenceDate
     );
 
     // 期間内の集計
@@ -214,12 +244,8 @@ export class InefficiencyDiagnosticEngine {
     let totalSuggestions = 0;
     let totalAcceptances = 0;
     let totalCostUsd = 0;
-    const modelTotals: Record<string, number> = {
-      'claude-3-7-sonnet': 0,
-      'gpt-4o': 0,
-      'o1': 0,
-      'gemini-2-0-flash': 0,
-    };
+    // 観測されたモデルだけを集計する (特定年のモデル ID を固定で並べない)
+    const modelTotals: Record<string, number> = {};
 
     for (const h of filteredHistory) {
       totalChats += h.total_chats;
@@ -240,7 +266,7 @@ export class InefficiencyDiagnosticEngine {
       activeDays > 0 ? Number((totalSuggestions / activeDays).toFixed(1)) : 0;
 
     // 組織全体の平均ベンチマーク計算
-    const peerMetrics = this.calculatePeerBenchmark(allProfiles, scopeType, customRange);
+    const peerMetrics = this.calculatePeerBenchmark(allProfiles, scopeType, customRange, referenceDate);
 
     // Agent 関連の指標は、プロファイルに実測値があるときだけ使う。無い値を固定の比率
     // (旧: 短時間 25%・完了 70%・PR 10%・マージ 60 分) で補わず、判定不能 (データ不足) とする。
@@ -253,7 +279,7 @@ export class InefficiencyDiagnosticEngine {
     const p2 = diagnoseOverkillModel(totalChats, modelTotals);
     const p3 = diagnoseContextBlindChat(totalChats, totalAcceptances, activeDays, filteredHistory);
     const p4 = diagnosePassiveSeat(periodInfo.totalDays, activeDays, totalSuggestions, totalChats);
-    const p5 = diagnoseOffHoursWorkload(filteredHistory);
+    const p5 = diagnoseOffHoursWorkload(filteredHistory, config);
 
     // Phase 6-B: 4つの新パターン
     let totalCreditsConsumed = 0;
@@ -267,7 +293,9 @@ export class InefficiencyDiagnosticEngine {
     // プランも不明なら特定できないため、固定値を仮定せず判定不能とする。
     const creditsLimit =
       profile.ai_credits_limit_monthly ?? getIncludedCreditsPerSeat(profile.plan_type, periodInfo.endDate.slice(0, 7));
-    const heavyModelRequests = (modelTotals['o1'] || 0) + (modelTotals['claude-3-7-sonnet'] || 0);
+    const tierCounts = countByTier(modelTotals);
+    const heavyModelRequests = tierCounts.reasoning_heavy + tierCounts.heavy;
+    const reasoningHeavyCount = tierCounts.reasoning_heavy;
 
     const p6 = diagnoseCreditBurnOverdrive(totalCreditsConsumed, creditsLimit, totalAcceptances, knownAgentSessions);
     // 短時間中断セッション数は収集していないため null (実測が得られるまで評価に使わない)
@@ -279,7 +307,42 @@ export class InefficiencyDiagnosticEngine {
       profile.agent_pr_median_merge_mins ?? null
     );
 
-    const patterns = [p1, p2, p3, p4, p5, p6, p7, p8, p9];
+    // データ充足度による判定制御: パターンごとの最小サンプルを満たさないときは判定せず、理由を表示する
+    const sampleInput = {
+      activeDays,
+      windowDays: periodInfo.totalDays,
+      suggestions: totalSuggestions,
+      chats: totalChats,
+    };
+    const gate = (
+      key: DiagnosticPatternKey,
+      pattern: InefficiencyPatternResult
+    ): InefficiencyPatternResult => {
+      const sufficiency = assessDataSufficiency(key, sampleInput, config);
+      if (!sufficiency.sufficient) {
+        const blocked = insufficientDataResult(
+          pattern.id,
+          pattern.name,
+          pattern.nameEn,
+          pattern.tagline,
+          sufficiency.reason as string
+        );
+        return withSignalFields({ ...blocked, insufficientDataReason: sufficiency.reason }, sufficiency, config);
+      }
+      return withSignalFields(pattern, sufficiency, config);
+    };
+
+    const patterns = [
+      gate('tab_spamming_roulette', p1),
+      gate('overkill_model_addiction', p2),
+      gate('context_blind_chat_churn', p3),
+      gate('passive_seat_disengaged', p4),
+      gate('off_hours_workload_spike', p5),
+      withSignalFields(p6, undefined, config),
+      withSignalFields(p7, undefined, config),
+      gate('model_cost_mismatch', p8),
+      withSignalFields(p9, undefined, config),
+    ];
 
     // 総合健全度スコアの計算 (100点満点からのペナルティ減算)
     // 高リスクパターンが多いほどスコア低下。判定不能 (evaluable = false) のパターンは確率 0 でペナルティなし。
@@ -293,10 +356,7 @@ export class InefficiencyDiagnosticEngine {
       }
     }
 
-    // 健全利用ボーナス（受諾率が28%以上でアクティブなら維持）
-    if (acceptanceRatePercent >= 28 && activeDays >= 3) {
-      penalty = Math.max(0, penalty - 10);
-    }
+    // 旧「受諾率 28% 以上の健全ボーナス」は廃止した (受諾率パラドックス方針 SDD-06 §4.2 と矛盾するため)
 
     // スマート・オフロード実践ボーナス（AI自律タスク委任を高効率に行っている場合）
     if (p5.name.includes('スマート・オフロード')) {
@@ -321,7 +381,7 @@ export class InefficiencyDiagnosticEngine {
       })),
       modelDistribution: Object.entries(modelTotals).map(([mName, count]) => {
         const pct = totalChats > 0 ? Number(((count / totalChats) * 100).toFixed(1)) : 0;
-        const ratePerChat = MODEL_ESTIMATED_CHAT_COST[mName] || 0.02;
+        const ratePerChat = classifyModel(mName).estimatedChatCostUsd;
         return {
           modelName: mName,
           chatsCount: count,
@@ -353,16 +413,16 @@ export class InefficiencyDiagnosticEngine {
               isPositiveForEfficiency: (activeDays > 0 ? totalAcceptances / activeDays : 0) >= peerMetrics.avgDailyAcceptances,
             },
             {
-              metricName: '高コスト推論モデル比率 (o1)',
-              userValue: totalChats > 0 ? Number((((modelTotals['o1'] || 0) / totalChats) * 100).toFixed(1)) : 0,
-              userFormatted: `${totalChats > 0 ? (((modelTotals['o1'] || 0) / totalChats) * 100).toFixed(1) : 0}%`,
+              metricName: '推論特化モデル比率',
+              userValue: totalChats > 0 ? Number(((reasoningHeavyCount / totalChats) * 100).toFixed(1)) : 0,
+              userFormatted: `${totalChats > 0 ? ((reasoningHeavyCount / totalChats) * 100).toFixed(1) : 0}%`,
               peerAverageValue: peerMetrics.avgO1Ratio,
               peerAverageFormatted: `${peerMetrics.avgO1Ratio}%`,
               differenceFormatted: `${(
-                (totalChats > 0 ? ((modelTotals['o1'] || 0) / totalChats) * 100 : 0) - peerMetrics.avgO1Ratio
+                (totalChats > 0 ? (reasoningHeavyCount / totalChats) * 100 : 0) - peerMetrics.avgO1Ratio
               ).toFixed(1)}pt`,
               isPositiveForEfficiency:
-                (totalChats > 0 ? ((modelTotals['o1'] || 0) / totalChats) * 100 : 0) <= peerMetrics.avgO1Ratio,
+                (totalChats > 0 ? (reasoningHeavyCount / totalChats) * 100 : 0) <= peerMetrics.avgO1Ratio,
             },
           ]
         : [],
@@ -383,9 +443,114 @@ export class InefficiencyDiagnosticEngine {
         dailyAvgSuggestions,
       },
       patterns,
+      calibration: { status: CALIBRATION_PLAN.status, note: CALIBRATION_PLAN.note },
       evaluatedPatternCount: patterns.filter((p) => p.evaluable !== false).length,
       patternCount: patterns.length,
       drilldown,
+    };
+  }
+
+  /**
+   * チーム単位の診断 (既定の表示単位)。
+   * 構成員が最小人数 (config.minTeamSize, 既定 5) 未満のチームは判定せず理由を返す。パターンごとにも、
+   * 評価できた人数が最小人数未満ならセルを伏せる (少人数の分布から個人が特定されるのを防ぐ)。
+   * 結果にはログイン名・氏名・個人別の値を含めない (強度の帯ごとの人数のみ)。
+   */
+  public static diagnoseTeam(
+    profiles: UserUsageProfile[],
+    scopeType: AnalysisPeriodScopeType = '30d',
+    customRange?: CustomDateRange,
+    options: DiagnoseOptions = {}
+  ): TeamDiagnosticResult {
+    const config = options.config ?? DEFAULT_DIAGNOSTIC_CONFIG;
+    const referenceDate =
+      options.referenceDate ?? resolveReferenceDate(profiles.map((p) => p.daily_history || []), config);
+    const calibration = { status: CALIBRATION_PLAN.status, note: CALIBRATION_PLAN.note };
+    const merged = this.filterDailyHistory(
+      profiles.flatMap((p) => p.daily_history || []),
+      scopeType,
+      customRange,
+      referenceDate
+    );
+    // 稼働日数は「いずれかの構成員が利用した日」の数 (行数ではなく暦日の重複を除く)
+    const periodInfo = {
+      ...merged.periodInfo,
+      activeDays: new Set(
+        merged.filteredHistory.filter((h) => h.suggestions > 0 || h.total_chats > 0).map((h) => h.date)
+      ).size,
+    };
+
+    if (profiles.length < config.minTeamSize) {
+      return {
+        period: periodInfo,
+        memberCount: profiles.length,
+        minTeamSize: config.minTeamSize,
+        evaluable: false,
+        insufficientReason: `構成員が ${config.minTeamSize} 人未満 (${profiles.length} 人) のため、チーム診断は表示しません。個人表示は閲覧権限のある社員のみが利用できます。`,
+        metricsSummary: null,
+        patterns: [],
+        calibration,
+      };
+    }
+
+    const results = profiles.map((p) =>
+      this.diagnoseUser(p, scopeType, customRange, profiles, { ...options, config, referenceDate })
+    );
+    const summaries: TeamPatternSummary[] = [];
+    for (const proto of results[0].patterns) {
+      const perMember = results.map((r) => r.patterns.find((p) => p.id === proto.id)!);
+      const evaluated = perMember.filter((p) => p.evaluable !== false);
+      const base = {
+        id: proto.id,
+        name: proto.name,
+        nameEn: proto.nameEn,
+        evaluatedMembers: evaluated.length,
+        notEvaluableMembers: perMember.length - evaluated.length,
+      };
+      if (evaluated.length < config.minTeamSize) {
+        summaries.push({
+          ...base,
+          distribution: null,
+          flaggedSharePercent: null,
+          suppressedReason: `判定できた人数が ${config.minTeamSize} 人未満 (${evaluated.length} 人) のため分布を表示しません`,
+        });
+        continue;
+      }
+      const distribution = { none: 0, weak: 0, medium: 0, strong: 0 };
+      for (const p of evaluated) {
+        const band = p.signalBand;
+        if (band && band !== 'unknown') distribution[band]++;
+      }
+      summaries.push({
+        ...base,
+        distribution,
+        flaggedSharePercent: Number((((distribution.medium + distribution.strong) / evaluated.length) * 100).toFixed(1)),
+      });
+    }
+
+    const totals = results.reduce(
+      (acc, r) => {
+        acc.chats += r.metricsSummary.totalChats;
+        acc.suggestions += r.metricsSummary.totalSuggestions;
+        acc.acceptances += r.metricsSummary.totalAcceptances;
+        return acc;
+      },
+      { chats: 0, suggestions: 0, acceptances: 0 }
+    );
+    return {
+      period: periodInfo,
+      memberCount: profiles.length,
+      minTeamSize: config.minTeamSize,
+      evaluable: true,
+      metricsSummary: {
+        totalChats: totals.chats,
+        totalSuggestions: totals.suggestions,
+        totalAcceptances: totals.acceptances,
+        acceptanceRatePercent:
+          totals.suggestions > 0 ? Number(((totals.acceptances / totals.suggestions) * 100).toFixed(1)) : 0,
+      },
+      patterns: summaries,
+      calibration,
     };
   }
 
@@ -411,7 +576,8 @@ export class InefficiencyDiagnosticEngine {
   private static calculatePeerBenchmark(
     allProfiles: UserUsageProfile[],
     scopeType: AnalysisPeriodScopeType,
-    customRange?: CustomDateRange
+    customRange?: CustomDateRange,
+    referenceDate?: string
   ): {
     avgAcceptanceRate: number;
     avgDailyAcceptances: number;
@@ -421,7 +587,7 @@ export class InefficiencyDiagnosticEngine {
       return null;
     }
 
-    let sumRate = 0;
+    let sumSuggestions = 0;
     let sumAcceptances = 0;
     let sumActiveDays = 0;
     let sumO1Chats = 0;
@@ -432,7 +598,8 @@ export class InefficiencyDiagnosticEngine {
       const { filteredHistory, periodInfo } = this.filterDailyHistory(
         p.daily_history || [],
         scopeType,
-        customRange
+        customRange,
+        referenceDate
       );
       if (filteredHistory.length === 0) continue;
 
@@ -445,11 +612,11 @@ export class InefficiencyDiagnosticEngine {
         pSugg += h.suggestions;
         pAcc += h.acceptances;
         pChats += h.total_chats;
-        pO1 += h.model_breakdown?.['o1'] || 0;
+        pO1 += countByTier(h.model_breakdown || {}).reasoning_heavy;
       }
 
       if (pSugg > 0) {
-        sumRate += (pAcc / pSugg) * 100;
+        sumSuggestions += pSugg;
         sumAcceptances += pAcc;
         sumActiveDays += periodInfo.activeDays || 1;
         sumO1Chats += pO1;
@@ -463,7 +630,8 @@ export class InefficiencyDiagnosticEngine {
     }
 
     return {
-      avgAcceptanceRate: Number((sumRate / countWithData).toFixed(1)),
+      // 全体 KPI と同じ定義 (提案合計に対する受諾合計の比)。個人率の単純平均にしない
+      avgAcceptanceRate: Number(((sumAcceptances / sumSuggestions) * 100).toFixed(1)),
       avgDailyAcceptances: Number((sumAcceptances / sumActiveDays).toFixed(1)),
       avgO1Ratio: Number(((sumO1Chats / sumTotalChats) * 100).toFixed(1)),
     };
