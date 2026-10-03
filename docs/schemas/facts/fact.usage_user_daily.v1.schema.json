@@ -1,0 +1,161 @@
+{
+  "title": "fact.usage_user_daily",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "number",
+      "const": 1
+    },
+    "day": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "user_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "interactions": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "code_generations": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "code_acceptances": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "loc_suggested_add": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "loc_suggested_delete": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "loc_added": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "loc_deleted": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "used_agent": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "used_chat": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "used_cli": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "ai_credits_used": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "api",
+        "csv",
+        "derived"
+      ]
+    },
+    "quality": {
+      "type": "string",
+      "enum": [
+        "measured",
+        "estimated",
+        "missing",
+        "demo"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "day",
+    "user_key",
+    "interactions",
+    "code_generations",
+    "code_acceptances",
+    "loc_suggested_add",
+    "loc_suggested_delete",
+    "loc_added",
+    "loc_deleted",
+    "used_agent",
+    "used_chat",
+    "used_cli",
+    "ai_credits_used",
+    "source",
+    "quality"
+  ],
+  "additionalProperties": false
+}

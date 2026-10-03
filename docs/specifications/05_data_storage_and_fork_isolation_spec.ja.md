@@ -197,6 +197,26 @@ data/raw/landing/
 - **未対応**: 複数 run を結合した長期の履歴 (1 回の窓を超えるバックフィル)、保持期間・削除 (目標 60 か月、Phase 4)、正準ファクト (`schema_version`) の再生成 (P1-3)。
 - `raw/` は公開しない: `pages:stage` は許可リスト方式で、`pages:verify` は `dist/` に含まれていれば失敗とする。
 
+### 2.4 正準ファクト契約 v1 (P1-3)
+
+ソースごとの形 (Reports の `users-1-day`、シート、CSV、AI Credits) を、版管理された**正準ファクト** (`src/domain/facts/`) へ写す。API 変更の影響は取込層に閉じ込め、集計・ビューはこの契約だけに依存する (Phase 2 の Dataset 層の入力)。
+
+| ファクト | 粒度 |
+| :--- | :--- |
+| `fact.usage_user_daily` | 日 × ユーザー (合計、`used_*` フラグ、`ai_credits_used`) |
+| `fact.usage_user_feature_daily` | 日 × ユーザー × 機能 × モデル (内訳。ソースに無い軸は `null`) |
+| `fact.usage_org_daily` | 日 × スコープ (Enterprise / Org): サーフェス別の利用者数 |
+| `fact.seat_snapshot` | スナップショット日 × ユーザー (`plan_type` は `unknown` を許容) |
+| `fact.cost_line` | 日 × ユーザー(任意) × SKU × モデル (P1-5 で取り込む) |
+
+規約:
+
+- 全ファクトに `schema_version` (リテラル、現在 `1`)、`source` (`api` / `csv` / `derived`)、`quality` (`measured` / `estimated` / `missing` / `demo`) を持たせる。互換を壊す変更は版を上げる。
+- **欠損は `0` ではなく `null`。** 全指標が `null` の行は `quality: "missing"`。
+- 合計と内訳は別ファクトとし、合算しても二重計上にならない。内訳行はソースが返す最も細かい粒度 (モデル × 機能、無ければ機能) だけを採る。
+- `user_key` は呼び出し側が解決する (匿名化モードでは仮名 ID)。実名・メールはファクトに書かない。
+- スキーマは zod で定義し (`schemas.ts`)、JSON Schema は `npm run schema:facts` で `docs/schemas/facts/` に生成する。コミット済みファイルと生成結果が異なると `npm test` が失敗する。
+
 ## 3. インデックスメタデータ (`index.json`) 仕様
 
 ダッシュボードSPAが起動時に最初に読み込み、利用可能な「日」「月」「期間」「アーカイブ」の選択肢を提供するメタデータ。
