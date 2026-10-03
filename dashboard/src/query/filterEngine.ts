@@ -327,7 +327,7 @@ function buildGroupSummaries(
 }
 
 /**
- * Live Metrics (自動定期収集データ) への FilterCriteria 適用
+ * 自動定期収集データ への FilterCriteria 適用
  * SDD-15 準拠: 全派生フィールドを完全再計算
  *
  * - 費用はスコープ種別 (daily / monthly / custom) に応じて再計算する (seatCostForScope)。

@@ -67,7 +67,7 @@ try {
   if (!hasChanges) {
     console.log(`ℹ️  No changes detected in DEMO dataset partitions on '${DATA_BRANCH}'. Branch is up to date.`);
   } else {
-    const commitMsg = `chore(demo): record Live Metrics DEMO dataset partitions (${new Date().toISOString().slice(0, 10)}) [skip ci]`;
+    const commitMsg = `chore(demo): record Auto-collected DEMO dataset partitions (${new Date().toISOString().slice(0, 10)}) [skip ci]`;
     execSync(`git -C "${tempDir}" commit -m "${commitMsg}"`, { stdio: 'inherit' });
     console.log(`✅ Staged and committed DEMO dataset on '${DATA_BRANCH}' branch.`);
 

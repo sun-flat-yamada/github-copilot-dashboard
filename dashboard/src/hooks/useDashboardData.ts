@@ -55,7 +55,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     return isDemoMode ? './data/demo' : './data';
   }, [isDemoMode]);
 
-  // Live Metrics スコープ
+  // 自動定期収集データ スコープ
   const [scopeType, setScopeType] = useState<AnalysisScopeType>('monthly');
   // 初期値は空。index.json の default_scopes (実際に存在する期間) から決定する (固定の日付を持たない)
   const [selectedKey, setSelectedKey] = useState<string>('');
@@ -63,7 +63,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [noLiveData, setNoLiveData] = useState<boolean>(false);
-  // 現在表示中の Live Metrics データが実際に /demo/ パスから取得されたものか (ソース単位で追跡)
+  // 現在表示中の自動定期収集データが実際に /demo/ パスから取得されたものか (ソース単位で追跡)
   const [scopeDataIsDemoSourced, setScopeDataIsDemoSourced] = useState<boolean | undefined>(undefined);
   // Dataset Loader が返したデータ状態 (ok / partial / failed / demo)。未取得は undefined
   const [scopeDatasetState, setScopeDatasetState] = useState<DatasetState | undefined>(undefined);
@@ -225,7 +225,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
   }, [isDemoMode, addRuntimeIssue, clearRuntimeIssue]);
 
   // 初回マウント時のみ実行する。loadIndex は isDemoMode に依存する useCallback のため、
-  // 依存配列に含めると Live Metrics / Monthly Report 取得時のDEMOフォールバック (isDemoMode の
+  // 依存配列に含めると 自動定期収集データ / Monthly Report 取得時のDEMOフォールバック (isDemoMode の
   // 暗黙的な変化) の度に index.json が再取得され、ユーザーが選択済みの selectedKey /
   // selectedReportMonth が最新月へ強制的に巻き戻ってしまう。明示的なモード切替は
   // toggleDemoMode が loadIndex を直接呼び出すため、ここでは初回ロードのみを行う。
@@ -264,7 +264,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     });
   }, [loadIndex]);
 
-  // 2. Live Metrics データの取得
+  // 2. 自動定期収集データの取得
   useEffect(() => {
     if (!indexMeta || noLiveData || !selectedKey) return;
 
@@ -294,7 +294,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
       try {
         // 取得 (候補 URL のフォールバック・期間の切り出し・DEMO 判定) は Dataset Loader に委ねる。
         // グローバルな isDemoMode (ユーザーの既定ディレクトリ選好) は書き換えない。これにより、
-        // Live Metrics だけがデモの場合でも Monthly Report 等 他ソースの表示が
+        // 自動定期収集データ だけがデモの場合でも Monthly Report 等 他ソースの表示が
         // 誤って「DEMO」表示になることを防ぐ。
         const result = await loadScopeDataset(dataBaseDir, scopeType, selectedKey, {
           mockDeclared: indexMetaRef.current?.is_mock_mode === true,
@@ -365,7 +365,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
       setReportLoading(true);
       setReportError(null);
       try {
-        // Live Metrics と同様、取得元がデモかどうかをソース単位で記録する (Dataset Loader が判定)。
+        // 自動定期収集データ と同様、取得元がデモかどうかをソース単位で記録する (Dataset Loader が判定)。
         // グローバルな isDemoMode は書き換えない。
         const result = await loadReportDataset(dataBaseDir, selectedReportMonth, {
           mockDeclared: indexMetaRef.current?.is_mock_mode === true,
@@ -461,7 +461,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
 
   // 現在アクティブ選択中のデータソースが実際に DEMO データを表示しているか (ソース単位の実態)。
   // グローバルな isDemoMode (既定ディレクトリ選好) とは独立しており、
-  // - live_metrics: Live Metrics 取得が /demo/ へフォールバックしたか
+  // - live_metrics: 自動定期収集データ 取得が /demo/ へフォールバックしたか
   // - monthly_report: Monthly Report 取得が /demo/ へフォールバックしたか
   // - user_upload: ユーザーが自分のファイルをアップロードした実データのため常に false (DEMO扱いしない)
   // 該当データが未取得の場合は undefined を返し、呼び出し側で静的ヒューリスティックにフォールバックできるようにする。
@@ -495,7 +495,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     };
   }, [activeSource, currentData, activeReportData]);
 
-  // 統合フィルター条件 (FilterCriteria) を適用した Live Metrics データ (SDD-15 準拠・完全再集計)
+  // 統合フィルター条件 (FilterCriteria) を適用した 自動定期収集データ (SDD-15 準拠・完全再集計)
   const filteredCurrentData = useMemo<ScopeAggregatedData | null>(() => {
     if (!currentData) return null;
     return queryLiveScope(currentData, filterCriteria);

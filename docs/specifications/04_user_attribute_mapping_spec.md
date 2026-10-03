@@ -242,7 +242,7 @@ To allow full inspection and validation of multi-axis breakdowns (Department, Co
 ### 7.2 Architecture and Specification
 1. **In-Repository Fixture**:
    - `fixtures/demo/copilot-user-mapping.demo.json.gpg`
-   - Encrypts 94 synthetic mock user profiles (85 Live Metrics users + Monthly Usage Report users).
+   - Encrypts 94 synthetic mock user profiles (85 Auto-collected Data users + Monthly Usage Report users).
    - AES256 GPG symmetric encryption (default passphrase: `copilot-demo-secret-passphrase-2026`).
 2. **Automated Deployment**:
    - When `scripts/generate-demo-data.ts` runs, the encrypted fixture is deployed to both `data/demo/config/` and `dashboard/public/data/demo/config/`.

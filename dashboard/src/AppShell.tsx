@@ -83,7 +83,7 @@ export const AppShell: React.FC<AppShellProps> = ({ registry: defaultViewRegistr
     availableGroups: hookAvailableGroups,
   } = useDashboardData('live_metrics');
 
-  // ディープ分析用データ統合フック (Live Metrics / Monthly Report / User Upload 全対応)
+  // ディープ分析用データ統合フック (自動定期収集データ / Monthly Report / User Upload 全対応)
   const {
     profiles: deepAnalysisProfiles,
     sourceInfo: deepAnalysisSourceInfo,

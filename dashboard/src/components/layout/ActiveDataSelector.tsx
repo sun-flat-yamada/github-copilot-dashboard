@@ -26,7 +26,7 @@ import {
 interface ActiveDataSelectorProps {
   activeSource: DataSourceType;
   onSelectSource: (source: DataSourceType) => void;
-  // Live Metrics スコープ
+  // 自動定期収集データ スコープ
   indexMeta: IndexMetadata | null;
   scopeType: AnalysisScopeType;
   selectedScopeKey: string;

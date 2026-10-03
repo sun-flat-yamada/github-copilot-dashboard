@@ -65,7 +65,7 @@ interface DashboardHeaderProps {
   /** 表示モードを明示的に切り替える。true=デモ / false=実データ (バッジのクリック時に現在の逆を渡す) */
   onToggleDemoMode?: (forcedMode?: boolean) => void;
   /**
-   * 現在アクティブに選択されているデータソース (Live Metrics / Monthly Report / User Upload) が
+   * 現在アクティブに選択されているデータソース (自動定期収集データ / Monthly Report / User Upload) が
    * 実際に DEMO データを表示しているかどうか (取得元がデモパス、または index.json が is_mock_mode を宣言)。
    * isDemoMode (グローバルな既定ディレクトリ選好) とは独立しており、他ソースが DEMO であっても
    * アクティブソースが実データであれば false になる。未取得時は undefined
@@ -174,7 +174,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-amber-500/15 border border-amber-500/40 text-amber-300 shadow-sm whitespace-nowrap select-none ${
                     onToggleDemoMode ? 'cursor-pointer hover:bg-amber-500/25 transition-colors' : 'cursor-help'
                   }`}
-                  title="【DEMO / Mock モード】現在アクティブに選択中のデータ (Live Metrics / Monthly Report / User Upload) はシミュレーション用の架空（デモ用）データです。クリックで既定のLIVEデータ/DEMOデータを切り替え可能です。"
+                  title="【DEMO / Mock モード】現在アクティブに選択中のデータ (自動収集データ / 月次レポート / オンデマンドCSV) はシミュレーション用の架空（デモ用）データです。クリックで既定のLIVEデータ/DEMOデータを切り替え可能です。"
                 >
                   <span className="relative flex h-1.5 w-1.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>

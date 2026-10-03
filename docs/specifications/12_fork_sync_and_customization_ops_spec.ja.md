@@ -263,7 +263,7 @@ jobs:
 
 ### 3.4 DEMO データの初期導入・同期手順 (Fork DEMO Dataset Provisioning & Sync)
 GitHub UI から Fork を作成した場合、デフォルトで「Copy the main branch only」が有効となっているため、Fork 直後は `copilot-data` ブランチ（およびデータファイル全般）が存在しません。
-Fork 先でダッシュボードの表示確認や開発・テストを即座に行うため、本家リポジトリから Live Metrics DEMO データ（2026年最新仕様）を取り込むターンキーコマンドが提供されています。
+Fork 先でダッシュボードの表示確認や開発・テストを即座に行うため、本家リポジトリから自動定期収集 DEMO データ（2026年最新仕様）を取り込むターンキーコマンドが提供されています。
 
 #### 3.4.1 ワンコマンド導入 (`npm run demo:setup`)
 ```bash
