@@ -20,6 +20,7 @@ import type {
   ScopeAggregatedData,
 } from '../../../src/types/copilot';
 import type { DataQualityHistory } from '../../../src/domain/entities/data-quality';
+import type { MonthCloseIndex, MonthCloseRecord } from '../../../src/domain/entities/month-close';
 import { fetchDataWithFallback, getCandidateDataUrls, resolveDataPath } from '../utils/pathResolver';
 
 export type DatasetState = 'ok' | 'partial' | 'failed' | 'demo';
@@ -282,4 +283,31 @@ export async function loadQualityHistoryDataset(baseDir: string): Promise<Datase
     demoSourced,
     error: null,
   };
+}
+
+async function loadCloseFile<T>(baseDir: string, file: string): Promise<DatasetResult<T>> {
+  const candidates = getCandidateDataUrls(baseDir, 'closes', file);
+  const result = await fetchJson<T>(candidates);
+  if ('error' in result) return failed(result.error);
+  const demoSourced = isDemoUrl(result.url) || baseDir.includes('/demo');
+  return {
+    state: deriveDatasetState({ demoSourced, partial: false }),
+    data: result.data,
+    url: result.url,
+    demoSourced,
+    error: null,
+  };
+}
+
+/**
+ * 月次締めの一覧 (closes/index.json, P4-2)。数値・日付・チェックサムのみ。
+ * 無い・読めないときは failed (締め済みの月を作らない)。
+ */
+export function loadMonthCloseIndexDataset(baseDir: string): Promise<DatasetResult<MonthCloseIndex>> {
+  return loadCloseFile<MonthCloseIndex>(baseDir, 'index.json');
+}
+
+/** 1 か月分の確定スナップショットと改訂履歴 (closes/{month}.json, P4-2) */
+export function loadMonthCloseRecordDataset(baseDir: string, month: string): Promise<DatasetResult<MonthCloseRecord>> {
+  return loadCloseFile<MonthCloseRecord>(baseDir, `${month}.json`);
 }
