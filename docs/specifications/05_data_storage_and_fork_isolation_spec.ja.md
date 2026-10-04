@@ -111,6 +111,10 @@ data/
 │   └── reports/
 │       ├── 2026-08.json              # 月次レポート集計済みデータ
 │       └── 2026-09.json
+└── audit/                            # 利用者単位の監査データ。Pages には配信しない (P4-3, SDD-17 §4)
+    ├── seat-events/
+    │   └── 2026-09.json              # シート監査イベント（検出日の月）
+    └── exports/                      # 権限のある閲覧者向けの CSV 出力
 ```
 
 ### 2.1 DEMO専用データ格納パーティション (`data/demo/`)
@@ -250,6 +254,10 @@ data/raw/landing/
 - 元の `closed` 版は書き換えない。改訂は理由・実行 ID・時刻・差分つきで追記する。
 - `npm run month:verify` は、保存済みの数値が改訂の記録なしに現在の版と違うと失敗する。
 - ファイルは `data/processed/` の他のファイルと同じく `copilot-data` に置く（`main` には置かない）。
+
+### 2.8 シート監査ファイル (`audit/seat-events/`, P4-3)
+
+`audit/seat-events/{YYYY-MM}.json` は、`raw/` の日次シートスナップショットから生成したシート監査イベントを持つ（SDD-17 §4）。`processed/` と違い**利用者単位のデータ**なので、`processed/` の外に置き、`pages:stage` の許可リストには**載せず**、`dashboard/public/data/` へも複製せず、`dist/data/` に `audit` があれば `pages:verify` が失敗する。`ForkSafeStorage.saveSeatAuditMonth` が書き、`copilot-data` の `raw/` と同じ場所に置く（リポジトリと同じ公開範囲。`fork:verify` の公開範囲検査が守る。`main` には置かない）。
 
 ## 3. インデックスメタデータ (`index.json`) 仕様
 

@@ -7,7 +7,7 @@
 - **Document ID**: SPEC-COPILOT-017
 - **Status**: Approved / Active (grows with Phase 4; sections are added by P4-2 to P4-6)
 - **Target Version**: 2026.10
-- **Date**: 2026-10-04 (P4-1 / #197: audit and data quality view; P4-2 / #198: monthly close and revisions)
+- **Date**: 2026-10-04 (P4-1 / #197: audit and data quality view; P4-2 / #198: monthly close and revisions; P4-3 / #199: seat audit events)
 - **Related**: [SDD-05 §2.3 / §2.5 / §2.7](05_data_storage_and_fork_isolation_spec.md), [SDD-07 §2.19](07_dashboard_ui_ux_spec.md), [SDD-16 Data Contract & Metric Catalog](16_data_contract_and_metric_catalog_spec.md)
 
 ---
@@ -22,6 +22,7 @@ The dashboard is used inside the company to explain Copilot cost and usage. An o
 | Revisions after close | Allowed, with history | §3 (P4-2) |
 | Raw data retention | 5 years (60 months); `data_retention` defaults to 60 months | P4-6 |
 | Personal data | Audit screens and exports carry counts, dates and source names only | P4-1 (this document §2) |
+| Seat history | Grants, revocations, plan changes and last-activity changes are recorded from daily seat snapshots and exported as CSV for authorized internal reviewers; never published | §4 (P4-3) |
 
 ## 2. Audit & Data Quality View (P4-1 / E-01)
 
@@ -71,6 +72,54 @@ The **figures** of the month: numeric values of the monthly scope `overview` (se
 - **1-year trend (SDD-06 §4.6)**: a month is `closed` only when a close snapshot exists; the close day alone is not enough. `points[].revision_count` shows revisions after the close.
 - **Audit view (SDD-07 §2.19)**: per month the close day, confirmed time, checksum and revision count; each revision with reason, run id, actor, time and the **diff table** (before / after / difference). The JSON is `closes/{month}.json`. Unavailable data is shown as 「—（reason）」.
 
-## 4. Planned Sections (not yet specified)
+## 4. Seat Audit Events and CSV Export (P4-3 / E-02)
 
-Sheet audit events and CSV export (P4-3), billing reconciliation (P4-4), definition-driven reports (P4-5), privacy tiers and retention policy (P4-6) are specified here when each task lands.
+An audit must be able to answer "when was a seat granted to whom, and when was it revoked or changed". The events are derived from the **daily seat snapshots** (the `seats` of the Raw partitions `raw/YYYY/MM/YYYY-MM-DD-raw.json`) by comparing each snapshot with the previous one.
+
+### 4.1 Events
+
+| `type` | Generated when | `from` → `to` |
+|:--|:--|:--|
+| `granted` | a login is in the snapshot and not in the previous one | `null` → plan |
+| `revoked` | a login was in the previous snapshot and is gone | plan → `null` |
+| `plan_changed` | `plan_type` differs (`business` / `enterprise`; an unknown value is `unknown`, never guessed) | old plan → new plan |
+| `last_activity_changed` | the **date** (`YYYY-MM-DD`) of `last_activity_at` differs (the time of day is ignored) | old date / `null` → new date / `null` |
+
+- Event fields: `event_id`, `day` (the day of the newer snapshot = detection day), `type`, `user`, `organization`, `previous_snapshot_day`, `from`, `to`. **Nothing else** about a person is stored: no display name, email, department, numeric user ID, avatar or profile URL.
+- `event_id` = first 16 hex of SHA-256 over `day`, `type`, `user`, `from`, `to`: the same difference always yields the same id, so regeneration never duplicates an event.
+- The **first snapshot is the baseline** (no events). If a day has no readable partition, the next readable one is compared with the last readable one; `previous_snapshot_day` shows the gap. Events show when a change was *detected*, which can be later than when it happened if the pipeline did not run in between.
+- A login that is returned twice in one snapshot counts once (the last row wins).
+
+### 4.2 Generation and storage
+
+- `SeatAuditService.update()` runs in every pipeline run right after the Raw partition is saved (not in a reprocess, which never rewrites Raw). It processes only the snapshot pairs after the last processed day (`through`) and merges by `event_id`. A failure becomes a warning issue `audit:seat-events` and never stops the pipeline. `npm run seat-audit:update [-- --rebuild]` runs the same job on its own; `--rebuild` recomputes every pair (idempotent).
+- File `audit/seat-events/{YYYY-MM}.json` (month of detection): `schema_version`, `month`, `pseudonymized`, `through`, `events[]` (sorted by `day`, `type`, `user`). It is **outside `processed/`** and is never copied to the public (Pages) directory.
+- `pseudonymized` is derived from the data: `true` only if every login of the input snapshots is a pseudonym (`dev_<16 hex>`) with numeric ID 0 and no avatar, i.e. the Raw partitions were stored in `ANONYMIZE_USERS=true` mode (SDD-04 §5.2). One real login makes the month document `false` (safe side).
+
+### 4.3 Publication scope (zero PII)
+
+| Where | Seat audit events | Why |
+|:--|:--|:--|
+| GitHub Pages / `dist/data/` | **Never** | `audit/` is not on the `pages:stage` allow-list, and `pages:verify` fails if `audit` appears in `dist/data/` (`FORBIDDEN_DIST_PATHS`) |
+| `copilot-data` branch | Yes, like `raw/` | Same visibility as the repository. The existing `fork:verify` exposure check guards it through `index.json` `privacy` (`contains_user_level_data` / `anonymized`); it is not weakened or bypassed |
+| `main` branch | **Never** | Data isolation (SDD-05) |
+| Issues, PRs, chat | **Never** | The CSV is handed to authorized internal reviewers only |
+
+- Real, non-pseudonymized events (real GitHub logins) are valid only where the repository and Pages are private / internal and access-controlled (SDD-04 §5 premise), or the deployment runs with `ANONYMIZE_USERS=true` and a strong `ANONYMIZE_SECRET`. In pseudonymized mode the events carry HMAC pseudonyms only; raw seat data, avatar URLs, numeric IDs and original CSVs are never published. Pseudonyms are still personal data (SDD-04 §5.2 limits).
+- Retention follows the raw-data retention (60 months, enforced by P4-6).
+
+### 4.4 CSV export
+
+`npm run seat-audit:export -- --month YYYY-MM` (or `--from YYYY-MM-DD --to YYYY-MM-DD`), optional `--types granted,revoked,plan_changed,last_activity_changed` and `--out <file>` (default `data/audit/exports/seat-events-{from}_{to}.csv`).
+
+| Item | Rule |
+|:--|:--|
+| Encoding / line ending | UTF-8 **with BOM** (Excel opens it correctly), **CRLF** |
+| Columns (fixed order; new columns only at the end) | `event_id`, `day`, `type`, `user`, `organization`, `previous_snapshot_day`, `from`, `to` |
+| Quoting | RFC 4180: a cell with a comma, double quote or line break is quoted; `"` is doubled |
+| CSV injection | A cell that starts with `=`, `+`, `-`, `@`, tab or CR gets a leading `'` so a spreadsheet never evaluates it as a formula. Applies to every cell |
+| Warning | The command states whether the file holds pseudonyms only or real logins and that it must be shared only with authorized reviewers |
+
+## 5. Planned Sections (not yet specified)
+
+Billing reconciliation (P4-4), definition-driven reports (P4-5), privacy tiers and retention policy (P4-6) are specified here when each task lands.

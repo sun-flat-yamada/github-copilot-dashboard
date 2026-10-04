@@ -144,6 +144,7 @@ A person's department / cost center changes when they transfer. A mapping withou
 |---|---|---|
 | `main` branch | Source code only (no data, no mapping) | Repository visibility |
 | `copilot-data` branch (same repository) | `processed/*` (resolved display names, departments, tags, per-user usage and diagnostics), `raw/*` (seat assignments with GitHub login, numeric user ID, avatar URL), imported report CSVs | **Same as the repository.** A public repository publishes this branch. |
+| `copilot-data` branch: `audit/seat-events/*` (P4-3) | Seat audit events (grant / revoke / plan change / last-activity change per login; the login is a pseudonym in `ANONYMIZE_USERS=true` mode). Outside `processed/`, so it is never staged | Same as the repository. **Never published on Pages** (`pages:verify` fails if `audit` is in `dist/data/`). CSV export: authorized internal reviewers only (SDD-17 §4) |
 | GitHub Pages artifact | `index.json`, `processed/*` flattened into the site root | **Public by default even when the repository is private**, unless access-controlled Pages (GitHub Enterprise Cloud) is used |
 
 Treat the repository **and** the Pages site as the publication boundary of the data: under the premise both are restricted to enterprise members (internal / private repository; access-controlled Pages).

@@ -110,6 +110,10 @@ data/
 │   └── reports/
 │       ├── 2026-08.json              # Monthly report precomputed data
 │       └── 2026-09.json              # Monthly report precomputed data
+└── audit/                            # User-level audit data, NOT published on Pages (P4-3, SDD-17 §4)
+    ├── seat-events/
+    │   └── 2026-09.json              # Seat audit events (month of detection)
+    └── exports/                      # CSV exports for authorized reviewers
 ```
 
 ### 2.1 Dedicated DEMO Data Partition (`data/demo/`)
@@ -249,6 +253,10 @@ Built on every run from the stored `processed/monthly/{YYYY-MM}.json` files (nev
 - The original `closed` version is never rewritten; revisions are appended with reason, run id, time and diff.
 - `npm run month:verify` fails when a stored figure differs from the current version without a recorded revision.
 - The files live in `copilot-data` with the rest of `data/processed/` (never in `main`).
+
+### 2.8 Seat Audit Files (`audit/seat-events/`, P4-3)
+
+`audit/seat-events/{YYYY-MM}.json` holds the seat audit events generated from the daily seat snapshots in `raw/` (SDD-17 §4). Unlike `processed/`, it is **user-level data**: it is outside `processed/`, is **not** on the `pages:stage` allow-list, is never copied to `dashboard/public/data/`, and `pages:verify` fails if `audit` appears in `dist/data/`. It is written by `ForkSafeStorage.saveSeatAuditMonth` and lives in `copilot-data` with `raw/` (same visibility as the repository, guarded by the `fork:verify` exposure check; never in `main`).
 
 ## 3. Metadata Index (`index.json`) Specification
 
