@@ -12,7 +12,7 @@
  * - verify: ビルド成果物 dist/data/ に、ステージ対象が揃っていること・公開してはならないものが
  *           含まれていないことを検査する (CI で失敗させる)
  *
- * 公開してよいもの: index.json / error-log.json / processed/{monthly,reports,deep-analysis,trends,custom}/*.json、
+ * 公開してよいもの: index.json / error-log.json / processed/{monthly,reports,deep-analysis,trends,custom,quality,closes}/*.json、
  *                   processed/daily/ は index.json の available_days に載っている日のみ (UI が参照する範囲)。
  * 公開しないもの:   raw/ (未加工の API 応答)、reports/ (取り込んだ CSV の原本)、config/ (暗号化済みユーザーマッピング) など。
  */
@@ -28,7 +28,7 @@ export interface StagingEntry {
 }
 
 /** processed/ 直下で配信ルートへ展開するディレクトリ (daily は別扱い) */
-export const STAGED_PROCESSED_DIRS = ['monthly', 'reports', 'deep-analysis', 'trends', 'custom', 'quality'] as const;
+export const STAGED_PROCESSED_DIRS = ['monthly', 'reports', 'deep-analysis', 'trends', 'custom', 'quality', 'closes'] as const;
 
 /** 配信物に含めてはならないトップレベルのパス (dist/data/ からの相対) */
 export const FORBIDDEN_DIST_PATHS = ['raw', 'config', path.join('reports', 'monthly')] as const;

@@ -12,8 +12,8 @@ export const STATUS_LABEL: Record<YearlyTrendStatus, string> = {
 };
 
 const STATUS_NOTE: Record<YearlyTrendStatus, string> = {
-  closed: '締め日を過ぎた月',
-  provisional: '締め前の月 (値は変わり得る)',
+  closed: '月次締めで確定した月 (改訂は履歴に残る)',
+  provisional: '確定前の月 (値は変わり得る)',
   missing: '保存済みの集計がない月 (0 ではない)',
 };
 
@@ -73,9 +73,11 @@ export const YearlyTrendPanel: React.FC<YearlyTrendPanelProps> = ({ dataset, err
   const rows = toChartRows(points);
   const counts = { closed: 0, provisional: 0, missing: 0 };
   for (const p of points) counts[p.status] += 1;
+  const revised = points.filter((p) => (p.revision_count ?? 0) > 0).length;
   const latest = [...points].reverse().find((p) => p.entry);
   const summary =
     `${points[0].month} から ${points[points.length - 1].month} までの 12 か月。確定 ${counts.closed} か月、暫定 ${counts.provisional} か月、欠損 ${counts.missing} か月。` +
+    (revised > 0 ? `確定後に改訂された月が ${revised} か月ある (監査ビューで履歴と差分を確認できる)。` : '') +
     (latest ? `最新の月 (${latest.month}) の利用費用は ${usd(latest.entry!.total_spend_usd)}。` : '');
 
   return (
@@ -120,7 +122,7 @@ export const YearlyTrendPanel: React.FC<YearlyTrendPanelProps> = ({ dataset, err
         ]}
         rows={points.map((p) => ({
           month: p.month,
-          status: `${STATUS_LABEL[p.status]}${p.status === 'closed' ? '' : p.status === 'provisional' ? ` (締め日 ${p.closes_on})` : ''}`,
+          status: `${STATUS_LABEL[p.status]}${p.status === 'closed' ? (p.revision_count ? ` (改訂 ${p.revision_count} 回)` : '') : p.status === 'provisional' ? ` (締め日 ${p.closes_on})` : ''}`,
           spend: p.entry ? usd(p.entry.total_spend_usd) : '—（保存済み集計なし）',
           spend_yoy: formatYoy(p.yoy.total_spend_usd, usd),
           seats: p.entry ? `${p.entry.active_seats}` : '—（保存済み集計なし）',

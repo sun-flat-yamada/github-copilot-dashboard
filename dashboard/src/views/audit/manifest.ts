@@ -5,7 +5,7 @@ const manifest: ViewManifest = {
   id: 'audit',
   label: '監査',
   title: '監査・データ品質',
-  description: '収集の実行履歴・ソース別の状態・品質チェックの履歴',
+  description: '収集の実行履歴・ソース別の状態・品質チェックの履歴・月次締めと改訂履歴',
   iconName: 'ShieldCheck',
   order: 100,
   supportedDataSources: ['live_metrics', 'monthly_report', 'user_upload'],

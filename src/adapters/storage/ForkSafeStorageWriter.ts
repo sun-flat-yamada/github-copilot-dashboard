@@ -1,4 +1,5 @@
 import type { DataQualityHistory } from '../../domain/entities/data-quality.js';
+import type { MonthCloseIndex, MonthCloseRecord } from '../../domain/entities/month-close.js';
 import { IStorageWriter } from '../../domain/ports/IStorageWriter.js';
 import {
   CopilotDailyMetrics,
@@ -60,6 +61,22 @@ export class ForkSafeStorageWriter implements IStorageWriter {
 
   loadDataQualityHistory(): DataQualityHistory | null {
     return this.storage.loadDataQualityHistory();
+  }
+
+  saveMonthClose(record: MonthCloseRecord, index: MonthCloseIndex): void {
+    this.storage.saveMonthClose(record, index);
+  }
+
+  loadMonthClose(month: string): MonthCloseRecord | null {
+    return this.storage.loadMonthClose(month);
+  }
+
+  getClosedMonths(): string[] {
+    return this.storage.getClosedMonths();
+  }
+
+  loadReportData(month: string): MonthlyReportAggregatedData | null {
+    return this.storage.loadReportData(month);
   }
 
   saveIndex(metadata: IndexMetadata): void {

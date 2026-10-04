@@ -348,7 +348,7 @@ export const METRIC_REGISTRY = {
     window: 'point_in_time',
     filterable: false,
     sources: ['processed/monthly', 'trends/rolling-1year'],
-    caveats: ['締め日 (翌月第 5 営業日) 前の月は暫定値', '前年同月が 0 のときは変化率を出さない', 'フィルターでは絞り込まれない (全社値)'],
+    caveats: ['月次締め (翌月第 5 営業日) で確定するまでの月は暫定値', '前年同月が 0 のときは変化率を出さない', 'フィルターでは絞り込まれない (全社値)'],
     defaultQuality: 'measured',
   },
   yoy_active_seats_change: {
@@ -360,7 +360,7 @@ export const METRIC_REGISTRY = {
     window: 'point_in_time',
     filterable: false,
     sources: ['processed/monthly', 'trends/rolling-1year'],
-    caveats: ['締め日 (翌月第 5 営業日) 前の月は暫定値', 'フィルターでは絞り込まれない (全社値)'],
+    caveats: ['月次締め (翌月第 5 営業日) で確定するまでの月は暫定値', 'フィルターでは絞り込まれない (全社値)'],
     defaultQuality: 'measured',
   },
 } as const satisfies Record<string, MetricDefinition>;

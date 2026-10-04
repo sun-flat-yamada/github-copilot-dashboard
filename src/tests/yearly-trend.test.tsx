@@ -5,7 +5,6 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import {
   buildYearlyTrend,
   monthCloseDate,
-  monthCloseStatus,
   shiftMonth,
   yearlyTrendMonthsNeeded,
   YEARLY_TREND_CLOSE_RULE,
@@ -27,7 +26,6 @@ function entry(month: string, over: Partial<RollingTrendEntry> = {}): RollingTre
     ...over,
   };
 }
-const at = (iso: string) => new Date(`${iso}T12:00:00Z`);
 
 describe('month close rule (5th business day of the next month)', () => {
   it('skips weekends: 2026-09 closes on 2026-10-07 (Oct 1 is Thursday)', () => {
@@ -38,14 +36,6 @@ describe('month close rule (5th business day of the next month)', () => {
     // Jan 2027: Fri 1, Mon 4, Tue 5, Wed 6, Thu 7
     assert.equal(monthCloseDate('2026-12'), '2027-01-07');
   });
-  it('boundary: the day before is provisional, the close day itself is closed', () => {
-    assert.equal(monthCloseStatus('2026-09', at('2026-10-06')), 'provisional');
-    assert.equal(monthCloseStatus('2026-09', at('2026-10-07')), 'closed');
-  });
-  it('the current month is provisional; old months are closed', () => {
-    assert.equal(monthCloseStatus('2026-10', at('2026-10-20')), 'provisional');
-    assert.equal(monthCloseStatus('2025-01', at('2026-10-20')), 'closed');
-  });
   it('shiftMonth crosses year boundaries both ways', () => {
     assert.equal(shiftMonth('2026-01', -1), '2025-12');
     assert.equal(shiftMonth('2026-12', 1), '2027-01');
@@ -55,7 +45,7 @@ describe('month close rule (5th business day of the next month)', () => {
 
 describe('buildYearlyTrend', () => {
   it('returns 12 consecutive calendar months ending at endMonth, oldest first', () => {
-    const points = buildYearlyTrend({ endMonth: '2026-09', entries: new Map(), now: at('2026-10-03') });
+    const points = buildYearlyTrend({ endMonth: '2026-09', entries: new Map(), closedMonths: new Map() });
     assert.equal(points.length, 12);
     assert.equal(points[0].month, '2025-10');
     assert.equal(points[11].month, '2026-09');
@@ -64,7 +54,7 @@ describe('buildYearlyTrend', () => {
 
   it('missing months are "missing" with null values, never 0', () => {
     const entries = new Map([['2026-09', entry('2026-09')], ['2026-07', entry('2026-07')]]);
-    const points = buildYearlyTrend({ endMonth: '2026-09', entries, now: at('2026-10-20') });
+    const points = buildYearlyTrend({ endMonth: '2026-09', entries, closedMonths: new Map() });
     const aug = points.find((p) => p.month === '2026-08')!;
     assert.equal(aug.status, 'missing');
     assert.equal(aug.entry, null);
@@ -73,13 +63,28 @@ describe('buildYearlyTrend', () => {
     assert.match(aug.yoy.total_spend_usd.reason!, /保存済み集計がない/);
   });
 
-  it('provisional vs closed follows the close date', () => {
+  it('closed means a close snapshot exists, not that the close date has passed', () => {
     const entries = new Map([['2026-08', entry('2026-08')], ['2026-09', entry('2026-09')]]);
-    const early = buildYearlyTrend({ endMonth: '2026-09', entries, now: at('2026-10-05') });
-    assert.equal(early.find((p) => p.month === '2026-08')!.status, 'closed');
-    assert.equal(early.find((p) => p.month === '2026-09')!.status, 'provisional');
-    const late = buildYearlyTrend({ endMonth: '2026-09', entries, now: at('2026-10-07') });
-    assert.equal(late.find((p) => p.month === '2026-09')!.status, 'closed');
+    // 2026-08 closed on 2026-09-08 but no snapshot yet; 2026-09 has one (revised once)
+    const points = buildYearlyTrend({ endMonth: '2026-09', entries, closedMonths: new Map([['2026-09', { revision_count: 1 }]]) });
+    const aug = points.find((p) => p.month === '2026-08')!;
+    const sep = points.find((p) => p.month === '2026-09')!;
+    assert.equal(aug.status, 'provisional');
+    assert.equal(aug.revision_count, undefined);
+    assert.equal(sep.status, 'closed');
+    assert.equal(sep.revision_count, 1);
+    assert.equal(sep.closes_on, '2026-10-07');
+  });
+
+  it('a configured holiday moves the close date shown on the point', () => {
+    const entries = new Map([['2026-09', entry('2026-09')]]);
+    const p = buildYearlyTrend({
+      endMonth: '2026-09',
+      entries,
+      closedMonths: new Map(),
+      calendar: { close_business_days: 5, weekend_days: [0, 6], holidays: ['2026-10-05'] },
+    }).at(-1)!;
+    assert.equal(p.closes_on, '2026-10-08');
   });
 
   it('year-over-year compares with the same month of the previous year', () => {
@@ -87,7 +92,7 @@ describe('buildYearlyTrend', () => {
       ['2025-09', entry('2025-09', { total_spend_usd: 800, active_seats: 20 })],
       ['2026-09', entry('2026-09', { total_spend_usd: 1000, active_seats: 30 })],
     ]);
-    const p = buildYearlyTrend({ endMonth: '2026-09', entries, now: at('2026-10-20') }).at(-1)!;
+    const p = buildYearlyTrend({ endMonth: '2026-09', entries, closedMonths: new Map() }).at(-1)!;
     assert.equal(p.prior_month, '2025-09');
     assert.equal(p.yoy.total_spend_usd.delta, 200);
     assert.equal(p.yoy.total_spend_usd.change_rate, 0.25);
@@ -97,7 +102,7 @@ describe('buildYearlyTrend', () => {
 
   it('no previous-year data: "—（reason）", not a comparison against 0', () => {
     const entries = new Map([['2026-09', entry('2026-09')]]);
-    const p = buildYearlyTrend({ endMonth: '2026-09', entries, now: at('2026-10-20') }).at(-1)!;
+    const p = buildYearlyTrend({ endMonth: '2026-09', entries, closedMonths: new Map() }).at(-1)!;
     assert.equal(p.yoy.total_spend_usd.delta, null);
     assert.equal(p.yoy.total_spend_usd.change_rate, null);
     assert.equal(p.yoy.total_spend_usd.reason, '前年同月のデータなし');
@@ -108,7 +113,7 @@ describe('buildYearlyTrend', () => {
       ['2025-09', entry('2025-09', { total_ai_credits_used: 0 })],
       ['2026-09', entry('2026-09', { total_ai_credits_used: 10 })],
     ]);
-    const y = buildYearlyTrend({ endMonth: '2026-09', entries, now: at('2026-10-20') }).at(-1)!.yoy.total_ai_credits_used;
+    const y = buildYearlyTrend({ endMonth: '2026-09', entries, closedMonths: new Map() }).at(-1)!.yoy.total_ai_credits_used;
     assert.equal(y.delta, 10);
     assert.equal(y.change_rate, null);
     assert.match(y.reason!, /0 のため/);
@@ -119,8 +124,8 @@ describe('buildYearlyTrend', () => {
       ['2025-09', entry('2025-09')],
       ['2026-09', entry('2026-09', { acceptance_rate: null, total_chats: null })],
     ]);
-    const p = buildYearlyTrend({ endMonth: '2026-09', entries, now: at('2026-10-20') }).at(-1)!;
-    assert.equal(p.status, 'closed');
+    const p = buildYearlyTrend({ endMonth: '2026-09', entries, closedMonths: new Map() }).at(-1)!;
+    assert.equal(p.status, 'provisional');
     assert.equal(p.yoy.acceptance_rate.delta, null);
     assert.match(p.yoy.acceptance_rate.reason!, /取得できていない/);
     assert.equal(p.yoy.total_spend_usd.delta, 0);
@@ -133,7 +138,11 @@ describe('YearlyTrendPanel', () => {
     ['2026-07', entry('2026-07')],
     ['2026-09', entry('2026-09', { total_spend_usd: 1200, acceptance_rate: null })],
   ]);
-  const points = buildYearlyTrend({ endMonth: '2026-09', entries, now: at('2026-10-03') });
+  const points = buildYearlyTrend({
+    endMonth: '2026-09',
+    entries,
+    closedMonths: new Map([['2025-09', { revision_count: 0 }], ['2026-07', { revision_count: 2 }]]),
+  });
   const dataset: RollingTrendDataset = {
     generated_at: '2026-10-03T00:00:00Z',
     months: [],
@@ -156,7 +165,8 @@ describe('YearlyTrendPanel', () => {
     assert.match(html, /data-testid="yearly-trend-legend"/);
     for (const label of ['確定', '暫定', '欠損']) assert.match(html, new RegExp(label));
     assert.match(html, /第 5 営業日/);
-    assert.match(html, /確定 \d+ か月、暫定 1 か月、欠損 \d+ か月/);
+    assert.match(html, /確定 1 か月、暫定 1 か月、欠損 \d+ か月/);
+    assert.match(html, /確定後に改訂された月が 1 か月/);
     assert.match(html, /data-testid="metric-label-yoy_spend_change"/);
   });
 
