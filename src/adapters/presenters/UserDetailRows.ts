@@ -9,6 +9,7 @@ import type {
   AnalysisScopeType,
   CopilotPlanType,
   MonthlyReportAggregatedData,
+  ReportUserDetail,
   ScopeAggregatedData,
   UsageInsight,
   UserSeatStatus,
@@ -22,6 +23,31 @@ import {
 } from '../../processor/usage-insight.js';
 
 export type UserDetailSource = 'live' | 'report';
+
+export interface TopModelShare {
+  model: string;
+  share: number | null;
+}
+
+export const TOP_MODELS_LIMIT = 3;
+
+/** モデル別の数量から上位 N 件と全体に対する比率を返す (数量 0 以下は除く) */
+export function topModelShares(counts: Record<string, number> | undefined, limit = TOP_MODELS_LIMIT): TopModelShare[] {
+  const entries = Object.entries(counts ?? {}).filter(([, n]) => n > 0);
+  const total = entries.reduce((sum, [, n]) => sum + n, 0);
+  if (total <= 0) return [];
+  entries.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  return entries.slice(0, limit).map(([model, n]) => ({ model, share: n / total }));
+}
+
+export function formatShare(share: number): string {
+  return `${Math.round(share * 100)}%`;
+}
+
+/** CSV / 検索用の文字列: `A 50%; B 30%; C 20%` (比率が無いモデルは名前のみ) */
+export function formatTopModels(models: TopModelShare[]): string {
+  return models.map((m) => (m.share === null ? m.model : `${m.model} ${formatShare(m.share)}`)).join('; ');
+}
 
 /** 全項目が必須。そのソースに無い値は null / false を明示し、キー集合はソースによらず同一 */
 export interface UserDetailRow {
@@ -47,6 +73,8 @@ export interface UserDetailRow {
 
   // 利用実績
   primary_model: string | null;
+  /** 利用量上位 (最大 3)。share は全モデル合計に対する比率 (0-1)。内訳が無く比率を出せないときは null */
+  top_models: TopModelShare[];
   /** 月次レポート: requests 系の数量。ライブ: Reports API に無いため null */
   requests: number | null;
   /** 以下 4 つはライブ (Reports API) のみ。月次レポートには無いため null */
@@ -123,6 +151,7 @@ export function buildLiveRows(data: ScopeAggregatedData, profiles: UserUsageProf
       prorated_daily_cost_usd: u.prorated_daily_cost_usd,
       notes: u.notes ?? null,
       primary_model: topModelOf(prof),
+      top_models: topModelShares(prof?.model_usage_totals),
       requests: null,
       suggestions: prof ? prof.total_suggestions : null,
       acceptances: prof ? prof.total_acceptances : null,
@@ -137,6 +166,15 @@ export function buildLiveRows(data: ScopeAggregatedData, profiles: UserUsageProf
   });
 
   return { source: 'live', rows, costUnitLabel, scopeKey: data.scope_key, scopeType };
+}
+
+/** 月次: requests 内訳 → 費用内訳 → 主利用モデルのみ (比率なし) の順で使う */
+function reportTopModels(u: ReportUserDetail): TopModelShare[] {
+  const byRequests = topModelShares(u.model_requests);
+  if (byRequests.length > 0) return byRequests;
+  const bySpend = topModelShares(u.model_spend_usd);
+  if (bySpend.length > 0) return bySpend;
+  return u.primary_model && u.primary_model !== 'None' ? [{ model: u.primary_model, share: null }] : [];
 }
 
 export function buildReportRows(data: MonthlyReportAggregatedData): UserDetailRowSet {
@@ -159,6 +197,7 @@ export function buildReportRows(data: MonthlyReportAggregatedData): UserDetailRo
     monthly_cost_usd: null,
     prorated_daily_cost_usd: null,
     primary_model: u.primary_model && u.primary_model !== 'None' ? u.primary_model : null,
+    top_models: reportTopModels(u),
     // requests 系の明細が無い (AI usage report のみ) ときは 0 件ではなく不明 (null)
     requests: u.usage_insight ? u.usage_insight.usage.requests : u.total_requests,
     suggestions: null,
