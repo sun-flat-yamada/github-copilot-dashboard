@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import * as assert from 'node:assert/strict';
-import { buildLiveRows, buildReportRows } from '../../../adapters/presenters/UserDetailRows.js';
+import { buildLiveRows, buildReportRows, formatTopModels } from '../../../adapters/presenters/UserDetailRows.js';
 import { accumulatorFromDailyHistory, computeOrgBaseline, computeUsageInsight } from '../../../processor/usage-insight.js';
 import { ReportParser } from '../../../processor/report-parser.js';
 import { MockDataGenerator } from '../../../collector/mock-generator.js';
@@ -122,6 +122,25 @@ describe('UserDetailRows: ライブと月次を同じ形式にそろえる', () 
     assert.equal(r.usage_insight?.usage.active_days, 6);
     assert.equal(r.usage_insight?.usage.credits, 600);
     assert.equal(r.usage_insight?.tokens, null, 'Reports API 由来にトークンは無い');
+  });
+
+  it('ライブ: 主利用モデルは上位3件を全体比(%)つきで返す', () => {
+    const p = { ...profile('a', 6), model_usage_totals: { m1: 50, m2: 30, m3: 15, m4: 5, m0: 0 } };
+    const r = buildLiveRows(scope([seat('a')]), [p]).rows[0];
+    assert.deepEqual(r.top_models, [
+      { model: 'm1', share: 0.5 },
+      { model: 'm2', share: 0.3 },
+      { model: 'm3', share: 0.15 },
+    ]);
+    assert.equal(formatTopModels(r.top_models), 'm1 50%; m2 30%; m3 15%');
+  });
+
+  it('月次: 内訳が無ければ主利用モデルのみ (比率は null)', () => {
+    const rows = buildReportRows(report).rows;
+    for (const r of rows) {
+      if (r.primary_model) assert.ok(r.top_models.length >= 1);
+      else assert.deepEqual(r.top_models, []);
+    }
   });
 
   it('ライブ: プラン未確定のシートは費用を算定せず null (0 と区別)', () => {

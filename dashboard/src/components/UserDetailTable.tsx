@@ -39,6 +39,8 @@ import {
   buildReportRows,
   UserDetailRow,
   UserDetailRowSet,
+  formatShare,
+  formatTopModels,
 } from '../../../src/adapters/presenters/UserDetailRows';
 import { PERSONAL_METRICS_NOTICE } from '../../../src/domain/metrics/metric-registry';
 import { describeInsightTooltip } from '../../../src/processor/usage-insight-definitions';
@@ -403,7 +405,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
         u.plan ?? '',
         u.status ?? '',
         u.days_inactive === null ? '' : u.days_inactive === 999 ? 'N/A' : u.days_inactive,
-        q(u.primary_model ?? ''),
+        q(formatTopModels(u.top_models)),
         n(u.requests),
         n(u.suggestions),
         n(u.acceptances),
@@ -970,9 +972,21 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                         unavailable(UNAVAILABLE_REASON.noProfile, 'left')
                       ) : (
                         <td className="px-2.5 py-2">
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-950/60 text-purple-300 border border-purple-800/50">
-                            {u.primary_model}
-                          </span>
+                          <div className="flex flex-col gap-0.5 items-start">
+                            {(u.top_models.length > 0 ? u.top_models : [{ model: u.primary_model, share: null }]).map((m, i) => (
+                              <span
+                                key={m.model}
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${
+                                  i === 0
+                                    ? 'bg-purple-950/60 text-purple-300 border-purple-800/50'
+                                    : 'bg-slate-800/60 text-slate-300 border-slate-700/50'
+                                }`}
+                              >
+                                {m.model}
+                                {m.share !== null && ` ${formatShare(m.share)}`}
+                              </span>
+                            ))}
+                          </div>
                         </td>
                       )}
 
