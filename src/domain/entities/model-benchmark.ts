@@ -157,6 +157,10 @@ export interface BenchmarkSourceMeta {
 
 export interface BenchmarkDataset {
   version: string;
+  /** sha256 (first 16 hex chars) of the records, axis definitions and normalisation method (P3-7) */
+  content_hash?: string;
+  /** e.g. 'percentile-rank-v1': radar scores are percentile ranks within this dataset */
+  normalization_method?: string;
   last_updated: string;
   sources: BenchmarkSourceMeta[];
   axis_definitions: RadarAxisMeta[];
