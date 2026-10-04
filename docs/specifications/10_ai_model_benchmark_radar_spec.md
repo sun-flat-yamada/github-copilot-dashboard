@@ -176,12 +176,13 @@ The 6-axis comparison is drawn as a **radar chart** (recharts `RadarChart`, 0-10
 
 ### 4.2 GitHub Copilot Supported Models Roster (September 2026)
 
-Comprehensive roster covering all 43 evaluated frontier models (34 Copilot-supported + 9 classic/external controls) compliant with official GitHub Copilot documentation ([Supported models](https://docs.github.com/en/copilot/reference/ai-models/supported-models) and [Models & pricing](https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing)).
+Comprehensive roster covering all 45 evaluated frontier models (36 Copilot-supported + 9 classic/external controls) compliant with official GitHub Copilot documentation ([Supported models](https://docs.github.com/en/copilot/reference/ai-models/supported-models) and [Models & pricing](https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing)).
 
 #### 1. OpenAI (12 Models)
 | Model ID | Name | Tier | Status | Context | In / 1M | Out / 1M | Cache Read | Highlights |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `gpt-6-astra` | GPT-6 Astra | Powerful | GA | 272K (1M) | $10.00 | $50.00 | $2.50 | 2026 premier deep-reasoning flagship |
+| `gpt-6-1-sol` | GPT-6.1 Sol (estimated scores) | Powerful | GA | 1.05M | $2.00 | $10.00 | $0.10 | Newest Sol; benchmark scores are estimates (`is_estimated`) pending verified sources |
 | `gpt-6-sol` | GPT-6 Sol | Powerful | GA | 272K (1M) | $2.00 | $10.00 | $0.20 | New generation Powerful workhorse balancing capability and cost |
 | `gpt-6-luna` | GPT-6 Luna | Lightweight | GA | 272K (1M ※Caution) | $0.10 | $0.50 | $0.01 | Ultra-fast inline completions (※Note poor long-context retention) |
 | `gpt-5-6-sol` | GPT-5.6 Sol | Powerful | GA | 272K (1M) | $4.00 | $20.00 | $1.00 | GPT-5.6 workhorse for complex tasks |
@@ -200,6 +201,7 @@ Comprehensive roster covering all 43 evaluated frontier models (34 Copilot-suppo
 #### 2. Anthropic (11 Models)
 | Model ID | Name | Tier | Status | Context | In / 1M | Out / 1M | Cache Read/Write | Highlights |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `claude-sonnet-5-5` | Claude Sonnet 5.5 (estimated scores) | Versatile | GA | 200K (1M) | $2.00 | $10.00 | $0.20 / $2.50 | Newest Sonnet; benchmark scores are estimates (`is_estimated`) pending verified sources |
 | `claude-sonnet-5` | Claude Sonnet 5 | Powerful | GA | 200K (1M) | $2.00 | $10.00 | $0.20 / $2.50 | The standard flagship enterprise driver |
 | `claude-opus-5-5` | Claude Opus 5.5 | Powerful | GA | 200K (1M) | $4.00 | $20.00 | $0.20 / $5.00 | Next-generation flagship reasoning & enhanced steerability |
 | `claude-opus-5` | Claude Opus 5 | Powerful | GA | 200K (1M) | $5.00 | $25.00 | $0.50 / $6.25 | Deep architectural design & reasoning |
@@ -313,3 +315,5 @@ flowchart TD
   ```bash
   npm run typecheck && npm test && npm run secret-scan && npm run build
   ```
+
+> Records flagged `is_estimated: true` in `benchmark-records.json` have prices, context and dates from public announcements but scores without a verified source (estimated from sibling models). The radar view shows an "推測値" badge for them; replace the scores and drop the flag once verified.

@@ -60,14 +60,14 @@ export const PRESETS: RadarPreset[] = [
   {
     id: 'vendor-anthropic',
     name: '🟠 Anthropic 主力',
-    description: 'Claude Sonnet 5 / Claude Opus 5.5 / Claude Opus 5 / Claude Fable 5.1 / Claude Haiku 4.5 (Anthropic 2026最新)',
-    modelIds: ['claude-sonnet-5', 'claude-opus-5-5', 'claude-opus-5', 'claude-fable-5-1', 'claude-haiku-4-5'],
+    description: 'Claude Sonnet 5.5 / Claude Sonnet 5 / Claude Opus 5.5 / Claude Opus 5 / Claude Fable 5.1 / Claude Haiku 4.5 (Anthropic 2026最新)',
+    modelIds: ['claude-sonnet-5-5', 'claude-sonnet-5', 'claude-opus-5-5', 'claude-opus-5', 'claude-fable-5-1', 'claude-haiku-4-5'],
   },
   {
     id: 'vendor-openai',
     name: '🟢 OpenAI 主力',
-    description: 'GPT-6 Astra / GPT-6 Sol / GPT-5.6 Sol (OpenAI 2026主力ラインナップ)',
-    modelIds: ['gpt-6-astra', 'gpt-6-sol', 'gpt-5-6-sol'],
+    description: 'GPT-6 Astra / GPT-6.1 Sol / GPT-6 Sol / GPT-5.6 Sol (OpenAI 2026主力ラインナップ)',
+    modelIds: ['gpt-6-astra', 'gpt-6-1-sol', 'gpt-6-sol', 'gpt-5-6-sol'],
   },
   {
     id: 'vendor-google',

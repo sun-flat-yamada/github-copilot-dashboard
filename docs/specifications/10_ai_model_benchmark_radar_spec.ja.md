@@ -202,12 +202,13 @@ flowchart TD
 
 ### 4.2 GitHub Copilot 公式サポートモデル体系 (2026年最新)
 
-GitHub Copilot 公式ドキュメント（[Supported models](https://docs.github.com/ja/copilot/reference/ai-models/supported-models) および [Models and pricing](https://docs.github.com/ja/copilot/reference/copilot-billing/models-and-pricing)）に準拠した全モデル（34モデル＋クラシック/外部対照9モデル = 計43モデル）の仕様・単価体系を網羅。
+GitHub Copilot 公式ドキュメント（[Supported models](https://docs.github.com/ja/copilot/reference/ai-models/supported-models) および [Models and pricing](https://docs.github.com/ja/copilot/reference/copilot-billing/models-and-pricing)）に準拠した全モデル（36モデル＋クラシック/外部対照9モデル = 計45モデル）の仕様・単価体系を網羅。
 
 #### 1. OpenAI (12モデル)
 | モデルID | モデル名 | Tier | Status | Context | In単価 (/1M) | Out単価 (/1M) | キャッシュ単価 | 備考 |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `gpt-6-astra` | GPT-6 Astra | Powerful | GA | 272K (1M) | $10.00 | $50.00 | $2.50 | 2026最上位推論・極限思考フラッグシップ |
+| `gpt-6-1-sol` | GPT-6.1 Sol (推測値) | Powerful | GA | 1.05M | $2.00 | $10.00 | $0.10 | 最新 Sol。ベンチマークスコアは裏付けのない推測値 (`is_estimated`) |
 | `gpt-6-sol` | GPT-6 Sol | Powerful | GA | 272K (1M) | $2.00 | $10.00 | $0.20 | 高性能と手頃な単価を両立する新世代Powerful主力 |
 | `gpt-6-luna` | GPT-6 Luna | Lightweight | GA | 272K (1M ※長文注意) | $0.10 | $0.50 | $0.01 | 超高速・超低コストインライン補完（※長文性能注意） |
 | `gpt-5-6-sol` | GPT-5.6 Sol | Powerful | GA | 272K (1M) | $4.00 | $20.00 | $1.00 | GPT-5.6世代のPowerful主力 |
@@ -226,6 +227,7 @@ GitHub Copilot 公式ドキュメント（[Supported models](https://docs.github
 #### 2. Anthropic (11モデル)
 | モデルID | モデル名 | Tier | Status | Context | In単価 (/1M) | Out単価 (/1M) | キャッシュ読取/書込 | 備考 |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `claude-sonnet-5-5` | Claude Sonnet 5.5 (推測値) | Versatile | GA | 200K (1M) | $2.00 | $10.00 | $0.20 / $2.50 | 最新 Sonnet。ベンチマークスコアは裏付けのない推測値 (`is_estimated`) |
 | `claude-sonnet-5` | Claude Sonnet 5 | Powerful | GA | 200K (1M) | $2.00 | $10.00 | $0.20 / $2.50 | 全社標準の次世代絶対的主力 |
 | `claude-opus-5-5` | Claude Opus 5.5 | Powerful | GA | 200K (1M) | $4.00 | $20.00 | $0.20 / $5.00 | 次世代最高峰推論・制御性向上フラッグシップ |
 | `claude-opus-5` | Claude Opus 5 | Powerful | GA | 200K (1M) | $5.00 | $25.00 | $0.50 / $6.25 | 深層思考・極限アーキテクチャ設計 |
@@ -352,3 +354,5 @@ flowchart TD
   ```bash
   npm run typecheck && npm test && npm run secret-scan && npm run build
   ```
+
+> `benchmark-records.json` で `is_estimated: true` のレコードは、単価・コンテキスト・日付は公表値だが、スコアは検証可能な出典がなく同系統モデルからの推測値。レーダー画面に「推測値」バッジを表示する。検証後にスコアを差し替え、フラグを外す。

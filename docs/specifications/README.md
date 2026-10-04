@@ -26,7 +26,7 @@ flowchart TD
 
     subgraph D3["3. Analytics & Benchmarking"]
         S06["SDD-06 Aggregation & Billing Logic"]
-        S10["SDD-10 AI Benchmark Radar (43 Models)"]
+        S10["SDD-10 AI Benchmark Radar (45 Models)"]
         S11["SDD-11 Deep Analysis & AEDP Autonomy"]
     end
 
@@ -63,7 +63,7 @@ flowchart TD
 | **SDD-07** | Dashboard UI/UX Specification | [EN](07_dashboard_ui_ux_spec.md) \| [JA](07_dashboard_ui_ux_spec.ja.md) | Responsive layout, 80%×80% anomaly modal, Recharts visual design | Active (2026.09) |
 | **SDD-08** | Automation & CI/CD Workflow Specification | [EN](08_automation_workflow_spec.md) \| [JA](08_automation_workflow_spec.ja.md) | Actions cron, GitHub Pages zero-infra deployment, graceful fallbacks | Active (2026.09) |
 | **SDD-09** | Monthly Usage Report Mode Specification | [EN](09_monthly_usage_report_mode_spec.md) \| [JA](09_monthly_usage_report_mode_spec.ja.md) | Enterprise CSV usage report ingestion, month normalization, historical trends | Active (2026.09) |
-| **SDD-10** | AI Model Benchmark Radar Specification | [EN](10_ai_model_benchmark_radar_spec.md) \| [JA](10_ai_model_benchmark_radar_spec.ja.md) | 6-axis radar charts, 43 frontier models evaluation, token pricing | Active (2026.09) |
+| **SDD-10** | AI Model Benchmark Radar Specification | [EN](10_ai_model_benchmark_radar_spec.md) \| [JA](10_ai_model_benchmark_radar_spec.ja.md) | 6-axis radar charts, 45 frontier models evaluation, token pricing | Active (2026.09) |
 | **SDD-11** | Deep Analytics View Specification | [EN](11_deep_analysis_view_spec.md) \| [JA](11_deep_analysis_view_spec.ja.md) | Inefficient AI pattern diagnostics, AEDP autonomy depth metrics | Active (2026.09) |
 | **SDD-12** | Fork Synchronization & Operations Specification | [EN](12_fork_sync_and_customization_ops_spec.md) \| [JA](12_fork_sync_and_customization_ops_spec.ja.md) | Upstream sync runbooks (UI/CLI), dual-branch model, health audit | Active (2026.09) |
 | **SDD-13** | Fork-Restricted Environment Setup Guide | [EN](13_fork_restricted_environment_setup_guide.md) \| [JA](13_fork_restricted_environment_setup_guide.ja.md) | Mirror-based duplication procedure for EMU and restricted enterprises | Active (2026.09) |
