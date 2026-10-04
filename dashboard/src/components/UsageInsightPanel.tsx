@@ -29,7 +29,7 @@ export const UsageInsightPanel: React.FC<UsageInsightPanelProps> = ({ insight })
   const noTokens = tokens === null ? 'トークン列のない CSV のため' : '';
 
   return (
-    <div className="bg-slate-900/70 border-b border-slate-800 px-4 py-3 space-y-3 text-xs whitespace-normal" data-testid="usage-insight-panel">
+    <div className="bg-slate-900/70 border border-slate-800 rounded-xl px-4 py-3 space-y-3 text-xs whitespace-normal" data-testid="usage-insight-panel">
       <div className="flex flex-wrap items-center gap-2">
         <h4 className="text-xs font-bold text-white">使用量と効率</h4>
         <UsageSignalBadge level={insight.level} />

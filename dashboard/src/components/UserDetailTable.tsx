@@ -1124,7 +1124,6 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                       <tr key={`${u.login}-drilldown`} className="bg-slate-950">
                         <td colSpan={USER_DETAIL_COLUMN_COUNT} className="p-0 border-b-2 border-indigo-500/60 whitespace-normal">
                           <div className="sticky left-0 max-w-[calc(100vw-3.5rem)]">
-                            {u.usage_insight && <UsageInsightPanel insight={u.usage_insight} />}
                             <UserDrilldownPanel
                               login={u.login}
                               displayName={u.display_name}
@@ -1149,6 +1148,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                               onSelectUserForTrend={onSelectUserForTrend}
                               onSelectUserForDeepAnalysis={onSelectUserForDeepAnalysis}
                               onClose={() => setSelectedUserLogin(null)}
+                              insightSlot={u.usage_insight ? <UsageInsightPanel insight={u.usage_insight} /> : undefined}
                             />
                           </div>
                         </td>

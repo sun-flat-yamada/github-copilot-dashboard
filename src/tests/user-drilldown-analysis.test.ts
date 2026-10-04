@@ -96,8 +96,13 @@ describe('User Detail Table Inline Drilldown Analysis Tests', () => {
       /if \(userProfiles && userProfiles\.length > 0\) return userProfiles;\s*return data\?\.user_profiles \|\| \[\];/,
       'UserDetailTable must use only the measured profiles passed in (or the live scope data)'
     );
-    // 月次レポートの経路でも、兆候 (使用量と効率) をドリルダウンの上に出す
-    assert.match(content, /<UsageInsightPanel insight=\{u\.usage_insight\} \/>/);
+    // 月次レポートの経路でも、兆候 (使用量と効率) を出す。ユーザー情報ヘッダーの下 (タブの上) に差し込む
+    assert.match(content, /insightSlot=\{u\.usage_insight \? <UsageInsightPanel insight=\{u\.usage_insight\} \/> : undefined\}/);
+    const panel = fs.readFileSync(panelPath, 'utf-8');
+    assert.ok(
+      panel.indexOf('{displayName}') < panel.indexOf('{insightSlot}'),
+      'the user header must precede 使用量と効率'
+    );
   });
 
   it('verifies App.tsx passes deepAnalysisProfiles to user tables for unified multi-source diagnostics', () => {
