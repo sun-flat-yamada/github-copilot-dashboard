@@ -34,6 +34,7 @@ flowchart TD
         S07["SDD-07 Dashboard UI/UX & Fallbacks"]
         S15["SDD-15 Data-Centric Reactivity Design"]
         S16["SDD-16 Data Contract & Metric Catalog"]
+        S17["SDD-17 Audit & Report"]
     end
 
     subgraph D5["5. Operations & Fork Lifecycle"]
@@ -69,6 +70,7 @@ flowchart TD
 | **SDD-14** | Development Workflow & Git Ops Specification | [EN](14_development_workflow_and_git_ops_spec.md) \| [JA](14_development_workflow_and_git_ops_spec.ja.md) | Multi-agent parallel Worktree operations, Issue driven, PR & Rebase merge, permission model | Active (2026.09) |
 | **SDD-15** | Data-Centric Reactivity Design Specification | [EN](15_data_centric_reactivity_design_spec.md) \| [JA](15_data_centric_reactivity_design_spec.ja.md) | Cross-View tracking of active selected data (source/scope/tags), React implementation conventions, known anti-patterns | Active (2026.09) |
 | **SDD-16** | Data Contract & Metric Catalog Specification | [EN](16_data_contract_and_metric_catalog_spec.md) \| [JA](16_data_contract_and_metric_catalog_spec.ja.md) | Metric catalog v1 (definition / window / source of every KPI), personal-metric positioning | Active (2026.10) |
+| **SDD-17** | Audit & Report Specification | [EN](17_audit_and_report_spec.md) \| [JA](17_audit_and_report_spec.ja.md) | Audit requirements (monthly close, revisions, 60-month retention), audit & data quality view | Active (2026.10) |
 
 ---
 

@@ -34,6 +34,7 @@ flowchart TD
         S07["SDD-07 ダッシュボード UI/UX 仕様"]
         S15["SDD-15 データセントリック・リアクティビティ設計"]
         S16["SDD-16 データ契約 & 指標カタログ"]
+        S17["SDD-17 監査 & レポート"]
     end
 
     subgraph D5["5. 自動化運用 & Fork保守ライフサイクル"]
@@ -69,6 +70,7 @@ flowchart TD
 | **SDD-14** | 開発運用ワークフロー & Git Ops 仕様書 | [JA](14_development_workflow_and_git_ops_spec.ja.md) \| [EN](14_development_workflow_and_git_ops_spec.md) | 複数AIエージェント並行Worktree運用、Issue起票、PR作成、Rebaseマージ、権限制御 | 正式運用 (2026.09) |
 | **SDD-15** | データセントリック・リアクティビティ設計仕様書 | [JA](15_data_centric_reactivity_design_spec.ja.md) \| [EN](15_data_centric_reactivity_design_spec.md) | 各Viewのアクティブ選択データ（データソース/スコープ/タグ）への追従原則、React実装規約、既知アンチパターン | 正式運用 (2026.09) |
 | **SDD-16** | データ契約 & 指標カタログ仕様書 | [JA](16_data_contract_and_metric_catalog_spec.ja.md) \| [EN](16_data_contract_and_metric_catalog_spec.md) | 指標カタログ v1 (全 KPI の定義・窓・出典)、個人指標の位置づけ | 正式運用 (2026.10) |
+| **SDD-17** | 監査 & レポート仕様書 | [JA](17_audit_and_report_spec.ja.md) \| [EN](17_audit_and_report_spec.md) | 監査要件（月次締め・改訂・60 か月保持）、監査・データ品質ビュー | 正式運用 (2026.10) |
 
 ---
 
