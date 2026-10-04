@@ -18,6 +18,7 @@ permissions:
   contents: write      # copilot-data 独立ブランチへのデータ蓄積コミット用
   pages: write         # GitHub Pages へのデプロイ用
   id-token: write      # GitHub Pages OIDCトークン用
+  issues: write        # 請求突合の許容差超過を issue 化する用 (billing:issues)
 
 concurrency:
   group: 'pages'
@@ -155,6 +156,8 @@ jobs:
           COPILOT_BILLING_CONFIG: ${{ vars.COPILOT_BILLING_CONFIG || secrets.COPILOT_BILLING_CONFIG }}
           # 月次締めの営業日カレンダー (JSON、任意)。未設定なら翌月の第 5 営業日・土日休み。不正な値は issue として記録される
           COPILOT_BUSINESS_CALENDAR: ${{ vars.COPILOT_BUSINESS_CALENDAR }}
+          # 請求突合の許容差 (JSON、既定 1 USD かつ 1 %)。不正な値は issue として記録され既定値になる
+          COPILOT_RECONCILIATION_TOLERANCE: ${{ vars.COPILOT_RECONCILIATION_TOLERANCE }}
           # 匿名化 (仮名化)。ANONYMIZE_USERS=true のときは秘密鍵 ANONYMIZE_SECRET (16 文字以上) が必須 (無ければ停止する)
           ANONYMIZE_USERS: ${{ vars.ANONYMIZE_USERS }}
           ANONYMIZE_SECRET: ${{ secrets.ANONYMIZE_SECRET }}
@@ -168,6 +171,18 @@ jobs:
       - name: Update exchange-rate catalog (ECB monthly averages)
         # 失敗しても既存カタログを保ったまま続行する (換算は表示の補助)
         run: npm run catalog:fx
+
+      - name: File billing reconciliation issues (tolerance exceeded)
+        # 計算額と Billing API の金額 (AI Credits) の差が許容差を超えた月を issue にする (同じ月は重複しない)。
+        # 許容差は COPILOT_RECONCILIATION_TOLERANCE (JSON、既定 1 USD かつ 1 %)。失敗しても後続の保存・配信は止めない。
+        # 請求額は issue に載せない (公開リポジトリでは差額・割合も載せない)。SDD-17 §5
+        if: env.MOCK_MODE != 'true'
+        continue-on-error: true
+        env:
+          COPILOT_RECONCILIATION_TOLERANCE: ${{ vars.COPILOT_RECONCILIATION_TOLERANCE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: npm run billing:issues
 
       - name: Commit and Push to data branch (Fork-Safe Storage)
         run: |

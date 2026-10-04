@@ -40,6 +40,8 @@
     "month:verify": "tsx src/cli/month-close.ts verify",
     "seat-audit:update": "tsx src/cli/seat-audit.ts update",
     "seat-audit:export": "tsx src/cli/seat-audit.ts export",
+    "billing:report": "tsx src/cli/billing-reconcile.ts report",
+    "billing:issues": "tsx src/cli/billing-reconcile.ts issues",
     "demo:generate": "tsx scripts/generate-demo-data.ts",
     "demo:sync": "tsx scripts/sync-demo-to-copilot-data.ts",
     "demo:setup": "tsx scripts/setup-fork-demo.ts",
