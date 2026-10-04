@@ -44,6 +44,8 @@
     "billing:issues": "tsx src/cli/billing-reconcile.ts issues",
     "reports:validate": "tsx src/cli/reports.ts validate",
     "reports:generate": "tsx src/cli/reports.ts generate",
+    "retention:plan": "tsx src/cli/retention.ts plan",
+    "retention:apply": "tsx src/cli/retention.ts apply",
     "demo:generate": "tsx scripts/generate-demo-data.ts",
     "demo:sync": "tsx scripts/sync-demo-to-copilot-data.ts",
     "demo:setup": "tsx scripts/setup-fork-demo.ts",

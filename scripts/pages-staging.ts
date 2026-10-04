@@ -19,6 +19,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { checkProfileConsistency } from '../src/domain/privacy-profile.js';
 
 export interface StagingEntry {
   /** data/ からの相対パス (ソース) */
@@ -33,6 +34,17 @@ export const STAGED_PROCESSED_DIRS = ['monthly', 'reports', 'deep-analysis', 'tr
 /** 配信物に含めてはならないトップレベルのパス (dist/data/ からの相対) */
 /** audit/: シート監査イベント (利用者単位の個人データ。P4-3)。許可リストに無いので通常はステージされないが、混入したら失敗させる */
 export const FORBIDDEN_DIST_PATHS = ['raw', 'config', 'audit', path.join('reports', 'monthly')] as const;
+
+/**
+ * 発行プロファイル (src/domain/privacy-profile.ts) の宣言と、この許可リスト・禁止リストの食い違い (P4-6)。
+ * 空なら一致。pages:verify と fork:verify が失敗にする。
+ */
+export function publicationProfileProblems(): string[] {
+  return checkProfileConsistency({
+    stagedProcessedDirs: STAGED_PROCESSED_DIRS,
+    forbiddenDistPaths: FORBIDDEN_DIST_PATHS.map((p) => p.split(path.sep).join('/')),
+  });
+}
 
 function listJsonFiles(dir: string): string[] {
   if (!fs.existsSync(dir)) return [];
@@ -157,6 +169,12 @@ function main(): number {
   }
 
   if (command === 'verify') {
+    const profileProblems = publicationProfileProblems();
+    if (profileProblems.length > 0) {
+      console.error('❌ The publication profile (SDD-17 §7) disagrees with the Pages staging configuration:');
+      for (const p of profileProblems) console.error(`   - ${p}`);
+      return 1;
+    }
     const plan = planStaging(dataDir);
     if (plan.length === 0) {
       console.log('ℹ️ No staged data to verify (data/ has no publishable files yet).');

@@ -205,7 +205,7 @@ data/raw/landing/
 - **Anonymization mode lands nothing.** Raw bodies contain real logins and names and cannot be pseudonymized, so with `ANONYMIZE_USERS=true` (and in mock mode) no landing is written, and `index.json` carries no `run`.
 - **`index.json` `run`**: `{ run_id, reprocessed? }` names the run an artifact was built from (`reprocessed: true` for `pipeline:reprocess`). It is omitted when no run was landed (or the manifest could not be written — such a run is not reprocessable).
 - **Reprocess** (`npm run pipeline:reprocess [-- --run <run_id>]`, default: the latest run) replays one run through the same fetch → normalize → aggregate code via a replay client (`ReplayFetcher`) and makes **no network access**. A request the run never made fails loudly (`ReplayMissError`); a recorded failure replays as the same failure. The existing `raw/YYYY/MM/*-raw.json` partitions are not rewritten.
-- **Not yet covered**: merging several runs into a longer history (backfill beyond one run's window), retention / pruning (SDD target: 60 months, Phase 4), and canonical-fact (`schema_version`) regeneration (P1-3).
+- **Not yet covered**: merging several runs into a longer history (backfill beyond one run's window), retention / pruning (specified in §2.11 and SDD-17 §8, P4-6), and canonical-fact (`schema_version`) regeneration (P1-3).
 - `raw/` is never published: `pages:stage` allow-lists, and `pages:verify` forbids it in `dist/`.
 
 ### 2.4 Canonical Fact Contract v1 (P1-3)
@@ -270,6 +270,10 @@ Built on every run from the stored `processed/monthly/{YYYY-MM}.json` files (nev
 ### 2.10 Definition-Driven Report Outputs (`audit/report-outputs/`, P4-5)
 
 `audit/report-outputs/{report_id}/{period}.{md,csv}` and `audit/report-outputs/index.json` hold the reports generated from `reports/*.yaml` (SDD-17 §6). A definition may group by cost center, organization or department, so the outputs follow the rule of `audit/`: outside `processed/`, **not** on the `pages:stage` allow-list, never copied to `dashboard/public/data/`, and `pages:verify` fails if `audit` appears in `dist/data/`. They are aggregate-only (no per-user row), written by `ForkSafeStorage.saveReportOutput` / `saveReportOutputIndex` and kept in `copilot-data` (never in `main`; only the definitions in `reports/` are in `main`).
+
+### 2.11 Retention Policy Files (`audit/retention/`, P4-6)
+
+`audit/retention/log.json` records every retention run (SDD-17 §8): run id, time, retention months, cutoff, per category the count / months / ids / bytes of what was deleted, skipped items and errors (no personal data). It follows the rule of `audit/` (outside `processed/`, **not** on the `pages:stage` allow-list, never in `dist/data/`, never in `main`) and is itself never deleted by retention. Retention (default 60 months, `COPILOT_DATA_RETENTION_MONTHS`) deletes expired months of `raw/` (daily partitions, Run Manifests and unreferenced landing objects), `reports/monthly/` (original CSVs), `audit/seat-events/`, `audit/billing-reconciliation/` and `audit/report-outputs/`; it **never deletes `processed/**`**, in particular the closed-month snapshots and revisions in `processed/closes/` (§2.7), and it deletes Raw / CSV originals of a month only after that month is closed. The publication profile that declares the tier and the Pages visibility of every path is in SDD-17 §7.2.
 
 ## 3. Metadata Index (`index.json`) Specification
 

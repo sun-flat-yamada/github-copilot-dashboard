@@ -18,6 +18,7 @@ import {
   type ReportLanguage,
 } from '../domain/entities/report-definition.js';
 import { METRIC_REGISTRY, QUALITY_PRESENTATION, qualify, type MetricId, type MetricQuality, type MetricUnit } from '../domain/metrics/metric-registry.js';
+import { isPrivacyTier, PRIVACY_TIERS } from '../domain/privacy-profile.js';
 import { CSV_BOM, escapeCsvCell } from './seat-audit-csv.js';
 
 /**
@@ -255,12 +256,8 @@ export function parseReportDefinition(text: string, fileId?: string): ParsedDefi
   if (!parsed.success) return { errors: formatZodIssues(parsed.error) };
   const d = parsed.data;
   const errors: string[] = [];
-  if (d.privacy_tier !== undefined && d.privacy_tier !== 'aggregate-only') {
-    errors.push(
-      d.privacy_tier === 'identified'
-        ? 'privacy_tier: "identified" (user-level rows) is not supported yet; it is specified by P4-6 (#202). Use "aggregate-only".'
-        : `privacy_tier: unknown tier "${d.privacy_tier}" (only "aggregate-only" is supported)`
-    );
+  if (d.privacy_tier !== undefined && !isPrivacyTier(d.privacy_tier)) {
+    errors.push(`privacy_tier: unknown tier "${d.privacy_tier}" (use ${PRIVACY_TIERS.map((t) => `"${t}"`).join(' or ')})`);
   }
   if (fileId !== undefined && d.id !== fileId) errors.push(`id: "${d.id}" must equal the file name "${fileId}"`);
   const definition: ReportDefinition = {
@@ -269,7 +266,7 @@ export function parseReportDefinition(text: string, fileId?: string): ParsedDefi
     description: d.description,
     schedule: d.schedule,
     dataset: d.dataset,
-    privacy_tier: 'aggregate-only',
+    privacy_tier: isPrivacyTier(d.privacy_tier) ? d.privacy_tier : 'aggregate-only',
     language: d.language ?? 'ja',
     outputs: [...new Set(d.outputs)],
     sections: d.sections as ReportDefinition['sections'],

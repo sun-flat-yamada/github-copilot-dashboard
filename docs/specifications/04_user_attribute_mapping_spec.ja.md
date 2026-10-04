@@ -181,6 +181,10 @@ suzuki-ken,鈴木 健 (パートナー),フロントエンド基盤G,Platform-En
 
 定期実行ワークフローは、データを収集する **前** に `npm run fork:verify` を実行する。公開リポジトリが仮名化なしの実データの公開を始めることはできない。
 
+### 5.4 プライバシー階層・発行プロファイル・保持期間 (P4-6)
+
+発行物ごとに `aggregate-only` / `identified` を発行プロファイル（`src/domain/privacy-profile.ts`）に宣言し、その宣言を Pages のステージ設定と `pages:verify` / `fork:verify`（オフライン部分）で突き合わせる。これは §5.3 の公開範囲の検査に**加える**ものであり、置き換えない。`identified` のレポートは仮名化（§5.2）か、明示的な `COPILOT_ALLOW_IDENTIFIED_REPORTS=true` が必要で、`COPILOT_ALLOW_PUBLIC_DATA` はこのゲートを開けない。生データと利用者単位の監査データ（`raw/`、CSV 原本、`audit/seat-events/`）は既定で 60 か月後に期限切れとなり、明示的な `npm run retention:apply` でだけ削除される（先にドライラン。締め済みの月のスナップショットは保持）。詳細は [SDD-17 §7 / §8](17_audit_and_report_spec.ja.md)。
+
 ---
 
 ## 6. 48KB超マッピング向け GPG暗号化ワークアラウンド (オプション)

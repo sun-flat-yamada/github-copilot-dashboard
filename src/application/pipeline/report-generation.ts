@@ -6,6 +6,7 @@ import {
 } from '../../domain/entities/report-definition.js';
 import type { MonthCloseRecord } from '../../domain/entities/month-close.js';
 import { renderReport } from '../../processor/report-engine.js';
+import type { IdentifiedGate } from '../../domain/privacy-profile.js';
 
 /**
  * 定義駆動レポートの生成 (P4-5 / E-04)。何を・いつ生成するかの判定と保存。描画は processor/report-engine.ts。
@@ -40,8 +41,10 @@ export interface ReportDefinitionEntry {
 export interface GenerationResult {
   report_id: string;
   period: string;
-  status: 'generated' | 'up_to_date' | 'no_data';
+  status: 'generated' | 'up_to_date' | 'no_data' | 'refused';
   files: string[];
+  /** refused のときの理由 (identified の生成ゲートを満たさない) */
+  reason?: string;
 }
 
 /** ISO 8601 の週 (YYYY-Www)。UTC 基準 */
@@ -55,7 +58,13 @@ export function isoWeek(date: Date): string {
 }
 
 export class ReportGenerationService {
-  constructor(private readonly storage: ReportGenerationStorage) {}
+  /**
+   * @param identifiedGate identified 階層の生成を許すか (SDD-17 §7.3)。省略時は許さない (fail closed)
+   */
+  constructor(
+    private readonly storage: ReportGenerationStorage,
+    private readonly identifiedGate: IdentifiedGate = { allowed: false, reason: 'no identified-tier gate was provided' }
+  ) {}
 
   private datasetMonths(def: ReportDefinition): string[] {
     return def.dataset === 'monthly' ? this.storage.getStoredProcessedMonths() : this.storage.getStoredReportMonths();
@@ -88,6 +97,9 @@ export class ReportGenerationService {
   /** 1 件を生成して保存する。入力データが無ければ no_data (何も書かない) */
   generate(entry: ReportDefinitionEntry, target: ReportTarget, now: Date): GenerationResult {
     const { definition: def } = entry;
+    if (def.privacy_tier === 'identified' && !this.identifiedGate.allowed) {
+      return { report_id: def.id, period: target.period, status: 'refused', files: [], reason: this.identifiedGate.reason };
+    }
     const doc = this.loadDoc(def, target.dataMonth);
     if (!doc) return { report_id: def.id, period: target.period, status: 'no_data', files: [] };
     const demo = this.storage.isDemoStorage() || this.storage.loadIndex()?.is_mock_mode === true;
@@ -111,6 +123,7 @@ export class ReportGenerationService {
       definition_sha256: entry.sha256,
       outputs: [...def.outputs],
       demo,
+      privacy_tier: def.privacy_tier,
     };
     const outputs = index.outputs
       .filter((o) => !(o.report_id === def.id && o.period === target.period))
