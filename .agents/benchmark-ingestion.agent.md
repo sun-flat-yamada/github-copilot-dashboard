@@ -14,7 +14,7 @@ Specialized agent responsible for fetching, structuring, and maintaining technic
    - LMSYS Chatbot Arena Coding Elo (`arena_coding_elo`)
    - Artificial Analysis TPS & TTFT (`output_speed_tps`)
    - Frontier Technical Reports (AIME 2024, GPQA Diamond, HumanEval+)
-3. Maintain model profiles in `scripts/update-benchmarks.ts` and ensure model ID normalization logic in `src/processor/benchmark-evaluator.ts` handles all display name variants.
+3. Maintain model records in `scripts/benchmark-data/benchmark-records.json` and the exact-match aliases in `src/processor/model-catalog.ts` (no substring matching; unknown names stay `unknown:<raw>`).
 4. Maintain and synchronize the specification document `supported_models.md` in tandem with codebase updates, ensuring official support matrices, client availability, and retirement logs are completely updated.
 
 ---
