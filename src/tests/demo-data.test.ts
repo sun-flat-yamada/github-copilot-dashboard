@@ -16,6 +16,8 @@ import { setupForkDemoData } from '../../scripts/setup-fork-demo.js';
 import { loadDemoUserMapping } from '../collector/demo-mapping-loader.js';
 import { CreditsPresenter } from '../adapters/presenters/CreditsPresenter.js';
 import { AgentPresenter } from '../adapters/presenters/AgentPresenter.js';
+import { resolveCatalogModelId } from '../processor/model-catalog.js';
+import { COPILOT_MODEL_TOKEN_PRICES } from '../collector/mock-generator.js';
 import { AdoptionPresenter } from '../adapters/presenters/AdoptionPresenter.js';
 
 describe('Live Metrics DEMO Data & Referencing Tests', () => {
@@ -654,6 +656,45 @@ describe('Live Metrics DEMO Data & Referencing Tests', () => {
       for (const s of ['normal', 'warning', 'exceeded']) assert.ok(budgetStates.has(s as any), `budget status ${s}`);
       const models = new Set(Object.keys(monthly.user_profiles?.[0]?.model_usage_totals ?? {}));
       assert.ok(models.has('claude-sonnet-5') && !models.has('gpt-4o'), 'model names follow the current catalog');
+    });
+
+    it('every user profile (monthly scope and Deep Analysis archives) carries tags, department and cost center (#270)', () => {
+      const monthly = readJson<ScopeAggregatedData>('processed/monthly/2026-09.json');
+      const archive = readJson<{ user_profiles: Array<{ tags?: string[]; department: string; cost_center: string }> }>('processed/deep-analysis/2026-08.json');
+      for (const profiles of [monthly.user_profiles ?? [], archive.user_profiles]) {
+        assert.ok(profiles.length > 0);
+        assert.ok(profiles.every((p) => (p.tags ?? []).length > 0), 'every profile must have tags');
+        assert.ok(profiles.every((p) => p.department && p.cost_center));
+      }
+      const tags = new Set((monthly.user_profiles ?? []).flatMap((p) => p.tags ?? []));
+      assert.ok(tags.size >= 6, 'several distinct tags for filtering');
+    });
+
+    it('usage examples use the latest models that resolve in the model catalog (#270)', () => {
+      const monthly = readJson<ScopeAggregatedData>('processed/monthly/2026-09.json');
+      const report = readJson<any>('processed/reports/2026-09.json');
+      const names = new Set<string>([
+        ...(monthly.user_profiles ?? []).flatMap((p) => Object.keys(p.model_usage_totals ?? {})),
+        ...report.model_breakdown.map((m: any) => m.model_name).filter((n: string) => n !== 'Standard Completion'),
+        ...Object.keys(COPILOT_MODEL_TOKEN_PRICES),
+      ]);
+      for (const n of names) assert.ok(resolveCatalogModelId(n), `${n} must resolve in the model catalog`);
+      const resolved = new Set([...names].map((n) => resolveCatalogModelId(n)));
+      for (const latest of ['gpt-6-astra', 'claude-fable-5-1', 'claude-opus-5-5', 'claude-sonnet-5']) {
+        assert.ok(resolved.has(latest), `${latest} must appear in the demo`);
+      }
+    });
+
+    it('the token price table matches benchmark-records.json (#270)', () => {
+      const records = JSON.parse(fs.readFileSync(path.join(projectRoot, 'scripts/benchmark-data/benchmark-records.json'), 'utf-8')) as any[];
+      for (const [id, price] of Object.entries(COPILOT_MODEL_TOKEN_PRICES)) {
+        const m = records.find((r) => r.id === id)?.raw_metrics;
+        assert.ok(m, `${id} must exist in benchmark-records.json`);
+        assert.equal(price.input, m.input_cost_per_m, `${id} input`);
+        assert.equal(price.output, m.output_cost_per_m, `${id} output`);
+        assert.equal(price.cachedInput, m.cached_input_cost_per_m, `${id} cached input`);
+        assert.equal(price.cacheWrite, m.cache_write_cost_per_m ?? 0, `${id} cache write`);
+      }
     });
   });
 });

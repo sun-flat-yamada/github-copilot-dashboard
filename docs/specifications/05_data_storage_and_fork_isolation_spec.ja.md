@@ -153,7 +153,7 @@ DEMO データは決定的 (seed 固定) に生成し、全ての表示パター
 - **月次締め**: 1 か月 (`2026-04`) を確定後に改訂した履歴 (理由・担当・差分)。確定済みの月は再実行しても書き換えない。
 - **データ品質**: `quality/history.json` に `ok` / `warning` / `error` の実行、欠損日、隔離を含む。最新の実行は `warning` で、傾向は `recovered`。
 - **ソースと issue**: `index.json` の `source_status` は `ok` / `partial` / `failed`、issue は重大度・分類の異なる見本 (実際の障害ではない)。
-- **シートと予算**: シートは `active` / `low_active` / `idle` / `never_used` / `onboarding` とプラン未確定を含み、Cost Center 予算は `normal` / `warning` / `exceeded` を網羅する。モデル名は現行のモデルカタログ (`src/processor/model-catalog.ts`) に従う。
+- **シートと予算**: シートは `active` / `low_active` / `idle` / `never_used` / `onboarding` とプラン未確定を含み、Cost Center 予算は `normal` / `warning` / `exceeded` を網羅する。モデル名は現行のモデルカタログ (`src/processor/model-catalog.ts`) に従い、最新の構成 (`gpt-6-astra` / `claude-fable-5-1` / `claude-opus-5-5` / `claude-sonnet-5` / `gpt-5-4-mini` / `gemini-3-8-flash`) を使う。トークン単価表は `scripts/benchmark-data/benchmark-records.json` と一致させる。ユーザー別プロファイル (月次スコープと Deep Analysis アーカイブ) には属性マッピングのタグ・部署・Cost Center を付与し、どの画面でもタグ絞り込みが効く。
 - `npm run demo:generate` は再生成の前に前回の DEMO 生成物 (`processed/` / `quality/` / `audit/` / `raw/`) を削除する。網羅性は `src/tests/demo-data.test.ts` で検査する。
 
 ### 2.2 永続ストレージ階層 (`processed/`) と SPA公開パスの二重構造および同期規約 (ナレッジ・再発防止)
