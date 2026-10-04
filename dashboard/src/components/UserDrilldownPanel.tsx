@@ -62,6 +62,8 @@ export interface UserDrilldownPanelProps {
   onSelectUserForTrend?: (login: string) => void;
   onSelectUserForDeepAnalysis?: (login: string) => void;
   onClose?: () => void;
+  /** ユーザー情報ヘッダーの直下 (タブの上) に差し込む領域。「使用量と効率」など */
+  insightSlot?: React.ReactNode;
 }
 
 const MODEL_COLORS: Record<string, string> = {
@@ -96,6 +98,7 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
   onSelectUserForTrend,
   onSelectUserForDeepAnalysis,
   onClose,
+  insightSlot,
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'diagnostic'>('overview');
   const [showAllPatterns, setShowAllPatterns] = useState(false);
@@ -262,6 +265,8 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
           )}
         </div>
       </div>
+
+      {insightSlot}
 
       {/* 2. ドリルダウン サブナビゲーションタブ */}
       <div className="flex items-center space-x-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800/80 w-fit">
