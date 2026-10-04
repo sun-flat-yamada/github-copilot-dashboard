@@ -104,6 +104,9 @@ data/
 │   ├── deep-analysis/
 │   │   ├── 2026-08.json              # Monthly deep analytics archives
 │   │   └── 2026-09.json
+│   ├── closes/                       # Monthly close snapshots + revision history (P4-2, SDD-17 §3)
+│   │   ├── index.json
+│   │   └── 2026-08.json
 │   └── reports/
 │       ├── 2026-08.json              # Monthly report precomputed data
 │       └── 2026-09.json              # Monthly report precomputed data
@@ -236,7 +239,16 @@ Built on every run from the stored `processed/monthly/{YYYY-MM}.json` files (nev
 | `close_rule` | The declared close rule (see SDD-06 §4.6) |
 | `points` | **12 consecutive calendar months, oldest first.** A month without a stored aggregate is a point with `status: "missing"`, `entry: null` and null year-over-year values; it is never filled with 0 and never dropped silently. Each point has `status` (`closed` / `provisional` / `missing`), `closes_on`, `entry`, `prior_month` and `yoy` |
 
-`months` / `trends` (the latest 12 recorded months, possibly non-consecutive) are kept for compatibility. Monthly aggregates up to 24 months back are read so that the previous-year month is available for the comparison. The file contains company-wide values only (no per-user data) and stays on the `pages:stage` allow-list (`trends`). Frozen snapshots, checksums and revisions of closed months are the monthly close (P4-2) and are not part of this file yet.
+`months` / `trends` (the latest 12 recorded months, possibly non-consecutive) are kept for compatibility. Monthly aggregates up to 24 months back are read so that the previous-year month is available for the comparison. The file contains company-wide values only (no per-user data) and stays on the `pages:stage` allow-list (`trends`). Frozen snapshots, checksums and revisions of closed months are the monthly close (§2.7) and are not part of this file; `points[].status` is `closed` only when a close snapshot exists.
+
+### 2.7 Monthly Close Files (`closes/`, P4-2)
+
+`processed/closes/{YYYY-MM}.json` holds the frozen figures of a closed month (SHA-256 checksum, the original version and the revision history with diffs) and `processed/closes/index.json` the per-month summary. They contain numbers, dates and checksums only (no per-user data), are written by `ForkSafeStorage.saveMonthClose`, and are on the `pages:stage` allow-list (`STAGED_PROCESSED_DIRS` includes `closes`). Rules (SDD-17 §3):
+
+- A closed month's `processed/monthly` / `processed/reports` file is **not overwritten** by a pipeline run or reprocess whose figures differ, unless the month is revised explicitly (`npm run pipeline:reprocess -- --revise <month> --reason "..."`); the held change becomes a `month-close:{month}` issue.
+- The original `closed` version is never rewritten; revisions are appended with reason, run id, time and diff.
+- `npm run month:verify` fails when a stored figure differs from the current version without a recorded revision.
+- The files live in `copilot-data` with the rest of `data/processed/` (never in `main`).
 
 ## 3. Metadata Index (`index.json`) Specification
 

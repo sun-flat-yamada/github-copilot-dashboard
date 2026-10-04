@@ -102,6 +102,9 @@ data/
 │   │   └── latest-30d.json           # 直近30日間の推移トレンドデータ
 │   ├── trends/
 │   │   └── rolling-1year.json        # 直近1年分の推移トレンド集約データ (SPA高速読込用)
+│   ├── closes/                       # 月次締めのスナップショットと改訂履歴 (P4-2, SDD-17 §3)
+│   │   ├── index.json
+│   │   └── 2026-08.json
 │   ├── deep-analysis/
 │   │   ├── 2026-08.json              # 月次ディープ分析（高度診断）アーカイブ
 │   │   └── 2026-09.json
@@ -237,7 +240,16 @@ data/raw/landing/
 | `close_rule` | 宣言された締めのルール（SDD-06 §4.6） |
 | `points` | **暦月で連続した 12 か月（古い順）。** 保存済み集計が無い月は `status: "missing"`・`entry: null`・前年比も null の点として残し、0 で補完せず、黙って落とさない。各点に `status`（`closed` / `provisional` / `missing`）、`closes_on`、`entry`、`prior_month`、`yoy` を持つ |
 
-`months` / `trends`（保存済みの直近 12 か月。連続とは限らない）は互換のため残す。前年同月を比較に使えるよう、24 か月前までの月次集計を読む。ファイルは全社値のみ（個人別データなし）で、`pages:stage` の許可リスト（`trends`）に載る。締め済み月のスナップショット凍結・チェックサム・改訂版は月次締め（P4-2）の責務で、このファイルにはまだ含めない。
+`months` / `trends`（保存済みの直近 12 か月。連続とは限らない）は互換のため残す。前年同月を比較に使えるよう、24 か月前までの月次集計を読む。ファイルは全社値のみ（個人別データなし）で、`pages:stage` の許可リスト（`trends`）に載る。締め済み月のスナップショット凍結・チェックサム・改訂版は月次締め（§2.7）の責務で、このファイルには含めない。`points[].status` は確定スナップショットがあるときだけ `closed` になる。
+
+### 2.7 月次締めファイル (`closes/`, P4-2)
+
+`processed/closes/{YYYY-MM}.json` は締め済みの月の確定した数値（SHA-256 チェックサム・元の版・差分つきの改訂履歴）、`processed/closes/index.json` は月ごとの要約を持つ。数値・日付・チェックサムのみで（個人別データなし）、`ForkSafeStorage.saveMonthClose` が書き、`pages:stage` の許可リスト（`STAGED_PROCESSED_DIRS` に `closes`）に載る。規則（SDD-17 §3）:
+
+- 確定月の `processed/monthly` / `processed/reports` は、数値が違うパイプライン実行・再処理では**上書きしない**。明示的に改訂する（`npm run pipeline:reprocess -- --revise <月> --reason "..."`）場合だけ更新し、保留した変更は `month-close:{月}` の issue になる。
+- 元の `closed` 版は書き換えない。改訂は理由・実行 ID・時刻・差分つきで追記する。
+- `npm run month:verify` は、保存済みの数値が改訂の記録なしに現在の版と違うと失敗する。
+- ファイルは `data/processed/` の他のファイルと同じく `copilot-data` に置く（`main` には置かない）。
 
 ## 3. インデックスメタデータ (`index.json`) 仕様
 

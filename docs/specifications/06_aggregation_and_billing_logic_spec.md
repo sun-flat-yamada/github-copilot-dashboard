@@ -200,7 +200,7 @@ Missing days (`null`) are not observed days and are never treated as 0. Confiden
 
 Pure functions in `src/processor/yearly-trend.ts` (the current time is injected; dates are UTC).
 
-**Month close rule.** Until the monthly close (P4-2: frozen snapshot, checksum, revisions) exists, the close is derived from the calendar: a month is **closed (確定)** from the **5th business day of the next month** (Monday to Friday; public holidays are not considered), **provisional (暫定)** before that, including the current month. The close day itself is closed. *Closed only means the close day has passed*; numeric immutability comes with P4-2. The rule (`MONTH_CLOSE_BUSINESS_DAYS = 5`) is declared in one place and written into the dataset as `close_rule`.
+**Month close rule.** A month is **closed (確定)** only when a **close snapshot** exists (monthly close, SDD-17 §3: figures frozen with a checksum on the **N-th business day of the next month**, default 5; the business calendar is configurable) and **provisional (暫定)** otherwise, including the current month and a month whose close job has not run. Passing the close day alone does not make a month closed. `points[].revision_count` shows revisions after the close. The declared rule (`close_rule`) is built by `buildYearlyTrendCloseRule(calendar)` and written into the dataset.
 
 **Series.** 12 consecutive calendar months ending at the latest recorded month. A month with no stored aggregate is `missing` (null values), never 0. A month that exists but has no measured usage keeps `acceptance_rate` / `total_chats` as null.
 
