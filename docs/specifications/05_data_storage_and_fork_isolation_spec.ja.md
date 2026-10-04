@@ -286,7 +286,7 @@ data/raw/landing/
     "is_fork": false
   },
   "generated_at": "2026-09-10T00:30:00Z",
-  "data_retention_days": 365,
+  "data_retention_months": 60,
   "is_mock_mode": false,
   "source_status": [
     { "source": "metrics", "status": "failed", "records": 0,
@@ -327,7 +327,7 @@ data/raw/landing/
 }
 ```
 
-`data_retention_days` は**旧来の固定の表示値**（About モーダルが表示する）である。削除を制御せず、保持ポリシーでもない。生データは既定で 60 か月保持する（`COPILOT_DATA_RETENTION_MONTHS`、SDD-17 §8.1）。表示値の整合は別 Issue で扱う。
+`data_retention_months` は保持ポリシーの月数（`COPILOT_DATA_RETENTION_MONTHS`、既定 60、SDD-17 §8.1）で、About モーダルが表示する。表示用であり、削除は `retention:apply` が行う。旧項目 `data_retention_days`（固定の 365）は非推奨で、もう出力しない。旧項目しかない `index.json` は既定の 60 か月として表示する。
 
 ### 3.0 ソース別ステータス・Last-known-good・`is_mock_mode` の意味
 
