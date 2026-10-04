@@ -285,7 +285,7 @@ The entry metadata file loaded first by the dashboard SPA to provide available d
     "is_fork": false
   },
   "generated_at": "2026-09-10T00:30:00Z",
-  "data_retention_days": 365,
+  "data_retention_months": 60,
   "is_mock_mode": false,
   "source_status": [
     { "source": "metrics", "status": "failed", "records": 0,
@@ -326,7 +326,7 @@ The entry metadata file loaded first by the dashboard SPA to provide available d
 }
 ```
 
-`data_retention_days` is a **legacy, fixed display value** (the About modal shows it). It does not control deletion and is not the retention policy: raw data is kept for 60 months by default (`COPILOT_DATA_RETENTION_MONTHS`, SDD-17 §8.1). Aligning the display value is tracked as a separate Issue.
+`data_retention_months` is the retention policy in months (`COPILOT_DATA_RETENTION_MONTHS`, default 60, SDD-17 §8.1); the About modal shows it. It is informational: deletion is done by `retention:apply`. The former field `data_retention_days` (a fixed 365) is deprecated and no longer written; an `index.json` that has only the old field is shown as the default 60 months.
 
 ### 3.0 Per-Source Status, Last-Known-Good and the Meaning of `is_mock_mode`
 

@@ -720,7 +720,10 @@ export interface IndexMetadata {
   generated_at: string;
   /** この成果物を作った run (Raw Landing の Run Manifest の ID)。ライブ収集・再処理のときだけ */
   run?: RunReference;
-  data_retention_days: number;
+  /** 保持ポリシーの月数 (COPILOT_DATA_RETENTION_MONTHS、既定 60。SDD-17 §8.1)。旧 index.json には無い */
+  data_retention_months?: number;
+  /** @deprecated 固定の表示値 365 で保持ポリシーではない。もう出力しない (旧 index.json にだけ残る) */
+  data_retention_days?: number;
   available_months: string[]; // 過去1年ローリング表示対象月 (最大12カ月)
   all_recorded_months?: string[]; // 全蓄積月（上限なく記録された月一覧）
   available_days: string[];

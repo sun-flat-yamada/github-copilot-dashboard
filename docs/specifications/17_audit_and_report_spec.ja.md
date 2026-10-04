@@ -325,7 +325,7 @@ strict スキーマ（未知のキーはエラー）と意味の検証。`npm ru
 
 ### 8.1 設定と期限
 
-- `COPILOT_DATA_RETENTION_MONTHS`（Actions 変数。整数 **12〜600**、既定 **60**）。不正な値はメッセージを出して 60 に戻す（`index.json` の旧項目 `data_retention_days` は固定の表示値で、削除を制御しない）。
+- `COPILOT_DATA_RETENTION_MONTHS`（Actions 変数。整数 **12〜600**、既定 **60**）。不正な値はメッセージを出して 60 に戻す（`index.json` は About モーダル用にこの値を `data_retention_months` として持つ。削除は制御しない。旧項目 `data_retention_days`（固定値）は非推奨）。
 - **当月を含む**直近 N 暦月を保持する。月 `M` は、当月から N か月より前なら期限切れ（N = 60 の 2026-10 では 2021-11 を保持、2021-10 以前が期限切れ）。日付は UTC。カットオフは `keep_from` として表示する。
 
 ### 8.2 期限切れになるもの・ならないもの
@@ -379,6 +379,6 @@ P4-7 は Phase 4 の最後の変更である。仕様書と実装を突き合わ
 
 | 差分 | 場所 | 扱い |
 |:--|:--|:--|
-| `index.json` の `data_retention_days` は固定の表示値（365）で、About モーダルが保持期間として表示するため、60 か月のポリシーと食い違う | `PipelineOrchestrator`、`dashboard/src/components/AboutModal.tsx` | §8.1 と SDD-07 に明記。変更はコード・index の型・多数のテストフィクスチャに及ぶため、別 Issue (#257) とする |
+| `index.json` の `data_retention_days` は固定の 365 で、About モーダルが表示するため 60 か月のポリシーと食い違っていた | `PipelineOrchestrator`、`dashboard/src/components/AboutModal.tsx` | Issue #257 で修正: `data_retention_months` を出力・表示し、旧項目は非推奨（§8.1、SDD-05 §3、SDD-07） |
 | リポジトリのルールと `AGENTS.md` が存在しない `dashboard/src/data/models.ts` を挙げていた（UI のレジストリは `dashboard/src/components/radar/radar-constants.ts`） | `.agents/rules/model-benchmark-management.md`、`AGENTS.md` | Issue #258 で SDD-10 §6.1.2 と同じ同期対象に訂正した |
 | 実機検証: Reports / Billing API とスキーマドリフトのワークフローは、開発環境から実 Enterprise に対して実行していない | SDD-03、SDD-08 §1、§5.7 | 各機能の仕様に明記済み。Enterprise の PAT が必要 |

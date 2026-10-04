@@ -12,6 +12,7 @@ import { buildRollingTrendEntry } from '../../processor/rolling-trend.js';
 import { buildYearlyTrend, buildYearlyTrendCloseRule, yearlyTrendMonthsNeeded } from '../../processor/yearly-trend.js';
 import { extractMonthlyFigures, extractReportFigures, parseBusinessCalendar } from '../../processor/month-close.js';
 import { MonthCloseService, type RevisionRequest } from './month-close.js';
+import { parseRetentionMonths } from '../../processor/retention.js';
 import { SeatAuditService } from './seat-audit.js';
 import { BillingReconciliationService } from './billing-reconciliation.js';
 import { parseTolerance } from '../../processor/billing-reconciliation.js';
@@ -593,7 +594,7 @@ export class PipelineOrchestrator {
       ...(this.runInfo && landed
         ? { run: { run_id: this.runInfo.runId, ...(this.runInfo.reprocessed ? { reprocessed: true } : {}) } }
         : {}),
-      data_retention_days: 365,
+      data_retention_months: parseRetentionMonths(process.env.COPILOT_DATA_RETENTION_MONTHS).months,
       available_months: rolling12Months,
       all_recorded_months: allRecordedMonths,
       available_days: [...availableDays].sort().reverse(),
