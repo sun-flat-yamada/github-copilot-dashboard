@@ -111,9 +111,11 @@ data/
 │   └── reports/
 │       ├── 2026-08.json              # 月次レポート集計済みデータ
 │       └── 2026-09.json
-└── audit/                            # 利用者単位の監査データ。Pages には配信しない (P4-3, SDD-17 §4)
+└── audit/                            # 監査データ（利用者単位・請求由来）。Pages には配信しない (P4-3 / P4-4, SDD-17 §4, §5)
     ├── seat-events/
     │   └── 2026-09.json              # シート監査イベント（検出日の月）
+    ├── billing-reconciliation/
+    │   └── 2026-09.json              # 月ごとの請求突合 (P4-4, SDD-17 §5)
     └── exports/                      # 権限のある閲覧者向けの CSV 出力
 ```
 
@@ -258,6 +260,10 @@ data/raw/landing/
 ### 2.8 シート監査ファイル (`audit/seat-events/`, P4-3)
 
 `audit/seat-events/{YYYY-MM}.json` は、`raw/` の日次シートスナップショットから生成したシート監査イベントを持つ（SDD-17 §4）。`processed/` と違い**利用者単位のデータ**なので、`processed/` の外に置き、`pages:stage` の許可リストには**載せず**、`dashboard/public/data/` へも複製せず、`dist/data/` に `audit` があれば `pages:verify` が失敗する。`ForkSafeStorage.saveSeatAuditMonth` が書き、`copilot-data` の `raw/` と同じ場所に置く（リポジトリと同じ公開範囲。`fork:verify` の公開範囲検査が守る。`main` には置かない）。
+
+### 2.9 請求突合ファイル (`audit/billing-reconciliation/`, P4-4)
+
+`audit/billing-reconciliation/{YYYY-MM}.json` は、Billing API から収集した日別の AI Credits の数量・金額と、突合に使った版・許容差を持つ（SDD-17 §5）。実際の請求額に由来するため `audit/` の規則に従う: `processed/` の外に置き、`pages:stage` の許可リストには**載せず**、`dashboard/public/data/` へも複製せず、`dist/data/` に `audit` があれば `pages:verify` が失敗する。利用者・組織・Cost Center の識別子は持たない。`ForkSafeStorage.saveBillingReconciliationMonth` が書き、`copilot-data` に置く（`main` には置かない）。
 
 ## 3. インデックスメタデータ (`index.json`) 仕様
 
