@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "months": [
+    {
+      "month": "2026-08",
+      "closes_on": "2026-09-07",
+      "closed_at": "2026-10-04T02:01:12.621Z",
+      "checksum": "f74f3cb43fb63c794f100410d0981b9a00b5430573caae170ec06cbfc04d3c5a",
+      "revision_count": 0,
+      "last_revised_at": null
+    }
+  ]
+}
