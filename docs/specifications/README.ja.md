@@ -69,8 +69,8 @@ flowchart TD
 | **SDD-13** | Fork制限環境向けセットアップ手順書 | [JA](13_fork_restricted_environment_setup_guide.ja.md) \| [EN](13_fork_restricted_environment_setup_guide.md) | EMU・ポリシー制限によりGitHub Forkを使えない組織向けのミラー複製手順 | 正式運用 (2026.09) |
 | **SDD-14** | 開発運用ワークフロー & Git Ops 仕様書 | [JA](14_development_workflow_and_git_ops_spec.ja.md) \| [EN](14_development_workflow_and_git_ops_spec.md) | 複数AIエージェント並行Worktree運用、Issue起票、PR作成、Rebaseマージ、権限制御 | 正式運用 (2026.09) |
 | **SDD-15** | データセントリック・リアクティビティ設計仕様書 | [JA](15_data_centric_reactivity_design_spec.ja.md) \| [EN](15_data_centric_reactivity_design_spec.md) | 各Viewのアクティブ選択データ（データソース/スコープ/タグ）への追従原則、React実装規約、既知アンチパターン | 正式運用 (2026.09) |
-| **SDD-16** | データ契約 & 指標カタログ仕様書 | [JA](16_data_contract_and_metric_catalog_spec.ja.md) \| [EN](16_data_contract_and_metric_catalog_spec.md) | 指標カタログ v1 (全 KPI の定義・窓・出典)、個人指標の位置づけ | 正式運用 (2026.10) |
-| **SDD-17** | 監査 & レポート仕様書 | [JA](17_audit_and_report_spec.ja.md) \| [EN](17_audit_and_report_spec.md) | 監査要件（月次締め・改訂・60 か月保持）、監査・データ品質ビュー、月次締め・改訂履歴・差分（P4-2）、シート監査イベント（P4-3）、請求突合（P4-4） | 正式運用 (2026.10) |
+| **SDD-16** | データ契約 & 指標カタログ仕様書 | [JA](16_data_contract_and_metric_catalog_spec.ja.md) \| [EN](16_data_contract_and_metric_catalog_spec.md) | 指標カタログ (全 28 KPI の定義・窓・出典)、個人指標の位置づけ、データ契約の索引 (正準ファクトと保存ファイル) | 正式運用 (2026.10) |
+| **SDD-17** | 監査 & レポート仕様書 | [JA](17_audit_and_report_spec.ja.md) \| [EN](17_audit_and_report_spec.md) | 監査要件（月次締め・改訂・60 か月保持）、監査・データ品質ビュー、月次締め・改訂履歴・差分（P4-2）、シート監査イベント（P4-3）、請求突合（P4-4）、定義駆動レポート（P4-5）、プライバシー階層と保持期間（P4-6）、同期状況と既知の差分（P4-7） | 正式運用 (2026.10) |
 
 ---
 

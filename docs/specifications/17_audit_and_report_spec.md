@@ -5,10 +5,10 @@
 # SDD-17: Audit & Report Specification
 
 - **Document ID**: SPEC-COPILOT-017
-- **Status**: Approved / Active (grows with Phase 4; sections are added by P4-2 to P4-6; P4-4 adds §5, P4-5 adds §6, P4-6 adds §7 and §8)
+- **Status**: Approved / Active (completed with Phase 4: P4-2 to P4-6 added §3 to §8; P4-7 added §9)
 - **Target Version**: 2026.10
-- **Date**: 2026-10-04 (P4-1 / #197: audit and data quality view; P4-2 / #198: monthly close and revisions; P4-3 / #199: seat audit events; P4-4 / #200: billing reconciliation; P4-5 / #201: definition-driven reports; P4-6 / #202: privacy tiers and retention)
-- **Related**: [SDD-05 §2.3 / §2.5 / §2.7](05_data_storage_and_fork_isolation_spec.md), [SDD-07 §2.19](07_dashboard_ui_ux_spec.md), [SDD-16 Data Contract & Metric Catalog](16_data_contract_and_metric_catalog_spec.md)
+- **Date**: 2026-10-04 (P4-1 / #197: audit and data quality view; P4-2 / #198: monthly close and revisions; P4-3 / #199: seat audit events; P4-4 / #200: billing reconciliation; P4-5 / #201: definition-driven reports; P4-6 / #202: privacy tiers and retention; P4-7 / #203: sync status)
+- **Related**: [SDD-05 §2.3 / §2.5 / §2.7](05_data_storage_and_fork_isolation_spec.md), [SDD-07 §2.19](07_dashboard_ui_ux_spec.md), [SDD-08 §1](08_automation_workflow_spec.md), [SDD-16 Data Contract & Metric Catalog](16_data_contract_and_metric_catalog_spec.md)
 
 ---
 
@@ -21,7 +21,7 @@ The dashboard is used inside the company to explain Copilot cost and usage. An o
 | Monthly close | The 5th business day of the following month | §3 (P4-2) |
 | Revisions after close | Allowed, with history | §3 (P4-2) |
 | Raw data retention | 5 years (60 months); `data_retention` defaults to 60 months | §8 (P4-6) |
-| Personal data | Audit screens and exports carry counts, dates and source names only | P4-1 (this document §2) |
+| Personal data | Audit screens and exports carry counts, dates and source names only. User-level outputs (seat events, `identified` reports) follow the privacy tiers and publication profile; raw and user-level audit data expire with the retention policy | §2, §4.3, §7 (P4-1, P4-3, P4-6) |
 | Seat history | Grants, revocations, plan changes and last-activity changes are recorded from daily seat snapshots and exported as CSV for authorized internal reviewers; never published | §4 (P4-3) |
 
 ## 2. Audit & Data Quality View (P4-1 / E-01)
@@ -355,6 +355,30 @@ Raw data is kept for **5 years**. The retention is declared, shown before it is 
 
 `audit/retention/log.json` (`schema_version`, `runs[]`, at most 1000 runs): `run_id`, `started_at`, `finished_at`, `status` (`started` -> `completed` / `failed`), `retention_months`, `keep_from`, `actor` (an alias or role chosen by the operator; never taken from the CI user or GitHub login), per category `count` / `keys` (months, run ids, `{report_id}/{period}`; no personal data) / `bytes`, `skipped[]` and `errors[]`. The **intent is written first** (`started`), then the deletion runs, then the record is completed, so an interrupted run is visible. A failure on one item does not stop the others; the run is then `failed`. Because the closed-month records stay, the audit trail of figures (§3) outlives the raw data.
 
-## 9. Remaining Sections
+## 9. Sync Status and Known Gaps (P4-7 / #203)
 
-None. P4-7 (#203) is the completeness and consistency pass over SDD-16 and SDD-17.
+P4-7 is the last Phase 4 change. It compared the specifications with the implementation and recorded the result here, so a later reader can see what was checked and what is still open.
+
+### 9.1 Specifications checked against the implementation
+
+| SDD | Checked topic | Result |
+|:--|:--|:--|
+| SDD-02 | Actual wiring and the single front-end architecture (ADR-0001) | Matches (synced in P2) |
+| SDD-03 | Reports API, Cost Centers shape, Billing (AI Credits) API | Matches (synced in P1); live calls are not yet run against a real enterprise (SDD-08 §1) |
+| SDD-04 | Publication scope, HMAC pseudonymization, privacy tiers | Matches (P4-6 added §5.4 cross-reference) |
+| SDD-05 | Raw landing, Run Manifest, canonical facts, `audit/`, `closes/` layout | **Fixed in P4-7**: the `raw/` layout in §2 listed `*-metrics.json` / `*-seats.json` / `*-cost-centers.json`; the implementation writes one `YYYY-MM-DD-raw.json` per day (`metrics`, `seats`, `cost_centers`) |
+| SDD-06 | Pricing catalog, gross / net, seat classification, estimates | Matches; reconciliation in §4.7 (P4-4). Retention does not touch aggregation, so no P4-6 change |
+| SDD-07 | Quality attributes, KPI rules, audit view (§2.19) | Matches; the About modal note on the legacy retention field was added in P4-7 |
+| SDD-08 | Daily workflow steps, variables, permissions | **Fixed in P4-7**: the exchange-rate, billing-issue, report-generation and retention dry-run steps, the variables `COPILOT_BUSINESS_CALENDAR`, `COPILOT_RECONCILIATION_TOLERANCE`, `COPILOT_ALLOW_IDENTIFIED_REPORTS`, `COPILOT_DATA_RETENTION_MONTHS` and the `issues: write` permission were missing |
+| SDD-10 | Normalization, dataset version (content hash), data files | Matches (synced in P3-7) |
+| SDD-11 | Diagnosis v2, unclassified users | Matches (synced in P3-5) |
+| SDD-15 | Query layer, ESLint rules | Matches |
+| SDD-16 | Catalog vs `METRIC_REGISTRY` | **Fixed in P4-7**: `adoption_unclassified_users`, `yoy_spend_change` and `yoy_active_seats_change` were missing from the table; a data-contract index (§7) was added. All 28 ids now match |
+
+### 9.2 Known gaps (not fixed in this change)
+
+| Gap | Where | Handling |
+|:--|:--|:--|
+| `index.json` `data_retention_days` is a fixed display value (365) and the About modal shows it as the retention period, which disagrees with the 60-month policy | `PipelineOrchestrator`, `dashboard/src/components/AboutModal.tsx` | Documented in §8.1 and SDD-07. Changing it touches code, the index type and many test fixtures, so it is a separate Issue (#257) |
+| The repository rules and `AGENTS.md` name `dashboard/src/data/models.ts`, which does not exist (the UI registry is `dashboard/src/components/radar/radar-constants.ts`; SDD-10 §6.1.2 already says so) | `.agents/rules/model-benchmark-management.md`, `AGENTS.md` | Outside the SDD scope; a separate Issue (#258) |
+| Live verification: the Reports / Billing APIs and the schema-drift workflow have not run against a real enterprise from the development environment | SDD-03, SDD-08 §1, §5.7 | Stated where each feature is specified; needs an enterprise PAT |

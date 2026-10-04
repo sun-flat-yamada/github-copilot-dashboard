@@ -32,8 +32,7 @@
 │
 ├── copilot-data (Dedicated Orphan Data Branch — 実データ専用)
 │   ├── data/
-│   │   ├── raw/YYYY/MM/copilot_metrics_YYYY-MM-DD.json
-│   │   ├── raw/YYYY/MM/copilot_seats_YYYY-MM-DD.json
+│   │   ├── raw/YYYY/MM/YYYY-MM-DD-raw.json (その日の metrics + seats + cost centers)
 │   │   ├── reports/monthly/YYYY-MM/copilot_monthly_usage_YYYY-MM.csv (月次利用レポートCSV)
 │   │   ├── processed/daily/YYYY-MM-DD.json
 │   │   ├── processed/monthly/YYYY-MM.json
@@ -74,18 +73,16 @@
 
 ## 2. ストレージディレクトリ構造 & パーティショニング
 
-データはすべて日毎・月毎にイミュータブル（不変・追記型）に配置され、**データ蓄積は上限なく無期限に継続**される。
+データはすべて日毎・月毎にイミュータブル（不変・追記型）に配置され、データ蓄積は保持ポリシーだけが上限になる（`raw/`・原本 CSV・`audit/` は既定 60 か月、`processed/` は失効しない。§2.11、SDD-17 §8）。
 
 ```
 data/
-├── raw/                              # APIから取得した未加工Rawデータ (無期限・日次追記)
+├── raw/                              # APIから取得した未加工Rawデータ (日次追記。月次締め後、保持期間を過ぎると失効。SDD-17 §8)
 │   └── 2026/
 │       ├── 09/
-│       │   ├── 2026-09-01-metrics.json
-│       │   ├── 2026-09-01-seats.json
-│       │   ├── 2026-09-01-cost-centers.json
+│       │   ├── 2026-09-01-raw.json   # 1 日 1 ファイル: { collected_at, date, metrics, seats, cost_centers }
 │       │   └── ...
-├── reports/                          # GitHubからエクスポートされた月次利用レポートCSV (無期限追記)
+├── reports/                          # GitHubからエクスポートされた月次利用レポートCSV (追記。保持は raw/ と同じ)
 │   └── monthly/
 │       ├── 2026-08/
 │       │   └── copilot_monthly_usage_2026-08.csv
@@ -329,6 +326,8 @@ data/raw/landing/
   }
 }
 ```
+
+`data_retention_days` は**旧来の固定の表示値**（About モーダルが表示する）である。削除を制御せず、保持ポリシーでもない。生データは既定で 60 か月保持する（`COPILOT_DATA_RETENTION_MONTHS`、SDD-17 §8.1）。表示値の整合は別 Issue で扱う。
 
 ### 3.0 ソース別ステータス・Last-known-good・`is_mock_mode` の意味
 
