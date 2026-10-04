@@ -13,6 +13,8 @@ import { buildYearlyTrend, buildYearlyTrendCloseRule, yearlyTrendMonthsNeeded } 
 import { extractMonthlyFigures, extractReportFigures, parseBusinessCalendar } from '../../processor/month-close.js';
 import { MonthCloseService, type RevisionRequest } from './month-close.js';
 import { SeatAuditService } from './seat-audit.js';
+import { BillingReconciliationService } from './billing-reconciliation.js';
+import { parseTolerance } from '../../processor/billing-reconciliation.js';
 import { MockDataGenerator, MOCK_DATA_UNAVAILABLE_ORGS } from '../../collector/mock-generator.js';
 import {
   CostCenterBudget,
@@ -454,6 +456,56 @@ export class PipelineOrchestrator {
           category: 'data_integrity',
           target: 'audit:seat-events',
           message: 'Seat audit events could not be updated.',
+          details: err instanceof Error ? err.message : String(err),
+        });
+        this.storage.saveErrorLog(issues);
+      }
+    }
+
+    // 請求突合 (P4-4): 取得できた Billing API の AI credit usage と、ダッシュボードの計算額 (数量 × 単価) を突合する。
+    // 取得できなかった実行・再処理では書かない (前回の保存値を保つ)。失敗しても本処理は止めず issue にする
+    if (!this.runInfo?.reprocessed && aiCreditLines.length > 0 && isSourceUsable(statuses.find((s) => s.source === 'ai_credits'))) {
+      try {
+        const parsedTolerance = parseTolerance(process.env.COPILOT_RECONCILIATION_TOLERANCE);
+        if (parsedTolerance.error) {
+          issues.push({
+            id: `issue_billing_reconciliation_config_${Date.now()}`,
+            timestamp: nowIso,
+            severity: 'warning',
+            category: 'data_integrity',
+            target: 'env:COPILOT_RECONCILIATION_TOLERANCE',
+            message: parsedTolerance.error,
+          });
+        }
+        const reports = new BillingReconciliationService(this.storage).record(aiCreditLines, {
+          now: nowIso,
+          tolerance: parsedTolerance.tolerance,
+          unitPriceUsd: (m) => BillingConfigLoader.loadForMonth(m).creditsPricing.costPerCreditUSD,
+          exchangeCatalog: this.storage.loadCatalog?.<ExchangeRateCatalog>('exchange-rates') ?? null,
+        });
+        for (const r of reports) {
+          if (r.status !== 'exceeded') continue;
+          issues.push({
+            id: `issue_billing_reconciliation_${r.month}`,
+            timestamp: nowIso,
+            severity: 'warning',
+            category: 'data_integrity',
+            target: `billing:ai_credits:${r.month}`,
+            message: `AI credits computed amount differs from the Billing API amount beyond tolerance for ${r.month}.`,
+            details: `difference_usd=${r.difference_usd}, difference_percent=${r.difference_percent ?? 'n/a'}, tolerance=${r.tolerance.absolute_usd} USD and ${r.tolerance.percent}%`,
+          });
+        }
+        if (reports.length > 0) {
+          console.log(`🧮 Billing reconciliation: ${reports.map((r) => `${r.month} ${r.status}`).join(', ')}.`);
+        }
+      } catch (err) {
+        issues.push({
+          id: `issue_billing_reconciliation_${Date.now()}`,
+          timestamp: nowIso,
+          severity: 'warning',
+          category: 'data_integrity',
+          target: 'audit:billing-reconciliation',
+          message: 'Billing reconciliation could not be recorded.',
           details: err instanceof Error ? err.message : String(err),
         });
         this.storage.saveErrorLog(issues);

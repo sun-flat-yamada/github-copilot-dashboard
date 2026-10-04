@@ -45,6 +45,7 @@ describe('Pages staging: real processed data (past months included) reaches the 
     write(path.join(dataDir, 'config/copilot-user-mapping.json.gpg'), 'encrypted');
     write(path.join(dataDir, 'audit/seat-events/2026-09.json'), '{"events":[{"user":"real-user"}]}'); // シート監査イベント (個人データ)
     write(path.join(dataDir, 'audit/exports/seat-events.csv'), 'user\nreal-user\n');
+    write(path.join(dataDir, 'audit/billing-reconciliation/2026-09.json'), '{"days":{}}'); // 請求突合 (請求額に由来)
     write(path.join(dataDir, 'demo/index.json')); // demo は別ステップでステージされる
   });
 
@@ -81,7 +82,7 @@ describe('Pages staging: real processed data (past months included) reaches the 
     assert.ok(fs.existsSync(path.join(publicDir, 'deep-analysis/2026-08.json')));
     assert.ok(!fs.existsSync(path.join(publicDir, 'raw')));
     assert.ok(!fs.existsSync(path.join(publicDir, 'config')));
-    assert.ok(!fs.existsSync(path.join(publicDir, 'audit')), 'seat audit events are user-level data and are never staged');
+    assert.ok(!fs.existsSync(path.join(publicDir, 'audit')), 'seat audit events and billing reconciliation are never staged');
     assert.ok(!fs.existsSync(path.join(publicDir, 'reports/monthly')));
     assert.ok(!fs.existsSync(path.join(publicDir, 'demo')));
     assert.ok(!fs.existsSync(path.join(publicDir, 'daily/2026-01-05.json')));
@@ -122,6 +123,7 @@ describe('Pages staging: real processed data (past months included) reaches the 
     write(path.join(distDataDir, 'raw/2026/09/x.json'));
     write(path.join(distDataDir, 'config/copilot-user-mapping.json.gpg'));
     write(path.join(distDataDir, 'audit/seat-events/2026-09.json'));
+    write(path.join(distDataDir, 'audit/billing-reconciliation/2026-09.json'));
     write(path.join(distDataDir, 'reports/monthly/2026-08/export.csv'));
     write(path.join(distDataDir, 'somewhere/else/leak.csv'));
 
