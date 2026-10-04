@@ -3,10 +3,11 @@ import { UserAttributeMapping } from '../../domain/entities/copilot.js';
 import { UserAttributeMappingV2 } from '../../domain/entities/user-mapping.js';
 import { AttributeResolver, AttributeResolverOptions } from '../../collector/attribute-resolver.js';
 import { Pseudonymizer } from '../../collector/pseudonymizer.js';
+import { selectEffectiveEntry } from '../../collector/mapping-periods.js';
 
 export class AttributeResolverAdapter implements IAttributeResolver {
   private resolver: AttributeResolver;
-  private mappings = new Map<string, UserAttributeMapping | UserAttributeMappingV2>();
+  private mappings = new Map<string, (UserAttributeMapping | UserAttributeMappingV2)[]>();
   private isAnonymize: boolean = false;
   private pseudonymizer: Pseudonymizer | null = null;
 
@@ -35,7 +36,10 @@ export class AttributeResolverAdapter implements IAttributeResolver {
         const list = Array.isArray(parsed) ? parsed : parsed.mappings || [parsed];
         for (const item of list) {
           if (item && item.github_user) {
-            this.mappings.set(item.github_user.toLowerCase(), item);
+            const key = item.github_user.toLowerCase();
+            const entries = this.mappings.get(key);
+            if (entries) entries.push(item);
+            else this.mappings.set(key, [item]);
           }
         }
       } catch {
@@ -44,9 +48,9 @@ export class AttributeResolverAdapter implements IAttributeResolver {
     }
   }
 
-  resolve(login: string): UserAttributeMapping | UserAttributeMappingV2 | undefined {
+  resolve(login: string, asOf?: string): UserAttributeMapping | UserAttributeMappingV2 | undefined {
     const key = login.toLowerCase();
-    const v2 = this.mappings.get(key);
+    const v2 = selectEffectiveEntry(this.mappings.get(key) ?? [], asOf);
     if (v2) {
       if (this.pseudonymizer) {
         const pz = this.pseudonymizer;
@@ -72,7 +76,7 @@ export class AttributeResolverAdapter implements IAttributeResolver {
       return v2;
     }
 
-    const resolved = this.resolver.resolve(login);
+    const resolved = this.resolver.resolve(login, asOf);
     return {
       github_user: resolved.login,
       display_name: resolved.displayName,
@@ -83,10 +87,10 @@ export class AttributeResolverAdapter implements IAttributeResolver {
     };
   }
 
-  resolveAll(logins: string[]): Map<string, UserAttributeMapping | UserAttributeMappingV2> {
+  resolveAll(logins: string[], asOf?: string): Map<string, UserAttributeMapping | UserAttributeMappingV2> {
     const map = new Map<string, UserAttributeMapping | UserAttributeMappingV2>();
     for (const login of logins) {
-      const attr = this.resolve(login);
+      const attr = this.resolve(login, asOf);
       if (attr) {
         map.set(login.toLowerCase(), attr);
       }

@@ -394,7 +394,9 @@ export class ReportParser {
 
     const profiles: UserUsageProfile[] = [];
     for (const [login, dayMap] of byUserByDate.entries()) {
-      const resolved = this.resolver.resolve(login);
+      // 実効期間付きマッピングは最終利用日の属性 (異動後の所属) で解決する
+      const lastDate = Array.from(dayMap.keys()).sort((a, b) => this.compareDateStrings(a, b)).pop();
+      const resolved = this.resolver.resolve(login, lastDate);
       const seat = seatsByLogin?.get(login.toLowerCase());
       const dailyHistory = Array.from(dayMap.values()).sort((a, b) => this.compareDateStrings(a.date, b.date));
 
@@ -593,7 +595,9 @@ export class ReportParser {
       totalRequests += reqCount;
 
       // 属性解決 (Department, CostCenter, etc.)
-      const resolved = this.resolver.resolve(login);
+      // 属性はレコードの日付時点の実効属性で解決する (異動月は日付で部署・Cost Center が分かれる)。
+      // 日付が無いレコードは対象月の月末時点
+      const resolved = this.resolver.resolve(login, rec.date || reportMonth);
       const department = resolved.department || UNASSIGNED_LABELS.department;
       const costCenter = resolved.costCenterOverride || rec.cost_center_name || UNASSIGNED_LABELS.reportCostCenter;
       const organization = rec.organization || UNASSIGNED_LABELS.organization;
@@ -646,6 +650,11 @@ export class ReportParser {
       userStat.modelSpend[model] = (userStat.modelSpend[model] || 0) + netSpend;
       if (rec.date && (!userStat.lastActivityDate || rec.date > userStat.lastActivityDate)) {
         userStat.lastActivityDate = rec.date;
+        // ユーザー別の属性は最新の利用日の実効属性にそろえる (集計軸の配賦はレコード単位で既に分かれている)
+        userStat.outputLogin = resolved.login;
+        userStat.displayName = resolved.displayName;
+        userStat.department = department;
+        userStat.costCenter = costCenter;
       }
       if (rec.last_surface_used) {
         userStat.surface = rec.last_surface_used;
@@ -802,7 +811,7 @@ export class ReportParser {
           last_activity_date: u.lastActivityDate,
           // 実データが無い場合に既定のサーフェス (VS Code) を捏造しない
           surface: u.surface,
-          tags: this.resolver.resolve(u.login).tags,
+          tags: this.resolver.resolve(u.login, u.lastActivityDate).tags,
           usage_insight: computeUsageInsight(u.usage, orgBaseline),
         };
       })

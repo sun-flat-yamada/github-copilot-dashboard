@@ -76,7 +76,7 @@ The system automatically recognizes the following configuration sources configur
 
 ### 3.2 CSV Format (Simplified Setup)
 
-CSVs with standard header rows are also automatically detected and parsed:
+CSVs with standard header rows are also automatically detected and parsed (optional `valid_from` / `valid_to` columns add effective periods, see Section 4.1):
 
 ```csv
 github_user,display_name,department,cost_center_override,notes,tags
@@ -101,6 +101,36 @@ to avoid colliding with the comma used as the column delimiter (e.g., `Contracto
 | `cost_center_override` | string | No | Custom override for GitHub API Cost Center | API Cost Center if present; else `"Default-Cost-Center"` |
 | `notes` | string | No | Employment type, contract status, or notes | `""` |
 | `tags` | string[] | No | Freeform multi-value labels (e.g., `["Contractor", "Remote"]`). Array in JSON; single `;`-separated cell in CSV | Unset (`undefined`) |
+| `valid_from` | string (`YYYY-MM-DD`) | No | First day (inclusive) on which this row is in effect (Section 4.1) | Unset (no lower bound) |
+| `valid_to` | string (`YYYY-MM-DD`) | No | Last day (inclusive) on which this row is in effect | Unset (no upper bound) |
+
+### 4.1 Effective Periods (SCD Type 2, P3-8 / B-17)
+
+A person's department / cost center changes when they transfer. A mapping without a point in time would re-allocate every past month to the *current* affiliation, so a user can carry **one row per effective period**:
+
+```json
+[
+  { "github_user": "dev_alice", "department": "Unit Alpha", "cost_center_override": "CC-ALPHA", "valid_to": "2026-08-14" },
+  { "github_user": "dev_alice", "department": "Unit Beta",  "cost_center_override": "CC-BETA",  "valid_from": "2026-08-15" }
+]
+```
+
+(The values above are fictional placeholders. Real mappings are supplied only through `COPILOT_USER_MAPPING` / the encrypted mapping file and are never committed.)
+
+- **Backward compatible**: a row with neither `valid_from` nor `valid_to` is unlimited, so existing mappings behave exactly as before. In CSV, add `valid_from` / `valid_to` columns (a CSV without them is unchanged).
+- **Resolution time (`asOf`)**: `AttributeResolver.resolve(login, asOf)` (and `IAttributeResolver.resolve`) picks the row in effect on `asOf` (`YYYY-MM-DD`; `YYYY-MM` means the **last day of that month**). Omitting `asOf` selects the current row (the one with the latest `valid_from`). If no row is in effect (before the first period or inside a gap), the user is treated as unmapped (login as display name, `Unassigned`).
+- **Where it is applied**: the monthly report aggregation (`ReportParser.aggregate`) resolves each record at its own date, so the department / cost center allocation of a transfer month **splits at the effective date** (records without a date use the month end); the per-user rows use the attribute on the user's last activity day. `BillingCalculator` resolves at its reference date. Past months are no longer re-allocated to the new affiliation.
+- **Validation** (`validateMappingPeriods`, run when the mapping is loaded; `AttributeResolver.getValidationIssues()`):
+
+| Finding | Severity | Handling |
+|---|---|---|
+| Invalid date / `valid_from` later than `valid_to` | error | The row is dropped from resolution (treated as unmapped) |
+| Overlapping periods (including two period-less rows for one user) | error | The row with the later `valid_from` (then the later input order) wins |
+| Gap between periods | warning | Days in the gap are treated as unmapped |
+
+  The load-time warning logs only counts, never login names (Zero PII).
+- **Pseudonymization** (Section 5.2) applies to the row selected for the date, so a transfer changes the `Group-<hex>` pseudonym while `dev_<hex>` stays stable.
+- **Viewing premise**: per-person views show the attribute of the period concerned and are intended for employees with viewing permission (SDD-01 §1.1).
 
 ---
 
