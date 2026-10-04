@@ -982,8 +982,8 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                                     : 'bg-slate-800/60 text-slate-300 border-slate-700/50'
                                 }`}
                               >
+                                {m.share !== null && `${formatShare(m.share)} `}
                                 {m.model}
-                                {m.share !== null && ` ${formatShare(m.share)}`}
                               </span>
                             ))}
                           </div>
