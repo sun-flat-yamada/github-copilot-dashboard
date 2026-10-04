@@ -11,6 +11,7 @@ import {
   Compass,
   Coins,
   TrendingUp,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface ViewNavigationProps {
@@ -30,6 +31,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   Compass: <Compass className="w-3.5 h-3.5 text-purple-400" />,
   Coins: <Coins className="w-3.5 h-3.5 text-amber-400" />,
   TrendingUp: <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />,
+  ShieldCheck: <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />,
 };
 
 export const ViewNavigation: React.FC<ViewNavigationProps> = ({
