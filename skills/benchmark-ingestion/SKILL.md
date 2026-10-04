@@ -24,7 +24,7 @@ Use this skill when fetching, parsing, and updating official AI model technical 
 
 ## 📋 Required Model Metadata Schema
 
-For each model added or updated in `scripts/update-benchmarks.ts`:
+For each model added or updated in `scripts/benchmark-data/benchmark-records.json` (and its alias in `src/processor/model-catalog.ts`):
 ```typescript
 interface RawModelEntry {
   id: string; // e.g. 'claude-sonnet-5', 'gpt-6-astra'
@@ -60,7 +60,7 @@ interface RawModelEntry {
 
 ## 🔄 Execution Workflow
 
-1. Update `LATEST_BENCHMARK_RECORDS` in `scripts/update-benchmarks.ts`.
+1. Update the records in `scripts/benchmark-data/benchmark-records.json` (externalised JSON data) and add the model aliases to `src/processor/model-catalog.ts`.
 2. Ensure model ID normalization is compatible with `src/processor/benchmark-evaluator.ts`.
 3. **Synchronize Specification (`supported_models.md`)**:
    - In accordance with `.agents/rules/model-benchmark-management.md`, update all relevant tables in `supported_models.md` (Table 1 Copilot Models, Table 2 Auto Selection, Table 3 Extensions, Table 4 Clients, Table 5 Min IDE, Table 6 Plans, and Table 11 Retirement History).

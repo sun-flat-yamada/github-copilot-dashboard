@@ -119,17 +119,13 @@ Provides instant, pre-configured model comparisons across diverse tiers and scen
 - **🟢 OpenAI Suite (`vendor-openai`)**: GPT-6 Astra / GPT-6 Sol / GPT-5.6 Sol (*Adds GPT-6 Sol and GPT-5.6 Sol, removes legacy GPT-5.5/5.4/mini*).
 - **🔵 Google Gemini 3.x (`vendor-google`)**: Gemini 3.8 Flash / Gemini 3.7 Flash / Gemini 3.6 Flash / Gemini 3.5 Flash
 
-### 2.6 Radar Chart Line Representation & Active Model Visual Hierarchy
-- **Active (Focused) Model Emphasis**:
-  - The currently active/focused model is rendered with a **Bold solid stroke (`strokeWidth: 3.5`, `strokeDasharray: undefined`)** to establish immediate visual prominence.
-  - An active indicator badge is also provided in the chart header and legend.
-- **Comparison Models Dashed Stroke & Legibility Preservation**:
-  - Secondary comparison models are rendered with a **dashed stroke (`strokeDasharray: "8 3"`, `strokeWidth: 1.75`)**.
-  - By maintaining a high line-to-gap ratio (~73% dash, 27% gap), polygon boundaries and radar vertices remain clearly legible while clearly denoting secondary status.
-- **Smart Legend Indicator (Color Block + Line State)**:
-  - The chart legend retains the model's signature colored swatch, immediately followed by an inline miniature **solid or dashed line indicator** for seamless visual reference.
-- **Bi-directional Focus Synchronization with Detail Card**:
-  - Clicking any model entry in the chart legend (or its polygon in the radar chart) immediately synchronizes the active focus state, updating the right-hand "Model Diagnostics & Guidance" detail card in lockstep.
+### 2.6 Model Comparison Chart: Dot Plot + Raw-Value Table (P3-7 / B-15, D-03)
+The radar polygon is replaced by **small multiples of dot plots** (`ModelDotPlot`, `dashboard/src/components/radar/ModelDotPlot.tsx`). A polygon's area depends on the axis order and saturated axes hide differences; a dot plot reads every model off one common 0-100 scale.
+- **One row per axis, one dot per selected model.** The x position is the axis score (0-100). Rows are the six axes of section 3 in the order of `axis_definitions`.
+- **Models are told apart by marker shape and a text legend, not by colour alone**: circle, square, diamond, triangle, cross (repeating by selection order). The legend buttons show the same glyph and the model name.
+- **Active (focused) model**: a larger marker with a white outline, plus the 「選択中」 badge in the legend. Clicking a dot or a legend button sets `focusedModelId` and updates the detail card in lockstep.
+- **Raw values are always available**: every dot carries a `<title>` (model, axis, score and the raw metric, e.g. `SWE-bench 80% / HumanEval+ 95%`). The 「表で見る」 toggle (`AccessibleChart`, SDD-07 section 2.17) swaps the picture for a data table with one row per model, and per axis the score with its raw value underneath. The graph has `role="img"` and a summary naming the leader of each axis.
+- The radar-polygon morphing transition of earlier versions no longer exists (no polygon).
 
 ### 2.7 Left-Frame Model Selector & 3-Mode Display State Specification
 - **Left-Frame Placement & Viewport Tracking (`sticky`)**:
@@ -153,12 +149,22 @@ Provides instant, pre-configured model comparisons across diverse tiers and scen
 
 | Metric Key | Display Label | Weight | Reference Benchmarks | Logic & Rationale |
 | :--- | :--- | :--- | :--- | :--- |
-| `coding_swe` | Coding & SWE | 25% | SWE-bench Verified (85%), HumanEval+ (15%) | Autonomous issue resolution and PR creation; normalized against 75% peak. |
+| `coding_swe` | Coding & SWE | 25% | SWE-bench Verified (85%), HumanEval+ (15%) | Autonomous issue resolution and PR creation; percentile rank within the dataset. |
 | `reasoning_logic` | Reasoning & Logic | 25% | AIME 2024 (65%), GPQA Diamond (35%) | Chain-of-thought mathematical rigor, complex algorithmic reasoning, edge-case coverage. |
-| `arena_elo` | Community & Elo | 15% | LMSYS Chatbot Arena (Coding) | Blind user preference rating (normalized between 1220 and 1460). |
-| `speed_latency` | Speed & Latency | 10% | Tokens / sec (TPS), TTFT | Output generation velocity (30 to 180+ TPS piecewise log scaling). |
-| `cost_efficiency` | Cost Efficiency | 10% | Pricing per 1M tokens (In/Out) | Inverse evaluation of blended token rates; lower cost yields higher scores. |
+| `arena_elo` | Community & Elo | 15% | LMSYS Chatbot Arena (Coding) | Blind user preference rating; percentile rank within the dataset. |
+| `speed_latency` | Speed & Latency | 10% | Tokens / sec (TPS), TTFT | Output generation velocity; percentile rank within the dataset. |
+| `cost_efficiency` | Cost Efficiency | 10% | Pricing per 1M tokens (In/Out) | Blended token rate (40% input, 60% output) ranked in reverse; lower cost yields higher scores. |
 | `architecture_design` | Architecture & Context | 15% | Context Window (128K–2M), SWE multi-file | Repository-wide codebase comprehension and multi-file refactoring aptitude. |
+
+### 3.1 Normalisation: Percentile Rank (P3-7 / B-15)
+- **Why**: the former fixed anchors (SWE-bench 75 / AIME 90 / Elo 1460) were exceeded by current models, so 11 / 12 / 7 of 43 models were clamped at 99 and ten GA models tied on coding. Fixed anchors saturate whenever the field moves ahead of them.
+- **Method (`percentile-rank-v1`)**: for each component the score is the percentile rank of the model's raw value among all models of the dataset, `(below + 0.5 * equal) / n` (ties share the mid rank), mapped onto 20-99 and kept to one decimal. Axis scores combine components with the weights of the table above (coding = 0.85 SWE + 0.15 HumanEval+, reasoning = 0.65 AIME + 0.35 GPQA, architecture = 0.45 context + 0.55 SWE). The overall score is the weighted mean of the six axes (one decimal), so the top models are distinguishable.
+- **Relative by design**: a score tells the position within the current dataset, not an absolute capability, so it moves when models are added. The **raw values are always shown next to the scores** (dot plot tooltip, raw-value table, benchmark table).
+- `computeRadarScores(raw)` without a context (single model) keeps the legacy anchor formula for backward compatibility. The qualitative evaluation (grade, tags, strengths / weaknesses) keeps its absolute thresholds and is judged on the anchor scores.
+- Tests: `src/tests/benchmark-normalization.test.ts` (top models are not tied, rank boundaries, order independence).
+
+### 3.2 Model Catalog: Exact Alias Match (P3-7 / A-13)
+`normalizeModelId` resolves a raw name through the model catalog (`src/processor/model-catalog.ts`: canonical ID + alias list). The match is an **exact match on the normalised alias** (lower case, letters and digits only); the only accepted variations are a trailing parenthetical (`Kimi K3 (Moonshot)`) and a trailing release date (`-20250219`). There is **no substring matching**: an unknown name returns `unknown:<raw>` and is kept as is, so an unknown new model (for example a `GPT-6 Nova`) is never counted as `gpt-6-astra`. Alias collisions throw. A test asserts that the catalog and the benchmark records list the same models and that every record id and name resolves to itself.
 
 ---
 
@@ -259,8 +265,13 @@ The AI Model Radar dataset and UI display feature individual page version tracki
 $$\text{Version} = \text{yyyy-mm-dd-xxxx}$$
 - `yyyy-mm-dd`: Calendar date of generation (e.g., `2026-09-13`).
 - `xxxx`: 4-digit zero-padded incremental sequence (`0001`, `0002`, `0003`...).
-- Re-running `npm run benchmark:update` on the same date increments the sequence (`+1`).
-- Running on a subsequent date resets the sequence to `0001`.
+- **The version is managed by content hash (P3-7 / B-15)**: the dataset carries `content_hash` (first 16 hex chars of the sha256 of the benchmark records, axis definitions and normalisation method). `npm run benchmark:update` (also run by `pretest` / `prebuild`) keeps `version` and `last_updated` when the hash equals the existing file, and advances the sequence (`+1` on the same date, `0001` on a new date) **only when the content changed**. Running tests or builds no longer bumps the version. A legacy file without `content_hash` is bumped once.
+
+### 6.1.1 Externalised Benchmark Data
+The benchmark values are JSON data, not code: `scripts/benchmark-data/benchmark-records.json` (loaded by `loadBenchmarkRecords` in `scripts/update-benchmarks.ts`). Updating a model's numbers means editing that file; the script derives scores, evaluation, hash and version. The output `dashboard/public/data/model-benchmarks.json` stays generated (not committed).
+
+### 6.1.2 Dual Sync (AGENTS.md rule 8)
+When a model or benchmark changes, update together: `supported_models.md` (reference tables), `scripts/benchmark-data/benchmark-records.json` (+ `scripts/update-benchmarks.ts`), `src/processor/model-catalog.ts` (aliases) and the presets in `dashboard/src/components/radar/radar-constants.ts` (the UI model registry; `dashboard/src/data/models.ts` named in older rule text does not exist). `src/tests/benchmark-normalization.test.ts` fails when the catalog and the records diverge. This change adds, removes and renames no model, so `supported_models.md` is unchanged.
 
 ### 6.2 UI Presentation
 - Displayed prominently beside the page title as `v2026-09-13-0001`.
