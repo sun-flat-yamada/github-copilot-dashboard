@@ -380,5 +380,5 @@ P4-7 is the last Phase 4 change. It compared the specifications with the impleme
 | Gap | Where | Handling |
 |:--|:--|:--|
 | `index.json` `data_retention_days` is a fixed display value (365) and the About modal shows it as the retention period, which disagrees with the 60-month policy | `PipelineOrchestrator`, `dashboard/src/components/AboutModal.tsx` | Documented in §8.1 and SDD-07. Changing it touches code, the index type and many test fixtures, so it is a separate Issue (#257) |
-| The repository rules and `AGENTS.md` name `dashboard/src/data/models.ts`, which does not exist (the UI registry is `dashboard/src/components/radar/radar-constants.ts`; SDD-10 §6.1.2 already says so) | `.agents/rules/model-benchmark-management.md`, `AGENTS.md` | Outside the SDD scope; a separate Issue (#258) |
+| The repository rules and `AGENTS.md` named `dashboard/src/data/models.ts`, which does not exist (the UI registry is `dashboard/src/components/radar/radar-constants.ts`) | `.agents/rules/model-benchmark-management.md`, `AGENTS.md` | Corrected in Issue #258 to the same sync targets as SDD-10 §6.1.2 |
 | Live verification: the Reports / Billing APIs and the schema-drift workflow have not run against a real enterprise from the development environment | SDD-03, SDD-08 §1, §5.7 | Stated where each feature is specified; needs an enterprise PAT |

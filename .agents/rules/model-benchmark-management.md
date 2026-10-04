@@ -5,7 +5,7 @@ category: "rules"
 type: "specification"
 status: "active"
 date: 2026-10-03
-updated: 2026-10-03
+updated: 2026-10-04
 lang: "en"
 tags:
   - "rules"
@@ -28,8 +28,10 @@ Whenever AI models or benchmark metrics change, specification documents and oper
 | Category | File Path | Responsibility |
 | :--- | :--- | :--- |
 | **Specifications & Reference** | `supported_models.md` | Primary reference for Copilot GA/Preview models, Auto Selection eligibility, Extended capabilities (1M tokens, Reasoning), IDE/Client matrices, Minimum IDE versions, Plan availability, and Retirement history. |
-| **Benchmark Script** | `scripts/update-benchmarks.ts` | Benchmark metric definitions, capabilities, provider attribution, context limits, pricing, and score updates. |
-| **Frontend Model Registry** | `dashboard/src/data/models.ts` | UI catalog, recommended model presets (e.g., Code Review, Architecture, Cost-Performance), and comparison groups. |
+| **Benchmark Data** | `scripts/benchmark-data/benchmark-records.json` | Benchmark values, capabilities, provider attribution, context limits, pricing, and score updates (JSON data, not code). |
+| **Benchmark Script** | `scripts/update-benchmarks.ts` | Loads the records and derives scores, evaluation, hash and version. |
+| **Model Catalog** | `src/processor/model-catalog.ts` | Model aliases; `src/tests/benchmark-normalization.test.ts` fails when the catalog and the records diverge. |
+| **Frontend Model Registry** | `dashboard/src/components/radar/radar-constants.ts` | UI catalog, recommended model presets (e.g., Code Review, Architecture, Cost-Performance), and comparison groups. |
 | **Architecture Specifications** | `docs/specifications/*` | Architectural decisions, feature specifications, and SDD documentation. |
 
 ---
@@ -47,11 +49,11 @@ When introducing a new model or updating an existing model:
 - [ ] Update **Copilot プランごとにサポートされる AI モデル** (Table 6: Pro, Pro+, Max, Business, Enterprise).
 - [ ] If a model is deprecated/retired, record the end-of-support date and successor model in **モデルリタイアメント履歴** (Table 11).
 
-### Step 2: `scripts/update-benchmarks.ts` Verification
-- [ ] Ensure the model identifier, provider, benchmark scores, context window, and pricing are registered.
+### Step 2: `scripts/benchmark-data/benchmark-records.json` & `scripts/update-benchmarks.ts` Verification
+- [ ] Ensure the model identifier, provider, benchmark scores, context window, and pricing are registered in the records file, and its alias in `src/processor/model-catalog.ts`.
 - [ ] Run benchmark validation or ingestion script to verify schema conformance.
 
-### Step 3: `dashboard/src/data/models.ts` & Presets Verification
+### Step 3: `dashboard/src/components/radar/radar-constants.ts` & Presets Verification
 - [ ] Verify that model presets (e.g. `設計に推奨`, `コードレビュー利用に推奨`, `コードベース分析`, `実用性能で高コスパ`) reflect the latest GA model lineup.
 - [ ] Ensure deprecated models are removed or replaced with successor equivalents according to project requirements.
 
