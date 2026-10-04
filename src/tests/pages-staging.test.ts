@@ -46,6 +46,7 @@ describe('Pages staging: real processed data (past months included) reaches the 
     write(path.join(dataDir, 'audit/seat-events/2026-09.json'), '{"events":[{"user":"real-user"}]}'); // シート監査イベント (個人データ)
     write(path.join(dataDir, 'audit/exports/seat-events.csv'), 'user\nreal-user\n');
     write(path.join(dataDir, 'audit/billing-reconciliation/2026-09.json'), '{"days":{}}'); // 請求突合 (請求額に由来)
+    write(path.join(dataDir, 'audit/report-outputs/monthly-cost-summary/2026-09.md'), '# report\n'); // 定義駆動レポートの生成物 (P4-5)
     write(path.join(dataDir, 'demo/index.json')); // demo は別ステップでステージされる
   });
 
@@ -124,6 +125,7 @@ describe('Pages staging: real processed data (past months included) reaches the 
     write(path.join(distDataDir, 'config/copilot-user-mapping.json.gpg'));
     write(path.join(distDataDir, 'audit/seat-events/2026-09.json'));
     write(path.join(distDataDir, 'audit/billing-reconciliation/2026-09.json'));
+    write(path.join(distDataDir, 'audit/report-outputs/index.json'));
     write(path.join(distDataDir, 'reports/monthly/2026-08/export.csv'));
     write(path.join(distDataDir, 'somewhere/else/leak.csv'));
 

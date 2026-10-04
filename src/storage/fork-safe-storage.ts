@@ -1,5 +1,6 @@
 import type { DataQualityHistory } from '../domain/entities/data-quality.js';
 import type { BillingReconciliationMonthDocument } from '../domain/entities/billing-reconciliation.js';
+import type { ReportOutputIndex } from '../domain/entities/report-definition.js';
 import type { SeatAuditMonthDocument } from '../domain/entities/seat-audit.js';
 import type { MonthCloseIndex, MonthCloseRecord } from '../domain/entities/month-close.js';
 import * as fs from 'fs';
@@ -263,6 +264,30 @@ export class ForkSafeStorage {
       .filter((m) => /^\d{4}-\d{2}$/.test(m))
       .sort()
       .reverse();
+  }
+
+  /**
+   * 定義駆動レポートの生成物 (audit/report-outputs/{report_id}/{period}.{md|csv}) を保存する (P4-5)。
+   * 配信 (Pages) の対象外なので processed/ の外に置き、配信用ディレクトリへは複製しない。
+   */
+  public saveReportOutput(reportId: string, period: string, ext: 'md' | 'csv', content: string): string {
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(reportId)) throw new Error(`Invalid report id: ${reportId}`);
+    if (!/^\d{4}-(\d{2}|W\d{2})$/.test(period)) throw new Error(`Invalid report period: ${period}`);
+    const dir = path.join(this.baseDir, 'audit', 'report-outputs', reportId);
+    this.ensureDirectory(dir);
+    const filePath = path.join(dir, `${period}.${ext}`);
+    fs.writeFileSync(filePath, content, 'utf-8');
+    return filePath;
+  }
+
+  public loadReportOutputIndex(): ReportOutputIndex | null {
+    return this.readJson<ReportOutputIndex>(path.join(this.baseDir, 'audit', 'report-outputs', 'index.json'));
+  }
+
+  public saveReportOutputIndex(index: ReportOutputIndex): void {
+    const dir = path.join(this.baseDir, 'audit', 'report-outputs');
+    this.ensureDirectory(dir);
+    fs.writeFileSync(path.join(dir, 'index.json'), JSON.stringify(index, null, 2), 'utf-8');
   }
 
   /** 保存済みの月次レポート集計 (processed/reports/{month}.json)。未保存・破損時は null */
