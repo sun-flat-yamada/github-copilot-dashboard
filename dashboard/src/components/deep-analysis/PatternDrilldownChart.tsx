@@ -1,6 +1,7 @@
 import React from 'react';
 import { UserDiagnosticDrilldown } from '../../../../src/types/deep-analysis';
 import { Activity, TrendingUp } from 'lucide-react';
+import { getModelColor } from '../../utils/modelDisplay';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -16,12 +17,6 @@ import {
   Cell,
 } from 'recharts';
 
-export const DRILLDOWN_MODEL_COLORS: Record<string, string> = {
-  'claude-3-7-sonnet': '#a855f7',
-  'gpt-4o': '#3b82f6',
-  'o1': '#f43f5e',
-  'gemini-2-0-flash': '#10b981',
-};
 
 interface PatternDrilldownChartProps {
   drilldown: UserDiagnosticDrilldown;
@@ -129,7 +124,7 @@ export const PatternDrilldownChart: React.FC<PatternDrilldownChartProps> = ({ dr
                     {drilldown.modelDistribution.map((entry) => (
                       <Cell
                         key={entry.modelName}
-                        fill={DRILLDOWN_MODEL_COLORS[entry.modelName] || '#64748b'}
+                        fill={getModelColor(entry.modelName)}
                       />
                     ))}
                   </Pie>
@@ -155,7 +150,7 @@ export const PatternDrilldownChart: React.FC<PatternDrilldownChartProps> = ({ dr
                 <div className="flex items-center space-x-1.5">
                   <span
                     className="w-2.5 h-2.5 rounded-full"
-                    style={{ backgroundColor: DRILLDOWN_MODEL_COLORS[m.modelName] || '#64748b' }}
+                    style={{ backgroundColor: getModelColor(m.modelName) }}
                   />
                   <span className="text-slate-300 font-mono">{m.modelName}</span>
                 </div>

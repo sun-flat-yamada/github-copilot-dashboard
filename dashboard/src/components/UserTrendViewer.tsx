@@ -24,6 +24,8 @@ import {
   Layers,
 } from 'lucide-react';
 
+import { getModelDisplay } from '../utils/modelDisplay';
+
 interface UserTrendViewerProps {
   profiles?: UserUsageProfile[];
   initialSelectedLogin?: string;
@@ -32,19 +34,6 @@ interface UserTrendViewerProps {
   onOpenDeepAnalysis?: (login: string) => void;
 }
 
-// 既知モデルのカラーパレット定義 (未知のモデルはフォールバックパレットを使用)
-const MODEL_COLOR_MAP: Record<string, { name: string; color: string }> = {
-  'claude-3-7-sonnet': { name: 'Claude 3.7 Sonnet', color: '#d97706' }, // amber-600
-  'claude-3-5-sonnet': { name: 'Claude 3.5 Sonnet', color: '#f59e0b' }, // amber-500
-  'gpt-4o': { name: 'GPT-4o', color: '#10b981' }, // emerald-500
-  'gpt-4o-mini': { name: 'GPT-4o mini', color: '#34d399' }, // emerald-400
-  'o1': { name: 'o1 (推論)', color: '#6366f1' }, // indigo-500
-  'o3-mini': { name: 'o3-mini', color: '#818cf8' }, // indigo-400
-  'gemini-2-0-flash': { name: 'Gemini 2.0 Flash', color: '#3b82f6' }, // blue-500
-  'gemini-1-5-pro': { name: 'Gemini 1.5 Pro', color: '#60a5fa' }, // blue-400
-};
-
-const FALLBACK_COLORS = ['#ec4899', '#8b5cf6', '#14b8a6', '#f97316', '#a855f7'];
 
 export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
   profiles = [],
@@ -89,25 +78,7 @@ export const UserTrendViewer: React.FC<UserTrendViewerProps> = ({
 
     // モデル別の実績が無い場合に代表モデルを仮定して系列を作らない (実測のないモデルを凡例に出さない)
 
-    const modelList = Array.from(foundModels);
-    let fallbackIdx = 0;
-
-    return modelList.map((modelId) => {
-      if (MODEL_COLOR_MAP[modelId]) {
-        return {
-          id: modelId,
-          name: MODEL_COLOR_MAP[modelId].name,
-          color: MODEL_COLOR_MAP[modelId].color,
-        };
-      }
-      const color = FALLBACK_COLORS[fallbackIdx % FALLBACK_COLORS.length];
-      fallbackIdx++;
-      return {
-        id: modelId,
-        name: modelId,
-        color,
-      };
-    });
+    return Array.from(foundModels).map((modelId) => ({ id: modelId, ...getModelDisplay(modelId) }));
   }, [currentProfile]);
 
   // フックは早期 return より前に置く (プロファイルの有無でフック数が変わると React が例外を投げる)。

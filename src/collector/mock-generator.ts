@@ -33,18 +33,19 @@ export const DUMMY_INCLUDED_CREDITS = 150;
 
 /**
  * モデル別のトークン単価 (USD / 100 万トークン)。
- * 出典: GitHub Docs `data/tables/copilot/models-and-pricing.yml` (2026-10-02 時点)。
- * `model` 列の表記はドキュメントの例 (`claude-sonnet-4`) に合わせたスラッグ。
- * 実際のエクスポートの表記は実ファイルで要確認。
+ * 値は `scripts/benchmark-data/benchmark-records.json` の `raw_metrics` に一致させる
+ * (`src/tests/demo-data.test.ts` が一致を検査する)。`model` 列の表記はモデル ID のスラッグ。
  */
 export const COPILOT_MODEL_TOKEN_PRICES: Record<
   string,
   { input: number; cachedInput: number; cacheWrite: number; output: number }
 > = {
-  'claude-sonnet-4': { input: 3.0, cachedInput: 0.3, cacheWrite: 3.75, output: 15.0 },
-  'claude-opus-4-8': { input: 5.0, cachedInput: 0.5, cacheWrite: 6.25, output: 25.0 },
-  'gpt-5-4': { input: 2.5, cachedInput: 0.25, cacheWrite: 0, output: 15.0 },
-  'gpt-5-mini': { input: 0.25, cachedInput: 0.025, cacheWrite: 0, output: 2.0 },
+  'claude-fable-5-1': { input: 10.0, cachedInput: 0.25, cacheWrite: 12.5, output: 50.0 },
+  'claude-opus-5-5': { input: 4.0, cachedInput: 0.2, cacheWrite: 5.0, output: 20.0 },
+  'claude-sonnet-5': { input: 2.0, cachedInput: 0.2, cacheWrite: 2.5, output: 10.0 },
+  'gpt-6-astra': { input: 10.0, cachedInput: 1.0, cacheWrite: 12.5, output: 50.0 },
+  'gpt-5-4-mini': { input: 0.75, cachedInput: 0.075, cacheWrite: 0, output: 4.5 },
+  'gemini-3-8-flash': { input: 0.75, cachedInput: 0.075, cacheWrite: 0, output: 3.75 },
 };
 
 export class MockDataGenerator {
@@ -378,7 +379,7 @@ export class MockDataGenerator {
           total_chat_insertion_events: Math.floor(totalChats * 0.38),
           models: [
             { name: 'claude-sonnet-5', total_chats: Math.floor(totalChats * 0.58) },
-            { name: 'gpt-5-5', total_chats: Math.floor(totalChats * 0.28) },
+            { name: 'gpt-6-astra', total_chats: Math.floor(totalChats * 0.28) },
             { name: 'claude-opus-5-5', total_chats: Math.floor(totalChats * 0.14) },
           ],
         },
@@ -429,7 +430,7 @@ export class MockDataGenerator {
           total_used: Math.floor((350 + this.random() * 200) * activityFactor),
           by_model: {
             'claude-sonnet-5': Math.floor((180 + this.random() * 90) * activityFactor),
-            'gpt-5-5': Math.floor((90 + this.random() * 40) * activityFactor),
+            'gpt-6-astra': Math.floor((90 + this.random() * 40) * activityFactor),
             'claude-opus-5-5': Math.floor((50 + this.random() * 30) * activityFactor),
             'gemini-3-8-flash': Math.floor((30 + this.random() * 20) * activityFactor),
           },
@@ -520,7 +521,7 @@ export class MockDataGenerator {
       let totalAcceptances = 0;
       const modelTotals: Record<string, number> = {
         'claude-sonnet-5': 0,
-        'gpt-5-5': 0,
+        'gpt-6-astra': 0,
         'claude-opus-5-5': 0,
         'gemini-3-8-flash': 0,
       };
@@ -537,7 +538,7 @@ export class MockDataGenerator {
           dailyHistory.push({
             date: dateStr,
             total_chats: 0,
-            model_breakdown: { 'claude-sonnet-5': 0, 'gpt-5-5': 0, 'claude-opus-5-5': 0, 'gemini-3-8-flash': 0 },
+            model_breakdown: { 'claude-sonnet-5': 0, 'gpt-6-astra': 0, 'claude-opus-5-5': 0, 'gemini-3-8-flash': 0 },
             suggestions: 0,
             acceptances: 0,
             lines_suggested: 0,
@@ -550,9 +551,9 @@ export class MockDataGenerator {
 
         let dayChats = Math.floor((5 + this.random() * 25) * userActivityFactor);
         let claudeChats = Math.floor(dayChats * (0.45 + this.random() * 0.2));
-        let gpt4oChats = Math.floor((dayChats - claudeChats) * 0.5);
-        let o1Chats = Math.floor((dayChats - claudeChats - gpt4oChats) * 0.6);
-        let geminiChats = Math.max(0, dayChats - claudeChats - gpt4oChats - o1Chats);
+        let astraChats = Math.floor((dayChats - claudeChats) * 0.5);
+        let opusChats = Math.floor((dayChats - claudeChats - astraChats) * 0.6);
+        let geminiChats = Math.max(0, dayChats - claudeChats - astraChats - opusChats);
 
         let daySuggestions = Math.floor((40 + this.random() * 120) * userActivityFactor);
         let dayAcceptances = Math.floor(daySuggestions * (0.28 + this.random() * 0.12));
@@ -565,17 +566,17 @@ export class MockDataGenerator {
         } else if (login === 'yuki-takahashi') {
           // ペルソナ2: 超重量級モデル過剰依存型 (o1が70%〜85%を占め、Gemini Flashが0)
           dayChats = Math.floor((12 + this.random() * 15) * userActivityFactor);
-          o1Chats = Math.floor(dayChats * (0.7 + this.random() * 0.15));
-          claudeChats = Math.floor((dayChats - o1Chats) * 0.8);
-          gpt4oChats = Math.max(0, dayChats - o1Chats - claudeChats);
+          opusChats = Math.floor(dayChats * (0.7 + this.random() * 0.15));
+          claudeChats = Math.floor((dayChats - opusChats) * 0.8);
+          astraChats = Math.max(0, dayChats - opusChats - claudeChats);
           geminiChats = 0;
         } else if (login === 'mika-ito') {
           // ペルソナ3: 文脈希薄・対話空回り型 (チャットが25〜35回と多いがコード受諾が僅少)
           dayChats = Math.floor((24 + this.random() * 12) * userActivityFactor);
           claudeChats = Math.floor(dayChats * 0.5);
-          gpt4oChats = Math.floor(dayChats * 0.3);
-          o1Chats = Math.floor(dayChats * 0.1);
-          geminiChats = Math.max(0, dayChats - claudeChats - gpt4oChats - o1Chats);
+          astraChats = Math.floor(dayChats * 0.3);
+          opusChats = Math.floor(dayChats * 0.1);
+          geminiChats = Math.max(0, dayChats - claudeChats - astraChats - opusChats);
           daySuggestions = Math.floor((15 + this.random() * 15) * userActivityFactor);
           dayAcceptances = Math.floor(daySuggestions * 0.2);
         } else if (login === 'taro-tanaka') {
@@ -583,21 +584,21 @@ export class MockDataGenerator {
           daySuggestions = Math.floor((60 + this.random() * 40) * userActivityFactor);
           dayAcceptances = Math.floor(daySuggestions * (0.35 + this.random() * 0.08));
           geminiChats = Math.floor(dayChats * 0.35);
-          gpt4oChats = Math.floor(dayChats * 0.3);
+          astraChats = Math.floor(dayChats * 0.3);
           claudeChats = Math.floor(dayChats * 0.25);
-          o1Chats = Math.max(0, dayChats - geminiChats - gpt4oChats - claudeChats);
+          opusChats = Math.max(0, dayChats - geminiChats - astraChats - claudeChats);
         }
 
         const modelBreakdown: Record<string, number> = {
           'claude-sonnet-5': claudeChats,
-          'gpt-5-5': gpt4oChats,
-          'claude-opus-5-5': o1Chats,
+          'gpt-6-astra': astraChats,
+          'claude-opus-5-5': opusChats,
           'gemini-3-8-flash': geminiChats,
         };
 
         modelTotals['claude-sonnet-5'] += claudeChats;
-        modelTotals['gpt-5-5'] += gpt4oChats;
-        modelTotals['claude-opus-5-5'] += o1Chats;
+        modelTotals['gpt-6-astra'] += astraChats;
+        modelTotals['claude-opus-5-5'] += opusChats;
         modelTotals['gemini-3-8-flash'] += geminiChats;
         totalChats += dayChats;
 
@@ -674,8 +675,10 @@ export class MockDataGenerator {
 
     const models = [
       { name: 'Claude Sonnet 5', rate: 0.04 },
-      { name: 'GPT-5.5', rate: 0.03 },
-      { name: 'claude-opus-5-5', rate: 0.05 },
+      { name: 'GPT-6 Astra', rate: 0.05 },
+      { name: 'Claude Opus 5.5', rate: 0.05 },
+      { name: 'Claude Fable 5.1', rate: 0.06 },
+      { name: 'GPT-5.4 mini', rate: 0.01 },
       { name: 'Gemini 3.8 Flash', rate: 0.02 },
     ];
 
@@ -762,18 +765,18 @@ export class MockDataGenerator {
     ];
     type Pattern = { login: string; days: number; models: string[]; input: number; output: number; cacheRead: number; spikes?: number };
     const patterns: Pattern[] = [
-      { login: 'demo-user-01', days: 14, models: ['claude-sonnet-4'], input: 40000, output: 6000, cacheRead: 60000 },
-      { login: 'demo-user-02', days: 14, models: ['claude-sonnet-4'], input: 38000, output: 5500, cacheRead: 58000 },
-      { login: 'demo-user-03', days: 14, models: ['gpt-5-4'], input: 42000, output: 6500, cacheRead: 64000 },
-      { login: 'demo-user-04', days: 14, models: ['claude-sonnet-4'], input: 36000, output: 6000, cacheRead: 55000 },
+      { login: 'demo-user-01', days: 14, models: ['claude-sonnet-5'], input: 40000, output: 6000, cacheRead: 60000 },
+      { login: 'demo-user-02', days: 14, models: ['claude-sonnet-5'], input: 38000, output: 5500, cacheRead: 58000 },
+      { login: 'demo-user-03', days: 14, models: ['gpt-6-astra'], input: 42000, output: 6500, cacheRead: 64000 },
+      { login: 'demo-user-04', days: 14, models: ['claude-sonnet-5'], input: 36000, output: 6000, cacheRead: 55000 },
       // 文脈の持ち越しが大きい (出力に対する入力・キャッシュ読取が多い)
-      { login: 'demo-long-context', days: 12, models: ['claude-opus-4-8'], input: 150000, output: 5000, cacheRead: 600000 },
+      { login: 'demo-long-context', days: 12, models: ['claude-fable-5-1'], input: 150000, output: 5000, cacheRead: 600000 },
       // 高トークン日が多い
-      { login: 'demo-spiky', days: 12, models: ['claude-sonnet-4'], input: 40000, output: 6000, cacheRead: 60000, spikes: 6 },
+      { login: 'demo-spiky', days: 12, models: ['claude-sonnet-5'], input: 40000, output: 6000, cacheRead: 60000, spikes: 6 },
       // 日内のモデル切替が多い
-      { login: 'demo-switcher', days: 12, models: ['claude-sonnet-4', 'gpt-5-4', 'gpt-5-mini'], input: 30000, output: 5000, cacheRead: 40000 },
+      { login: 'demo-switcher', days: 12, models: ['claude-sonnet-5', 'gpt-6-astra', 'gpt-5-4-mini'], input: 30000, output: 5000, cacheRead: 40000 },
       // 利用が少ない (判定しない)
-      { login: 'demo-light', days: 2, models: ['gpt-5-mini'], input: 20000, output: 3000, cacheRead: 10000 },
+      { login: 'demo-light', days: 2, models: ['gpt-5-4-mini'], input: 20000, output: 3000, cacheRead: 10000 },
     ];
     const [y, m] = monthStr.split('-').map(Number);
     const daysInMonth = new Date(y, m, 0).getDate();
