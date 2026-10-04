@@ -142,6 +142,7 @@ suzuki-ken,鈴木 健 (パートナー),フロントエンド基盤G,Platform-En
 |---|---|---|
 | `main` ブランチ | ソースコードのみ（データ・マッピングなし） | リポジトリの公開範囲 |
 | `copilot-data` ブランチ（同一リポジトリ） | `processed/*`（解決済みの表示名・部署・タグ・個人別利用・診断）、`raw/*`（GitHub ログイン名・数値ユーザー ID・アバター URL を含むシート割り当て）、取り込んだレポート CSV | **リポジトリと同じ。** 公開リポジトリならこのブランチも公開される |
+| `copilot-data` ブランチ: `audit/seat-events/*`（P4-3） | シート監査イベント（ログインごとの付与・剥奪・プラン変更・最終利用日の変化。`ANONYMIZE_USERS=true` ではログインは仮名）。`processed/` の外にあるのでステージされない | リポジトリと同じ。**Pages には配信しない**（`dist/data/` に `audit` があれば `pages:verify` が失敗）。CSV 出力は権限のある社内の閲覧者のみ（SDD-17 §4） |
 | GitHub Pages の配信物 | `index.json`、ルートへ展開した `processed/*` | **リポジトリが非公開でも既定で公開される**（GitHub Enterprise Cloud のアクセス制御付き Pages を使う場合を除く） |
 
 リポジトリと Pages の **両方** を、データの公開境界として扱うこと。前提のもとでは、どちらも Enterprise のメンバーに限定する (internal / private リポジトリ、アクセス制御付き Pages)。
