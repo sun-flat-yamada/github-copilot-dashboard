@@ -32,8 +32,7 @@ In many open-source projects and enterprise template repositories, automated bot
 │
 ├── copilot-data (Dedicated Orphan Data Branch — REAL data only)
 │   ├── data/
-│   │   ├── raw/YYYY/MM/copilot_metrics_YYYY-MM-DD.json
-│   │   ├── raw/YYYY/MM/copilot_seats_YYYY-MM-DD.json
+│   │   ├── raw/YYYY/MM/YYYY-MM-DD-raw.json (metrics + seats + cost centers of the day)
 │   │   ├── reports/monthly/YYYY-MM/copilot_monthly_usage_YYYY-MM.csv (Monthly Usage Report CSV)
 │   │   ├── processed/daily/YYYY-MM-DD.json
 │   │   ├── processed/monthly/YYYY-MM.json
@@ -73,18 +72,16 @@ This design was chosen over alternatives such as (a) a single shared branch with
 
 ## 2. Storage Directory Structure & Partitioning
 
-All data files are arranged immutably using append-only daily and monthly partitions, with **perpetual accumulation without upper limits**:
+All data files are arranged immutably using append-only daily and monthly partitions, with accumulation that is bounded only by the retention policy (default 60 months for `raw/`, original CSVs and `audit/`; `processed/` is never expired, §2.11, SDD-17 §8):
 
 ```
 data/
-├── raw/                              # Unprocessed raw API responses (Perpetual append-only)
+├── raw/                              # Unprocessed raw API responses (append-only; expires after the retention period once the month is closed, SDD-17 §8)
 │   └── 2026/
 │       ├── 09/
-│       │   ├── 2026-09-01-metrics.json
-│       │   ├── 2026-09-01-seats.json
-│       │   ├── 2026-09-01-cost-centers.json
+│       │   ├── 2026-09-01-raw.json   # one file per day: { collected_at, date, metrics, seats, cost_centers }
 │       │   └── ...
-├── reports/                          # Exported GitHub Monthly Usage Report CSVs (Perpetual append-only)
+├── reports/                          # Exported GitHub Monthly Usage Report CSVs (append-only; same retention as raw/)
 │   └── monthly/
 │       ├── 2026-08/
 │       │   └── copilot_monthly_usage_2026-08.csv
@@ -328,6 +325,8 @@ The entry metadata file loaded first by the dashboard SPA to provide available d
   }
 }
 ```
+
+`data_retention_days` is a **legacy, fixed display value** (the About modal shows it). It does not control deletion and is not the retention policy: raw data is kept for 60 months by default (`COPILOT_DATA_RETENTION_MONTHS`, SDD-17 §8.1). Aligning the display value is tracked as a separate Issue.
 
 ### 3.0 Per-Source Status, Last-Known-Good and the Meaning of `is_mock_mode`
 

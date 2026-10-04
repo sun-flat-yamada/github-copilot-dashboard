@@ -5,10 +5,10 @@
 # SDD-17: 監査 & レポート仕様書 (Audit & Report Specification)
 
 - **文書番号**: SPEC-COPILOT-017
-- **ステータス**: Approved / Active（Phase 4 に合わせて拡張。P4-2〜P4-6 で節を追加する。P4-4 は §5、P4-5 は §6、P4-6 は §7 と §8）
+- **ステータス**: Approved / Active（Phase 4 で完成。P4-2〜P4-6 が §3〜§8 を追加し、P4-7 が §9 を追加した）
 - **対象バージョン**: 2026.10
-- **作成日**: 2026-10-04 (P4-1 / #197: 監査・データ品質ビュー、P4-2 / #198: 月次締めと改訂、P4-3 / #199: シート監査イベント、P4-4 / #200: 請求突合、P4-5 / #201: 定義駆動レポート、P4-6 / #202: プライバシー階層と保持期間)
-- **関連**: [SDD-05 §2.3 / §2.5 / §2.7](05_data_storage_and_fork_isolation_spec.ja.md)、[SDD-07 §2.19](07_dashboard_ui_ux_spec.ja.md)、[SDD-16 データ契約 & 指標カタログ](16_data_contract_and_metric_catalog_spec.ja.md)
+- **作成日**: 2026-10-04 (P4-1 / #197: 監査・データ品質ビュー、P4-2 / #198: 月次締めと改訂、P4-3 / #199: シート監査イベント、P4-4 / #200: 請求突合、P4-5 / #201: 定義駆動レポート、P4-6 / #202: プライバシー階層と保持期間、P4-7 / #203: 同期状況)
+- **関連**: [SDD-05 §2.3 / §2.5 / §2.7](05_data_storage_and_fork_isolation_spec.ja.md)、[SDD-07 §2.19](07_dashboard_ui_ux_spec.ja.md)、[SDD-08 §1](08_automation_workflow_spec.ja.md)、[SDD-16 データ契約 & 指標カタログ](16_data_contract_and_metric_catalog_spec.ja.md)
 
 ---
 
@@ -21,7 +21,7 @@
 | 月次締め | 翌月 5 営業日 | §3（P4-2） |
 | 締め後の改訂 | 履歴付きで可 | §3（P4-2） |
 | 生データの保持 | 5 年（60 か月）。`data_retention` の既定は 60 か月 | §8（P4-6） |
-| 個人情報 | 監査画面と出力は件数・日付・ソース名のみ | P4-1（本書 §2） |
+| 個人情報 | 監査画面と出力は件数・日付・ソース名のみ。ユーザー単位の出力（シートイベント、`identified` レポート）はプライバシー階層と公開プロファイルに従い、生データとユーザー単位の監査データは保持期間のポリシーで失効する | §2、§4.3、§7（P4-1、P4-3、P4-6） |
 | シート履歴 | 付与・剥奪・プラン変更・最終利用日の変化を日次シートスナップショットから記録し、権限のある社内の閲覧者向けに CSV で出力する。公開しない | §4（P4-3） |
 
 ## 2. 監査・データ品質ビュー (P4-1 / E-01)
@@ -355,6 +355,30 @@ strict スキーマ（未知のキーはエラー）と意味の検証。`npm ru
 
 `audit/retention/log.json`（`schema_version`、`runs[]`、最大 1000 件）: `run_id`、`started_at`、`finished_at`、`status`（`started` → `completed` / `failed`）、`retention_months`、`keep_from`、`actor`（運用者が選ぶ別名・役割名。CI ユーザーや GitHub ログインは自動で入れない）、カテゴリ別の `count` / `keys`（月・run_id・`{report_id}/{period}`。個人情報なし）/ `bytes`、`skipped[]`、`errors[]`。**先に意図を書き**（`started`）、削除し、記録を完了にするので、中断された実行も見える。1 件の失敗は他を止めない（その実行は `failed`）。締め済みの記録は残るため、数値の監査証跡（§3）は生データより長く残る。
 
-## 9. 残りの節
+## 9. 同期状況と既知の差分 (P4-7 / #203)
 
-なし。P4-7（#203）は SDD-16 と SDD-17 の網羅性・整合性の確認である。
+P4-7 は Phase 4 の最後の変更である。仕様書と実装を突き合わせ、その結果をここに残す。後から読む人が、何を確認し、何が未解決かを分かるようにする。
+
+### 9.1 実装と突き合わせた仕様書
+
+| SDD | 確認した内容 | 結果 |
+|:--|:--|:--|
+| SDD-02 | 実際の結線と単一フロントエンド構成（ADR-0001） | 一致（P2 で同期済み） |
+| SDD-03 | Reports API、Cost Centers の形、Billing（AI Credits）API | 一致（P1 で同期済み）。実 Enterprise への実 API 呼び出しは未実施（SDD-08 §1） |
+| SDD-04 | 公開範囲、HMAC 仮名化、プライバシー階層 | 一致（P4-6 が §5.4 の相互参照を追加） |
+| SDD-05 | Raw Landing、Run Manifest、正準ファクト、`audit/`、`closes/` のレイアウト | **P4-7 で修正**: §2 の `raw/` のレイアウトが `*-metrics.json` / `*-seats.json` / `*-cost-centers.json` だったが、実装は 1 日 1 ファイルの `YYYY-MM-DD-raw.json`（`metrics`、`seats`、`cost_centers`）を書く |
+| SDD-06 | 価格カタログ、総額 / 純額、シート分類、推定 | 一致。突合は §4.7（P4-4）。保持期間は集計に触れないので P4-6 の変更なし |
+| SDD-07 | 品質属性、KPI 規約、監査ビュー（§2.19） | 一致。旧保持期間フィールドについての About モーダルの注記を P4-7 で追加 |
+| SDD-08 | 日次ワークフローのステップ、変数、権限 | **P4-7 で修正**: 為替、請求 Issue、レポート生成、保持期間のドライランの各ステップと、変数 `COPILOT_BUSINESS_CALENDAR`・`COPILOT_RECONCILIATION_TOLERANCE`・`COPILOT_ALLOW_IDENTIFIED_REPORTS`・`COPILOT_DATA_RETENTION_MONTHS`、権限 `issues: write` が欠けていた |
+| SDD-10 | 正規化、データセット版（内容ハッシュ）、データファイル | 一致（P3-7 で同期済み） |
+| SDD-11 | 診断 v2、判定不能ユーザー | 一致（P3-5 で同期済み） |
+| SDD-15 | Query 層、ESLint 規約 | 一致 |
+| SDD-16 | カタログと `METRIC_REGISTRY` | **P4-7 で修正**: 表に `adoption_unclassified_users`・`yoy_spend_change`・`yoy_active_seats_change` が欠けていた。データ契約の索引（§7）を追加。28 件の id がすべて一致 |
+
+### 9.2 既知の差分（この変更では直さない）
+
+| 差分 | 場所 | 扱い |
+|:--|:--|:--|
+| `index.json` の `data_retention_days` は固定の表示値（365）で、About モーダルが保持期間として表示するため、60 か月のポリシーと食い違う | `PipelineOrchestrator`、`dashboard/src/components/AboutModal.tsx` | §8.1 と SDD-07 に明記。変更はコード・index の型・多数のテストフィクスチャに及ぶため、別 Issue (#257) とする |
+| リポジトリのルールと `AGENTS.md` が存在しない `dashboard/src/data/models.ts` を挙げている（UI のレジストリは `dashboard/src/components/radar/radar-constants.ts`。SDD-10 §6.1.2 は訂正済み） | `.agents/rules/model-benchmark-management.md`、`AGENTS.md` | SDD の範囲外。別 Issue (#258) とする |
+| 実機検証: Reports / Billing API とスキーマドリフトのワークフローは、開発環境から実 Enterprise に対して実行していない | SDD-03、SDD-08 §1、§5.7 | 各機能の仕様に明記済み。Enterprise の PAT が必要 |

@@ -7,8 +7,8 @@
 - **Document ID**: SPEC-COPILOT-016
 - **Status**: Approved / Active
 - **Target Version**: 2026.10
-- **Date**: 2026-10-03 (P3-1 / #188: metric catalog v1; P3-2 / #189: budget and forecast metrics)
-- **Related**: [SDD-06 Aggregation & Billing Logic](06_aggregation_and_billing_logic_spec.md), [SDD-07 Dashboard UI/UX §2.14a](07_dashboard_ui_ux_spec.md), [SDD-15 Data-Centric Reactivity](15_data_centric_reactivity_design_spec.md)
+- **Date**: 2026-10-04 (P3-1 / #188: metric catalog v1; P3-2 / #189: budget and forecast metrics; P3-5 / P3-6: adoption and year-over-year metrics; P4-7 / #203: data contract section and catalog sync)
+- **Related**: [SDD-06 Aggregation & Billing Logic](06_aggregation_and_billing_logic_spec.md), [SDD-07 Dashboard UI/UX §2.14a](07_dashboard_ui_ux_spec.md), [SDD-15 Data-Centric Reactivity](15_data_centric_reactivity_design_spec.md), [SDD-05 §2.3 / §2.4](05_data_storage_and_fork_isolation_spec.md), [SDD-17 Audit & Report](17_audit_and_report_spec.md)
 
 ---
 
@@ -70,6 +70,7 @@ Per-user metrics (the user detail table, the drill-down panel, user trends) are 
 | `report_top_model` | Most used AI model | name | report_month | yes | monthly usage report CSV |
 | `report_top_sku` | Primary SKU | name | report_month | yes | monthly usage report CSV |
 | `adoption_evaluated_users` | Evaluated users | users | collection_period | yes | agent metrics |
+| `adoption_unclassified_users` | Unclassified users | users | collection_period | yes | users-1-day report |
 | `adoption_active_rate` | Overall adoption rate | ratio | collection_period | yes | agent metrics |
 | `adoption_advanced_rate` | Advanced adoption rate | ratio | collection_period | yes | agent metrics |
 | `adoption_multi_agent_users` | Multi-agent users | users | collection_period | yes | agent metrics |
@@ -81,5 +82,31 @@ Per-user metrics (the user detail table, the drill-down panel, user trends) are 
 | `credits_cost` | AI Credits cost | usd | collection_period | yes | AI credits usage, pricing catalog |
 | `combined_cost` | Combined cost (seats + credits) | usd | collection_period | yes | seats, AI credits usage, pricing catalog |
 | `pool_utilization` | Pool utilization | ratio | collection_period | yes | AI credits usage, seats |
+| `yoy_spend_change` | Spend year-over-year | usd | point_in_time | no | processed/monthly, trends/rolling-1year |
+| `yoy_active_seats_change` | Active seats year-over-year | seats | point_in_time | no | processed/monthly, trends/rolling-1year |
 
-The full definition, formula and caveats are in the catalog source. Adding a KPI means: add the entry, render it with `MetricLabel`, and keep this table and its Japanese counterpart in sync.
+The full definition, formula and caveats are in the catalog source. Adding a KPI means: add the entry, render it with `MetricLabel`, and keep this table and its Japanese counterpart in sync. The table lists every id of `METRIC_REGISTRY` (28 entries); the id set is checked against the catalog source when this document is updated (P4-7).
+
+## 7. Data Contract
+
+The metric catalog (§1 to §6) defines what a number means. The data contract defines the shape of the data the numbers are computed from. It is specified where it is produced; this section is the index.
+
+| Contract | Version constant | Specified in |
+|:--|:--|:--|
+| Canonical facts (`fact.usage_user_daily`, `fact.usage_user_feature_daily`, `fact.usage_org_daily`, `fact.seat_snapshot`, `fact.cost_line`); JSON Schemas in `docs/schemas/facts/` | `FACT_SCHEMA_VERSION` | SDD-05 §2.4 |
+| Run Manifest | `RUN_MANIFEST_SCHEMA_VERSION` | SDD-05 §2.3 |
+| Data quality report | `DATA_QUALITY_SCHEMA_VERSION` | SDD-05 §2.5, SDD-17 §2 |
+| CSV import report | `CSV_IMPORT_REPORT_SCHEMA_VERSION` | SDD-09 |
+| Monthly close snapshot and revisions | `MONTH_CLOSE_SCHEMA_VERSION` | SDD-05 §2.7, SDD-17 §3 |
+| Seat audit events | `SEAT_AUDIT_SCHEMA_VERSION` | SDD-05 §2.8, SDD-17 §4 |
+| Billing reconciliation | `BILLING_RECONCILIATION_SCHEMA_VERSION` | SDD-05 §2.9, SDD-17 §5 |
+| Report definition (`reports/*.yaml`) | `REPORT_DEFINITION_SCHEMA_VERSION` | SDD-17 §6 |
+| Retention log | `RETENTION_LOG_SCHEMA_VERSION` | SDD-05 §2.11, SDD-17 §8 |
+
+Rules shared by every contract:
+
+- **Versioned**: each file carries `schema_version`; a breaking change bumps it. Today every contract is at version 1.
+- **Missing is not zero**: an absent value is `null` (facts) or an explicit `missing` / `estimated` quality, never `0` (SDD-06 §4.4). The catalog's `defaultQuality` (`measured` / `estimated`) is the display-side counterpart of the fact `quality` (`measured` / `estimated` / `missing` / `demo`, SDD-07 §2.14a).
+- **Ingestion absorbs API change**: API shape changes are contained in the ingestion layer and detected by contract tests and the weekly schema-drift check (SDD-08 §1).
+- **Privacy tier per path**: every persisted path declares its privacy tier and Pages visibility in the publication profile (SDD-17 §7.2).
+- **Catalog, facts and views stay in step**: a KPI is defined once in the catalog, computed from the contracts above, and shown with `MetricLabel`.
