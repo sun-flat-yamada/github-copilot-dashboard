@@ -64,6 +64,35 @@
     }
   },
   {
+    "id": "gpt-6-1-sol",
+    "name": "GPT-6.1 Sol",
+    "vendor": "OpenAI",
+    "model_family": "GPT-6",
+    "color": "#10b981",
+    "is_copilot_native": true,
+    "release_date": "2026-09-29",
+    "release_status": "GA",
+    "is_estimated": true,
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Powerful"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 79.5,
+      "humaneval_plus": 95.8,
+      "aime_2024": 92.5,
+      "gpqa_diamond": 83.5,
+      "arena_coding_elo": 1466,
+      "output_speed_tps": 95,
+      "input_cost_per_m": 2,
+      "output_cost_per_m": 10,
+      "cached_input_cost_per_m": 0.1,
+      "context_window_k": 1050,
+      "context_window_display": "1.05M"
+    }
+  },
+  {
     "id": "gpt-6-luna",
     "name": "GPT-6 Luna",
     "vendor": "OpenAI",
@@ -385,6 +414,36 @@
       "aime_2024": 91.5,
       "gpqa_diamond": 80.2,
       "arena_coding_elo": 1460,
+      "output_speed_tps": 84,
+      "input_cost_per_m": 2,
+      "output_cost_per_m": 10,
+      "cached_input_cost_per_m": 0.2,
+      "cache_write_cost_per_m": 2.5,
+      "context_window_k": 1000,
+      "context_window_display": "200K (1M Supported)"
+    }
+  },
+  {
+    "id": "claude-sonnet-5-5",
+    "name": "Claude Sonnet 5.5",
+    "vendor": "Anthropic",
+    "model_family": "Claude 5",
+    "color": "#ea580c",
+    "is_copilot_native": true,
+    "release_date": "2026-09-28",
+    "release_status": "GA",
+    "is_estimated": true,
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Versatile"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 80.5,
+      "humaneval_plus": 95.5,
+      "aime_2024": 92.5,
+      "gpqa_diamond": 82,
+      "arena_coding_elo": 1468,
       "output_speed_tps": 84,
       "input_cost_per_m": 2,
       "output_cost_per_m": 10,

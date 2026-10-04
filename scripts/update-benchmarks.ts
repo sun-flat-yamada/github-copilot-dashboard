@@ -39,6 +39,8 @@ interface RawModelEntry {
   is_copilot_native: boolean;
   release_date: string;
   release_status: ModelReleaseStatus;
+  /** true when the scores have no verified source and are estimates (shown as such in the UI). */
+  is_estimated?: boolean;
   capabilities?: ModelExtendedCapabilities;
   raw_metrics: BenchmarkRawMetrics;
 }
@@ -80,8 +82,8 @@ export function generateBenchmarkDataset(
 ): BenchmarkDataset {
   const prev: ExistingDatasetInfo = typeof existing === 'string' ? { version: existing } : existing ?? {};
   const normalization = buildNormalizationContext(records.map((r) => r.raw_metrics));
-  const models: ModelBenchmarkProfile[] = records.map((rec) =>
-    createModelProfile(
+  const models: ModelBenchmarkProfile[] = records.map((rec) => {
+    const profile = createModelProfile(
       rec.id,
       rec.name,
       rec.vendor,
@@ -94,8 +96,9 @@ export function generateBenchmarkDataset(
       rec.capabilities,
       undefined,
       normalization
-    )
-  );
+    );
+    return rec.is_estimated ? { ...profile, is_estimated: true } : profile;
+  });
 
   const content_hash = computeContentHash(records);
   // Same content -> same version and timestamp. The version only advances when the content changes.

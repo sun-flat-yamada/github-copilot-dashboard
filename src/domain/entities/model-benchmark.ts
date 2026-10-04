@@ -137,6 +137,7 @@ export interface ModelBenchmarkProfile {
   is_copilot_native: boolean; // GitHub Copilot公式対応モデルかどうか
   release_date: string;
   release_status?: ModelReleaseStatus;
+  is_estimated?: boolean; // true: スコアは公式・実測の裏付けがない推測値 (要検証)
   capabilities?: ModelExtendedCapabilities;
   extended_capabilities?: ModelExtendedCapabilities;
   raw_metrics: BenchmarkRawMetrics;
