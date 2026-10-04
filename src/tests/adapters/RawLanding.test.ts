@@ -279,6 +279,8 @@ describe('Raw Landing: record a run, replay it (P1-2)', () => {
       // 再処理は index に印を付ける。それ以外は同一であること
       if (copy['index.json']?.run) delete copy['index.json'].run;
       for (const k of Object.keys(copy)) if (k.startsWith('catalog')) delete copy[k];
+      // シート監査イベント (P4-3) は追記専用の記録で、再処理 (Raw を書き換えない) の対象外
+      for (const k of Object.keys(copy)) if (k.startsWith('audit')) delete copy[k];
       return copy;
     };
     const stripBefore = normalize(before);

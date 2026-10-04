@@ -12,6 +12,7 @@ import { buildRollingTrendEntry } from '../../processor/rolling-trend.js';
 import { buildYearlyTrend, buildYearlyTrendCloseRule, yearlyTrendMonthsNeeded } from '../../processor/yearly-trend.js';
 import { extractMonthlyFigures, extractReportFigures, parseBusinessCalendar } from '../../processor/month-close.js';
 import { MonthCloseService, type RevisionRequest } from './month-close.js';
+import { SeatAuditService } from './seat-audit.js';
 import { MockDataGenerator, MOCK_DATA_UNAVAILABLE_ORGS } from '../../collector/mock-generator.js';
 import {
   CostCenterBudget,
@@ -435,6 +436,27 @@ export class PipelineOrchestrator {
             (merged.duplicatesSkipped > 0 ? ` (${merged.duplicatesSkipped} duplicate row(s) skipped)` : '') +
             `, $${aggregatedReport.overview.total_net_spend_usd} total net spend.`
         );
+      }
+    }
+
+    // シート監査イベント (P4-3): Raw のシートスナップショットの差分から付与・剥奪などを記録する。
+    // 失敗しても本処理は止めず issue にする (再処理は Raw を書き換えないので対象外)
+    if (!this.runInfo?.reprocessed) {
+      try {
+        const audit = new SeatAuditService(this.storage);
+        const r = audit.update();
+        if (r.added > 0) console.log(`🧾 Seat audit: ${r.added} new event(s).`);
+      } catch (err) {
+        issues.push({
+          id: `issue_seat_audit_${Date.now()}`,
+          timestamp: nowIso,
+          severity: 'warning',
+          category: 'data_integrity',
+          target: 'audit:seat-events',
+          message: 'Seat audit events could not be updated.',
+          details: err instanceof Error ? err.message : String(err),
+        });
+        this.storage.saveErrorLog(issues);
       }
     }
 
