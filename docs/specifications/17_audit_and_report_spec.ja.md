@@ -380,5 +380,5 @@ P4-7 は Phase 4 の最後の変更である。仕様書と実装を突き合わ
 | 差分 | 場所 | 扱い |
 |:--|:--|:--|
 | `index.json` の `data_retention_days` は固定の表示値（365）で、About モーダルが保持期間として表示するため、60 か月のポリシーと食い違う | `PipelineOrchestrator`、`dashboard/src/components/AboutModal.tsx` | §8.1 と SDD-07 に明記。変更はコード・index の型・多数のテストフィクスチャに及ぶため、別 Issue (#257) とする |
-| リポジトリのルールと `AGENTS.md` が存在しない `dashboard/src/data/models.ts` を挙げている（UI のレジストリは `dashboard/src/components/radar/radar-constants.ts`。SDD-10 §6.1.2 は訂正済み） | `.agents/rules/model-benchmark-management.md`、`AGENTS.md` | SDD の範囲外。別 Issue (#258) とする |
+| リポジトリのルールと `AGENTS.md` が存在しない `dashboard/src/data/models.ts` を挙げていた（UI のレジストリは `dashboard/src/components/radar/radar-constants.ts`） | `.agents/rules/model-benchmark-management.md`、`AGENTS.md` | Issue #258 で SDD-10 §6.1.2 と同じ同期対象に訂正した |
 | 実機検証: Reports / Billing API とスキーマドリフトのワークフローは、開発環境から実 Enterprise に対して実行していない | SDD-03、SDD-08 §1、§5.7 | 各機能の仕様に明記済み。Enterprise の PAT が必要 |
