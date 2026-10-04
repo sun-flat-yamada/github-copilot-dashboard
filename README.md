@@ -196,6 +196,7 @@ Register your configuration under **Settings** > **Secrets and variables** > **A
       { "github_user": "octocat-lead", "display_name": "Taro Tanaka", "department": "Platform Engineering", "cost_center_override": "FinTech-Division" }
     ]
     ```
+  - `COPILOT_BUSINESS_CALENDAR`: *(Optional)* JSON business calendar for the monthly close (SDD-17 §3): `{"close_business_days": 5, "weekend_days": [0, 6], "holidays": ["2026-11-03"]}`. Default: close on the 5th business day of the next month, weekends off, no holidays.
   - `COPILOT_BILLING_CONFIG`: *(Optional)* JSON configuration for optional sub-currency (JPY, EUR, etc.), EA volume discount, period-based pricing overrides (`periods`), or custom contractual AI Credits unit pricing. See [`examples/config/billing.example.json`](examples/config/billing.example.json) for concrete templates:
     ```json
     { "subCurrency": { "code": "JPY", "symbol": "¥", "exchangeRateFromUSD": 155.0, "displayDecimals": 0 }, "discountPercent": 15 }
