@@ -31,7 +31,8 @@ export interface StagingEntry {
 export const STAGED_PROCESSED_DIRS = ['monthly', 'reports', 'deep-analysis', 'trends', 'custom', 'quality', 'closes'] as const;
 
 /** 配信物に含めてはならないトップレベルのパス (dist/data/ からの相対) */
-export const FORBIDDEN_DIST_PATHS = ['raw', 'config', path.join('reports', 'monthly')] as const;
+/** audit/: シート監査イベント (利用者単位の個人データ。P4-3)。許可リストに無いので通常はステージされないが、混入したら失敗させる */
+export const FORBIDDEN_DIST_PATHS = ['raw', 'config', 'audit', path.join('reports', 'monthly')] as const;
 
 function listJsonFiles(dir: string): string[] {
   if (!fs.existsSync(dir)) return [];
