@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "outputs": [
+    {
+      "report_id": "weekly-usage-report-digest",
+      "period": "2026-W40",
+      "data_month": "2026-09",
+      "generated_at": "2026-10-04T02:31:13.635Z",
+      "definition_sha256": "0841c87293b4cd75725b873ec5c7498ad07f4bd5dca1eea4f0297399bee8ce74",
+      "outputs": [
+        "markdown",
+        "csv"
+      ],
+      "demo": false
+    }
+  ]
+}
