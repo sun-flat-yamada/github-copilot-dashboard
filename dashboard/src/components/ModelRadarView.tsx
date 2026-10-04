@@ -1,16 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
-  ResponsiveContainer,
-  Tooltip,
-} from 'recharts';
-import {
   BenchmarkDataset,
-  RadarAxisKey,
   CANONICAL_VENDOR_ORDER,
 } from '../../../src/types/model-benchmark';
 import {
@@ -67,6 +57,15 @@ import {
 } from './radar/radar-utils';
 import { PRESETS } from './radar/radar-constants';
 import { RadarDocReferences } from './radar/RadarDocReferences';
+import { ModelDotPlot, dotShapeFor } from './radar/ModelDotPlot';
+
+const SHAPE_GLYPH: Record<ReturnType<typeof dotShapeFor>, string> = {
+  circle: '●',
+  square: '■',
+  diamond: '◆',
+  triangle: '▲',
+  cross: '✕',
+};
 
 export { computeModelUsage, getTopUsageModelIds, PRESETS };
 export type { ModelUsageStat };
@@ -261,26 +260,6 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       }
     );
   }, [focusedModel, usageStats]);
-
-  // レーダーチャート用データ整形
-  const radarChartData = useMemo(() => {
-    if (!dataset) return [];
-
-    return dataset.axis_definitions.map((axis) => {
-      const entry: Record<string, any> = {
-        subject: axis.shortLabel,
-        fullSubject: axis.label,
-        key: axis.key,
-        primaryMetric: axis.primaryMetric,
-      };
-
-      for (const model of selectedModels) {
-        entry[model.name] = model.radar_scores[axis.key as RadarAxisKey];
-      }
-
-      return entry;
-    });
-  }, [dataset, selectedModels]);
 
   // テーブルソート・フィルタ済みモデルリスト
   const sortedModels = useMemo(() => {
@@ -669,15 +648,11 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
             <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
               <div className="flex items-center space-x-2">
                 <Compass className="w-5 h-5 text-indigo-400" />
-                <h3 className="text-sm font-bold text-white">6軸多次元特性マップ (0 - 100)</h3>
+                <h3 className="text-sm font-bold text-white">6軸スコア比較 (ドットプロット / 0 - 100)</h3>
               </div>
               <div className="flex items-center space-x-3 text-[11px] text-slate-400">
                 <span className="hidden sm:inline-flex items-center space-x-1.5">
-                  <span className="inline-block w-3.5 h-0.5 bg-indigo-400 rounded" />
-                  <span className="text-slate-300 font-medium">実線(太・点滅): アクティブ</span>
-                  <span className="text-slate-600">|</span>
-                  <span className="inline-block w-4 border-b border-dashed border-slate-400" />
-                  <span>点線: 比較モデル</span>
+                  <span className="text-slate-300 font-medium">● ■ ◆ ▲ ✕ の形でモデルを区別 / 大きい白縁: アクティブ</span>
                 </span>
                 <span>
                   選択中: <strong className="text-indigo-300">{selectedModels.length}</strong> / {dataset.models.length} モデル
@@ -702,136 +677,12 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                   </button>
                 </div>
               )}
-              <div className="w-full h-[400px] relative">
-                <style>{`
-                  @keyframes radar-gentle-pulse {
-                    0%, 100% {
-                      opacity: 1;
-                    }
-                    50% {
-                      opacity: 0.4;
-                    }
-                  }
-                  .radar-focused-highlight {
-                    animation: radar-gentle-pulse 2s ease-in-out infinite !important;
-                  }
-                  .radar-focused-highlight path.recharts-radar-polygon,
-                  .radar-focused-highlight path {
-                    stroke-width: 3.5px !important;
-                    stroke-opacity: 1 !important;
-                    transition: stroke 0.4s ease, fill 0.4s ease;
-                  }
-                `}</style>
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={radarChartData} outerRadius="82%" margin={{ top: 10, right: 40, bottom: 10, left: 40 }}>
-                    <PolarGrid stroke="#334155" strokeDasharray="3 3" />
-                    <PolarAngleAxis
-                      dataKey="subject"
-                      tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }}
-                    />
-                    <PolarRadiusAxis
-                      angle={30}
-                      domain={[0, 100]}
-                      stroke="#475569"
-                      tick={{ fill: '#64748b', fontSize: 10 }}
-                    />
-                    <Tooltip
-                      content={({ active, payload, label }) => {
-                        if (active && payload && payload.length) {
-                          const targetAxis = dataset.axis_definitions.find(
-                            (a) => a.shortLabel === label
-                          );
-                          return (
-                            <div className="bg-slate-950/95 border border-slate-800 p-3 rounded-xl shadow-2xl text-xs space-y-2 backdrop-blur max-w-xs">
-                              <p className="font-bold text-slate-200 border-b border-slate-800 pb-1">
-                                {targetAxis?.label || label}
-                              </p>
-                              <p className="text-[11px] text-slate-400">
-                                {targetAxis?.description}
-                              </p>
-                              <div className="space-y-1 pt-1">
-                                {payload.map((entry: any, index: number) => (
-                                  <div
-                                    key={`item-${index}`}
-                                    className="flex items-center justify-between space-x-4"
-                                  >
-                                    <div className="flex items-center space-x-1.5">
-                                      <span
-                                        className="w-2.5 h-2.5 rounded-full"
-                                        style={{ backgroundColor: entry.color }}
-                                      />
-                                      <span className="text-slate-300 font-medium truncate max-w-[130px]">
-                                        {entry.name}
-                                      </span>
-                                    </div>
-                                    <span className="font-mono font-bold text-white">
-                                      {entry.value} / 100
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    {/* 1. 背景比較モデル群 (非アクティブモデル: 点線・低不透明度・zIndex: 50, 静止固定表示) */}
-                    {selectedModels
-                      .filter((m) => m.id !== (focusedModel?.id ?? focusedModelId))
-                      .map((model) => (
-                        <Radar
-                          key={model.id}
-                          name={model.name}
-                          dataKey={model.name}
-                          stroke={model.color}
-                          fill={model.color}
-                          zIndex={50}
-                          fillOpacity={selectedModels.length > 4 ? 0.02 : 0.05}
-                          strokeWidth={1.5}
-                          strokeDasharray="6 3"
-                          strokeOpacity={0.35}
-                          className="cursor-pointer transition-opacity duration-300"
-                          onClick={() => setFocusedModelId(model.id)}
-                          isAnimationActive={false}
-                        />
-                      ))}
-
-                    {/* 2. 選択中(アクティブ)AIモデル: 常に最前面 (zIndex: 1000, 実線3.5px, 穏やかな点滅, 前モデル枠線からのモーフィング変形) */}
-                    {focusedModel && (
-                      <Radar
-                        key="active-focused-radar"
-                        name={focusedModel.name}
-                        dataKey={focusedModel.name}
-                        stroke={focusedModel.color}
-                        fill={focusedModel.color}
-                        zIndex={1000}
-                        dot={false}
-                        activeDot={{
-                          r: 5,
-                          fill: focusedModel.color,
-                          stroke: focusedModel.color,
-                        }}
-                        fillOpacity={
-                          selectedModels.length === 1
-                            ? 0.35
-                            : selectedModels.length > 4
-                            ? 0.16
-                            : 0.25
-                        }
-                        strokeWidth={3.5}
-                        strokeDasharray={undefined}
-                        strokeOpacity={1}
-                        className="cursor-pointer radar-focused-highlight"
-                        onClick={() => setFocusedModelId(focusedModel.id)}
-                        isAnimationActive={true}
-                        animationDuration={600}
-                        animationEasing="ease-out"
-                      />
-                    )}
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
+              <ModelDotPlot
+                axes={dataset.axis_definitions}
+                models={selectedModels}
+                focusedModelId={focusedModel?.id ?? focusedModelId}
+                onFocusModel={setFocusedModelId}
+              />
               
               {/* 凡例 (レーダーチャート外の下部に配置) */}
               <div className="flex flex-wrap items-center justify-center gap-1.5 pt-3">
@@ -856,37 +707,9 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                         aria-hidden="true"
                       />
 
-                      {/* 線/点線の状態表示 */}
-                      <span
-                        className="inline-flex items-center flex-shrink-0"
-                        aria-label={isFocused ? '実線(アクティブ)' : '点線(比較対象)'}
-                      >
-                        {isFocused ? (
-                          <svg width="18" height="6" className="overflow-visible" aria-hidden="true">
-                            <line
-                              x1="0"
-                              y1="3"
-                              x2="18"
-                              y2="3"
-                              stroke={model.color}
-                              strokeWidth="3"
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                        ) : (
-                          <svg width="18" height="6" className="overflow-visible" aria-hidden="true">
-                            <line
-                              x1="0"
-                              y1="3"
-                              x2="18"
-                              y2="3"
-                              stroke={model.color}
-                              strokeWidth="1.75"
-                              strokeDasharray="5 2"
-                              strokeOpacity="0.85"
-                            />
-                          </svg>
-                        )}
+                      {/* マーカー形状 (ドットプロットと同じ形: 色だけに頼らない) */}
+                      <span className="inline-flex items-center flex-shrink-0 text-[11px] leading-none" aria-hidden="true" style={{ color: model.color }}>
+                        {SHAPE_GLYPH[dotShapeFor(selectedModels.findIndex((sm) => sm.id === model.id))]}
                       </span>
 
                       {/* モデル名 */}
