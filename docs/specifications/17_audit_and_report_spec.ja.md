@@ -5,9 +5,9 @@
 # SDD-17: 監査 & レポート仕様書 (Audit & Report Specification)
 
 - **文書番号**: SPEC-COPILOT-017
-- **ステータス**: Approved / Active（Phase 4 に合わせて拡張。P4-2〜P4-6 で節を追加する。P4-4 は §5、P4-5 は §6）
+- **ステータス**: Approved / Active（Phase 4 に合わせて拡張。P4-2〜P4-6 で節を追加する。P4-4 は §5、P4-5 は §6、P4-6 は §7 と §8）
 - **対象バージョン**: 2026.10
-- **作成日**: 2026-10-04 (P4-1 / #197: 監査・データ品質ビュー、P4-2 / #198: 月次締めと改訂、P4-3 / #199: シート監査イベント、P4-4 / #200: 請求突合、P4-5 / #201: 定義駆動レポート)
+- **作成日**: 2026-10-04 (P4-1 / #197: 監査・データ品質ビュー、P4-2 / #198: 月次締めと改訂、P4-3 / #199: シート監査イベント、P4-4 / #200: 請求突合、P4-5 / #201: 定義駆動レポート、P4-6 / #202: プライバシー階層と保持期間)
 - **関連**: [SDD-05 §2.3 / §2.5 / §2.7](05_data_storage_and_fork_isolation_spec.ja.md)、[SDD-07 §2.19](07_dashboard_ui_ux_spec.ja.md)、[SDD-16 データ契約 & 指標カタログ](16_data_contract_and_metric_catalog_spec.ja.md)
 
 ---
@@ -20,7 +20,7 @@
 |:--|:--|:--|
 | 月次締め | 翌月 5 営業日 | §3（P4-2） |
 | 締め後の改訂 | 履歴付きで可 | §3（P4-2） |
-| 生データの保持 | 5 年（60 か月）。`data_retention` の既定は 60 か月 | P4-6 |
+| 生データの保持 | 5 年（60 か月）。`data_retention` の既定は 60 か月 | §8（P4-6） |
 | 個人情報 | 監査画面と出力は件数・日付・ソース名のみ | P4-1（本書 §2） |
 | シート履歴 | 付与・剥奪・プラン変更・最終利用日の変化を日次シートスナップショットから記録し、権限のある社内の閲覧者向けに CSV で出力する。公開しない | §4（P4-3） |
 
@@ -65,7 +65,7 @@
 
 - パイプラインは、確定済みの月の `processed/monthly/{m}.json` / `processed/reports/{m}.json` を書く前に、新しい数値を**現在の版**と比べる。同じなら通常どおり書く。違い、かつその月に `--revise` の指定が無ければ**書かない**: 保存済みの数値を維持し、警告の issue `month-close:{m}`（先頭の差分つき）を `error-log.json` に追加する。`pipeline:run`・遅れて取り込んだ CSV・`pipeline:reprocess` のすべてが対象。
 - **整合性検査** `npm run month:verify`（パイプライン実行の冒頭でも実行）: 確定月の保存済み集計が、改訂の記録なしに現在の版と違う（`unrecorded_change`）、または記録のチェックサム・改訂の連鎖が内容と合わない（`checksum_mismatch`）と失敗する（exit 1。パイプラインではエラーの issue）。違う項目を表示する。
-- 締めと改訂は `raw/` に触れない。保持期間（60 か月）の強制は P4-6。
+- 締めと改訂は `raw/` に触れない。保持期間ポリシー（§8）は、締め済みの月のスナップショットと改訂履歴（`processed/closes/`）を削除しない。
 
 ### 3.5 表示
 
@@ -106,7 +106,7 @@
 | Issue・PR・チャット | **載せない** | CSV は権限のある社内の閲覧者だけに渡す |
 
 - 実ログインのままのイベント（非仮名）を扱ってよいのは、リポジトリと Pages が private / internal でアクセス制御されている場合（SDD-04 §5 の前提）、または `ANONYMIZE_USERS=true` と十分な長さの `ANONYMIZE_SECRET` で運用する場合のみ。仮名化モードのイベントは HMAC 仮名だけを持ち、シートの生データ・アバター URL・数値 ID・元の CSV は公開しない。仮名も個人データとして扱う（SDD-04 §5.2 の限界）。
-- 保持は生データの保持期間（60 か月。強制は P4-6）に従う。
+- 保持は生データの保持期間（60 か月、§8）に従う。期限切れの月の `audit/seat-events/{YYYY-MM}.json` は `npm run retention:apply` が削除する。
 
 ### 4.4 CSV 出力
 
@@ -191,7 +191,7 @@ title: 月次コストサマリー
 description: 任意の説明
 schedule: monthly-close           # monthly-close | weekly | (省略 = 手動のみ)
 dataset: monthly                  # monthly | reports
-privacy_tier: aggregate-only      # 本タスクで受け付けるのはこの階層だけ (§6.6)
+privacy_tier: aggregate-only      # aggregate-only (既定) | identified (§7)
 language: ja                      # ja (既定) | en
 outputs: [markdown, csv]
 sections:
@@ -229,7 +229,7 @@ strict スキーマ（未知のキーはエラー）と意味の検証。`npm ru
 | 指標カタログに無い指標 | `unknown metric "x" (not in the metric catalog)` |
 | そのデータセットが提供できないカタログ指標 | `metric "x" is not available from dataset "monthly"` |
 | 未知の `group_by`・列・`sort_by`（列に含まれない）・フィルター列 | `unknown group` / `unknown column` / `sort_by` |
-| `privacy_tier: identified` | `not supported yet; it is specified by P4-6 (#202)` |
+| 未知の `privacy_tier` | `unknown tier "x" (use "aggregate-only" or "identified")`（`identified` は有効。生成には §7.3 のゲートが要る） |
 | セクション ID・指標の重複、ファイル名と異なる `id`、ファイルをまたぐレポート ID の重複 | |
 | 不正な YAML、64 KiB を超えるファイル | YAML は安全な既定スキーマ（型タグなし）で読む |
 
@@ -249,7 +249,7 @@ strict スキーマ（未知のキーはエラー）と意味の検証。`npm ru
 
 ### 6.5 出力
 
-- ファイル: `audit/report-outputs/{report_id}/{period}.md` と `.csv`。一覧 `audit/report-outputs/index.json` は出力ごとに `report_id`、`period`、`data_month`、`generated_at`、`definition_sha256`（定義の版）、`outputs`、`demo` を持つ。
+- ファイル: `audit/report-outputs/{report_id}/{period}.md` と `.csv`。一覧 `audit/report-outputs/index.json` は出力ごとに `report_id`、`period`、`data_month`、`generated_at`、`definition_sha256`（定義の版）、`outputs`、`demo`、`privacy_tier`（P4-6。無い古い項目は `aggregate-only` として読む）を持つ。
 - 品質属性（指標カタログ）: すべての値に品質を付け、実測以外は `[推定]` / `[欠損]` / `[デモ]` と表示する。欠損は**「—（理由）」**で、0 や空の表にしない。デモデータにはデモである旨を付ける。Markdown の冒頭に、期間・データの月・データセット・プライバシー階層・定義の版、締め済みの月は現在の月次締めのチェックサム（SDD-17 §3）を載せる。
 - CSV: UTF-8 **BOM 付き**、**CRLF**、RFC 4180 のクォート、列は `section, group, item, value, unit, quality`（縦持ち。`value` は生の数値で、欠損は空セルと品質 `missing`）。§4.4 の CSV インジェクション対策をすべてのセルに適用する。
 
@@ -262,13 +262,99 @@ strict スキーマ（未知のキーはエラー）と意味の検証。`npm ru
 | `main` ブランチ | 定義（`reports/*.yaml`）だけ | 定義が持つのは ID・タイトル・列名で、データは持たない。出力は `main` に置かない |
 
 - Pages に載せない理由: Pages は既定で公開で（`security-zero-leakage.md` §2.3）、定義はグループ（Cost Center・組織・部署）を指定でき、その名前は社内の組織構造になる。同じ数値は、ダッシュボードが既に配信しているデータセット経由で画面から見られる。
-- **プライバシー階層**: 受け付けるのは `aggregate-only`（利用者単位の行なし）だけ。`identified`（利用者単位の行。プライベートなリポジトリ / Pages か `ANONYMIZE_USERS=true` のときだけ）は、保持期間ポリシーと一緒に P4-6（#202）で仕様化する。それまでは、`identified` を求める定義は検証で失敗する。
+- **プライバシー階層**: 定義は `aggregate-only`（既定）か `identified` を宣言する。階層・`identified` に必要なゲート・検査は §7 に定める。どちらの階層の出力も `audit/` に置き、Pages へは配信しない。出力の保持は §8。
 - サンプルとテストの値はすべて架空。
 
 ### 6.7 レポートの追加手順
 
 1. `reports/<id>.yaml` を書く（§6.1）。2. `npm run reports:validate`。3. `npm run reports:generate -- --id <id> --demo` でデモデータに対して確認する。4. マージすると、以降は日次ワークフローが生成する。コードが要るのは新しい*種類*の値（どのデータセットの束縛にもまだ無い指標や列）だけで、その場合は指標を指標カタログ（SDD-16 §2, §6）に追加し、`METRIC_BINDINGS` に束縛を足す。
 
-## 7. 今後追加する節（未仕様）
+## 7. プライバシー階層と発行プロファイル (P4-6 / E-05)
 
-プライバシー階層と保持期間ポリシー（P4-6）は、タスクの実装時に本書へ追記する。
+運用前提は社内限定（SDD-01 §1.1、SDD-04 §5）で、プライベート / 社内のリポジトリ、アクセス制御付きの Pages、閲覧者は従業員のみ。この前提では**ビルドは 1 系統で足りる**（二重ビルド＝匿名化版の別ビルドは必須ではない。親計画の判断結果 #2）。必要なのは、発行物ごとに「どれだけ個人を特定するか」の**宣言**と、宣言と実際の配信物が一致していることの**検査**である。
+
+### 7.1 階層
+
+| 階層 | 意味 | 使われる場所 |
+|:--|:--|:--|
+| `aggregate-only` | 利用者単位の行を含まない（ログイン・氏名・部署・個人別の数値なし）。件数・金額・日付・グループ合計のみ | レポート定義の既定、`index.json`、`error-log.json`、`processed/{trends,quality,closes}`、`catalog/`、`audit/billing-reconciliation/`、`audit/retention/` |
+| `identified` | 利用者単位の行を含み得る（ログイン、解決済みの氏名・部署、個人別の利用量。`ANONYMIZE_USERS=true` では仮名） | `processed/{monthly,reports,deep-analysis,custom,daily}`、`raw/`、CSV 原本、`audit/seat-events/`、これを宣言したレポート定義 |
+
+定義は `privacy_tier` で階層を宣言する（§6.1）。検証では両方の階層が有効で、未知の階層はエラーになる。現在のセクション種別（`kpi`、グループ別の `breakdown`）はすべて集計であり、階層は定義が宣言する上限である。将来、利用者単位のセクションを足すとき、`aggregate-only` のレポートに気づかれずに入ることを防ぐ。
+
+### 7.2 発行プロファイル
+
+`src/domain/privacy-profile.ts`（`PUBLICATION_PROFILE`）が、発行物（`data/` 配下のパス）ごとに**階層**・**Pages へ配信するか**・**保持の扱い**を宣言する。
+
+| 発行物 | 階層 | Pages | 保持（§8） |
+|:--|:--|:--|:--|
+| `index.json`、`error-log.json`、`catalog/` | aggregate-only | 配信する | 保持 |
+| `processed/{monthly,reports,deep-analysis,custom,daily}` | identified | 配信する（前提: 社内限定） | 保持 |
+| `processed/{trends,quality,closes}` | aggregate-only | 配信する | 保持（**`closes/` は削除しない**） |
+| `raw/`（日次 Raw・Run Manifest・landing の object）、`reports/monthly/`（CSV 原本） | identified | **配信しない** | raw: 期限切れで削除 |
+| `config/`（暗号化済みマッピング） | identified | **配信しない** | 保持 |
+| `audit/seat-events/` | identified | **配信しない** | audit: 期限切れで削除 |
+| `audit/billing-reconciliation/` | aggregate-only | **配信しない** | audit: 期限切れで削除 |
+| `audit/report-outputs/` | レポートごと（`index.json` の `privacy_tier`） | **配信しない** | audit: 期限切れで削除 |
+| `audit/retention/` | aggregate-only | **配信しない** | 保持 |
+
+規則: 配信しない発行物は `pages:stage` に載せず、`pages:verify` の禁止リスト（`FORBIDDEN_DIST_PATHS`）に載せる。Pages に載る `identified` は前提に基づく `processed/*` のスコープだけ。個人を特定するそれ以外のものは `copilot-data`（リポジトリと同じ可視性で、露出検査が守る）に置くか、そもそも保存しない。
+
+### 7.3 `identified` の出力のゲート
+
+`identified` のレポートは、次の**どちらか**を満たすときだけ生成する。満たさなければ `reports:generate` は生成を拒否する（`refused`、exit 1、何も書かない）。
+
+1. **仮名化**: `ANONYMIZE_USERS=true` かつ `ANONYMIZE_SECRET` が 16 文字以上（SDD-04 §5.2、キー付き HMAC-SHA256）。レポートが読むデータは仮名になる。
+2. 運用者の**明示許可**: Actions 変数 `COPILOT_ALLOW_IDENTIFIED_REPORTS=true`。リポジトリと Pages が社内限定であることの宣言（SDD-04 §5）。
+
+`COPILOT_ALLOW_PUBLIC_DATA` はゲートを**開けない**。ゲートは追加の条件であり、§7.4 の露出検査を置き換えたり緩めたりしない。
+
+### 7.4 検査
+
+| 検査 | 失敗する条件 |
+|:--|:--|
+| `npm run pages:verify` | プロファイルとステージ設定が食い違う（宣言の無い、または配信しないと宣言された `processed/` のディレクトリがステージされている、「配信しない」トップレベルのパスが禁止リストに無い、`processed/` 以外で配信すると宣言された `identified` がある）。既存の検査（ステージ対象が `dist/data/` に無い、`raw`・`config`・`audit`・CSV 原本が `dist/data/` にある）も同じ |
+| `npm run fork:verify`（オフライン部分、カテゴリ *Publication Profile*） | 同じプロファイルの整合、`dashboard/public/data/` に `audit/`・`raw/`・`config/`・CSV がある、`audit/report-outputs/index.json` が未知の階層を記録している、または §7.3 のゲートが閉じているのに `identified` の出力がある（デモ出力は除く）。保持期間を過ぎたデータは**警告** |
+| `npm run fork:verify`（露出検査、SDD-04 §5.3） | **変更なし**。実在の利用者単位データが誰にでも読める状態なら引き続き失敗する。`COPILOT_ALLOW_PUBLIC_DATA` は文書化された意味のままで、拡張しない |
+
+宣言と配信物が食い違えばビルドが失敗する。本節のどれも既存の検査を弱めない。
+
+## 8. 保持期間ポリシー (P4-6 / E-05)
+
+生データは **5 年**保持する。保持期間は宣言され、適用前に見え、明示操作でだけ適用され、記録される。
+
+### 8.1 設定と期限
+
+- `COPILOT_DATA_RETENTION_MONTHS`（Actions 変数。整数 **12〜600**、既定 **60**）。不正な値はメッセージを出して 60 に戻す（`index.json` の旧項目 `data_retention_days` は固定の表示値で、削除を制御しない）。
+- **当月を含む**直近 N 暦月を保持する。月 `M` は、当月から N か月より前なら期限切れ（N = 60 の 2026-10 では 2021-11 を保持、2021-10 以前が期限切れ）。日付は UTC。カットオフは `keep_from` として表示する。
+
+### 8.2 期限切れになるもの・ならないもの
+
+| 期限切れで削除（月単位） | 条件 |
+|:--|:--|
+| `raw/YYYY/MM/`（日次 Raw） | その月が**締め済み**（`processed/closes/{month}.json` がある）。未締めは保持し `not_closed` と報告 |
+| `reports/monthly/YYYY-MM/`（CSV 原本） | 締め済み（同上） |
+| `raw/landing/manifests/{run_id}.json` | run_id の月。および、残る manifest のどれからも参照されなくなった `raw/landing/objects/` のファイル。読めない manifest があれば object は 1 件も削除しない |
+| `audit/seat-events/{month}.json`、`audit/billing-reconciliation/{month}.json` | その月（締めは不要） |
+| `audit/report-outputs/{id}/{period}.{md,csv}` と `index.json` の該当行 | 期間: `YYYY-MM`、`YYYY-Www` は ISO 週の木曜日が属する月 |
+
+**保持期間で削除しないもの**: `processed/**`（月次・レポート・深掘り・カスタム・日次の集計、トレンド、品質履歴、**`processed/closes/`＝締め済みの月のスナップショット・チェックサム・改訂履歴**）、`index.json`、`error-log.json`、`catalog/`、`config/`、`audit/retention/`、`data/` の外のすべて。計画の生成はこれらを列挙しない作りになっている。
+
+### 8.3 操作と安全策
+
+| 手順 | コマンド | 動作 |
+|:--|:--|:--|
+| 計画（ドライラン、既定） | `npm run retention:plan`（`--execute` 無しの `retention:apply` も同じ） | 期限切れの対象をカテゴリ別（件数・サイズ・月または ID）と、未締めのため保持するものを一覧する。**何も変更せず、何も書かない**。日次ワークフローが実行し（`continue-on-error`）、期限超過があれば `::warning::` を出す |
+| 実行（明示操作） | `npm run retention:apply -- --execute --confirm <keep_from> [--actor <alias>]` | `--confirm` は現在の計画のカットオフ月と一致しなければならない（古い計画は拒否）。計画の対象を削除し、実行を記録する |
+
+- **拒否**: デモデータ（`data/demo`）には触れない。`copilot-data` 系ブランチ以外で `data/` 配下が Git で追跡されている場合（汚染された `main`、SDD-05）は拒否する。シンボリックリンクは列挙も追跡もしない。パスは検証済みの名前（月・run_id・object のハッシュ・レポート ID・期間）から組み立て、`data/` の外に出ない。CI では実行せず、`main` に対しては実行しない。
+- **弱めない**: 保持の実行は `fork:verify` / `pages:verify` に触れない。`fork:verify` の保持の検査は警告だけ。
+- **場所**: `copilot-data` のチェックアウトで実行し、そのブランチをコミットする。**削除したファイルはブランチの履歴に残る**（履歴を書き換えるまで）。期限切れがプライバシー上・法令上の要件なら、`copilot-data` の履歴の書き換えを（このツールの外で）別に行う。
+
+### 8.4 記録
+
+`audit/retention/log.json`（`schema_version`、`runs[]`、最大 1000 件）: `run_id`、`started_at`、`finished_at`、`status`（`started` → `completed` / `failed`）、`retention_months`、`keep_from`、`actor`（運用者が選ぶ別名・役割名。CI ユーザーや GitHub ログインは自動で入れない）、カテゴリ別の `count` / `keys`（月・run_id・`{report_id}/{period}`。個人情報なし）/ `bytes`、`skipped[]`、`errors[]`。**先に意図を書き**（`started`）、削除し、記録を完了にするので、中断された実行も見える。1 件の失敗は他を止めない（その実行は `failed`）。締め済みの記録は残るため、数値の監査証跡（§3）は生データより長く残る。
+
+## 9. 残りの節
+
+なし。P4-7（#203）は SDD-16 と SDD-17 の網羅性・整合性の確認である。

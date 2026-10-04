@@ -190,7 +190,21 @@ jobs:
         # 不正な定義があっても他の定義は生成し、失敗しても後続の保存・配信は止めない。
         if: env.MOCK_MODE != 'true'
         continue-on-error: true
+        env:
+          # identified 階層の定義は、仮名化 (ANONYMIZE_USERS + ANONYMIZE_SECRET) か明示許可がなければ生成を拒否する。SDD-17 §7
+          ANONYMIZE_USERS: ${{ vars.ANONYMIZE_USERS }}
+          ANONYMIZE_SECRET: ${{ secrets.ANONYMIZE_SECRET }}
+          COPILOT_ALLOW_IDENTIFIED_REPORTS: ${{ vars.COPILOT_ALLOW_IDENTIFIED_REPORTS }}
         run: npm run reports:generate -- --due
+
+      - name: Check data retention (dry run only)
+        # 保持期間 (COPILOT_DATA_RETENTION_MONTHS、既定 60 か月) を過ぎたデータを一覧し、あれば警告を出す。何も削除しない。
+        # 削除は運用者が copilot-data のチェックアウトで明示的に行う (npm run retention:apply -- --execute --confirm <月>)。SDD-17 §8
+        if: env.MOCK_MODE != 'true'
+        continue-on-error: true
+        env:
+          COPILOT_DATA_RETENTION_MONTHS: ${{ vars.COPILOT_DATA_RETENTION_MONTHS }}
+        run: npm run retention:plan
 
       - name: Commit and Push to data branch (Fork-Safe Storage)
         run: |

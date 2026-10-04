@@ -75,9 +75,10 @@ describe('Report definition schema (P4-5)', () => {
     assert.ok(parse(`${VALID}\nunexpected: 1\n`).errors.length > 0);
   });
 
-  it('rejects identified (user-level) tier until P4-6 and unknown tiers', () => {
+  it('accepts both privacy tiers (P4-6) and still rejects unknown ones', () => {
     const identified = parse(`${VALID}privacy_tier: identified\n`);
-    assert.ok(identified.errors.some((e) => /identified.*P4-6/.test(e)), identified.errors.join('\n'));
+    assert.deepEqual(identified.errors, []);
+    assert.equal(identified.definition?.privacy_tier, 'identified');
     assert.ok(parse(`${VALID}privacy_tier: public\n`).errors.some((e) => /unknown tier/.test(e)));
     assert.deepEqual(parse(`${VALID}privacy_tier: aggregate-only\n`).errors, []);
   });

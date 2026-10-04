@@ -4,6 +4,7 @@
  * 定義にも生成物にも、利用者単位の行・ログイン・氏名・部署名は載せない (aggregate-only)。
  */
 import type { MetricId } from '../metrics/metric-registry.js';
+import type { PrivacyTier } from '../privacy-profile.js';
 
 export const REPORT_DEFINITION_SCHEMA_VERSION = 1;
 
@@ -18,8 +19,8 @@ export type ReportSchedule = (typeof REPORT_SCHEDULES)[number];
 export const REPORT_OUTPUTS = ['markdown', 'csv'] as const;
 export type ReportOutput = (typeof REPORT_OUTPUTS)[number];
 
-/** P4-6 (#202) で仕様化するまで、扱えるのは aggregate-only だけ (利用者単位の identified は拒否する) */
-export type ReportPrivacyTier = 'aggregate-only';
+/** プライバシー階層 (P4-6、SDD-17 §7)。既定は aggregate-only。identified は生成ゲートを満たす場合だけ生成する */
+export type ReportPrivacyTier = PrivacyTier;
 
 export type ReportLanguage = 'ja' | 'en';
 
@@ -82,6 +83,8 @@ export interface ReportOutputEntry {
   outputs: ReportOutput[];
   /** 入力が demo (架空データ) のとき true */
   demo: boolean;
+  /** 生成時に宣言されていたプライバシー階層 (P4-6)。古い出力には無い (aggregate-only 扱い) */
+  privacy_tier?: ReportPrivacyTier;
 }
 
 export interface ReportOutputIndex {
