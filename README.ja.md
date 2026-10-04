@@ -196,6 +196,7 @@ github-copilot-dashboard/
       { "github_user": "octocat-lead", "display_name": "田中 太郎", "department": "プラットフォーム基盤部", "cost_center_override": "FinTech-Division" }
     ]
     ```
+  - `COPILOT_BUSINESS_CALENDAR`: *(任意)* 月次締めの営業日カレンダー（JSON、SDD-17 §3）: `{"close_business_days": 5, "weekend_days": [0, 6], "holidays": ["2026-11-03"]}`。既定は翌月の第 5 営業日に締め、土日休み、祝日なし。
   - `COPILOT_BILLING_CONFIG`: *(任意)* サブ表示通貨（円・ユーロなど）やEA契約ディスカウント率、期間別価格設定（`periods`）、個別AI Credits単価の設定。設定具体例テンプレートは [`examples/config/billing.example.json`](examples/config/billing.example.json) を参照してください：
     ```json
     { "subCurrency": { "code": "JPY", "symbol": "¥", "exchangeRateFromUSD": 155.0, "displayDecimals": 0 }, "discountPercent": 15 }
