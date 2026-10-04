@@ -10,6 +10,11 @@ import {
 } from '../types/model-benchmark.js';
 
 import {
+  UNKNOWN_MODEL_PREFIX,
+  isUnknownModelId,
+  resolveCatalogModelId,
+} from './model-catalog.js';
+import {
   RADAR_AXIS_DEFINITIONS,
   DEFAULT_BENCHMARK_SOURCES,
   getModelBuzz,
@@ -25,10 +30,99 @@ function clamp(val: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, val));
 }
 
+/** Normalisation method identifier (part of the dataset content hash). */
+export const NORMALIZATION_METHOD = 'percentile-rank-v1';
+
+/** Score range onto which the percentile rank (0..1) is mapped. */
+const SCORE_MIN = 20;
+const SCORE_MAX = 99;
+
+type ComponentKey =
+  | 'swe'
+  | 'humaneval'
+  | 'aime'
+  | 'gpqa'
+  | 'elo'
+  | 'speed'
+  | 'cost_inverse'
+  | 'context';
+
+/** Sorted raw values per component, built from every model of one dataset. */
+export type NormalizationContext = Record<ComponentKey, number[]>;
+
+function blendedCost(raw: BenchmarkRawMetrics): number {
+  return raw.input_cost_per_m * 0.4 + raw.output_cost_per_m * 0.6;
+}
+
+function componentValues(raw: BenchmarkRawMetrics): Record<ComponentKey, number> {
+  return {
+    swe: raw.swe_bench_verified,
+    humaneval: raw.humaneval_plus,
+    aime: raw.aime_2024,
+    gpqa: raw.gpqa_diamond,
+    elo: raw.arena_coding_elo,
+    speed: raw.output_speed_tps,
+    // cheaper is better: negate so that a higher value is always better
+    cost_inverse: -blendedCost(raw),
+    context: raw.context_window_k,
+  };
+}
+
 /**
- * Compute normalized 6-axis radar scores (0 - 100) from raw metrics
+ * Build the percentile-rank context from all raw metrics of a dataset (B-15).
+ * Fixed anchors saturate when the field moves ahead of them; ranks within the dataset do not.
  */
-export function computeRadarScores(raw: BenchmarkRawMetrics): RadarScores {
+export function buildNormalizationContext(rawList: BenchmarkRawMetrics[]): NormalizationContext {
+  const keys: ComponentKey[] = ['swe', 'humaneval', 'aime', 'gpqa', 'elo', 'speed', 'cost_inverse', 'context'];
+  const ctx = {} as NormalizationContext;
+  for (const key of keys) {
+    ctx[key] = rawList.map((r) => componentValues(r)[key]).sort((a, b) => a - b);
+  }
+  return ctx;
+}
+
+/**
+ * Percentile rank in [0, 1]: (below + 0.5 * equal) / n  (ties share the mid rank; the best of
+ * n distinct values scores (n - 0.5) / n, the worst 0.5 / n). A single-model context returns 0.5.
+ */
+export function percentileRank(sorted: number[], value: number): number {
+  const n = sorted.length;
+  if (n === 0) return 0.5;
+  let below = 0;
+  let equal = 0;
+  for (const v of sorted) {
+    if (v < value) below++;
+    else if (v === value) equal++;
+  }
+  return (below + 0.5 * equal) / n;
+}
+
+function toScore(rank01: number): number {
+  const score = SCORE_MIN + rank01 * (SCORE_MAX - SCORE_MIN);
+  return clamp(Math.round(score * 10) / 10, SCORE_MIN, SCORE_MAX);
+}
+
+function computePercentileRadarScores(raw: BenchmarkRawMetrics, ctx: NormalizationContext): RadarScores {
+  const v = componentValues(raw);
+  const r = (k: ComponentKey) => percentileRank(ctx[k], v[k]);
+  return {
+    coding_swe: toScore(0.85 * r('swe') + 0.15 * r('humaneval')),
+    reasoning_logic: toScore(0.65 * r('aime') + 0.35 * r('gpqa')),
+    arena_elo: toScore(r('elo')),
+    speed_latency: toScore(r('speed')),
+    cost_efficiency: toScore(r('cost_inverse')),
+    architecture_design: toScore(0.45 * r('context') + 0.55 * r('swe')),
+  };
+}
+
+/**
+ * Compute normalized 6-axis radar scores (20 - 99) from raw metrics.
+ * - With a `context` (built from the whole dataset) scores are percentile ranks, so top models stay distinguishable.
+ * - Without it (single-model use) the legacy fixed-anchor formula is used for backward compatibility.
+ * Raw values are always kept next to the scores (ModelBenchmarkProfile.raw_metrics).
+ */
+export function computeRadarScores(raw: BenchmarkRawMetrics, context?: NormalizationContext): RadarScores {
+  if (context) return computePercentileRadarScores(raw, context);
   // 1. Coding & SWE: SWE-bench Verified (0-75% scale mapped to 0-95) + HumanEval+ (0-100)
   // SWE-bench Verified 70% is state-of-the-art in 2026
   const sweScore = (raw.swe_bench_verified / 75) * 85;
@@ -100,7 +194,17 @@ export function computeRadarScores(raw: BenchmarkRawMetrics): RadarScores {
   };
 }
 
-/**
+/** Weighted overall score from radar axes (weights: RADAR_AXIS_DEFINITIONS), one decimal. */
+export function computeOverallScore(radar: RadarScores): number {
+  const total =
+    radar.coding_swe * 0.25 +
+    radar.reasoning_logic * 0.25 +
+    radar.arena_elo * 0.15 +
+    radar.architecture_design * 0.15 +
+    radar.speed_latency * 0.1 +
+    radar.cost_efficiency * 0.1;
+  return Math.round(total * 10) / 10;
+}
 
 /**
  * Evaluate and characterize an AI model based on its raw metrics and radar scores
@@ -443,10 +547,16 @@ export function createModelProfile(
   raw: BenchmarkRawMetrics,
   release_status_or_capabilities: ModelReleaseStatus | ModelBenchmarkProfile['extended_capabilities'] = 'GA',
   capabilities?: ModelExtendedCapabilities,
-  extended_capabilities?: ModelBenchmarkProfile['extended_capabilities']
+  extended_capabilities?: ModelBenchmarkProfile['extended_capabilities'],
+  normalization?: NormalizationContext
 ): ModelBenchmarkProfile {
-  const radar_scores = computeRadarScores(raw);
-  const evaluation = evaluateModel(id, raw, radar_scores, vendor);
+  const radar_scores = computeRadarScores(raw, normalization);
+  // Qualitative evaluation (grade, tags, strengths/weaknesses) keeps absolute thresholds, so it is judged on the
+  // absolute-anchor scores. The displayed overall score is the weighted percentile score, which does not saturate.
+  const evaluation = evaluateModel(id, raw, normalization ? computeRadarScores(raw) : radar_scores, vendor);
+  if (normalization) {
+    evaluation.overall_score = computeOverallScore(radar_scores);
+  }
 
   let release_status: ModelReleaseStatus = 'GA';
   let ext: ModelBenchmarkProfile['extended_capabilities'];
@@ -484,63 +594,13 @@ export function createModelProfile(
 }
 
 /**
- * 外部データやログのモデル名表記揺れをナレッジモデルIDに正規化
+ * 外部データやログのモデル名表記揺れをモデルカタログの正規 ID に解決する (A-13)。
+ * 別名の完全一致のみ。未知の名前は `unknown:<raw>` として保持し、既存 ID へ誤分類しない。
  */
 export function normalizeModelId(rawName: string): string {
-  const s = rawName.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-  // 2026 最新 OpenAI
-  if (s.includes('gpt6sol') || (s.includes('gpt6') && s.includes('sol'))) return 'gpt-6-sol';
-  if (s.includes('gpt6luna') || (s.includes('gpt6') && s.includes('luna'))) return 'gpt-6-luna';
-  if (s.includes('gpt6') || s.includes('astra')) return 'gpt-6-astra';
-  if (s.includes('gpt56sol') || (s.includes('gpt56') && s.includes('sol'))) return 'gpt-5-6-sol';
-  if (s.includes('gpt56terra') || (s.includes('gpt56') && s.includes('terra'))) return 'gpt-5-6-terra';
-  if (s.includes('gpt56luna') || (s.includes('gpt56') && s.includes('luna'))) return 'gpt-5-6-luna';
-  if (s.includes('gpt55')) return 'gpt-5-5';
-  if (s.includes('gpt54nano')) return 'gpt-5-4-nano';
-  if (s.includes('gpt54mini')) return 'gpt-5-4-mini';
-  if (s.includes('gpt54')) return 'gpt-5-4';
-  if (s.includes('gpt53codex') || (s.includes('gpt53') && s.includes('codex'))) return 'gpt-5-3-codex';
-  if (s.includes('gpt5mini')) return 'gpt-5-mini';
-
-  // 2026 最新 Anthropic
-  if (s.includes('claudeopus55') || s.includes('opus55')) return 'claude-opus-5-5';
-  if (s.includes('claudefable51') || s.includes('fable51') || s.includes('claude51fable')) return 'claude-fable-5-1';
-  if (s.includes('claudefable5') || s.includes('fable5') || s.includes('claude5fable')) return 'claude-fable-5';
-  if (s.includes('claudeopus5') || s.includes('claude5opus') || (s.includes('opus5') && !s.includes('sonnet'))) return 'claude-opus-5';
-  if (s.includes('claudesonnet5') || s.includes('claude5sonnet') || s.includes('sonnet5') || s.includes('claude5')) return 'claude-sonnet-5';
-  if (s.includes('claudeopus48fast')) return 'claude-opus-4-8-fast';
-  if (s.includes('claudeopus48') || s.includes('opus48')) return 'claude-opus-4-8';
-  if (s.includes('claudeopus47') || s.includes('opus47')) return 'claude-opus-4-7';
-  if (s.includes('claudeopus46') || s.includes('opus46')) return 'claude-opus-4-6';
-  if (s.includes('claudesonnet46') || s.includes('sonnet46')) return 'claude-sonnet-4-6';
-  if (s.includes('claudesonnet4') || s.includes('claude4sonnet') || s.includes('sonnet4')) return 'claude-sonnet-4';
-  if (s.includes('claudehaiku45') || s.includes('claude45haiku') || s.includes('haiku45')) return 'claude-haiku-4-5';
-
-  // 2026 最新 Google
-  if (s.includes('gemini38') || s.includes('gemini38flash')) return 'gemini-3-8-flash';
-  if (s.includes('gemini37') || s.includes('gemini37flash')) return 'gemini-3-7-flash';
-  if (s.includes('gemini36') || s.includes('gemini36flash')) return 'gemini-3-6-flash';
-  if (s.includes('gemini35') || s.includes('gemini35flash')) return 'gemini-3-5-flash';
-
-  // Microsoft / xAI / Moonshot
-  if (s.includes('maicode11') || s.includes('maicode')) return 'mai-code-1-1-flash';
-  if (s.includes('grok47')) return 'grok-4-7';
-  if (s.includes('grok46')) return 'grok-4-6';
-  if (s.includes('grok45') || s.includes('grok')) return 'grok-4-5';
-  if (s.includes('kimik3') || (s.includes('kimi') && s.includes('k3'))) return 'kimi-k3';
-  if (s.includes('kimik27') || s.includes('kimicode')) return 'kimi-k2-7-code';
-
-  // クラシック / 過去世代
-  if (s.includes('claude37') || s.includes('claude37sonnet')) return 'claude-3-7-sonnet';
-  if (s.includes('claude35') || s.includes('claude35sonnet')) return 'claude-3-5-sonnet';
-  if (s.includes('gpt4omini') || s.includes('4omini')) return 'gpt-4o-mini';
-  if (s.includes('gpt4o') || s.includes('gpt4omni') || s.includes('4o')) return 'gpt-4o';
-  if (s.includes('o3mini') || s.includes('o3')) return 'o3-mini';
-  if (s.includes('o1') || s.includes('openaio1')) return 'o1';
-  if (s.includes('gemini25') || s.includes('gemini25pro')) return 'gemini-2-5-pro';
-  if (s.includes('gemini20') || s.includes('gemini20flash') || s.includes('geminiflash')) return 'gemini-2-0-flash';
-  if (s.includes('deepseek') || s.includes('r1')) return 'deepseek-r1';
-
-  return rawName.toLowerCase().trim();
+  const resolved = resolveCatalogModelId(rawName);
+  if (resolved) return resolved;
+  return `${UNKNOWN_MODEL_PREFIX}${rawName.toLowerCase().trim()}`;
 }
+
+export { isUnknownModelId };

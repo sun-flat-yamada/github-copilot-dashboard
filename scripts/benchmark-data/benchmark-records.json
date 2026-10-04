@@ -1,0 +1,1249 @@
+[
+  {
+    "id": "gpt-6-astra",
+    "name": "GPT-6 Astra",
+    "vendor": "OpenAI",
+    "model_family": "GPT-6",
+    "color": "#047857",
+    "is_copilot_native": true,
+    "release_date": "2026-08-15",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Powerful"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 82.4,
+      "humaneval_plus": 96.2,
+      "aime_2024": 95.5,
+      "gpqa_diamond": 86.4,
+      "arena_coding_elo": 1475,
+      "output_speed_tps": 64,
+      "input_cost_per_m": 10,
+      "output_cost_per_m": 50,
+      "cached_input_cost_per_m": 1,
+      "cache_write_cost_per_m": 12.5,
+      "context_window_k": 272,
+      "context_window_display": "272K (Long Context: 1M)",
+      "long_context_threshold_k": 272,
+      "long_context_input_cost_per_m": 20,
+      "long_context_output_cost_per_m": 75
+    }
+  },
+  {
+    "id": "gpt-6-sol",
+    "name": "GPT-6 Sol",
+    "vendor": "OpenAI",
+    "model_family": "GPT-6",
+    "color": "#059669",
+    "is_copilot_native": true,
+    "release_date": "2026-09-20",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Powerful"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 78.5,
+      "humaneval_plus": 95.5,
+      "aime_2024": 92,
+      "gpqa_diamond": 83,
+      "arena_coding_elo": 1460,
+      "output_speed_tps": 95,
+      "input_cost_per_m": 2,
+      "output_cost_per_m": 10,
+      "cached_input_cost_per_m": 0.2,
+      "cache_write_cost_per_m": 2.5,
+      "context_window_k": 272,
+      "context_window_display": "272K (Long Context: 1M)",
+      "long_context_threshold_k": 272,
+      "long_context_input_cost_per_m": 4,
+      "long_context_output_cost_per_m": 15
+    }
+  },
+  {
+    "id": "gpt-6-luna",
+    "name": "GPT-6 Luna",
+    "vendor": "OpenAI",
+    "model_family": "GPT-6",
+    "color": "#34d399",
+    "is_copilot_native": true,
+    "release_date": "2026-09-20",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Lightweight"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 68.5,
+      "humaneval_plus": 92.4,
+      "aime_2024": 84,
+      "gpqa_diamond": 74,
+      "arena_coding_elo": 1410,
+      "output_speed_tps": 185,
+      "input_cost_per_m": 0.1,
+      "output_cost_per_m": 0.5,
+      "cached_input_cost_per_m": 0.01,
+      "cache_write_cost_per_m": 0.125,
+      "context_window_k": 272,
+      "context_window_display": "272K (Long Context: 1M ※長文性能注意)",
+      "long_context_threshold_k": 272,
+      "long_context_input_cost_per_m": 0.2,
+      "long_context_output_cost_per_m": 0.75
+    }
+  },
+  {
+    "id": "gpt-5-6-sol",
+    "name": "GPT-5.6 Sol",
+    "vendor": "OpenAI",
+    "model_family": "GPT-5.6",
+    "color": "#059669",
+    "is_copilot_native": true,
+    "release_date": "2026-07-20",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Powerful"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 76.8,
+      "humaneval_plus": 94.8,
+      "aime_2024": 92,
+      "gpqa_diamond": 82,
+      "arena_coding_elo": 1450,
+      "output_speed_tps": 75,
+      "input_cost_per_m": 4,
+      "output_cost_per_m": 20,
+      "cached_input_cost_per_m": 0.4,
+      "cache_write_cost_per_m": 5,
+      "context_window_k": 272,
+      "context_window_display": "272K (Long Context: 1M)",
+      "long_context_threshold_k": 272,
+      "long_context_input_cost_per_m": 8,
+      "long_context_output_cost_per_m": 30
+    }
+  },
+  {
+    "id": "gpt-5-6-terra",
+    "name": "GPT-5.6 Terra",
+    "vendor": "OpenAI",
+    "model_family": "GPT-5.6",
+    "color": "#10b981",
+    "is_copilot_native": true,
+    "release_date": "2026-07-20",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Versatile"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 71.5,
+      "humaneval_plus": 93,
+      "aime_2024": 87.5,
+      "gpqa_diamond": 76.5,
+      "arena_coding_elo": 1420,
+      "output_speed_tps": 92,
+      "input_cost_per_m": 2,
+      "output_cost_per_m": 12,
+      "cached_input_cost_per_m": 0.2,
+      "cache_write_cost_per_m": 2.5,
+      "context_window_k": 272,
+      "context_window_display": "272K (Long Context: 1M)",
+      "long_context_threshold_k": 272,
+      "long_context_input_cost_per_m": 4,
+      "long_context_output_cost_per_m": 18
+    }
+  },
+  {
+    "id": "gpt-5-6-luna",
+    "name": "GPT-5.6 Luna",
+    "vendor": "OpenAI",
+    "model_family": "GPT-5.6",
+    "color": "#34d399",
+    "is_copilot_native": true,
+    "release_date": "2026-07-20",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Lightweight"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 58.2,
+      "humaneval_plus": 89.4,
+      "aime_2024": 74,
+      "gpqa_diamond": 63.5,
+      "arena_coding_elo": 1365,
+      "output_speed_tps": 170,
+      "input_cost_per_m": 0.2,
+      "output_cost_per_m": 1.2,
+      "cached_input_cost_per_m": 0.02,
+      "cache_write_cost_per_m": 0.25,
+      "context_window_k": 200,
+      "context_window_display": "200K (Long Context: 1M ※長文性能注意)",
+      "long_context_threshold_k": 200,
+      "long_context_input_cost_per_m": 0.4,
+      "long_context_output_cost_per_m": 1.8
+    }
+  },
+  {
+    "id": "gpt-5-5",
+    "name": "GPT-5.5",
+    "vendor": "OpenAI",
+    "model_family": "GPT-5",
+    "color": "#0d9488",
+    "is_copilot_native": true,
+    "release_date": "2026-06-01",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Powerful"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 74.5,
+      "humaneval_plus": 94,
+      "aime_2024": 90.2,
+      "gpqa_diamond": 79.5,
+      "arena_coding_elo": 1438,
+      "output_speed_tps": 70,
+      "input_cost_per_m": 5,
+      "output_cost_per_m": 30,
+      "cached_input_cost_per_m": 0.5,
+      "context_window_k": 272,
+      "context_window_display": "272K (Long Context: 1M)",
+      "long_context_threshold_k": 272,
+      "long_context_input_cost_per_m": 10,
+      "long_context_output_cost_per_m": 45
+    }
+  },
+  {
+    "id": "gpt-5-4",
+    "name": "GPT-5.4",
+    "vendor": "OpenAI",
+    "model_family": "GPT-5",
+    "color": "#14b8a6",
+    "is_copilot_native": true,
+    "release_date": "2026-04-15",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Versatile"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 68.4,
+      "humaneval_plus": 92.5,
+      "aime_2024": 85,
+      "gpqa_diamond": 73,
+      "arena_coding_elo": 1408,
+      "output_speed_tps": 88,
+      "input_cost_per_m": 2.5,
+      "output_cost_per_m": 15,
+      "cached_input_cost_per_m": 0.25,
+      "context_window_k": 272,
+      "context_window_display": "272K (Long Context: 1M)",
+      "long_context_threshold_k": 272,
+      "long_context_input_cost_per_m": 5,
+      "long_context_output_cost_per_m": 22.5
+    }
+  },
+  {
+    "id": "gpt-5-4-mini",
+    "name": "GPT-5.4 mini",
+    "vendor": "OpenAI",
+    "model_family": "GPT-5",
+    "color": "#2dd4bf",
+    "is_copilot_native": true,
+    "release_date": "2026-04-15",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": false,
+      "has_configurable_reasoning": false,
+      "tier": "Lightweight"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 55.6,
+      "humaneval_plus": 88,
+      "aime_2024": 72.5,
+      "gpqa_diamond": 60,
+      "arena_coding_elo": 1355,
+      "output_speed_tps": 155,
+      "input_cost_per_m": 0.75,
+      "output_cost_per_m": 4.5,
+      "cached_input_cost_per_m": 0.075,
+      "context_window_k": 128,
+      "context_window_display": "128K"
+    }
+  },
+  {
+    "id": "gpt-5-4-nano",
+    "name": "GPT-5.4 nano (Utility)",
+    "vendor": "OpenAI",
+    "model_family": "GPT-5",
+    "color": "#5eead4",
+    "is_copilot_native": true,
+    "release_date": "2026-04-15",
+    "release_status": "Utility",
+    "capabilities": {
+      "has_1m_context": false,
+      "has_configurable_reasoning": false,
+      "tier": "Lightweight"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 46.5,
+      "humaneval_plus": 85,
+      "aime_2024": 64,
+      "gpqa_diamond": 53,
+      "arena_coding_elo": 1320,
+      "output_speed_tps": 210,
+      "input_cost_per_m": 0.2,
+      "output_cost_per_m": 1.25,
+      "cached_input_cost_per_m": 0.02,
+      "context_window_k": 128,
+      "context_window_display": "128K"
+    }
+  },
+  {
+    "id": "gpt-5-3-codex",
+    "name": "GPT-5.3-Codex (LTS)",
+    "vendor": "OpenAI",
+    "model_family": "Codex",
+    "color": "#2563eb",
+    "is_copilot_native": true,
+    "release_date": "2026-06-01",
+    "release_status": "LTS",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Powerful"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 72,
+      "humaneval_plus": 93.8,
+      "aime_2024": 86.5,
+      "gpqa_diamond": 75,
+      "arena_coding_elo": 1422,
+      "output_speed_tps": 80,
+      "input_cost_per_m": 1.75,
+      "output_cost_per_m": 14,
+      "cached_input_cost_per_m": 0.175,
+      "context_window_k": 1000,
+      "context_window_display": "1M (LTS Support)"
+    }
+  },
+  {
+    "id": "gpt-5-mini",
+    "name": "GPT-5 mini",
+    "vendor": "OpenAI",
+    "model_family": "GPT-5",
+    "color": "#0284c7",
+    "is_copilot_native": true,
+    "release_date": "2026-05-15",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": false,
+      "has_configurable_reasoning": false,
+      "tier": "Lightweight"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 52,
+      "humaneval_plus": 87.2,
+      "aime_2024": 70,
+      "gpqa_diamond": 58,
+      "arena_coding_elo": 1345,
+      "output_speed_tps": 160,
+      "input_cost_per_m": 0.25,
+      "output_cost_per_m": 2,
+      "cached_input_cost_per_m": 0.025,
+      "context_window_k": 128,
+      "context_window_display": "128K"
+    }
+  },
+  {
+    "id": "claude-sonnet-5",
+    "name": "Claude Sonnet 5",
+    "vendor": "Anthropic",
+    "model_family": "Claude 5",
+    "color": "#d97706",
+    "is_copilot_native": true,
+    "release_date": "2026-09-01",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Versatile"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 78.5,
+      "humaneval_plus": 95,
+      "aime_2024": 91.5,
+      "gpqa_diamond": 80.2,
+      "arena_coding_elo": 1460,
+      "output_speed_tps": 84,
+      "input_cost_per_m": 2,
+      "output_cost_per_m": 10,
+      "cached_input_cost_per_m": 0.2,
+      "cache_write_cost_per_m": 2.5,
+      "context_window_k": 1000,
+      "context_window_display": "200K (1M Supported)"
+    }
+  },
+  {
+    "id": "claude-opus-5-5",
+    "name": "Claude Opus 5.5",
+    "vendor": "Anthropic",
+    "model_family": "Claude 5",
+    "color": "#9333ea",
+    "is_copilot_native": true,
+    "release_date": "2026-09-25",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Powerful"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 82.8,
+      "humaneval_plus": 96.5,
+      "aime_2024": 94,
+      "gpqa_diamond": 86,
+      "arena_coding_elo": 1480,
+      "output_speed_tps": 70,
+      "input_cost_per_m": 4,
+      "output_cost_per_m": 20,
+      "cached_input_cost_per_m": 0.2,
+      "cache_write_cost_per_m": 5,
+      "context_window_k": 1000,
+      "context_window_display": "200K (1M Supported)"
+    }
+  },
+  {
+    "id": "claude-opus-5",
+    "name": "Claude Opus 5",
+    "vendor": "Anthropic",
+    "model_family": "Claude 5",
+    "color": "#b45309",
+    "is_copilot_native": true,
+    "release_date": "2026-09-01",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Powerful"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 81,
+      "humaneval_plus": 95.8,
+      "aime_2024": 93.8,
+      "gpqa_diamond": 84.5,
+      "arena_coding_elo": 1470,
+      "output_speed_tps": 62,
+      "input_cost_per_m": 5,
+      "output_cost_per_m": 25,
+      "cached_input_cost_per_m": 0.5,
+      "cache_write_cost_per_m": 6.25,
+      "context_window_k": 1000,
+      "context_window_display": "200K (1M Supported)"
+    }
+  },
+  {
+    "id": "claude-fable-5-1",
+    "name": "Claude Fable 5.1 (EFS)",
+    "vendor": "Anthropic",
+    "model_family": "Claude Fable",
+    "color": "#7c2d12",
+    "is_copilot_native": true,
+    "release_date": "2026-08-20",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Powerful"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 83,
+      "humaneval_plus": 96.5,
+      "aime_2024": 94.6,
+      "gpqa_diamond": 85.8,
+      "arena_coding_elo": 1478,
+      "output_speed_tps": 58,
+      "input_cost_per_m": 10,
+      "output_cost_per_m": 50,
+      "cached_input_cost_per_m": 0.25,
+      "cache_write_cost_per_m": 12.5,
+      "context_window_k": 1000,
+      "context_window_display": "200K (1M Supported, ZDR/EFS)"
+    }
+  },
+  {
+    "id": "claude-fable-5",
+    "name": "Claude Fable 5 (EFS)",
+    "vendor": "Anthropic",
+    "model_family": "Claude Fable",
+    "color": "#9a3412",
+    "is_copilot_native": true,
+    "release_date": "2026-07-15",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Powerful"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 80.5,
+      "humaneval_plus": 95.5,
+      "aime_2024": 92.8,
+      "gpqa_diamond": 83.2,
+      "arena_coding_elo": 1465,
+      "output_speed_tps": 60,
+      "input_cost_per_m": 10,
+      "output_cost_per_m": 50,
+      "cached_input_cost_per_m": 1,
+      "cache_write_cost_per_m": 12.5,
+      "context_window_k": 1000,
+      "context_window_display": "200K (1M Supported, ZDR/EFS)"
+    }
+  },
+  {
+    "id": "claude-opus-4-8",
+    "name": "Claude Opus 4.8",
+    "vendor": "Anthropic",
+    "model_family": "Claude 4",
+    "color": "#ea580c",
+    "is_copilot_native": true,
+    "release_date": "2026-06-29",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Powerful"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 77.2,
+      "humaneval_plus": 94.2,
+      "aime_2024": 91,
+      "gpqa_diamond": 81,
+      "arena_coding_elo": 1445,
+      "output_speed_tps": 65,
+      "input_cost_per_m": 5,
+      "output_cost_per_m": 25,
+      "cached_input_cost_per_m": 0.5,
+      "cache_write_cost_per_m": 6.25,
+      "context_window_k": 1000,
+      "context_window_display": "200K (1M Supported)"
+    }
+  },
+  {
+    "id": "claude-opus-4-8-fast",
+    "name": "Claude Opus 4.8 (Fast Mode)",
+    "vendor": "Anthropic",
+    "model_family": "Claude 4",
+    "color": "#f97316",
+    "is_copilot_native": true,
+    "release_date": "2026-06-29",
+    "release_status": "Preview",
+    "capabilities": {
+      "has_1m_context": false,
+      "has_configurable_reasoning": true,
+      "tier": "Powerful"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 76.5,
+      "humaneval_plus": 93.8,
+      "aime_2024": 90.5,
+      "gpqa_diamond": 80,
+      "arena_coding_elo": 1440,
+      "output_speed_tps": 110,
+      "input_cost_per_m": 10,
+      "output_cost_per_m": 50,
+      "cached_input_cost_per_m": 1,
+      "cache_write_cost_per_m": 12.5,
+      "context_window_k": 200,
+      "context_window_display": "200K"
+    }
+  },
+  {
+    "id": "claude-opus-4-7",
+    "name": "Claude Opus 4.7",
+    "vendor": "Anthropic",
+    "model_family": "Claude 4",
+    "color": "#c2410c",
+    "is_copilot_native": true,
+    "release_date": "2026-05-10",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Powerful"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 74,
+      "humaneval_plus": 93,
+      "aime_2024": 88.5,
+      "gpqa_diamond": 78,
+      "arena_coding_elo": 1430,
+      "output_speed_tps": 66,
+      "input_cost_per_m": 5,
+      "output_cost_per_m": 25,
+      "cached_input_cost_per_m": 0.5,
+      "cache_write_cost_per_m": 6.25,
+      "context_window_k": 1000,
+      "context_window_display": "200K (1M Supported)"
+    }
+  },
+  {
+    "id": "claude-opus-4-6",
+    "name": "Claude Opus 4.6",
+    "vendor": "Anthropic",
+    "model_family": "Claude 4",
+    "color": "#a8430a",
+    "is_copilot_native": true,
+    "release_date": "2026-02-17",
+    "release_status": "Retired",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Powerful"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 72.5,
+      "humaneval_plus": 92.5,
+      "aime_2024": 86.5,
+      "gpqa_diamond": 76,
+      "arena_coding_elo": 1420,
+      "output_speed_tps": 68,
+      "input_cost_per_m": 5,
+      "output_cost_per_m": 25,
+      "cached_input_cost_per_m": 0.5,
+      "cache_write_cost_per_m": 6.25,
+      "context_window_k": 1000,
+      "context_window_display": "200K (1M Supported)"
+    }
+  },
+  {
+    "id": "claude-sonnet-4-6",
+    "name": "Claude Sonnet 4.6",
+    "vendor": "Anthropic",
+    "model_family": "Claude 4",
+    "color": "#fb923c",
+    "is_copilot_native": true,
+    "release_date": "2026-05-01",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Versatile"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 73.2,
+      "humaneval_plus": 93.5,
+      "aime_2024": 87,
+      "gpqa_diamond": 74.5,
+      "arena_coding_elo": 1425,
+      "output_speed_tps": 76,
+      "input_cost_per_m": 3,
+      "output_cost_per_m": 15,
+      "cached_input_cost_per_m": 0.3,
+      "cache_write_cost_per_m": 3.75,
+      "context_window_k": 1000,
+      "context_window_display": "200K (1M Supported)"
+    }
+  },
+  {
+    "id": "claude-sonnet-4",
+    "name": "Claude Sonnet 4",
+    "vendor": "Anthropic",
+    "model_family": "Claude 4",
+    "color": "#fdba74",
+    "is_copilot_native": true,
+    "release_date": "2026-03-01",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": false,
+      "has_configurable_reasoning": false,
+      "tier": "Versatile"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 69.5,
+      "humaneval_plus": 92,
+      "aime_2024": 83.5,
+      "gpqa_diamond": 70,
+      "arena_coding_elo": 1410,
+      "output_speed_tps": 74,
+      "input_cost_per_m": 3,
+      "output_cost_per_m": 15,
+      "cached_input_cost_per_m": 0.3,
+      "cache_write_cost_per_m": 3.75,
+      "context_window_k": 200,
+      "context_window_display": "200K"
+    }
+  },
+  {
+    "id": "claude-haiku-4-5",
+    "name": "Claude Haiku 4.5",
+    "vendor": "Anthropic",
+    "model_family": "Claude 4",
+    "color": "#fbbf24",
+    "is_copilot_native": true,
+    "release_date": "2025-11-06",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": false,
+      "has_configurable_reasoning": false,
+      "tier": "Versatile"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 60.5,
+      "humaneval_plus": 89.2,
+      "aime_2024": 76,
+      "gpqa_diamond": 64,
+      "arena_coding_elo": 1380,
+      "output_speed_tps": 130,
+      "input_cost_per_m": 1,
+      "output_cost_per_m": 5,
+      "cached_input_cost_per_m": 0.1,
+      "cache_write_cost_per_m": 1.25,
+      "context_window_k": 200,
+      "context_window_display": "200K"
+    }
+  },
+  {
+    "id": "gemini-3-8-flash",
+    "name": "Gemini 3.8 Flash",
+    "vendor": "Google",
+    "model_family": "Gemini 3.x",
+    "color": "#0891b2",
+    "is_copilot_native": true,
+    "release_date": "2026-08-01",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": false,
+      "tier": "Versatile"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 71,
+      "humaneval_plus": 93,
+      "aime_2024": 86,
+      "gpqa_diamond": 75,
+      "arena_coding_elo": 1420,
+      "output_speed_tps": 195,
+      "input_cost_per_m": 0.75,
+      "output_cost_per_m": 3.75,
+      "cached_input_cost_per_m": 0.075,
+      "context_window_k": 1000,
+      "context_window_display": "1M (Promo: $0.75 / $3.75)"
+    }
+  },
+  {
+    "id": "gemini-3-7-flash",
+    "name": "Gemini 3.7 Flash",
+    "vendor": "Google",
+    "model_family": "Gemini 3.x",
+    "color": "#06b6d4",
+    "is_copilot_native": true,
+    "release_date": "2026-07-01",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": false,
+      "tier": "Versatile"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 68,
+      "humaneval_plus": 92,
+      "aime_2024": 83.5,
+      "gpqa_diamond": 72,
+      "arena_coding_elo": 1405,
+      "output_speed_tps": 190,
+      "input_cost_per_m": 0.75,
+      "output_cost_per_m": 3.75,
+      "cached_input_cost_per_m": 0.075,
+      "context_window_k": 1000,
+      "context_window_display": "1M (Promo: $0.75 / $3.75)"
+    }
+  },
+  {
+    "id": "gemini-3-6-flash",
+    "name": "Gemini 3.6 Flash",
+    "vendor": "Google",
+    "model_family": "Gemini 3.x",
+    "color": "#22d3ee",
+    "is_copilot_native": true,
+    "release_date": "2026-06-01",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": false,
+      "tier": "Versatile"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 65,
+      "humaneval_plus": 91,
+      "aime_2024": 80,
+      "gpqa_diamond": 68.5,
+      "arena_coding_elo": 1390,
+      "output_speed_tps": 185,
+      "input_cost_per_m": 0.75,
+      "output_cost_per_m": 3.75,
+      "cached_input_cost_per_m": 0.075,
+      "context_window_k": 1000,
+      "context_window_display": "1M (Promo: $0.75 / $3.75)"
+    }
+  },
+  {
+    "id": "gemini-3-5-flash",
+    "name": "Gemini 3.5 Flash",
+    "vendor": "Google",
+    "model_family": "Gemini 3.x",
+    "color": "#67e8f9",
+    "is_copilot_native": true,
+    "release_date": "2026-04-01",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": false,
+      "tier": "Lightweight"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 61.5,
+      "humaneval_plus": 89.5,
+      "aime_2024": 76,
+      "gpqa_diamond": 64,
+      "arena_coding_elo": 1370,
+      "output_speed_tps": 180,
+      "input_cost_per_m": 1.5,
+      "output_cost_per_m": 9,
+      "cached_input_cost_per_m": 0.15,
+      "context_window_k": 1000,
+      "context_window_display": "1M"
+    }
+  },
+  {
+    "id": "mai-code-1-1-flash",
+    "name": "MAI-Code-1.1-Flash",
+    "vendor": "Microsoft",
+    "model_family": "MAI-Code",
+    "color": "#0078d4",
+    "is_copilot_native": true,
+    "release_date": "2026-09-10",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": false,
+      "has_configurable_reasoning": false,
+      "tier": "Lightweight"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 56.4,
+      "humaneval_plus": 88.5,
+      "aime_2024": 71,
+      "gpqa_diamond": 59,
+      "arena_coding_elo": 1350,
+      "output_speed_tps": 195,
+      "input_cost_per_m": 0.2,
+      "output_cost_per_m": 1.2,
+      "cached_input_cost_per_m": 0.02,
+      "context_window_k": 128,
+      "context_window_display": "128K"
+    }
+  },
+  {
+    "id": "grok-4-7",
+    "name": "Grok 4.7",
+    "vendor": "xAI",
+    "model_family": "Grok",
+    "color": "#3b82f6",
+    "is_copilot_native": true,
+    "release_date": "2026-09-20",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": false,
+      "tier": "Versatile"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 73.2,
+      "humaneval_plus": 92.8,
+      "aime_2024": 86.5,
+      "gpqa_diamond": 77,
+      "arena_coding_elo": 1425,
+      "output_speed_tps": 110,
+      "input_cost_per_m": 2,
+      "output_cost_per_m": 6,
+      "cached_input_cost_per_m": 0.5,
+      "context_window_k": 200,
+      "context_window_display": "200K (Long Context: 1M)",
+      "long_context_threshold_k": 200,
+      "long_context_input_cost_per_m": 4,
+      "long_context_output_cost_per_m": 12
+    }
+  },
+  {
+    "id": "grok-4-6",
+    "name": "Grok 4.6",
+    "vendor": "xAI",
+    "model_family": "Grok",
+    "color": "#475569",
+    "is_copilot_native": true,
+    "release_date": "2026-08-01",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": false,
+      "has_configurable_reasoning": false,
+      "tier": "Versatile"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 69,
+      "humaneval_plus": 92.5,
+      "aime_2024": 85.5,
+      "gpqa_diamond": 75,
+      "arena_coding_elo": 1415,
+      "output_speed_tps": 95,
+      "input_cost_per_m": 2,
+      "output_cost_per_m": 6,
+      "cached_input_cost_per_m": 0.5,
+      "context_window_k": 200,
+      "context_window_display": "200K (Long Context Available)",
+      "long_context_threshold_k": 200,
+      "long_context_input_cost_per_m": 4,
+      "long_context_output_cost_per_m": 12
+    }
+  },
+  {
+    "id": "grok-4-5",
+    "name": "Grok 4.5",
+    "vendor": "xAI",
+    "model_family": "Grok",
+    "color": "#64748b",
+    "is_copilot_native": true,
+    "release_date": "2026-05-01",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": false,
+      "has_configurable_reasoning": false,
+      "tier": "Versatile"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 64,
+      "humaneval_plus": 90,
+      "aime_2024": 81,
+      "gpqa_diamond": 70,
+      "arena_coding_elo": 1390,
+      "output_speed_tps": 90,
+      "input_cost_per_m": 2,
+      "output_cost_per_m": 6,
+      "cached_input_cost_per_m": 0.5,
+      "context_window_k": 200,
+      "context_window_display": "200K (Long Context Available)",
+      "long_context_threshold_k": 200,
+      "long_context_input_cost_per_m": 4,
+      "long_context_output_cost_per_m": 12
+    }
+  },
+  {
+    "id": "kimi-k3",
+    "name": "Kimi K3",
+    "vendor": "Moonshot AI",
+    "model_family": "Kimi",
+    "color": "#7e22ce",
+    "is_copilot_native": true,
+    "release_date": "2026-07-01",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Powerful"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 73.5,
+      "humaneval_plus": 93.8,
+      "aime_2024": 89,
+      "gpqa_diamond": 78.5,
+      "arena_coding_elo": 1430,
+      "output_speed_tps": 72,
+      "input_cost_per_m": 3,
+      "output_cost_per_m": 15,
+      "cached_input_cost_per_m": 0.3,
+      "context_window_k": 1000,
+      "context_window_display": "1M Supported"
+    }
+  },
+  {
+    "id": "kimi-k2-7-code",
+    "name": "Kimi K2.7 Code",
+    "vendor": "Moonshot AI",
+    "model_family": "Kimi",
+    "color": "#9333ea",
+    "is_copilot_native": true,
+    "release_date": "2026-04-01",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": false,
+      "has_configurable_reasoning": false,
+      "tier": "Versatile"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 62,
+      "humaneval_plus": 89.5,
+      "aime_2024": 77,
+      "gpqa_diamond": 65,
+      "arena_coding_elo": 1375,
+      "output_speed_tps": 85,
+      "input_cost_per_m": 0.95,
+      "output_cost_per_m": 4,
+      "cached_input_cost_per_m": 0.19,
+      "context_window_k": 256,
+      "context_window_display": "256K"
+    }
+  },
+  {
+    "id": "claude-3-7-sonnet",
+    "name": "Claude 3.7 Sonnet (Hybrid)",
+    "vendor": "Anthropic",
+    "model_family": "Claude 3.7",
+    "color": "#f59e0b",
+    "is_copilot_native": true,
+    "release_date": "2025-02-24",
+    "release_status": "Retired",
+    "capabilities": {
+      "has_1m_context": false,
+      "has_configurable_reasoning": true,
+      "tier": "Powerful"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 70.3,
+      "humaneval_plus": 92.4,
+      "aime_2024": 84.8,
+      "gpqa_diamond": 67.2,
+      "arena_coding_elo": 1435,
+      "output_speed_tps": 68,
+      "input_cost_per_m": 3,
+      "output_cost_per_m": 15,
+      "cached_input_cost_per_m": 0.3,
+      "context_window_k": 200,
+      "context_window_display": "200K"
+    }
+  },
+  {
+    "id": "claude-3-5-sonnet",
+    "name": "Claude 3.5 Sonnet",
+    "vendor": "Anthropic",
+    "model_family": "Claude 3.5",
+    "color": "#ea580c",
+    "is_copilot_native": true,
+    "release_date": "2024-10-22",
+    "release_status": "Retired",
+    "capabilities": {
+      "has_1m_context": false,
+      "has_configurable_reasoning": false,
+      "tier": "Versatile"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 63.8,
+      "humaneval_plus": 91.2,
+      "aime_2024": 78.3,
+      "gpqa_diamond": 65,
+      "arena_coding_elo": 1395,
+      "output_speed_tps": 72,
+      "input_cost_per_m": 3,
+      "output_cost_per_m": 15,
+      "context_window_k": 200,
+      "context_window_display": "200K"
+    }
+  },
+  {
+    "id": "gpt-4o",
+    "name": "GPT-4o (Omni)",
+    "vendor": "OpenAI",
+    "model_family": "GPT-4",
+    "color": "#10b981",
+    "is_copilot_native": true,
+    "release_date": "2024-05-13",
+    "release_status": "Utility",
+    "capabilities": {
+      "has_1m_context": false,
+      "has_configurable_reasoning": false,
+      "tier": "Versatile"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 53.4,
+      "humaneval_plus": 90.2,
+      "aime_2024": 76.6,
+      "gpqa_diamond": 60.5,
+      "arena_coding_elo": 1370,
+      "output_speed_tps": 85,
+      "input_cost_per_m": 2.5,
+      "output_cost_per_m": 10,
+      "context_window_k": 128,
+      "context_window_display": "128K"
+    }
+  },
+  {
+    "id": "gpt-4o-mini",
+    "name": "GPT-4o mini",
+    "vendor": "OpenAI",
+    "model_family": "GPT-4",
+    "color": "#14b8a6",
+    "is_copilot_native": true,
+    "release_date": "2024-07-18",
+    "release_status": "Utility",
+    "capabilities": {
+      "has_1m_context": false,
+      "has_configurable_reasoning": false,
+      "tier": "Lightweight"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 41.2,
+      "humaneval_plus": 85.4,
+      "aime_2024": 63.5,
+      "gpqa_diamond": 52,
+      "arena_coding_elo": 1315,
+      "output_speed_tps": 145,
+      "input_cost_per_m": 0.15,
+      "output_cost_per_m": 0.6,
+      "context_window_k": 128,
+      "context_window_display": "128K"
+    }
+  },
+  {
+    "id": "o1",
+    "name": "OpenAI o1 (Full Reasoning)",
+    "vendor": "OpenAI",
+    "model_family": "o-series",
+    "color": "#6366f1",
+    "is_copilot_native": true,
+    "release_date": "2024-12-05",
+    "release_status": "Retired",
+    "capabilities": {
+      "has_1m_context": false,
+      "has_configurable_reasoning": true,
+      "tier": "Powerful"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 68.2,
+      "humaneval_plus": 92,
+      "aime_2024": 88.5,
+      "gpqa_diamond": 75.8,
+      "arena_coding_elo": 1415,
+      "output_speed_tps": 34,
+      "input_cost_per_m": 15,
+      "output_cost_per_m": 60,
+      "context_window_k": 200,
+      "context_window_display": "200K"
+    }
+  },
+  {
+    "id": "o3-mini",
+    "name": "OpenAI o3-mini",
+    "vendor": "OpenAI",
+    "model_family": "o-series",
+    "color": "#8b5cf6",
+    "is_copilot_native": true,
+    "release_date": "2025-01-31",
+    "release_status": "Retired",
+    "capabilities": {
+      "has_1m_context": false,
+      "has_configurable_reasoning": true,
+      "tier": "Powerful"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 64.5,
+      "humaneval_plus": 91.8,
+      "aime_2024": 87.3,
+      "gpqa_diamond": 72.4,
+      "arena_coding_elo": 1410,
+      "output_speed_tps": 78,
+      "input_cost_per_m": 1.1,
+      "output_cost_per_m": 4.4,
+      "context_window_k": 200,
+      "context_window_display": "200K"
+    }
+  },
+  {
+    "id": "gemini-2-0-flash",
+    "name": "Gemini 2.0 Flash",
+    "vendor": "Google",
+    "model_family": "Gemini 2.x",
+    "color": "#06b6d4",
+    "is_copilot_native": true,
+    "release_date": "2025-02-05",
+    "release_status": "Retired",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": false,
+      "tier": "Lightweight"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 54,
+      "humaneval_plus": 88.5,
+      "aime_2024": 67,
+      "gpqa_diamond": 57.2,
+      "arena_coding_elo": 1350,
+      "output_speed_tps": 185,
+      "input_cost_per_m": 0.1,
+      "output_cost_per_m": 0.4,
+      "context_window_k": 1048,
+      "context_window_display": "1M"
+    }
+  },
+  {
+    "id": "gemini-2-5-pro",
+    "name": "Gemini 2.5 Pro",
+    "vendor": "Google",
+    "model_family": "Gemini 2.x",
+    "color": "#3b82f6",
+    "is_copilot_native": true,
+    "release_date": "2025-03-01",
+    "release_status": "Retired",
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": false,
+      "tier": "Powerful"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 66.8,
+      "humaneval_plus": 92.6,
+      "aime_2024": 86.2,
+      "gpqa_diamond": 74,
+      "arena_coding_elo": 1425,
+      "output_speed_tps": 62,
+      "input_cost_per_m": 2,
+      "output_cost_per_m": 8,
+      "context_window_k": 2000,
+      "context_window_display": "2M"
+    }
+  },
+  {
+    "id": "deepseek-r1",
+    "name": "DeepSeek R1 (Open Reasoning)",
+    "vendor": "DeepSeek",
+    "model_family": "DeepSeek",
+    "color": "#ec4899",
+    "is_copilot_native": false,
+    "release_date": "2025-01-20",
+    "release_status": "GA",
+    "capabilities": {
+      "has_1m_context": false,
+      "has_configurable_reasoning": true,
+      "tier": "Powerful"
+    },
+    "raw_metrics": {
+      "swe_bench_verified": 65.2,
+      "humaneval_plus": 90.8,
+      "aime_2024": 86.8,
+      "gpqa_diamond": 73.5,
+      "arena_coding_elo": 1390,
+      "output_speed_tps": 58,
+      "input_cost_per_m": 0.55,
+      "output_cost_per_m": 2.19,
+      "context_window_k": 128,
+      "context_window_display": "128K"
+    }
+  }
+]
