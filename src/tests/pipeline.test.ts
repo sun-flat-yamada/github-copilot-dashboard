@@ -128,5 +128,5 @@ test('MetricsAggregator calculates multi-axis group summaries and handles issues
   assert.ok(aggregated.cost_center_budgets[0].free_tier_budget_usd > 0);
   assert.ok(aggregated.user_profiles && aggregated.user_profiles.length > 0);
   assert.ok(aggregated.user_profiles[0].daily_history.length > 0);
-  assert.ok('claude-3-7-sonnet' in aggregated.user_profiles[0].model_usage_totals);
+  assert.ok('claude-sonnet-5' in aggregated.user_profiles[0].model_usage_totals);
 });

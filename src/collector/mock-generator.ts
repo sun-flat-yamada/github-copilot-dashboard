@@ -49,9 +49,26 @@ export const COPILOT_MODEL_TOKEN_PRICES: Record<
 
 export class MockDataGenerator {
   private baseDate: Date;
+  private random: () => number;
 
-  constructor(baseDateStr: string = '2026-09-10') {
+  /**
+   * @param seed 指定すると乱数が決定的になる (DEMO の履歴を再生成しても同じ値になる)。省略時は Math.random。
+   */
+  constructor(baseDateStr: string = '2026-09-10', seed?: number) {
     this.baseDate = new Date(baseDateStr);
+    if (seed === undefined) {
+      this.random = Math.random;
+    } else {
+      // mulberry32
+      let a = seed >>> 0;
+      this.random = () => {
+        a = (a + 0x6d2b79f5) >>> 0;
+        let t = a;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
   }
 
   /**
@@ -62,7 +79,7 @@ export class MockDataGenerator {
     const sampleUserMappings = this.generateSampleUserMappings();
     const seats = this.generateSeats(seatCount, sampleUserMappings);
     const metrics = this.generateDailyMetrics(days, seatCount);
-    const costCenterBudgets = this.generateCostCenterBudgets(costCenters, seats);
+    const costCenterBudgets = this.generateCostCenterBudgets(costCenters);
     const userProfiles = this.generateUserUsageProfiles(seats, sampleUserMappings, days);
 
     return {
@@ -200,21 +217,21 @@ export class MockDataGenerator {
       // 15%: 15〜30日以内 (Low Active)
       // 10%: 31〜60日以内 (Idle: 遊休)
       // 5%: 未利用 (Never Used)
-      const rand = Math.random();
+      const rand = this.random();
       let lastActivityDate: Date | null = null;
       let lastEditor: string | null = editors[i % editors.length];
 
       if (rand < 0.7) {
         // 0〜13日前
-        const daysAgo = Math.floor(Math.random() * 14);
+        const daysAgo = Math.floor(this.random() * 14);
         lastActivityDate = new Date(this.baseDate.getTime() - daysAgo * 24 * 60 * 60 * 1000);
       } else if (rand < 0.85) {
         // 15〜29日前
-        const daysAgo = 15 + Math.floor(Math.random() * 15);
+        const daysAgo = 15 + Math.floor(this.random() * 15);
         lastActivityDate = new Date(this.baseDate.getTime() - daysAgo * 24 * 60 * 60 * 1000);
       } else if (rand < 0.95) {
         // 31〜60日前 (遊休)
-        const daysAgo = 31 + Math.floor(Math.random() * 30);
+        const daysAgo = 31 + Math.floor(this.random() * 30);
         lastActivityDate = new Date(this.baseDate.getTime() - daysAgo * 24 * 60 * 60 * 1000);
       } else {
         // 未利用
@@ -223,14 +240,14 @@ export class MockDataGenerator {
       }
 
       // シート作成日 (過去3ヶ月〜半年前)
-      const createdDaysAgo = 60 + Math.floor(Math.random() * 120);
+      const createdDaysAgo = 60 + Math.floor(this.random() * 120);
       const createdAt = new Date(this.baseDate.getTime() - createdDaysAgo * 24 * 60 * 60 * 1000);
 
       let aiCreditsUsed = 0;
       if (rand < 0.7) {
-        aiCreditsUsed = Math.floor(30 + Math.random() * 150);
+        aiCreditsUsed = Math.floor(30 + this.random() * 150);
       } else if (rand < 0.85) {
-        aiCreditsUsed = Math.floor(Math.random() * 15);
+        aiCreditsUsed = Math.floor(this.random() * 15);
       } else {
         aiCreditsUsed = 0;
       }
@@ -261,6 +278,21 @@ export class MockDataGenerator {
       });
     }
 
+    // 表示パターンの網羅: 末尾のシートを固定の状態にする (乱数に依存せず毎回出す)
+    if (count >= 12) {
+      const day = 24 * 60 * 60 * 1000;
+      const at = (daysAgo: number) => new Date(this.baseDate.getTime() - daysAgo * day).toISOString();
+      const last = (n: number) => seats[count - n];
+      // 付与 2 日・未利用 -> onboarding
+      Object.assign(last(1), { created_at: at(2), updated_at: at(2), last_activity_at: null, last_activity_editor: null, ai_credits_used: 0, billing_effective_date: at(2).slice(0, 10) });
+      // プラン未確定 -> 費用未確定 (cost_unconfirmed)
+      Object.assign(last(2), { plan_type: 'unknown' as const });
+      // 付与 45 日・一度も未利用 -> never_used
+      Object.assign(last(3), { created_at: at(45), updated_at: at(45), last_activity_at: null, last_activity_editor: null, ai_credits_used: 0, billing_effective_date: at(45).slice(0, 10) });
+      // 解約予定
+      Object.assign(last(4), { pending_cancellation_date: at(-20).slice(0, 10) });
+    }
+
     return seats;
   }
 
@@ -276,22 +308,22 @@ export class MockDataGenerator {
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
       const activityFactor = isWeekend ? 0.25 : 1.0;
 
-      const activeUsers = Math.floor((seatCount * (0.65 + Math.random() * 0.15)) * activityFactor);
+      const activeUsers = Math.floor((seatCount * (0.65 + this.random() * 0.15)) * activityFactor);
       const engagedUsers = Math.floor(activeUsers * 0.88);
 
-      const tsSuggestions = Math.floor((8000 + Math.random() * 4000) * activityFactor);
-      const tsAcceptances = Math.floor(tsSuggestions * (0.28 + Math.random() * 0.08));
+      const tsSuggestions = Math.floor((8000 + this.random() * 4000) * activityFactor);
+      const tsAcceptances = Math.floor(tsSuggestions * (0.28 + this.random() * 0.08));
 
-      const pySuggestions = Math.floor((6000 + Math.random() * 3000) * activityFactor);
-      const pyAcceptances = Math.floor(pySuggestions * (0.32 + Math.random() * 0.08));
+      const pySuggestions = Math.floor((6000 + this.random() * 3000) * activityFactor);
+      const pyAcceptances = Math.floor(pySuggestions * (0.32 + this.random() * 0.08));
 
-      const goSuggestions = Math.floor((3500 + Math.random() * 2000) * activityFactor);
-      const goAcceptances = Math.floor(goSuggestions * (0.35 + Math.random() * 0.06));
+      const goSuggestions = Math.floor((3500 + this.random() * 2000) * activityFactor);
+      const goAcceptances = Math.floor(goSuggestions * (0.35 + this.random() * 0.06));
 
-      const rustSuggestions = Math.floor((2000 + Math.random() * 1200) * activityFactor);
-      const rustAcceptances = Math.floor(rustSuggestions * (0.30 + Math.random() * 0.07));
+      const rustSuggestions = Math.floor((2000 + this.random() * 1200) * activityFactor);
+      const rustAcceptances = Math.floor(rustSuggestions * (0.30 + this.random() * 0.07));
 
-      const totalChats = Math.floor((1200 + Math.random() * 600) * activityFactor);
+      const totalChats = Math.floor((1200 + this.random() * 600) * activityFactor);
 
       metrics.push({
         date: dateStr,
@@ -345,9 +377,9 @@ export class MockDataGenerator {
           total_chat_copy_events: Math.floor(totalChats * 0.25),
           total_chat_insertion_events: Math.floor(totalChats * 0.38),
           models: [
-            { name: 'claude-3-7-sonnet', total_chats: Math.floor(totalChats * 0.58) },
-            { name: 'gpt-4o', total_chats: Math.floor(totalChats * 0.28) },
-            { name: 'o1', total_chats: Math.floor(totalChats * 0.14) },
+            { name: 'claude-sonnet-5', total_chats: Math.floor(totalChats * 0.58) },
+            { name: 'gpt-5-5', total_chats: Math.floor(totalChats * 0.28) },
+            { name: 'claude-opus-5-5', total_chats: Math.floor(totalChats * 0.14) },
           ],
         },
         copilot_dotcom_chat: {
@@ -356,16 +388,16 @@ export class MockDataGenerator {
         },
         copilot_dotcom_pull_requests: {
           total_engaged_users: Math.floor(engagedUsers * 0.45),
-          total_pr_summaries_created: Math.floor((40 + Math.random() * 30) * activityFactor),
+          total_pr_summaries_created: Math.floor((40 + this.random() * 30) * activityFactor),
         },
         copilot_in_cli: {
           total_engaged_users: Math.floor(engagedUsers * 0.22),
-          total_cli_completions: Math.floor((150 + Math.random() * 100) * activityFactor),
+          total_cli_completions: Math.floor((150 + this.random() * 100) * activityFactor),
         },
         copilot_ide_agent: {
           total_engaged_users: Math.floor(engagedUsers * 0.45),
-          total_sessions: Math.floor((300 + Math.random() * 150) * activityFactor),
-          total_user_messages: Math.floor((900 + Math.random() * 400) * activityFactor),
+          total_sessions: Math.floor((300 + this.random() * 150) * activityFactor),
+          total_user_messages: Math.floor((900 + this.random() * 400) * activityFactor),
           totals_by_vscode_agent: [
             { agent_name: 'workspace', total_sessions: Math.floor(180 * activityFactor), total_engaged_users: Math.floor(engagedUsers * 0.35), total_user_messages: Math.floor(500 * activityFactor) },
             { agent_name: 'terminal', total_sessions: Math.floor(80 * activityFactor), total_engaged_users: Math.floor(engagedUsers * 0.2), total_user_messages: Math.floor(250 * activityFactor) },
@@ -394,22 +426,22 @@ export class MockDataGenerator {
           ],
         },
         ai_credits: {
-          total_used: Math.floor((350 + Math.random() * 200) * activityFactor),
+          total_used: Math.floor((350 + this.random() * 200) * activityFactor),
           by_model: {
-            'claude-3-7-sonnet': Math.floor((180 + Math.random() * 90) * activityFactor),
-            'gpt-4o': Math.floor((90 + Math.random() * 40) * activityFactor),
-            'o1': Math.floor((50 + Math.random() * 30) * activityFactor),
-            'gemini-2-0-flash': Math.floor((30 + Math.random() * 20) * activityFactor),
+            'claude-sonnet-5': Math.floor((180 + this.random() * 90) * activityFactor),
+            'gpt-5-5': Math.floor((90 + this.random() * 40) * activityFactor),
+            'claude-opus-5-5': Math.floor((50 + this.random() * 30) * activityFactor),
+            'gemini-3-8-flash': Math.floor((30 + this.random() * 20) * activityFactor),
           },
         },
         prs_created_by_agent: {
-          total_prs_created_by_agent: Math.floor((12 + Math.random() * 8) * activityFactor),
-          total_prs_merged_by_agent: Math.floor((9 + Math.random() * 6) * activityFactor),
+          total_prs_created_by_agent: Math.floor((12 + this.random() * 8) * activityFactor),
+          total_prs_merged_by_agent: Math.floor((9 + this.random() * 6) * activityFactor),
           median_time_to_merge_hours: 4.5,
         },
         code_generation: {
-          total_lines_added: Math.floor((4000 + Math.random() * 2000) * activityFactor),
-          total_lines_deleted: Math.floor((1200 + Math.random() * 600) * activityFactor),
+          total_lines_added: Math.floor((4000 + this.random() * 2000) * activityFactor),
+          total_lines_deleted: Math.floor((1200 + this.random() * 600) * activityFactor),
           by_mode: {
             agent_session: { lines_added: Math.floor(2500 * activityFactor), lines_deleted: Math.floor(700 * activityFactor) },
             inline_completion: { lines_added: Math.floor(1500 * activityFactor), lines_deleted: Math.floor(500 * activityFactor) },
@@ -425,21 +457,19 @@ export class MockDataGenerator {
    * Cost CenterごとのBudget（上限額・無料額・現在使用額・残余額）を生成
    */
   private generateCostCenterBudgets(
-    costCenters: EnterpriseCostCenter[],
-    seats: CopilotSeatAssignment[]
+    costCenters: EnterpriseCostCenter[]
   ): CostCenterBudget[] {
-    const budgetConfigs: Record<string, { limit: number; free: number }> = {
-      'cc-fin-1001': { limit: 2500, free: 300 },
-      'cc-inf-2002': { limit: 3000, free: 400 },
-      'cc-ai-3003': { limit: 2000, free: 200 },
-      'cc-ent-9009': { limit: 1200, free: 150 },
+    // 3 状態 (normal / warning / exceeded) を毎回出すため、現在の使用額を固定する
+    const budgetConfigs: Record<string, { limit: number; free: number; spend: number }> = {
+      'cc-fin-1001': { limit: 2500, free: 300, spend: 1500 }, // 48% normal
+      'cc-inf-2002': { limit: 3000, free: 400, spend: 2900 }, // 83% warning
+      'cc-ai-3003': { limit: 2000, free: 200, spend: 2450 }, // 112% exceeded
+      'cc-ent-9009': { limit: 1200, free: 150, spend: 700 }, // 46% normal
     };
 
     return costCenters.map((cc) => {
-      const cfg = budgetConfigs[cc.id] || { limit: 1500, free: 200 };
-      // 該当Cost Centerのシート数を概算
-      const seatCount = seats.filter((s) => s.organization?.login === cc.resources[0]?.name).length || 15;
-      const currentSpend = seatCount * 39 + Math.floor(Math.random() * 300);
+      const cfg = budgetConfigs[cc.id] || { limit: 1500, free: 200, spend: 900 };
+      const currentSpend = cfg.spend;
       const netBillable = Math.max(0, currentSpend - cfg.free);
       const remaining = Math.max(0, cfg.limit - netBillable);
       const utilPercent = Number(((netBillable / cfg.limit) * 100).toFixed(1));
@@ -489,25 +519,25 @@ export class MockDataGenerator {
       let totalSuggestions = 0;
       let totalAcceptances = 0;
       const modelTotals: Record<string, number> = {
-        'claude-3-7-sonnet': 0,
-        'gpt-4o': 0,
-        'o1': 0,
-        'gemini-2-0-flash': 0,
+        'claude-sonnet-5': 0,
+        'gpt-5-5': 0,
+        'claude-opus-5-5': 0,
+        'gemini-3-8-flash': 0,
       };
 
       const hasActivity = seat.last_activity_at !== null;
-      const userActivityFactor = hasActivity ? (0.4 + Math.random() * 0.6) : 0;
+      const userActivityFactor = hasActivity ? (0.4 + this.random() * 0.6) : 0;
 
       for (let d = days - 1; d >= 0; d--) {
         const dateObj = new Date(this.baseDate.getTime() - d * 24 * 60 * 60 * 1000);
         const dateStr = dateObj.toISOString().split('T')[0];
         const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
 
-        if (userActivityFactor === 0 || (isWeekend && Math.random() > 0.15)) {
+        if (userActivityFactor === 0 || (isWeekend && this.random() > 0.15)) {
           dailyHistory.push({
             date: dateStr,
             total_chats: 0,
-            model_breakdown: { 'claude-3-7-sonnet': 0, 'gpt-4o': 0, 'o1': 0, 'gemini-2-0-flash': 0 },
+            model_breakdown: { 'claude-sonnet-5': 0, 'gpt-5-5': 0, 'claude-opus-5-5': 0, 'gemini-3-8-flash': 0 },
             suggestions: 0,
             acceptances: 0,
             lines_suggested: 0,
@@ -518,40 +548,40 @@ export class MockDataGenerator {
           continue;
         }
 
-        let dayChats = Math.floor((5 + Math.random() * 25) * userActivityFactor);
-        let claudeChats = Math.floor(dayChats * (0.45 + Math.random() * 0.2));
+        let dayChats = Math.floor((5 + this.random() * 25) * userActivityFactor);
+        let claudeChats = Math.floor(dayChats * (0.45 + this.random() * 0.2));
         let gpt4oChats = Math.floor((dayChats - claudeChats) * 0.5);
         let o1Chats = Math.floor((dayChats - claudeChats - gpt4oChats) * 0.6);
         let geminiChats = Math.max(0, dayChats - claudeChats - gpt4oChats - o1Chats);
 
-        let daySuggestions = Math.floor((40 + Math.random() * 120) * userActivityFactor);
-        let dayAcceptances = Math.floor(daySuggestions * (0.28 + Math.random() * 0.12));
+        let daySuggestions = Math.floor((40 + this.random() * 120) * userActivityFactor);
+        let dayAcceptances = Math.floor(daySuggestions * (0.28 + this.random() * 0.12));
 
         // ペルソナ別の特徴付け (非効率AI利用診断のリアルな兆候シミュレーション)
         if (login === 'kenji-sato') {
           // ペルソナ1: 生成ガチャ・受け身垂れ流し型 (大量提案だが受諾率8〜12%と極低)
-          daySuggestions = Math.floor((90 + Math.random() * 60) * userActivityFactor);
-          dayAcceptances = Math.floor(daySuggestions * (0.07 + Math.random() * 0.05));
+          daySuggestions = Math.floor((90 + this.random() * 60) * userActivityFactor);
+          dayAcceptances = Math.floor(daySuggestions * (0.07 + this.random() * 0.05));
         } else if (login === 'yuki-takahashi') {
           // ペルソナ2: 超重量級モデル過剰依存型 (o1が70%〜85%を占め、Gemini Flashが0)
-          dayChats = Math.floor((12 + Math.random() * 15) * userActivityFactor);
-          o1Chats = Math.floor(dayChats * (0.7 + Math.random() * 0.15));
+          dayChats = Math.floor((12 + this.random() * 15) * userActivityFactor);
+          o1Chats = Math.floor(dayChats * (0.7 + this.random() * 0.15));
           claudeChats = Math.floor((dayChats - o1Chats) * 0.8);
           gpt4oChats = Math.max(0, dayChats - o1Chats - claudeChats);
           geminiChats = 0;
         } else if (login === 'mika-ito') {
           // ペルソナ3: 文脈希薄・対話空回り型 (チャットが25〜35回と多いがコード受諾が僅少)
-          dayChats = Math.floor((24 + Math.random() * 12) * userActivityFactor);
+          dayChats = Math.floor((24 + this.random() * 12) * userActivityFactor);
           claudeChats = Math.floor(dayChats * 0.5);
           gpt4oChats = Math.floor(dayChats * 0.3);
           o1Chats = Math.floor(dayChats * 0.1);
           geminiChats = Math.max(0, dayChats - claudeChats - gpt4oChats - o1Chats);
-          daySuggestions = Math.floor((15 + Math.random() * 15) * userActivityFactor);
+          daySuggestions = Math.floor((15 + this.random() * 15) * userActivityFactor);
           dayAcceptances = Math.floor(daySuggestions * 0.2);
         } else if (login === 'taro-tanaka') {
           // ペルソナ4: 模範的・健全型 (受諾率38%、Gemini Flashも積極活用)
-          daySuggestions = Math.floor((60 + Math.random() * 40) * userActivityFactor);
-          dayAcceptances = Math.floor(daySuggestions * (0.35 + Math.random() * 0.08));
+          daySuggestions = Math.floor((60 + this.random() * 40) * userActivityFactor);
+          dayAcceptances = Math.floor(daySuggestions * (0.35 + this.random() * 0.08));
           geminiChats = Math.floor(dayChats * 0.35);
           gpt4oChats = Math.floor(dayChats * 0.3);
           claudeChats = Math.floor(dayChats * 0.25);
@@ -559,16 +589,16 @@ export class MockDataGenerator {
         }
 
         const modelBreakdown: Record<string, number> = {
-          'claude-3-7-sonnet': claudeChats,
-          'gpt-4o': gpt4oChats,
-          'o1': o1Chats,
-          'gemini-2-0-flash': geminiChats,
+          'claude-sonnet-5': claudeChats,
+          'gpt-5-5': gpt4oChats,
+          'claude-opus-5-5': o1Chats,
+          'gemini-3-8-flash': geminiChats,
         };
 
-        modelTotals['claude-3-7-sonnet'] += claudeChats;
-        modelTotals['gpt-4o'] += gpt4oChats;
-        modelTotals['o1'] += o1Chats;
-        modelTotals['gemini-2-0-flash'] += geminiChats;
+        modelTotals['claude-sonnet-5'] += claudeChats;
+        modelTotals['gpt-5-5'] += gpt4oChats;
+        modelTotals['claude-opus-5-5'] += o1Chats;
+        modelTotals['gemini-3-8-flash'] += geminiChats;
         totalChats += dayChats;
 
         const dayRate = daySuggestions > 0 ? Number((dayAcceptances / daySuggestions).toFixed(4)) : 0;
@@ -590,7 +620,7 @@ export class MockDataGenerator {
 
       const overallRate = totalSuggestions > 0 ? Number((totalAcceptances / totalSuggestions).toFixed(4)) : 0;
       const totalCost = seat.plan_type === 'enterprise' ? 39 : 19;
-      const aiCreditsUsed = seat.ai_credits_used ?? Math.floor(Math.random() * 80);
+      const aiCreditsUsed = seat.ai_credits_used ?? Math.floor(this.random() * 80);
 
       // コホート比率: 40% Code First, 30% Agent First, 20% Multi-Agent, 10% 未設定
       const cohortRand = (profiles.length * 17) % 100;
@@ -643,10 +673,10 @@ export class MockDataGenerator {
     ];
 
     const models = [
-      { name: 'Claude 3.7 Sonnet', rate: 0.04 },
-      { name: 'GPT-4o', rate: 0.03 },
-      { name: 'o1', rate: 0.05 },
-      { name: 'Gemini 2.0 Flash', rate: 0.02 },
+      { name: 'Claude Sonnet 5', rate: 0.04 },
+      { name: 'GPT-5.5', rate: 0.03 },
+      { name: 'claude-opus-5-5', rate: 0.05 },
+      { name: 'Gemini 3.8 Flash', rate: 0.02 },
     ];
 
     const users = [

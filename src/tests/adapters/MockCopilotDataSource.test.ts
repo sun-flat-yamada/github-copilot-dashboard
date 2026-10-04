@@ -26,6 +26,12 @@ describe('MockCopilotDataSource Tests', () => {
     assert.equal(teamMetrics[0].team_slug, 'dev-team');
 
     const issues = dataSource.getIssues();
-    assert.equal(issues.length, 0);
+    // 画面の表示パターン用に、severity / category の異なる見本 issue を返す
+    assert.ok(issues.length >= 4);
+    assert.ok(issues.some((i) => i.severity === 'error') && issues.some((i) => i.severity === 'warning'));
+    assert.ok(new Set(issues.map((i) => i.category)).size >= 4);
+
+    const statuses = dataSource.getSourceStatuses().map((s) => s.status);
+    assert.ok(statuses.includes('ok') && statuses.includes('partial') && statuses.includes('failed'));
   });
 });
