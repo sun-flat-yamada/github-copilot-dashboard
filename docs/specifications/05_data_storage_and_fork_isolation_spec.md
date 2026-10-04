@@ -115,6 +115,9 @@ data/
     │   └── 2026-09.json              # Seat audit events (month of detection)
     ├── billing-reconciliation/
     │   └── 2026-09.json              # Billing reconciliation per month (P4-4, SDD-17 §5)
+    ├── report-outputs/
+    │   ├── index.json                # Generated definition-driven reports (P4-5, SDD-17 §6)
+    │   └── monthly-cost-summary/2026-08.{md,csv}
     └── exports/                      # CSV exports for authorized reviewers
 ```
 
@@ -263,6 +266,10 @@ Built on every run from the stored `processed/monthly/{YYYY-MM}.json` files (nev
 ### 2.9 Billing Reconciliation Files (`audit/billing-reconciliation/`, P4-4)
 
 `audit/billing-reconciliation/{YYYY-MM}.json` holds the per-day AI Credits quantities and amounts collected from the Billing API and the versions / tolerance used for the reconciliation (SDD-17 §5). It is derived from real billing amounts, so it follows the rule of `audit/`: outside `processed/`, **not** on the `pages:stage` allow-list, never copied to `dashboard/public/data/`, and `pages:verify` fails if `audit` appears in `dist/data/`. It carries no user, organization or cost center identifier. It is written by `ForkSafeStorage.saveBillingReconciliationMonth` and lives in `copilot-data` (never in `main`).
+
+### 2.10 Definition-Driven Report Outputs (`audit/report-outputs/`, P4-5)
+
+`audit/report-outputs/{report_id}/{period}.{md,csv}` and `audit/report-outputs/index.json` hold the reports generated from `reports/*.yaml` (SDD-17 §6). A definition may group by cost center, organization or department, so the outputs follow the rule of `audit/`: outside `processed/`, **not** on the `pages:stage` allow-list, never copied to `dashboard/public/data/`, and `pages:verify` fails if `audit` appears in `dist/data/`. They are aggregate-only (no per-user row), written by `ForkSafeStorage.saveReportOutput` / `saveReportOutputIndex` and kept in `copilot-data` (never in `main`; only the definitions in `reports/` are in `main`).
 
 ## 3. Metadata Index (`index.json`) Specification
 
