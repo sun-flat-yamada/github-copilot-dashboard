@@ -134,13 +134,12 @@ test('AI Model Radar Table Sort and Action Button Tests', async (t) => {
     assert.ok(content.includes('id={`source-${src.id}`}'), 'Must set source anchor IDs for smooth scroll');
   });
 
-  await t.test('uses the dot plot (small multiples + raw-value table) instead of the radar polygon (P3-7)', () => {
+  await t.test('renders the 6-axis comparison as a radar chart (dot plot reverted)', () => {
     const viewFilePath = path.resolve(process.cwd(), 'dashboard/src/components/ModelRadarView.tsx');
     const content = fs.readFileSync(viewFilePath, 'utf-8');
 
-    assert.ok(content.includes('<ModelDotPlot'), 'The comparison chart must be the dot plot');
-    assert.ok(!content.includes('<RadarChart'), 'The radar polygon must not be used any more');
-    assert.ok(!content.includes("from 'recharts'"), 'The radar view no longer depends on recharts');
+    assert.ok(content.includes('<RadarChart'), 'The comparison chart must be the radar chart');
+    assert.ok(!content.includes('<ModelDotPlot'), 'The dot plot must not be used any more');
   });
 });
 

@@ -119,13 +119,8 @@ Provides instant, pre-configured model comparisons across diverse tiers and scen
 - **🟢 OpenAI Suite (`vendor-openai`)**: GPT-6 Astra / GPT-6 Sol / GPT-5.6 Sol (*Adds GPT-6 Sol and GPT-5.6 Sol, removes legacy GPT-5.5/5.4/mini*).
 - **🔵 Google Gemini 3.x (`vendor-google`)**: Gemini 3.8 Flash / Gemini 3.7 Flash / Gemini 3.6 Flash / Gemini 3.5 Flash
 
-### 2.6 Model Comparison Chart: Dot Plot + Raw-Value Table (P3-7 / B-15, D-03)
-The radar polygon is replaced by **small multiples of dot plots** (`ModelDotPlot`, `dashboard/src/components/radar/ModelDotPlot.tsx`). A polygon's area depends on the axis order and saturated axes hide differences; a dot plot reads every model off one common 0-100 scale.
-- **One row per axis, one dot per selected model.** The x position is the axis score (0-100). Rows are the six axes of section 3 in the order of `axis_definitions`.
-- **Models are told apart by marker shape and a text legend, not by colour alone**: circle, square, diamond, triangle, cross (repeating by selection order). The legend buttons show the same glyph and the model name.
-- **Active (focused) model**: a larger marker with a white outline, plus the 「選択中」 badge in the legend. Clicking a dot or a legend button sets `focusedModelId` and updates the detail card in lockstep.
-- **Raw values are always available**: every dot carries a `<title>` (model, axis, score and the raw metric, e.g. `SWE-bench 80% / HumanEval+ 95%`). The 「表で見る」 toggle (`AccessibleChart`, SDD-07 section 2.17) swaps the picture for a data table with one row per model, and per axis the score with its raw value underneath. The graph has `role="img"` and a summary naming the leader of each axis.
-- The radar-polygon morphing transition of earlier versions no longer exists (no polygon).
+### 2.6 Model Comparison Chart: Radar Chart
+The 6-axis comparison is drawn as a **radar chart** (recharts `RadarChart`, 0-100 scale, one polygon per selected model). The active (focused) model is a solid, thick, gently pulsing polygon in the foreground; the other selected models are dashed, low-opacity polygons. Clicking a polygon or a legend button sets `focusedModelId` and updates the detail card in lockstep. The dot plot introduced in P3-7 (`ModelDotPlot`) was reverted; raw values stay available in the benchmark table and the tooltip.
 
 ### 2.7 Left-Frame Model Selector & 3-Mode Display State Specification
 - **Left-Frame Placement & Viewport Tracking (`sticky`)**:
@@ -159,7 +154,7 @@ The radar polygon is replaced by **small multiples of dot plots** (`ModelDotPlot
 ### 3.1 Normalisation: Percentile Rank (P3-7 / B-15)
 - **Why**: the former fixed anchors (SWE-bench 75 / AIME 90 / Elo 1460) were exceeded by current models, so 11 / 12 / 7 of 43 models were clamped at 99 and ten GA models tied on coding. Fixed anchors saturate whenever the field moves ahead of them.
 - **Method (`percentile-rank-v1`)**: for each component the score is the percentile rank of the model's raw value among all models of the dataset, `(below + 0.5 * equal) / n` (ties share the mid rank), mapped onto 20-99 and kept to one decimal. Axis scores combine components with the weights of the table above (coding = 0.85 SWE + 0.15 HumanEval+, reasoning = 0.65 AIME + 0.35 GPQA, architecture = 0.45 context + 0.55 SWE). The overall score is the weighted mean of the six axes (one decimal), so the top models are distinguishable.
-- **Relative by design**: a score tells the position within the current dataset, not an absolute capability, so it moves when models are added. The **raw values are always shown next to the scores** (dot plot tooltip, raw-value table, benchmark table).
+- **Relative by design**: a score tells the position within the current dataset, not an absolute capability, so it moves when models are added. The **raw values are always shown next to the scores** (tooltip, benchmark table).
 - `computeRadarScores(raw)` without a context (single model) keeps the legacy anchor formula for backward compatibility. The qualitative evaluation (grade, tags, strengths / weaknesses) keeps its absolute thresholds and is judged on the anchor scores.
 - Tests: `src/tests/benchmark-normalization.test.ts` (top models are not tied, rank boundaries, order independence).
 
