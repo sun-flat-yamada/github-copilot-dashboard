@@ -17,6 +17,7 @@ $$\text{Version} = \text{YYYY-MM-DD-SSSS}$$
 - `SSSS`: A 4-digit zero-padded incremental sequence number starting at `0001`.
   - Multiple releases on the same date increment the sequence (`0001` $\rightarrow$ `0002` $\rightarrow$ `0003`).
   - A release on a new calendar date resets the sequence back to `0001`.
+  - The sequence advances **only when the dataset content changes**: the dataset carries a `content_hash` (benchmark records + axes + normalisation method); an unchanged hash keeps `version` and `last_updated` (P3-7).
 
 ---
 
