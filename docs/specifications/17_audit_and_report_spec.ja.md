@@ -5,9 +5,9 @@
 # SDD-17: 監査 & レポート仕様書 (Audit & Report Specification)
 
 - **文書番号**: SPEC-COPILOT-017
-- **ステータス**: Approved / Active（Phase 4 に合わせて拡張。P4-2〜P4-6 で節を追加する。P4-4 は §5）
+- **ステータス**: Approved / Active（Phase 4 に合わせて拡張。P4-2〜P4-6 で節を追加する。P4-4 は §5、P4-5 は §6）
 - **対象バージョン**: 2026.10
-- **作成日**: 2026-10-04 (P4-1 / #197: 監査・データ品質ビュー、P4-2 / #198: 月次締めと改訂、P4-3 / #199: シート監査イベント、P4-4 / #200: 請求突合)
+- **作成日**: 2026-10-04 (P4-1 / #197: 監査・データ品質ビュー、P4-2 / #198: 月次締めと改訂、P4-3 / #199: シート監査イベント、P4-4 / #200: 請求突合、P4-5 / #201: 定義駆動レポート)
 - **関連**: [SDD-05 §2.3 / §2.5 / §2.7](05_data_storage_and_fork_isolation_spec.ja.md)、[SDD-07 §2.19](07_dashboard_ui_ux_spec.ja.md)、[SDD-16 データ契約 & 指標カタログ](16_data_contract_and_metric_catalog_spec.ja.md)
 
 ---
@@ -179,6 +179,96 @@
 
 突合ロジックは合成データで検証した（一致・許容内・超過・データ欠損・負の調整行・冪等マージ・issue の重複なし）。**実 API では未検証**: Enterprise の請求読み取り権限を持つトークンが必要で、開発環境にはない。応答形状は P1-5 のスキーマと契約テストが保証する。最初の実運用の実行で、`COPILOT_ENTERPRISE` と `COPILOT_READ_TOKEN` を設定したパイプライン実行の後に `npm run billing:report` で確認する。
 
-## 6. 今後追加する節（未仕様）
+## 6. 定義駆動レポート (P4-5 / E-04)
 
-定義駆動レポート（P4-5）、プライバシー階層と保持期間ポリシー（P4-6）は、各タスクの実装時に本書へ追記する。
+これまでレポートはコードで、集計を 1 つ足すたびにモジュールが要った。レポートを `reports/{id}.yaml` に**宣言**する形にし、Report Engine が宣言を指標カタログに照らして検証し、定期的に生成する。**定義ファイルを 1 件追加するだけでレポートが増え、コード変更は要らない**。契約は親計画の付録 A.7.3 の `ReportDefinition`。
+
+### 6.1 定義ファイル
+
+```yaml
+id: monthly-cost-summary          # ファイル名と一致 (reports/monthly-cost-summary.yaml)。小文字・数字・ハイフン
+title: 月次コストサマリー
+description: 任意の説明
+schedule: monthly-close           # monthly-close | weekly | (省略 = 手動のみ)
+dataset: monthly                  # monthly | reports
+privacy_tier: aggregate-only      # 本タスクで受け付けるのはこの階層だけ (§6.6)
+language: ja                      # ja (既定) | en
+outputs: [markdown, csv]
+sections:
+  - { type: kpi, id: headline, title: 全社の指標, metrics: [total_spend, idle_waste] }
+  - type: breakdown
+    id: by-cost-center
+    title: Cost Center 別
+    group_by: cost_center
+    columns: [total_seats, total_cost_usd]
+    sort_by: total_cost_usd       # columns のどれか。既定は先頭の列
+    order: desc                   # asc | desc (既定 desc)
+    limit: 10                     # 1〜200 (既定 20)
+    filters:                      # すべて満たす行だけ。欠損値は合致しない
+      - { column: total_seats, op: gte, value: 2 }   # op: gt | gte | lt | lte | eq
+```
+
+同梱のサンプルは 2 件: `reports/monthly-cost-summary.yaml`（月次締め、データセット `monthly`）と `reports/weekly-usage-report-digest.yaml`（週次、データセット `reports`）。
+
+### 6.2 定義が参照できるもの
+
+| データセット | 入力 | 指標（指標カタログの ID。SDD-16 §2, §6） | `group_by` |
+|:--|:--|:--|:--|
+| `monthly` | `processed/monthly/{month}.json` | `total_spend`、`active_rate`、`idle_waste`、`acceptance_rate`、`agent_sessions`、`agent_messages`、`agent_active_users`、`agent_adoption_rate` | `cost_center`、`organization`、`department`、`team` |
+| `reports` | `processed/reports/{month}.json`（取り込んだ利用レポート） | `report_gross_spend`、`report_net_spend`、`report_requests`、`report_active_users`、`report_top_model`、`report_top_sku` | `cost_center`、`organization`、`department`、`model`、`sku` |
+
+- 内訳の列: シート系のグループは `total_seats`、`active_seats`、`idle_seats`、`total_cost_usd`、`net_cost_usd`、`potential_savings_usd`、`active_ratio`、`acceptance_rate`、`total_chats`、`total_requests`。`model` は `total_requests`、`total_spend_usd`、`active_users`、`percentage`。`sku` は `total_quantity`、`total_spend_usd`、`percentage`。対応表はコード（`src/processor/report-engine.ts` の `METRIC_BINDINGS` / `GROUP_SOURCES`）にあり、指標や列の追加はそこへ 1 項目足すだけ。
+- 定義に組織・部署・Cost Center・個人の名前は書かない（フィルターは列と数値だけ）。利用者単位の行（`users`、`user_profiles`、`user_details`）は読まない。
+
+### 6.3 検証
+
+strict スキーマ（未知のキーはエラー）と意味の検証。`npm run reports:validate [-- --dir reports]` がすべての問題を表示し、exit 1 で終わる。
+
+| 拒否するもの | メッセージ（抜粋） |
+|:--|:--|
+| 指標カタログに無い指標 | `unknown metric "x" (not in the metric catalog)` |
+| そのデータセットが提供できないカタログ指標 | `metric "x" is not available from dataset "monthly"` |
+| 未知の `group_by`・列・`sort_by`（列に含まれない）・フィルター列 | `unknown group` / `unknown column` / `sort_by` |
+| `privacy_tier: identified` | `not supported yet; it is specified by P4-6 (#202)` |
+| セクション ID・指標の重複、ファイル名と異なる `id`、ファイルをまたぐレポート ID の重複 | |
+| 不正な YAML、64 KiB を超えるファイル | YAML は安全な既定スキーマ（型タグなし）で読む |
+
+不正な定義は他の定義を止めない。有効なものは生成し、最後に exit 1 で知らせる。
+
+### 6.4 生成と定期実行
+
+`npm run reports:generate -- --due`（日次ワークフローがパイプラインの後に実行する。`continue-on-error`、モックモードでは実行しない）、または 1 件を `-- --id <id> [--month YYYY-MM] [--demo]` で生成する。
+
+| `schedule` | 対象 | 生成する条件 |
+|:--|:--|:--|
+| `monthly-close` | 月次締めのスナップショット（`processed/closes`、SDD-17 §3）があり、データセットにデータがある月ごと。期間は `YYYY-MM` | まだ出力が無い |
+| `weekly` | データセットの最新の月。期間は実行日の ISO 週（`YYYY-Www`、UTC） | 今週の出力がまだ無い |
+| （省略） | 手動のみ（`--id`。最新の月または `--month`） | 自動では生成しない |
+
+**定義が変わった**（SHA-256 が記録と異なる）か出力の種類が増えたときも再生成の対象になるので、定義を直せばレポートが更新される。生成は冪等で、同じ入力なら本文も同じ（生成時刻は本文に入れない）。入力の月が無いときは何も書かない（`no_data`）。
+
+### 6.5 出力
+
+- ファイル: `audit/report-outputs/{report_id}/{period}.md` と `.csv`。一覧 `audit/report-outputs/index.json` は出力ごとに `report_id`、`period`、`data_month`、`generated_at`、`definition_sha256`（定義の版）、`outputs`、`demo` を持つ。
+- 品質属性（指標カタログ）: すべての値に品質を付け、実測以外は `[推定]` / `[欠損]` / `[デモ]` と表示する。欠損は**「—（理由）」**で、0 や空の表にしない。デモデータにはデモである旨を付ける。Markdown の冒頭に、期間・データの月・データセット・プライバシー階層・定義の版、締め済みの月は現在の月次締めのチェックサム（SDD-17 §3）を載せる。
+- CSV: UTF-8 **BOM 付き**、**CRLF**、RFC 4180 のクォート、列は `section, group, item, value, unit, quality`（縦持ち。`value` は生の数値で、欠損は空セルと品質 `missing`）。§4.4 の CSV インジェクション対策をすべてのセルに適用する。
+
+### 6.6 公開範囲（ゼロリーク）
+
+| 場所 | レポートの出力 | 理由 |
+|:--|:--|:--|
+| GitHub Pages / `dist/data/` | **載せない** | 出力は `audit/` 配下にあり、`pages:stage` の許可リストに無い。`dist/data/` に `audit` があれば `pages:verify` が失敗する（`FORBIDDEN_DIST_PATHS`）。`STAGED_PROCESSED_DIRS` は変更しない |
+| `copilot-data` ブランチ | 載せる（`audit/` 配下） | リポジトリと同じ公開範囲。既存の `fork:verify` の公開範囲検査が守る（弱めない） |
+| `main` ブランチ | 定義（`reports/*.yaml`）だけ | 定義が持つのは ID・タイトル・列名で、データは持たない。出力は `main` に置かない |
+
+- Pages に載せない理由: Pages は既定で公開で（`security-zero-leakage.md` §2.3）、定義はグループ（Cost Center・組織・部署）を指定でき、その名前は社内の組織構造になる。同じ数値は、ダッシュボードが既に配信しているデータセット経由で画面から見られる。
+- **プライバシー階層**: 受け付けるのは `aggregate-only`（利用者単位の行なし）だけ。`identified`（利用者単位の行。プライベートなリポジトリ / Pages か `ANONYMIZE_USERS=true` のときだけ）は、保持期間ポリシーと一緒に P4-6（#202）で仕様化する。それまでは、`identified` を求める定義は検証で失敗する。
+- サンプルとテストの値はすべて架空。
+
+### 6.7 レポートの追加手順
+
+1. `reports/<id>.yaml` を書く（§6.1）。2. `npm run reports:validate`。3. `npm run reports:generate -- --id <id> --demo` でデモデータに対して確認する。4. マージすると、以降は日次ワークフローが生成する。コードが要るのは新しい*種類*の値（どのデータセットの束縛にもまだ無い指標や列）だけで、その場合は指標を指標カタログ（SDD-16 §2, §6）に追加し、`METRIC_BINDINGS` に束縛を足す。
+
+## 7. 今後追加する節（未仕様）
+
+プライバシー階層と保持期間ポリシー（P4-6）は、タスクの実装時に本書へ追記する。

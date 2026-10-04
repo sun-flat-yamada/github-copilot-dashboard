@@ -5,9 +5,9 @@
 # SDD-17: Audit & Report Specification
 
 - **Document ID**: SPEC-COPILOT-017
-- **Status**: Approved / Active (grows with Phase 4; sections are added by P4-2 to P4-6; P4-4 adds §5)
+- **Status**: Approved / Active (grows with Phase 4; sections are added by P4-2 to P4-6; P4-4 adds §5, P4-5 adds §6)
 - **Target Version**: 2026.10
-- **Date**: 2026-10-04 (P4-1 / #197: audit and data quality view; P4-2 / #198: monthly close and revisions; P4-3 / #199: seat audit events; P4-4 / #200: billing reconciliation)
+- **Date**: 2026-10-04 (P4-1 / #197: audit and data quality view; P4-2 / #198: monthly close and revisions; P4-3 / #199: seat audit events; P4-4 / #200: billing reconciliation; P4-5 / #201: definition-driven reports)
 - **Related**: [SDD-05 §2.3 / §2.5 / §2.7](05_data_storage_and_fork_isolation_spec.md), [SDD-07 §2.19](07_dashboard_ui_ux_spec.md), [SDD-16 Data Contract & Metric Catalog](16_data_contract_and_metric_catalog_spec.md)
 
 ---
@@ -179,6 +179,96 @@ The dashboard's amounts come from its own calculation (price catalog + usage). N
 
 The reconciliation logic is verified with synthetic data (match, within tolerance, exceeded, missing data, negative adjustment rows, idempotent merge, no duplicate issues). **It has not been verified against the real API**: that needs an Enterprise token with billing read permission, which the development environment does not have. The response shape is covered by the P1-5 schema and contract tests. Verify with the first real run: `npm run billing:report` after a pipeline run with `COPILOT_ENTERPRISE` and `COPILOT_READ_TOKEN`.
 
-## 6. Planned Sections (not yet specified)
+## 6. Definition-Driven Reports (P4-5 / E-04)
 
-Definition-driven reports (P4-5), privacy tiers and retention policy (P4-6) are specified here when each task lands.
+Reports used to be code: a new aggregation meant a new module. A report is now **declared** in `reports/{id}.yaml`; the Report Engine validates the declaration against the metric catalog and generates the report on a schedule. **Adding one definition file adds a report, with no code change.** The contract is `ReportDefinition` of the parent plan (appendix A.7.3).
+
+### 6.1 Definition file
+
+```yaml
+id: monthly-cost-summary          # = file name (reports/monthly-cost-summary.yaml); lowercase, digits, hyphens
+title: Monthly cost summary
+description: optional text
+schedule: monthly-close           # monthly-close | weekly | (omitted = manual only)
+dataset: monthly                  # monthly | reports
+privacy_tier: aggregate-only      # only this tier is accepted in this task (§6.6)
+language: ja                      # ja (default) | en
+outputs: [markdown, csv]
+sections:
+  - { type: kpi, id: headline, title: Headline, metrics: [total_spend, idle_waste] }
+  - type: breakdown
+    id: by-cost-center
+    title: By cost center
+    group_by: cost_center
+    columns: [total_seats, total_cost_usd]
+    sort_by: total_cost_usd       # must be one of the columns; default = first column
+    order: desc                   # asc | desc (default desc)
+    limit: 10                     # 1..200 (default 20)
+    filters:                      # all must hold; a missing value never matches
+      - { column: total_seats, op: gte, value: 2 }   # op: gt | gte | lt | lte | eq
+```
+
+Two shipped samples: `reports/monthly-cost-summary.yaml` (monthly close, dataset `monthly`) and `reports/weekly-usage-report-digest.yaml` (weekly, dataset `reports`).
+
+### 6.2 What a definition may reference
+
+| Dataset | Source | Metrics (ids of the metric catalog, SDD-16 §2, §6) | `group_by` |
+|:--|:--|:--|:--|
+| `monthly` | `processed/monthly/{month}.json` | `total_spend`, `active_rate`, `idle_waste`, `acceptance_rate`, `agent_sessions`, `agent_messages`, `agent_active_users`, `agent_adoption_rate` | `cost_center`, `organization`, `department`, `team` |
+| `reports` | `processed/reports/{month}.json` (imported usage report) | `report_gross_spend`, `report_net_spend`, `report_requests`, `report_active_users`, `report_top_model`, `report_top_sku` | `cost_center`, `organization`, `department`, `model`, `sku` |
+
+- Breakdown columns: for the seat-based groups `total_seats`, `active_seats`, `idle_seats`, `total_cost_usd`, `net_cost_usd`, `potential_savings_usd`, `active_ratio`, `acceptance_rate`, `total_chats`, `total_requests`; for `model` `total_requests`, `total_spend_usd`, `active_users`, `percentage`; for `sku` `total_quantity`, `total_spend_usd`, `percentage`. The tables live in code (`METRIC_BINDINGS`, `GROUP_SOURCES` in `src/processor/report-engine.ts`); a new metric or column is one entry there.
+- A definition never names an organization, department, cost center or person (filters are on columns and numbers only). Per-user rows (`users`, `user_profiles`, `user_details`) are never read.
+
+### 6.3 Validation
+
+A strict schema (unknown keys are errors) plus semantic checks. `npm run reports:validate [-- --dir reports]` prints every problem and exits 1.
+
+| Rejected | Message (excerpt) |
+|:--|:--|
+| A metric not in the metric catalog | `unknown metric "x" (not in the metric catalog)` |
+| A catalog metric the dataset cannot provide | `metric "x" is not available from dataset "monthly"` |
+| Unknown `group_by`, column, `sort_by` (not among the columns) or filter column | `unknown group` / `unknown column` / `sort_by` |
+| `privacy_tier: identified` | `not supported yet; it is specified by P4-6 (#202)` |
+| Duplicate section id or metric; `id` differing from the file name; duplicate report id across files | |
+| Invalid YAML, a file over 64 KiB | YAML is read with the safe default schema (no type tags) |
+
+An invalid definition never blocks the others: the valid ones are still generated and the command exits 1 at the end.
+
+### 6.4 Generation and schedule
+
+`npm run reports:generate -- --due` (the daily workflow runs it after the pipeline, `continue-on-error`, not in mock mode) or `-- --id <id> [--month YYYY-MM] [--demo]` for one report.
+
+| `schedule` | Target | Due when |
+|:--|:--|:--|
+| `monthly-close` | every month that has a close snapshot (`processed/closes`, SDD-17 §3) and data in the dataset; period `YYYY-MM` | no output yet |
+| `weekly` | the latest month of the dataset; period = ISO week of the run (`YYYY-Www`, UTC) | no output for this week yet |
+| (omitted) | manual only (`--id`; latest month or `--month`) | never |
+
+Both are also due again when the **definition changed** (its SHA-256 differs from the recorded one) or an output type was added, so editing a definition refreshes the reports. Generation is idempotent: the same input gives the same body (no generation time in it). When the input month does not exist nothing is written (`no_data`).
+
+### 6.5 Output
+
+- Files: `audit/report-outputs/{report_id}/{period}.md` and `.csv`; the list `audit/report-outputs/index.json` records per output `report_id`, `period`, `data_month`, `generated_at`, `definition_sha256` (the definition version), `outputs` and `demo`.
+- Quality attributes (metric catalog): every value is shown with its quality, `[estimated]` / `[missing]` / `[demo]` for non-measured values. A missing value is **「—（reason）」**, never 0 or an empty table; demo data carries the demo notice. The Markdown header shows the period, the data month, the dataset, the privacy tier, the definition version and, for a closed month, the current month-close checksum (SDD-17 §3).
+- CSV: UTF-8 **with BOM**, **CRLF**, RFC 4180 quoting, columns `section, group, item, value, unit, quality` (long format; `value` is the raw number, a missing value is an empty cell with quality `missing`). The CSV-injection rule of §4.4 applies to every cell.
+
+### 6.6 Publication scope (zero leakage)
+
+| Where | Report outputs | Why |
+|:--|:--|:--|
+| GitHub Pages / `dist/data/` | **Never** | Outputs live under `audit/`, which is not on the `pages:stage` allow-list; `pages:verify` fails if `audit` appears in `dist/data/` (`FORBIDDEN_DIST_PATHS`). `STAGED_PROCESSED_DIRS` is unchanged |
+| `copilot-data` branch | Yes, under `audit/` | Same visibility as the repository, guarded by the existing `fork:verify` exposure check (not weakened) |
+| `main` branch | Definitions only (`reports/*.yaml`) | Definitions hold ids, titles and column names, never data. Outputs are never committed to `main` |
+
+- Why not Pages: Pages sites are public by default (`security-zero-leakage.md` §2.3), and a definition can name groups (cost centers, organizations, departments) whose names are internal structure. The same figures stay visible in the dashboard through the datasets it already publishes.
+- **Privacy tiers**: only `aggregate-only` (no user-level row) is accepted. `identified` (user-level rows, only for a private repository / Pages or `ANONYMIZE_USERS=true`) is specified together with the retention policy in P4-6 (#202); until then a definition that asks for it fails validation.
+- Samples and tests use fictitious values only.
+
+### 6.7 Adding a report
+
+1. Write `reports/<id>.yaml` (§6.1). 2. `npm run reports:validate`. 3. `npm run reports:generate -- --id <id> --demo` to preview against demo data. 4. Merge: the daily workflow generates it from then on. A new *kind* of value (a metric or a column no dataset binding provides yet) is the only case that needs code: add the metric to the catalog (SDD-16 §2, §6) and its binding to `METRIC_BINDINGS`.
+
+## 7. Planned Sections (not yet specified)
+
+Privacy tiers and the retention policy (P4-6) are specified here when the task lands.
