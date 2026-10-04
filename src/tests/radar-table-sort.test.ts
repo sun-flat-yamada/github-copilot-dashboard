@@ -134,41 +134,13 @@ test('AI Model Radar Table Sort and Action Button Tests', async (t) => {
     assert.ok(content.includes('id={`source-${src.id}`}'), 'Must set source anchor IDs for smooth scroll');
   });
 
-  await t.test('verifies active radar morphing transition and background static radar settings', () => {
+  await t.test('uses the dot plot (small multiples + raw-value table) instead of the radar polygon (P3-7)', () => {
     const viewFilePath = path.resolve(process.cwd(), 'dashboard/src/components/ModelRadarView.tsx');
     const content = fs.readFileSync(viewFilePath, 'utf-8');
 
-    // 1. Stable key for active radar to enable smooth vertex interpolation across model selection changes
-    assert.ok(
-      content.includes('key="active-focused-radar"'),
-      'Active radar must have stable key to prevent unmount and allow smooth morphing'
-    );
-
-    // 2. Active radar animation parameters (isAnimationActive, duration, easing)
-    assert.ok(
-      content.includes('isAnimationActive={true}'),
-      'Active radar must explicitly have animation enabled'
-    );
-    assert.ok(
-      content.includes('animationDuration={600}'),
-      'Active radar must specify 600ms transition duration for optimal responsiveness & visibility'
-    );
-    assert.ok(
-      content.includes('animationEasing="ease-out"'),
-      'Active radar must use ease-out easing for natural landing on new model coordinates'
-    );
-
-    // 3. Background comparison models must disable animation to prevent 0-to-N flashing noise
-    assert.ok(
-      content.includes('isAnimationActive={false}'),
-      'Background comparison radars must have animation disabled'
-    );
-
-    // 4. CSS transition for stroke and fill color changes during model morphing
-    assert.ok(
-      content.includes('transition: stroke 0.4s ease, fill 0.4s ease'),
-      'Must define CSS transition for stroke and fill colors'
-    );
+    assert.ok(content.includes('<ModelDotPlot'), 'The comparison chart must be the dot plot');
+    assert.ok(!content.includes('<RadarChart'), 'The radar polygon must not be used any more');
+    assert.ok(!content.includes("from 'recharts'"), 'The radar view no longer depends on recharts');
   });
 });
 
