@@ -82,8 +82,8 @@ describe('Live Metrics DEMO Data & Referencing Tests', () => {
     // 数学的整合性の検証
     assert.equal(
       indexData.summary.total_seats,
-      indexData.summary.active_seats_30d + indexData.summary.idle_seats_30d,
-      'Total seats must equal active + idle seats'
+      indexData.summary.active_seats_30d + indexData.summary.idle_seats_30d + (indexData.summary.onboarding_seats ?? 0),
+      'Total seats must equal active + idle + onboarding seats'
     );
   });
 
@@ -597,5 +597,63 @@ describe('Live Metrics DEMO Data & Referencing Tests', () => {
     assert.ok(monthlyData.code_generation_summary.total_lines_added > 0, 'total_lines_added must be > 0');
     assert.ok(monthlyData.code_generation_summary.total_lines_deleted >= 0, 'total_lines_deleted must be >= 0');
   });
-});
 
+  describe('display pattern coverage (#264)', () => {
+    const readJson = <T>(rel: string): T => JSON.parse(fs.readFileSync(path.join(demoDataDir, rel), 'utf-8')) as T;
+
+    it('1-year trend shows closed, provisional and missing months and year-over-year with and without a prior year', () => {
+      const trend = readJson<any>('processed/trends/rolling-1year.json');
+      const statuses = new Set(trend.points.map((p: any) => p.status));
+      for (const s of ['closed', 'provisional', 'missing']) assert.ok(statuses.has(s), `trend must contain a ${s} month`);
+      const withPrior = trend.points.filter((p: any) => p.yoy.total_spend_usd.prior !== null);
+      const withoutPrior = trend.points.filter((p: any) => p.status !== 'missing' && p.yoy.total_spend_usd.prior === null);
+      assert.ok(withPrior.length > 0, 'some month must have a year-over-year comparison');
+      assert.ok(withoutPrior.length > 0, 'some month must lack a prior year (reason shown)');
+    });
+
+    it('month close has a revised month and several closed months', () => {
+      const closes = readJson<any>('processed/closes/index.json');
+      assert.ok(closes.months.length >= 10);
+      const revised = closes.months.find((m: any) => m.revision_count > 0);
+      assert.ok(revised, 'one closed month must have a revision');
+      const record = readJson<any>(`processed/closes/${revised.month}.json`);
+      assert.ok(record.revisions[0].reason && record.revisions[0].diff.length > 0);
+    });
+
+    it('data quality history contains ok, warning and error runs, missing days and a recovery trend', () => {
+      const history = readJson<any>('processed/quality/history.json');
+      assert.deepEqual(new Set(history.entries.map((e: any) => e.level)), new Set(['ok', 'warning', 'error']));
+      assert.ok(history.entries.some((e: any) => e.missing_days.length > 0));
+      assert.ok(history.entries.some((e: any) => e.quarantined > 0));
+      const index = readJson<IndexMetadata>('index.json');
+      assert.equal(index.data_quality?.trend, 'recovered');
+    });
+
+    it('index shows degraded sources and issues of several severities and categories', () => {
+      const index = readJson<IndexMetadata>('index.json');
+      const statuses = new Set((index.source_status ?? []).map((s) => s.status));
+      for (const s of ['ok', 'partial', 'failed']) assert.ok(statuses.has(s as any), `source_status must contain ${s}`);
+      const issues = index.issues ?? [];
+      assert.ok(issues.some((i) => i.severity === 'error') && issues.some((i) => i.severity === 'warning'));
+      assert.ok(new Set(issues.map((i) => i.category)).size >= 4);
+    });
+
+    it('stores many months of monthly scopes, reports and deep analysis', () => {
+      const index = readJson<IndexMetadata>('index.json');
+      assert.ok((index.all_recorded_months ?? []).length >= 20);
+      assert.ok((index.available_reports ?? []).length >= 12);
+      assert.ok((index.deep_analysis_months ?? []).length >= 6);
+    });
+
+    it('seats cover every status, an unconfirmed plan and all budget states with current model names', () => {
+      const monthly = readJson<ScopeAggregatedData>('processed/monthly/2026-09.json');
+      const statuses = new Set(monthly.users.map((u) => u.status));
+      for (const s of ['active', 'low_active', 'idle', 'never_used', 'onboarding']) assert.ok(statuses.has(s as any), `seat status ${s}`);
+      assert.ok(monthly.users.some((u) => u.cost_unconfirmed), 'a seat with an unconfirmed plan');
+      const budgetStates = new Set((monthly.cost_center_budgets ?? []).map((b) => b.status));
+      for (const s of ['normal', 'warning', 'exceeded']) assert.ok(budgetStates.has(s as any), `budget status ${s}`);
+      const models = new Set(Object.keys(monthly.user_profiles?.[0]?.model_usage_totals ?? {}));
+      assert.ok(models.has('claude-sonnet-5') && !models.has('gpt-4o'), 'model names follow the current catalog');
+    });
+  });
+});

@@ -37,6 +37,7 @@ import {
 } from '../../domain/pricing/pricing-catalog.js';
 import { PublicExchangeRatesService, type ExchangeRateCatalog } from '../../domain/services/PublicExchangeRatesService.js';
 import { appendQualityHistory, buildDataQualityReport, summarizeQualityHistory } from './data-quality.js';
+import { DemoHistoryService, demoReportMonths } from './demo-history.js';
 import { isSourceUsable, resolveSourceStatuses, statusOrInferred } from './source-status.js';
 
 export interface PipelineOrchestratorDependencies {
@@ -286,6 +287,19 @@ export class PipelineOrchestrator {
     console.log(`🔍 Detected ${issues.length} data fetch issue(s) during collection.`);
     this.storage.saveErrorLog(issues);
 
+    // DEMO 専用: 過去月の履歴 (1 年トレンド・月次締め・品質履歴の表示パターン用)。実データの運用では動かない
+    const demoHistory = this.isMock
+      ? new DemoHistoryService({
+          storage: this.storage,
+          resolver: legacyResolver,
+          costCenters,
+          currentMonth: monthKey,
+          calendar: calendarLoad.config,
+          now: new Date(nowIso),
+        })
+      : null;
+    demoHistory?.seedMonthlyScopes();
+
     // 5. スコープ集計 & 保存
     let availableDays: string[] = previousIndex?.available_days ?? [];
     let startDate: string | undefined = previousIndex?.default_scopes?.latest_range?.start;
@@ -385,7 +399,7 @@ export class PipelineOrchestrator {
     if (this.isMock) {
       // モックモード (デモデータ生成) のみ。実データ運用では固定の月を生成しない。
       const mockGen = new MockDataGenerator();
-      const mockMonths = ['2026-08', '2026-09'];
+      const mockMonths = [...demoReportMonths(monthKey), monthKey];
       for (const m of mockMonths) {
         const existingCsvs = this.storage.getRawReportFiles(m);
         if (existingCsvs.length === 0) {
@@ -513,6 +527,9 @@ export class PipelineOrchestrator {
       }
     }
 
+    // DEMO 専用: 改訂済みの月次締めの見本 (成果物がそろった後、締め判定の前に作る)
+    demoHistory?.seedRevisedClose();
+
     // 月次締め (P4-2): 改訂の指定を反映し、締め日 (翌月の第 N 営業日) を迎えた月を確定する
     monthClose.finalize();
     monthClose.closeDueMonths();
@@ -561,15 +578,18 @@ export class PipelineOrchestrator {
 
     // データ品質レポート: 実収集をした実行だけ、履歴に追記する (モック・未設定・失敗では前回の履歴を維持)
     let dataQuality = this.isMock ? undefined : previousIndex?.data_quality;
-    const observations = this.isMock ? null : this.dataSource.getQualityObservations?.() ?? null;
+    const observations = this.dataSource.getQualityObservations?.() ?? null;
     if (observations && this.storage.saveDataQualityHistory) {
       const report = buildDataQualityReport(
         observations,
         statuses,
         nowIso,
-        this.runInfo && landed ? this.runInfo.runId : undefined
+        this.isMock ? 'demo-current' : this.runInfo && landed ? this.runInfo.runId : undefined
       );
-      const history = appendQualityHistory(this.storage.loadDataQualityHistory?.() ?? null, report);
+      const history = appendQualityHistory(
+        this.isMock && demoHistory ? demoHistory.buildQualityHistory() : this.storage.loadDataQualityHistory?.() ?? null,
+        report
+      );
       this.storage.saveDataQualityHistory(history);
       dataQuality = summarizeQualityHistory(history) ?? dataQuality;
       console.log(`🩺 Data quality: ${report.level} (missing days: ${report.missing_days.length}, quarantined: ${report.quarantined}).`);

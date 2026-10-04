@@ -28,6 +28,11 @@ try {
     fs.rmSync(demoReportsRawDir, { recursive: true, force: true });
   }
 
+  // 2b. 履歴 (月次締め・品質履歴を含む) を毎回同じ状態から作り直すため、DEMO の生成物を削除する
+  for (const dir of ['processed', 'quality', 'audit', 'raw']) {
+    fs.rmSync(path.resolve(projectRoot, 'data/demo', dir), { recursive: true, force: true });
+  }
+
   // 3. パイプラインを DEMO モードで実行
   execSync('npx tsx src/cli/run-pipeline.ts --demo', {
     cwd: projectRoot,

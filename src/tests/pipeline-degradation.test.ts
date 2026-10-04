@@ -685,11 +685,15 @@ describe('PipelineOrchestrator: data quality history (P1-7)', () => {
     assert.equal(storage.index!.data_quality?.level, 'ok', 'the last known quality is kept');
   });
 
-  it('does not write quality for mock data', async () => {
+  it('writes a demo quality history for mock data, replacing it on every run', async () => {
     const storage = new MemoryStorage();
     await runPipeline(healthy(obs()), storage, { isMock: true });
-    assert.equal(storage.qualityHistory, null);
-    assert.equal(storage.index!.data_quality, undefined);
+    await runPipeline(healthy(obs()), storage, { isMock: true });
+    const entries = storage.qualityHistory!.entries;
+    assert.equal(entries.at(-1)!.run_id, 'demo-current');
+    assert.equal(entries.filter((e) => e.run_id === 'demo-current').length, 1);
+    assert.deepEqual(new Set(entries.map((e) => e.level)), new Set(['ok', 'warning', 'error']));
+    assert.ok(storage.index!.data_quality);
   });
 });
 
