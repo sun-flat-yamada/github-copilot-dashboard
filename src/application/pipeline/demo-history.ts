@@ -2,6 +2,7 @@ import { MetricsAggregator } from '../../processor/metrics-aggregator.js';
 import { BillingCalculator } from '../../processor/billing-calculator.js';
 import { MockDataGenerator, MOCK_DATA_UNAVAILABLE_ORGS } from '../../collector/mock-generator.js';
 import { appendRevision, createCloseRecord, buildCloseIndex, extractMonthlyFigures, extractReportFigures } from '../../processor/month-close.js';
+import { enrichUserProfiles } from '../../processor/profile-enricher.js';
 import { buildDataQualityReport } from './data-quality.js';
 import type { AttributeResolver } from '../../collector/attribute-resolver.js';
 import type { IStorageWriter } from '../../domain/ports/IStorageWriter.js';
@@ -90,6 +91,7 @@ export class DemoHistoryService {
       const bundle = new MockDataGenerator(end, monthSeed(month)).generateBundle(daysInMonth, seatCount);
       const calc = new BillingCalculator(resolver, costCenters, end, { dataUnavailableOrgs: MOCK_DATA_UNAVAILABLE_ORGS });
       const enriched = calc.enrichAllSeats(bundle.seats, daysInMonth);
+      const profiles = enrichUserProfiles(bundle.userProfiles, bundle.seats, enriched, resolver);
       const scope = aggregator.aggregateScope(
         'monthly',
         month,
@@ -98,10 +100,10 @@ export class DemoHistoryService {
         { start: `${month}-01`, end, days_count: daysInMonth },
         [],
         bundle.costCenterBudgets,
-        bundle.userProfiles
+        profiles
       );
       storage.saveScopeData('monthly', month, scope);
-      if (deepFrom.has(month)) storage.saveDeepAnalysisArchive(month, bundle.userProfiles);
+      if (deepFrom.has(month)) storage.saveDeepAnalysisArchive(month, profiles);
       written.push(month);
     });
     return written;

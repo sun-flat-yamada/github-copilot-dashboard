@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { UserUsageProfile } from '../../../src/types/copilot';
 import { InefficiencyDiagnosticEngine } from '../../../src/processor/inefficiency-diagnostic';
+import { getModelColor } from '../utils/modelDisplay';
 import { SIGNAL_BAND_LABELS } from '../../../src/processor/diagnostic-signals';
 import {
   X,
@@ -66,14 +67,6 @@ export interface UserDrilldownPanelProps {
   insightSlot?: React.ReactNode;
 }
 
-const MODEL_COLORS: Record<string, string> = {
-  'claude-3-7-sonnet': '#a855f7',
-  'gpt-4o': '#3b82f6',
-  'o1': '#f43f5e',
-  'gemini-2-0-flash': '#10b981',
-  'default': '#6366f1',
-};
-
 export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
   login,
   displayName,
@@ -121,11 +114,6 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
   const dailyChartData = useMemo(() => {
     if (!profile?.daily_history || profile.daily_history.length === 0) return [];
     return profile.daily_history.map((d) => {
-      const claude = d.model_breakdown['claude-3-7-sonnet'] || 0;
-      const gpt4o = d.model_breakdown['gpt-4o'] || 0;
-      const o1 = d.model_breakdown['o1'] || 0;
-      const gemini = d.model_breakdown['gemini-2-0-flash'] || 0;
-
       return {
         date: d.date.substring(5), // MM-DD
         fullDate: d.date,
@@ -133,10 +121,6 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
         acceptances: d.acceptances,
         chats: d.total_chats,
         acceptanceRate: Math.round(d.acceptance_rate * 100),
-        claude,
-        gpt4o,
-        o1,
-        gemini,
       };
     });
   }, [profile]);
@@ -165,7 +149,7 @@ export const UserDrilldownPanel: React.FC<UserDrilldownPanelProps> = ({
     return entries.map(([model, val]) => ({
       name: model,
       value: val,
-      color: MODEL_COLORS[model] || '#6366f1',
+      color: getModelColor(model),
     }));
   }, [profile, primaryModel, totalRequests]);
 

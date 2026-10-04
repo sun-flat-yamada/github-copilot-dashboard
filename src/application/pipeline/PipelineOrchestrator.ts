@@ -256,10 +256,13 @@ export class PipelineOrchestrator {
     let userProfiles: UserUsageProfile[] = [];
 
     if (this.isMock) {
-      [costCenterBudgets, userProfiles] = await Promise.all([
+      let rawMockProfiles: UserUsageProfile[];
+      [costCenterBudgets, rawMockProfiles] = await Promise.all([
         this.dataSource.fetchCostCenterBudgets(),
         this.dataSource.fetchUserProfiles(),
       ]);
+      // 実データと同じく、属性マッピング由来のタグ・部署・Cost Center をプロファイルへ反映する
+      userProfiles = seatsUsable ? enrichUserProfiles(rawMockProfiles, seats, enrichedSeats, legacyResolver) : rawMockProfiles;
     } else if (seatsUsable) {
       // ユーザー別プロファイル: 利用状況メトリクス (users-1-day) の実測から作り、シート・属性マッピングで属性を補う
       if (hasLiveMetrics) {

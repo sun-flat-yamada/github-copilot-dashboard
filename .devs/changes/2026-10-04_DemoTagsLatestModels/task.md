@@ -1,7 +1,7 @@
 # Tasks (#270)
-- [ ] profile enrichment
-- [ ] latest models and prices
-- [ ] UI model colors
-- [ ] tests and SDD-05
-- [ ] quality gate
+- [x] profile enrichment
+- [x] latest models and prices
+- [x] UI model colors
+- [x] tests and SDD-05
+- [x] quality gate
 - [ ] PR and change-dev:finish
