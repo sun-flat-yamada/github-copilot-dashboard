@@ -116,6 +116,9 @@ data/
     │   └── 2026-09.json              # シート監査イベント（検出日の月）
     ├── billing-reconciliation/
     │   └── 2026-09.json              # 月ごとの請求突合 (P4-4, SDD-17 §5)
+    ├── report-outputs/
+    │   ├── index.json                # 定義駆動レポートの生成物の一覧 (P4-5, SDD-17 §6)
+    │   └── monthly-cost-summary/2026-08.{md,csv}
     └── exports/                      # 権限のある閲覧者向けの CSV 出力
 ```
 
@@ -264,6 +267,10 @@ data/raw/landing/
 ### 2.9 請求突合ファイル (`audit/billing-reconciliation/`, P4-4)
 
 `audit/billing-reconciliation/{YYYY-MM}.json` は、Billing API から収集した日別の AI Credits の数量・金額と、突合に使った版・許容差を持つ（SDD-17 §5）。実際の請求額に由来するため `audit/` の規則に従う: `processed/` の外に置き、`pages:stage` の許可リストには**載せず**、`dashboard/public/data/` へも複製せず、`dist/data/` に `audit` があれば `pages:verify` が失敗する。利用者・組織・Cost Center の識別子は持たない。`ForkSafeStorage.saveBillingReconciliationMonth` が書き、`copilot-data` に置く（`main` には置かない）。
+
+### 2.10 定義駆動レポートの出力 (`audit/report-outputs/`, P4-5)
+
+`audit/report-outputs/{report_id}/{period}.{md,csv}` と `audit/report-outputs/index.json` は、`reports/*.yaml` から生成したレポートを持つ（SDD-17 §6）。定義は Cost Center・組織・部署でグループ化できるため、出力は `audit/` の規則に従う: `processed/` の外に置き、`pages:stage` の許可リストには**載せず**、`dashboard/public/data/` へも複製せず、`dist/data/` に `audit` があれば `pages:verify` が失敗する。集計のみ（利用者単位の行なし）で、`ForkSafeStorage.saveReportOutput` / `saveReportOutputIndex` が書き、`copilot-data` に置く（`main` に置くのは `reports/` の定義だけ）。
 
 ## 3. インデックスメタデータ (`index.json`) 仕様
 
