@@ -75,7 +75,7 @@ GitHub Copilotの利用者を「部署」「プロジェクト」「仕訳コー
 
 ### 3.2 CSV形式 (簡易設定用)
 
-ヘッダー行付きのCSV形式も自動判別してパースする：
+ヘッダー行付きのCSV形式も自動判別してパースする (任意の `valid_from` / `valid_to` 列で実効期間を追加できる。4.1 節)：
 
 ```csv
 github_user,display_name,department,cost_center_override,notes,tags
@@ -99,6 +99,36 @@ suzuki-ken,鈴木 健 (パートナー),フロントエンド基盤G,Platform-En
 | `cost_center_override` | string | - | GitHub APIのCost Centerを上書き指定する場合に設定 | API取得値を優先、無ければ `"デフォルトCostCenter"` |
 | `notes` | string | - | 雇用形態やメモ情報 | `""` |
 | `tags` | string[] | - | 自由入力の複数ラベル (例: `["業務委託", "リモート"]`)。JSONは配列、CSVは `;` 区切りの1セルで指定 | 未設定 (`undefined`) |
+| `valid_from` | string (`YYYY-MM-DD`) | - | この行が有効になる最初の日 (当日を含む)。4.1 節 | 未設定 (開始の制限なし) |
+| `valid_to` | string (`YYYY-MM-DD`) | - | この行が有効な最後の日 (当日を含む) | 未設定 (無期限) |
+
+### 4.1 実効期間 (SCD Type 2, P3-8 / B-17)
+
+異動で部署・コストセンターは変わる。時点を持たないマッピングは過去月も**現在の所属**で配賦し直してしまうため、ユーザーは**実効期間ごとに 1 行**を持てる。
+
+```json
+[
+  { "github_user": "dev_alice", "department": "Unit Alpha", "cost_center_override": "CC-ALPHA", "valid_to": "2026-08-14" },
+  { "github_user": "dev_alice", "department": "Unit Beta",  "cost_center_override": "CC-BETA",  "valid_from": "2026-08-15" }
+]
+```
+
+(上記は架空のプレースホルダー。実際のマッピングは `COPILOT_USER_MAPPING` / 暗号化マッピングファイルでのみ供給し、コミットしない。)
+
+- **後方互換**: `valid_from` / `valid_to` のどちらも無い行は無期限で、既存のマッピングは従来どおり動く。CSV は `valid_from` / `valid_to` 列を足す (列が無い CSV は変わらない)。
+- **解決時点 (`asOf`)**: `AttributeResolver.resolve(login, asOf)` (および `IAttributeResolver.resolve`) は `asOf` に有効な行を選ぶ。`asOf` は `YYYY-MM-DD`、`YYYY-MM` は**その月の月末日**。`asOf` 省略時は現行の行 (`valid_from` が最新の行)。有効な行が無い場合 (最初の期間より前・期間の隙間) は未登録として扱う (表示名はログイン名、部署は `Unassigned`)。
+- **適用箇所**: 月次レポートの集計 (`ReportParser.aggregate`) はレコードごとにそのレコードの日付で解決するため、異動月の部署・コストセンター配賦は**実効日で分かれる** (日付の無いレコードは月末)。ユーザー別の行は最終利用日の属性。`BillingCalculator` は基準日で解決する。過去月が新しい所属に付け替わることはない。
+- **検証** (`validateMappingPeriods`。マッピング読み込み時に実行し、`AttributeResolver.getValidationIssues()` で取得):
+
+| 検出内容 | 重大度 | 扱い |
+|---|---|---|
+| 不正な日付 / `valid_from` が `valid_to` より後 | error | その行は解決対象から外す (未登録扱い) |
+| 期間の重複 (期間なしの行が 1 ユーザーに 2 行ある場合を含む) | error | `valid_from` が新しい行 (同じなら入力順で後の行) を優先 |
+| 期間の隙間 | warning | 隙間の日は未登録扱い |
+
+  読み込み時の警告ログは件数のみで、ログイン名は出さない (Zero PII)。
+- **仮名化** (5.2 節) は、その日付で選ばれた行に適用する。異動すると `Group-<hex>` は変わるが `dev_<hex>` は変わらない。
+- **閲覧の前提**: 個人別の表示は該当期間の属性を示し、閲覧権限のある社員向け (SDD-01 §1.1)。
 
 ---
 

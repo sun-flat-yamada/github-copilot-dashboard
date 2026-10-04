@@ -19,6 +19,10 @@ export interface UserAttributeMappingV2 {
   ai_credits_alert_threshold?: number;
   target_adoption_phase?: AdoptionPhase;
   target_acceptance_rate?: number;
+  /** 実効期間の開始日 (YYYY-MM-DD, 当日を含む)。省略時は開始の制限なし (SCD Type 2) */
+  valid_from?: string;
+  /** 実効期間の終了日 (YYYY-MM-DD, 当日を含む)。省略時は無期限 */
+  valid_to?: string;
 }
 
 export interface UserAttributeMappingDocumentV2 {

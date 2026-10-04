@@ -280,6 +280,10 @@ export interface UserAttributeMapping {
   cost_center_override?: string;
   notes?: string;
   tags?: string[]; // 自由入力の複数ラベル (例: ["契約社員", "リモート"])。CSVでは ";" 区切りの1セルで表現
+  /** 実効期間の開始日 (YYYY-MM-DD, 当日を含む)。省略時は開始の制限なし (SCD Type 2) */
+  valid_from?: string;
+  /** 実効期間の終了日 (YYYY-MM-DD, 当日を含む)。省略時は無期限 */
+  valid_to?: string;
 }
 
 // ==========================================

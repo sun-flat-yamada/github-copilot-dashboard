@@ -95,7 +95,8 @@ export class BillingCalculator {
   public enrichSeat(seat: CopilotSeatAssignment, daysInMonth: number = 30): EnrichedUserSeat {
     const login = seat.assignee.login;
     const orgName = seat.organization?.login || UNASSIGNED_LABELS.organization;
-    const attr = this.resolver.resolve(login);
+    // 基準日時点の実効属性で解決する (実効期間付きマッピング)
+    const attr = this.resolver.resolve(login, this.referenceDate.toISOString().slice(0, 10));
 
     // Cost Centerの決定 (優先度: 1. 属性Override, 2. User紐付け, 3. Org紐付け, 4. デフォルト)
     let costCenter = attr.costCenterOverride;
