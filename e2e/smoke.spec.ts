@@ -59,3 +59,16 @@ test('a past month can be opened from the data selector', async ({ page }) => {
   await expect(page.getByRole('button', { name: '分析対象データ' })).toContainText(past);
   await expect(page.getByText('データの読み込みに失敗しました')).toHaveCount(0);
 });
+
+test('the audit view shows source status and a reason where run history is unavailable (P4-1)', async ({ page }) => {
+  await openDemo(page);
+  await page.getByRole('button', { name: /監査/ }).first().click();
+  const view = page.getByTestId('audit-data-quality');
+  await expect(view).toBeVisible();
+  await expect(view.getByRole('heading', { name: '監査・データ品質' })).toBeVisible();
+  // デモは品質履歴を記録しないため、0 や空表ではなく「—（理由）」を表示する
+  await expect(page.getByTestId('audit-runs-unavailable')).toContainText('—');
+  await expect(page.getByTestId('audit-runs-unavailable')).toContainText('デモデータには実行履歴がありません');
+  await expect(page.getByTestId('audit-last-success')).toBeVisible();
+  await expect(page.getByText('データの読み込みに失敗しました')).toHaveCount(0);
+});
