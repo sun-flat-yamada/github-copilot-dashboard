@@ -1,0 +1,26 @@
+# 週次ダイジェスト: 取り込み済みの月次利用レポート (CSV) の最新月を、週ごとに要約する (SDD-17 §6)。
+id: weekly-usage-report-digest
+title: Weekly usage report digest
+description: Net spend and request volume of the latest imported usage report, with the top models by spend.
+schedule: weekly
+dataset: reports
+privacy_tier: aggregate-only
+language: en
+outputs: [markdown, csv]
+sections:
+  - type: kpi
+    id: headline
+    title: Headline
+    metrics: [report_net_spend, report_gross_spend, report_requests, report_active_users, report_top_model]
+  - type: breakdown
+    id: top-models
+    title: Models with at least one request (by spend)
+    group_by: model
+    columns: [total_requests, total_spend_usd, active_users, percentage]
+    sort_by: total_spend_usd
+    order: desc
+    limit: 5
+    filters:
+      - column: total_requests
+        op: gte
+        value: 1

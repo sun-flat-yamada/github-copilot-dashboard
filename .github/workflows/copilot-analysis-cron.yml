@@ -184,6 +184,14 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: npm run billing:issues
 
+      - name: Generate definition-driven reports (reports/*.yaml)
+        # reports/*.yaml の定義に従い、月次締め済みの月 (monthly-close) と今週分 (weekly) で未生成のレポートを作る。
+        # 生成物は data/audit/report-outputs/ (copilot-data に保存し、Pages へは配信しない。SDD-17 §6)。
+        # 不正な定義があっても他の定義は生成し、失敗しても後続の保存・配信は止めない。
+        if: env.MOCK_MODE != 'true'
+        continue-on-error: true
+        run: npm run reports:generate -- --due
+
       - name: Commit and Push to data branch (Fork-Safe Storage)
         run: |
           # コードブランチには一切触れず、独立した一時リポジトリディレクトリで data ブランチを操作

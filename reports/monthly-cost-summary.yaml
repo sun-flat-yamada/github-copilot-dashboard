@@ -1,0 +1,23 @@
+# 月次コストサマリー: 月次締め済みの月ごとに自動生成する (SDD-17 §6)。
+# 定義を 1 件置くだけでレポートが増える。指標は指標カタログ (METRIC_REGISTRY) の ID、列は SDD-17 §6.2 の一覧から選ぶ。
+id: monthly-cost-summary
+title: 月次コストサマリー
+description: 月次締め済みの月のシート費用・遊休コスト・アクティブ率と、Cost Center 別の内訳。
+schedule: monthly-close
+dataset: monthly
+privacy_tier: aggregate-only
+language: ja
+outputs: [markdown, csv]
+sections:
+  - type: kpi
+    id: headline
+    title: 全社の指標
+    metrics: [total_spend, idle_waste, active_rate, acceptance_rate]
+  - type: breakdown
+    id: by-cost-center
+    title: Cost Center 別 (費用の大きい順、上位 10 件)
+    group_by: cost_center
+    columns: [total_seats, active_seats, idle_seats, total_cost_usd, potential_savings_usd, active_ratio]
+    sort_by: total_cost_usd
+    order: desc
+    limit: 10
