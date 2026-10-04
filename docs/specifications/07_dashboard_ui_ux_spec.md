@@ -299,7 +299,6 @@ Chart choice follows appendix A.5.2 of the improvement plan; accessibility follo
 - **Alternative to the picture**: every chart that carries data offers a **「表で見る」 / 「グラフで見る」** toggle (`<button aria-pressed>`) that swaps the chart for a data table (`<caption>`, `<th scope>`). SVG charts are wrapped by `AccessibleChart` (`role="img"` + a summary `aria-label`).
 - **Keyboard**: the toggle is a native button (Tab / Enter / Space); each ranked row is focusable (`tabindex=0`) with a full `aria-label` and a visible focus ring.
 - **Light / dark**: charts use theme-independent mid-tone fills with text labels in theme colours; both themes are checked by the automated test.
-- **Model comparison is a dot plot, not a radar (P3-7)**: `ModelDotPlot` shows one row per axis (small multiples) with one dot per selected model, models told apart by marker shape and legend text, wrapped by `AccessibleChart` so a raw-value table is one toggle away. Details: SDD-10 section 2.6.
 - **Out of scope here**: the 100% stacked trend and bullet charts (tracked with the budget redesign).
 
 **Automated check**: `e2e/a11y.spec.ts` (Playwright smoke, P2-6) runs axe-core on the overview in light and dark with the allocation section open and fails on any critical / serious violation (`color-contrast` is excluded from the automated run), and verifies the table toggle and keyboard focus. Unit tests: `src/tests/chart-series.test.ts`, `src/tests/ranked-bar-chart.test.ts`.

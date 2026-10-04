@@ -302,7 +302,6 @@ View Registry は **ビュー描画の唯一の入口**である。`App.tsx` に
 - **図の代替**: データを持つチャートは **「表で見る」/「グラフで見る」** 切替（`<button aria-pressed>`）でデータ表（`<caption>`、`<th scope>`）に切り替えられる。SVG チャートは `AccessibleChart`（`role="img"` + 要約の `aria-label`）で包む。
 - **キーボード**: 切替は標準の button（Tab / Enter / Space）。ランキングの各行はフォーカス可能（`tabindex=0`）で、完全な `aria-label` と見えるフォーカスリングを持つ。
 - **ライト / ダーク**: チャートは両テーマで使える中間色の塗りとし、文字ラベルはテーマ色にする。両テーマを自動テストで検査する。
-- **モデル比較はレーダーではなくドットプロット (P3-7)**: `ModelDotPlot` が 1 軸 = 1 行（スモールマルチプル）、選択モデル = 1 ドットで描き、モデルはマーカーの形と凡例の文字で区別する。`AccessibleChart` で包むため、生値表へ 1 操作で切り替えられる。詳細は SDD-10 §2.6。
 - **対象外**: 100% 積み上げ推移とブレットチャート（予算の再設計で扱う）。
 
 **自動検査**: `e2e/a11y.spec.ts`（Playwright スモーク、P2-6）が、コスト内訳セクションを開いた概要画面で axe-core をライト / ダークの両方で実行し、critical / serious の違反があれば失敗する（自動実行では `color-contrast` を除く）。あわせて表切替とキーボードフォーカスを確認する。単体テスト: `src/tests/chart-series.test.ts`、`src/tests/ranked-bar-chart.test.ts`。
