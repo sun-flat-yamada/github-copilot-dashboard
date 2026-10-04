@@ -1,4 +1,5 @@
 import type { DataQualityHistory } from '../domain/entities/data-quality.js';
+import type { SeatAuditMonthDocument } from '../domain/entities/seat-audit.js';
 import type { MonthCloseIndex, MonthCloseRecord } from '../domain/entities/month-close.js';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -173,6 +174,58 @@ export class ForkSafeStorage {
   /** 締め済みの月 (降順) */
   public getClosedMonths(): string[] {
     const dir = path.join(this.baseDir, 'processed', 'closes');
+    if (!fs.existsSync(dir)) return [];
+    return fs
+      .readdirSync(dir)
+      .map((f) => f.replace(/\.json$/, ''))
+      .filter((m) => /^\d{4}-\d{2}$/.test(m))
+      .sort()
+      .reverse();
+  }
+
+  /** Raw パーティションのシート一覧 (raw/YYYY/MM/YYYY-MM-DD-raw.json) の日 (昇順) (P4-3) */
+  public listRawSeatDays(): string[] {
+    const rawDir = path.join(this.baseDir, 'raw');
+    if (!fs.existsSync(rawDir)) return [];
+    const days: string[] = [];
+    for (const year of fs.readdirSync(rawDir)) {
+      if (!/^\d{4}$/.test(year)) continue;
+      for (const month of fs.readdirSync(path.join(rawDir, year))) {
+        if (!/^\d{2}$/.test(month)) continue;
+        for (const file of fs.readdirSync(path.join(rawDir, year, month))) {
+          const m = /^(\d{4}-\d{2}-\d{2})-raw\.json$/.exec(file);
+          if (m) days.push(m[1]);
+        }
+      }
+    }
+    return days.sort();
+  }
+
+  /** ある日の Raw パーティションの seats。未保存・破損時は null (P4-3) */
+  public loadRawSeats(day: string): CopilotSeatAssignment[] | null {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
+    const payload = this.readJson<{ seats?: unknown }>(path.join(this.baseDir, 'raw', day.slice(0, 4), day.slice(5, 7), `${day}-raw.json`));
+    return payload && Array.isArray(payload.seats) ? (payload.seats as CopilotSeatAssignment[]) : null;
+  }
+
+  /**
+   * シート監査イベント (audit/seat-events/{month}.json) を保存する (P4-3)。
+   * 利用者単位の個人データなので processed/ の外に置き、配信用ディレクトリ (Pages) へは複製しない。
+   */
+  public saveSeatAuditMonth(doc: SeatAuditMonthDocument): void {
+    const dir = path.join(this.baseDir, 'audit', 'seat-events');
+    this.ensureDirectory(dir);
+    fs.writeFileSync(path.join(dir, `${doc.month}.json`), JSON.stringify(doc, null, 2), 'utf-8');
+  }
+
+  public loadSeatAuditMonth(month: string): SeatAuditMonthDocument | null {
+    if (!/^\d{4}-\d{2}$/.test(month)) return null;
+    return this.readJson<SeatAuditMonthDocument>(path.join(this.baseDir, 'audit', 'seat-events', `${month}.json`));
+  }
+
+  /** シート監査イベントのある月 (降順) */
+  public getSeatAuditMonths(): string[] {
+    const dir = path.join(this.baseDir, 'audit', 'seat-events');
     if (!fs.existsSync(dir)) return [];
     return fs
       .readdirSync(dir)

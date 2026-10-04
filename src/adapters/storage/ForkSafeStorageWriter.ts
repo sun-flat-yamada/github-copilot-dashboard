@@ -1,5 +1,6 @@
 import type { DataQualityHistory } from '../../domain/entities/data-quality.js';
 import type { MonthCloseIndex, MonthCloseRecord } from '../../domain/entities/month-close.js';
+import type { SeatAuditMonthDocument } from '../../domain/entities/seat-audit.js';
 import { IStorageWriter } from '../../domain/ports/IStorageWriter.js';
 import {
   CopilotDailyMetrics,
@@ -73,6 +74,26 @@ export class ForkSafeStorageWriter implements IStorageWriter {
 
   getClosedMonths(): string[] {
     return this.storage.getClosedMonths();
+  }
+
+  listRawSeatDays(): string[] {
+    return this.storage.listRawSeatDays();
+  }
+
+  loadRawSeats(day: string): CopilotSeatAssignment[] | null {
+    return this.storage.loadRawSeats(day);
+  }
+
+  saveSeatAuditMonth(doc: SeatAuditMonthDocument): void {
+    this.storage.saveSeatAuditMonth(doc);
+  }
+
+  loadSeatAuditMonth(month: string): SeatAuditMonthDocument | null {
+    return this.storage.loadSeatAuditMonth(month);
+  }
+
+  getSeatAuditMonths(): string[] {
+    return this.storage.getSeatAuditMonths();
   }
 
   loadReportData(month: string): MonthlyReportAggregatedData | null {
