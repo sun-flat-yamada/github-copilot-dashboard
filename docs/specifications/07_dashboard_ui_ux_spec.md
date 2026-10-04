@@ -315,3 +315,15 @@ The overview has a **「1 年推移 (月次・前年同月比)」** accordion se
 - The data table (「表で見る」, `AccessibleChart`) lists per month the status (with the close day for provisional months), spend and active seats with their **year-over-year** values, and the acceptance rate. Values that cannot be computed read **「—（reason）」** (SDD-06 §4.6); nothing is shown as 0.
 - A legacy file (no `points`) shows "not yet produced in the new format"; demo-sourced data is labelled.
 - The year-over-year metrics are catalogued (`yoy_spend_change`, `yoy_active_seats_change`) and shown with `MetricLabel`. The section shows company-wide values; filters do not apply.
+
+### 2.19 Audit & Data Quality View (P4-1 / E-01)
+
+The **「監査」** tab (`views/audit/manifest.ts` + `View.tsx`, registered through the View Registry of §2.14b; `order: 100`, data-independent) shows what ran, when, and how the data quality changed. Component: `AuditDataQualityPanel` (`dashboard/src/components/AuditDataQualityPanel.tsx`). Specification of the audit as a whole: [SDD-17](17_audit_and_report_spec.md).
+
+- **Inputs** (loaded by the view itself through the Dataset Loader; no implicit switch to the other mode): `index.json` (`source_status`, `data_quality`) and `quality/history.json` (`loadQualityHistoryDataset`). The Run Manifest itself lives under `raw/landing/` and is never published (SDD-05 §2.3); the view shows the published per-run quality report, which carries the same `run_id`.
+- **Summary**: last success time (the newest `last_success_at` across sources), the latest quality level, and the time the level last changed.
+- **Source status table**: per source (metrics / seats / cost centers / AI credits): status (成功 / 一部のみ / 失敗 / 対象外), record count, quarantined count, last attempt, last success, reason.
+- **Run history table** (newest first, up to 30 of the stored 90): run id, time, quality level, per-source status, missing days (count and first dates), duplicates collapsed, out-of-range, quarantined and malformed-line counts.
+- **Counts, dates and source names only.** No login, name, department or value is displayed (zero PII).
+- **Unavailable is stated, never zero**: a missing `index.json`, a legacy `index.json` without `source_status`, a missing or empty `history.json` each show **「—（reason）」** in place of the table. Demo data has no history (mock collection records none), so the demo shows 「—（デモデータには実行履歴がありません）」 rather than an invented history.
+- Status and level are told apart by text, not by colour alone; tables have captions and row headers.
