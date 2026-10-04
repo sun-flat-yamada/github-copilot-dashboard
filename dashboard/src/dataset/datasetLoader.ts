@@ -19,6 +19,7 @@ import type {
   RollingTrendDataset,
   ScopeAggregatedData,
 } from '../../../src/types/copilot';
+import type { DataQualityHistory } from '../../../src/domain/entities/data-quality';
 import { fetchDataWithFallback, getCandidateDataUrls, resolveDataPath } from '../utils/pathResolver';
 
 export type DatasetState = 'ok' | 'partial' | 'failed' | 'demo';
@@ -253,6 +254,25 @@ export async function loadReportDataset(
 export async function loadYearlyTrendDataset(baseDir: string): Promise<DatasetResult<RollingTrendDataset>> {
   const candidates = getCandidateDataUrls(baseDir, 'trends', 'rolling-1year.json');
   const result = await fetchJson<RollingTrendDataset>(candidates);
+  if ('error' in result) return failed(result.error);
+  const demoSourced = isDemoUrl(result.url) || baseDir.includes('/demo');
+  return {
+    state: deriveDatasetState({ demoSourced, partial: false }),
+    data: result.data,
+    url: result.url,
+    demoSourced,
+    error: null,
+  };
+}
+
+/**
+ * データ品質の実行履歴 (quality/history.json, P1-7 / P4-1)。
+ * 件数・日付・ソース名だけを持つ公開してよいファイル。無い・読めないときは failed (空の履歴を作らない)。
+ * モック (DEMO) の収集は履歴を記録しないため、DEMO では通常 failed になる。
+ */
+export async function loadQualityHistoryDataset(baseDir: string): Promise<DatasetResult<DataQualityHistory>> {
+  const candidates = getCandidateDataUrls(baseDir, 'quality', 'history.json');
+  const result = await fetchJson<DataQualityHistory>(candidates);
   if ('error' in result) return failed(result.error);
   const demoSourced = isDemoUrl(result.url) || baseDir.includes('/demo');
   return {
