@@ -1,6 +1,7 @@
 import * as path from 'node:path';
 import { ReportGenerationService } from '../application/pipeline/report-generation.js';
 import { loadReportDefinitions } from '../processor/report-engine.js';
+import { evaluateIdentifiedGate } from '../domain/privacy-profile.js';
 import { ForkSafeStorage } from '../storage/fork-safe-storage.js';
 
 /**
@@ -32,7 +33,7 @@ function main(): number {
   }
 
   if (command === 'validate') {
-    for (const d of loaded.definitions) console.log(`✅ ${d.file} (${d.definition.id}, dataset=${d.definition.dataset}, schedule=${d.definition.schedule ?? 'manual'})`);
+    for (const d of loaded.definitions) console.log(`✅ ${d.file} (${d.definition.id}, dataset=${d.definition.dataset}, schedule=${d.definition.schedule ?? 'manual'}, tier=${d.definition.privacy_tier})`);
     if (loaded.definitions.length === 0 && loaded.invalid.length === 0) console.log(`ℹ️ No report definitions in ${dir}.`);
     return loaded.invalid.length > 0 ? 1 : 0;
   }
@@ -46,7 +47,7 @@ function main(): number {
   if (month !== undefined && !/^\d{4}-\d{2}$/.test(month)) return usage(`--month must be YYYY-MM: ${month}`);
 
   const storage = new ForkSafeStorage({ isDemo: args.includes('--demo') });
-  const service = new ReportGenerationService(storage);
+  const service = new ReportGenerationService(storage, evaluateIdentifiedGate(process.env));
   const now = new Date();
   let failed = loaded.invalid.length > 0;
   let generated = 0;
@@ -67,6 +68,9 @@ function main(): number {
         if (r.status === 'generated') {
           generated++;
           console.log(`🆕 ${r.report_id} ${r.period}: ${r.files.map((f) => path.relative(process.cwd(), f)).join(', ')}`);
+        } else if (r.status === 'refused') {
+          failed = true;
+          console.error(`❌ ${r.report_id} ${r.period}: refused (privacy_tier: identified): ${r.reason}`);
         } else {
           console.log(`⚠️ ${r.report_id} ${r.period}: no data for ${target.dataMonth}`);
         }

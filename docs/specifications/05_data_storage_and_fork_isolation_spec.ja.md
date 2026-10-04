@@ -206,7 +206,7 @@ data/raw/landing/
 - **匿名化モードでは保存しない。** Raw 本文には実名のログイン名・氏名が含まれ、仮名化できない。`ANONYMIZE_USERS=true` (およびモックモード) では Raw Landing を書かず、`index.json` にも `run` を付けない。
 - **`index.json` の `run`**: `{ run_id, reprocessed? }`。成果物の元になった run を示す (`pipeline:reprocess` では `reprocessed: true`)。run を保存しなかった場合 (または manifest を書けなかった場合。その run は再処理できない) は付けない。
 - **再処理** (`npm run pipeline:reprocess [-- --run <run_id>]`、省略時は最新の run) は、再生用クライアント (`ReplayFetcher`) 経由で、収集と同じ「取得 → 正規化 → 集計」のコードに 1 つの run を流す。**通信はしない**。run が行わなかったリクエストを要求した場合は `ReplayMissError` で明示的に失敗し、記録された失敗は同じ失敗として再生される。既存の `raw/YYYY/MM/*-raw.json` は書き換えない。
-- **未対応**: 複数 run を結合した長期の履歴 (1 回の窓を超えるバックフィル)、保持期間・削除 (目標 60 か月、Phase 4)、正準ファクト (`schema_version`) の再生成 (P1-3)。
+- **未対応**: 複数 run を結合した長期の履歴 (1 回の窓を超えるバックフィル)、保持期間・削除 (§2.11 と SDD-17 §8 で仕様化、P4-6)、正準ファクト (`schema_version`) の再生成 (P1-3)。
 - `raw/` は公開しない: `pages:stage` は許可リスト方式で、`pages:verify` は `dist/` に含まれていれば失敗とする。
 
 ### 2.4 正準ファクト契約 v1 (P1-3)
@@ -271,6 +271,10 @@ data/raw/landing/
 ### 2.10 定義駆動レポートの出力 (`audit/report-outputs/`, P4-5)
 
 `audit/report-outputs/{report_id}/{period}.{md,csv}` と `audit/report-outputs/index.json` は、`reports/*.yaml` から生成したレポートを持つ（SDD-17 §6）。定義は Cost Center・組織・部署でグループ化できるため、出力は `audit/` の規則に従う: `processed/` の外に置き、`pages:stage` の許可リストには**載せず**、`dashboard/public/data/` へも複製せず、`dist/data/` に `audit` があれば `pages:verify` が失敗する。集計のみ（利用者単位の行なし）で、`ForkSafeStorage.saveReportOutput` / `saveReportOutputIndex` が書き、`copilot-data` に置く（`main` に置くのは `reports/` の定義だけ）。
+
+### 2.11 保持期間ポリシーのファイル (`audit/retention/`, P4-6)
+
+`audit/retention/log.json` は保持期間の実行ごとの記録（SDD-17 §8）: run_id・時刻・保持月数・カットオフ・カテゴリ別の削除した件数 / 月 / ID / バイト数・スキップ・エラー（個人情報なし）。`audit/` の規則に従い（`processed/` の外、`pages:stage` の許可リストに**無く**、`dist/data/` にも `main` にも置かない）、保持期間によって自身が削除されることもない。保持期間（既定 60 か月、`COPILOT_DATA_RETENTION_MONTHS`）は、期限切れの月の `raw/`（日次パーティション・Run Manifest・参照されなくなった landing の object）、`reports/monthly/`（CSV 原本）、`audit/seat-events/`、`audit/billing-reconciliation/`、`audit/report-outputs/` を削除する。**`processed/**` は削除せず**、特に `processed/closes/` の確定スナップショットと改訂履歴（§2.7）は残す。Raw・CSV 原本は、その月が締め済みになってから削除する。全パスの階層と Pages への配信可否を宣言する発行プロファイルは SDD-17 §7.2。
 
 ## 3. インデックスメタデータ (`index.json`) 仕様
 

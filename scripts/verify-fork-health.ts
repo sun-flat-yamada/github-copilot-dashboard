@@ -2,6 +2,11 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+import { evaluateIdentifiedGate, isPrivacyTier } from '../src/domain/privacy-profile.js';
+import { FORBIDDEN_DIST_PATHS, publicationProfileProblems } from './pages-staging.js';
+import { RetentionService } from '../src/application/pipeline/retention.js';
+import { parseRetentionMonths } from '../src/processor/retention.js';
+import { ForkSafeStorage } from '../src/storage/fork-safe-storage.js';
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -186,6 +191,103 @@ export function checkDataIsolation(): HealthCheckResult[] {
         message: '.gitignore is missing explicit data/ exclusion patterns.',
         remediation: 'Add data/ to .gitignore to prevent accidental commits.',
       });
+    }
+  }
+
+  return results;
+}
+
+export interface PublicationProfileOptions {
+  /** data/ の場所 (省略時は cwd の data) */
+  dataDir?: string;
+  /** dashboard/public/data/ の場所 (省略時は cwd の dashboard/public/data) */
+  publicDataDir?: string;
+  env?: NodeJS.ProcessEnv;
+  now?: Date;
+}
+
+/**
+ * 3b. Publication profile (P4-6, SDD-17 §7): the declared privacy tiers must agree with what is actually staged,
+ * identified-tier outputs need their gate, and data past the retention period is reported.
+ * Offline. It is an addition to the exposure check (checkPublicExposure), never a replacement for it.
+ */
+export function checkPublicationProfile(options: PublicationProfileOptions = {}): HealthCheckResult[] {
+  const category = 'Publication Profile';
+  const results: HealthCheckResult[] = [];
+  const env = options.env ?? process.env;
+  const dataDir = options.dataDir ?? path.resolve(process.cwd(), 'data');
+  const publicDataDir = options.publicDataDir ?? path.resolve(process.cwd(), 'dashboard/public/data');
+
+  const mismatches = publicationProfileProblems();
+  results.push(
+    mismatches.length === 0
+      ? { category, name: 'Declaration vs Pages staging', status: 'pass', message: 'The declared privacy tiers match the pages:stage allow-list and the pages:verify deny-list.' }
+      : {
+          category,
+          name: 'Declaration vs Pages staging',
+          status: 'fail',
+          message: mismatches.join(' '),
+          remediation: 'Align src/domain/privacy-profile.ts with scripts/pages-staging.ts (SDD-17 §7). Never publish an artifact the profile declares as not published.',
+        }
+  );
+
+  // The staging directory must not hold anything the profile keeps off Pages
+  const stagedForbidden = FORBIDDEN_DIST_PATHS.filter((rel) => fs.existsSync(path.join(publicDataDir, rel)));
+  if (stagedForbidden.length > 0) {
+    results.push({
+      category,
+      name: 'Staged files',
+      status: 'fail',
+      message: `dashboard/public/data/ contains path(s) that must never be published: ${stagedForbidden.join(', ')}.`,
+      remediation: 'Remove them; pages:stage copies an allow-list only (never a recursive copy of data/).',
+    });
+  }
+
+  // identified-tier report outputs need the gate (pseudonymization or an explicit allowance)
+  try {
+    const indexFile = path.join(dataDir, 'audit', 'report-outputs', 'index.json');
+    if (fs.existsSync(indexFile)) {
+      const index = JSON.parse(fs.readFileSync(indexFile, 'utf-8')) as { outputs?: Array<{ report_id?: string; privacy_tier?: unknown; demo?: boolean }> };
+      const outputs = index.outputs ?? [];
+      const unknownTier = outputs.filter((o) => o.privacy_tier !== undefined && !isPrivacyTier(o.privacy_tier));
+      const identified = outputs.filter((o) => o.privacy_tier === 'identified' && o.demo !== true);
+      const gate = evaluateIdentifiedGate(env);
+      if (unknownTier.length > 0) {
+        results.push({ category, name: 'Report output tiers', status: 'fail', message: `${unknownTier.length} report output(s) record an unknown privacy tier.`, remediation: 'Regenerate them with npm run reports:generate.' });
+      } else if (identified.length > 0 && !gate.allowed) {
+        results.push({
+          category,
+          name: 'Report output tiers',
+          status: 'fail',
+          message: `${identified.length} identified-tier report output(s) exist but the identified gate is closed: ${gate.reason}.`,
+          remediation: 'Delete those outputs (they live under audit/, never on Pages) or enable pseudonymization / the explicit allowance (SDD-17 §7.3).',
+        });
+      } else {
+        results.push({ category, name: 'Report output tiers', status: 'pass', message: `${outputs.length} report output(s); identified-tier outputs: ${identified.length}.` });
+      }
+    }
+  } catch (e) {
+    results.push({ category, name: 'Report output tiers', status: 'warn', message: `Could not read audit/report-outputs/index.json: ${e instanceof Error ? e.message : String(e)}` });
+  }
+
+  // retention: only a report (the deletion is an explicit operator action)
+  if (fs.existsSync(dataDir)) {
+    try {
+      const { months } = parseRetentionMonths(env.COPILOT_DATA_RETENTION_MONTHS);
+      const plan = new RetentionService(new ForkSafeStorage({ baseDir: dataDir, publicDir: undefined })).plan(options.now ?? new Date(), months);
+      results.push(
+        plan.items.length === 0
+          ? { category, name: 'Data retention', status: 'pass', message: `Nothing is past the ${months}-month retention period.` }
+          : {
+              category,
+              name: 'Data retention',
+              status: 'warn',
+              message: `${plan.items.length} item(s) are past the ${months}-month retention period (before ${plan.keep_from}).`,
+              remediation: 'Review with npm run retention:plan, then apply explicitly: npm run retention:apply -- --execute --confirm <cutoff>.',
+            }
+      );
+    } catch (e) {
+      results.push({ category, name: 'Data retention', status: 'warn', message: `Could not evaluate the retention plan: ${e instanceof Error ? e.message : String(e)}` });
     }
   }
 
@@ -601,6 +703,7 @@ export function runAllHealthChecks(): ForkHealthSummary {
     ...checkGitRemotes(),
     ...checkWorkingTree(),
     ...checkDataIsolation(),
+    ...checkPublicationProfile(),
     ...checkCopilotDataBranch(),
     ...checkEnvironmentConfig(),
   ];

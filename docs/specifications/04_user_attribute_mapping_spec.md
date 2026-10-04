@@ -181,6 +181,10 @@ It **fails** when something is publicly readable (or the repository is public) *
 
 The scheduled workflow runs `npm run fork:verify` **before** collecting data, so a public repository cannot start publishing non-anonymized data.
 
+### 5.4 Privacy Tiers, Publication Profile and Retention (P4-6)
+
+Each published artifact is declared as `aggregate-only` or `identified` in the publication profile (`src/domain/privacy-profile.ts`); the declaration is checked against the Pages staging configuration by `pages:verify` and `fork:verify` (offline part), in addition to, never instead of, the exposure check of §5.3. An `identified` report needs pseudonymization (§5.2) or an explicit `COPILOT_ALLOW_IDENTIFIED_REPORTS=true`; `COPILOT_ALLOW_PUBLIC_DATA` does not open that gate. Raw data and user-level audit data (`raw/`, original CSVs, `audit/seat-events/`) expire after 60 months by default and are deleted only by the explicit `npm run retention:apply` (dry run first; closed-month snapshots are kept). Details: [SDD-17 §7 / §8](17_audit_and_report_spec.md).
+
 ---
 
 ## 6. GPG Encryption Workaround for Mappings Exceeding 48KB (Optional)

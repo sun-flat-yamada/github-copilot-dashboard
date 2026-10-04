@@ -5,9 +5,9 @@
 # SDD-17: Audit & Report Specification
 
 - **Document ID**: SPEC-COPILOT-017
-- **Status**: Approved / Active (grows with Phase 4; sections are added by P4-2 to P4-6; P4-4 adds §5, P4-5 adds §6)
+- **Status**: Approved / Active (grows with Phase 4; sections are added by P4-2 to P4-6; P4-4 adds §5, P4-5 adds §6, P4-6 adds §7 and §8)
 - **Target Version**: 2026.10
-- **Date**: 2026-10-04 (P4-1 / #197: audit and data quality view; P4-2 / #198: monthly close and revisions; P4-3 / #199: seat audit events; P4-4 / #200: billing reconciliation; P4-5 / #201: definition-driven reports)
+- **Date**: 2026-10-04 (P4-1 / #197: audit and data quality view; P4-2 / #198: monthly close and revisions; P4-3 / #199: seat audit events; P4-4 / #200: billing reconciliation; P4-5 / #201: definition-driven reports; P4-6 / #202: privacy tiers and retention)
 - **Related**: [SDD-05 §2.3 / §2.5 / §2.7](05_data_storage_and_fork_isolation_spec.md), [SDD-07 §2.19](07_dashboard_ui_ux_spec.md), [SDD-16 Data Contract & Metric Catalog](16_data_contract_and_metric_catalog_spec.md)
 
 ---
@@ -20,7 +20,7 @@ The dashboard is used inside the company to explain Copilot cost and usage. An o
 |:--|:--|:--|
 | Monthly close | The 5th business day of the following month | §3 (P4-2) |
 | Revisions after close | Allowed, with history | §3 (P4-2) |
-| Raw data retention | 5 years (60 months); `data_retention` defaults to 60 months | P4-6 |
+| Raw data retention | 5 years (60 months); `data_retention` defaults to 60 months | §8 (P4-6) |
 | Personal data | Audit screens and exports carry counts, dates and source names only | P4-1 (this document §2) |
 | Seat history | Grants, revocations, plan changes and last-activity changes are recorded from daily seat snapshots and exported as CSV for authorized internal reviewers; never published | §4 (P4-3) |
 
@@ -65,7 +65,7 @@ The **figures** of the month: numeric values of the monthly scope `overview` (se
 
 - Before the pipeline writes `processed/monthly/{m}.json` or `processed/reports/{m}.json` for a closed month it compares the new figures with the **current version**. Equal: written as usual. Different and no `--revise` for that month: **not written**; the stored figures are kept and a warning issue `month-close:{m}` (with the first differences) is added to `error-log.json`. This covers `pipeline:run`, a CSV imported late and `pipeline:reprocess` alike.
 - **Integrity check** `npm run month:verify` (also run at the start of every pipeline run): fails (exit 1; an error issue in the pipeline) when a closed month's stored aggregate differs from its current version without a recorded revision (`unrecorded_change`), or when a record's checksum or revision chain does not match its content (`checksum_mismatch`). It prints the differing items.
-- Closing and revising never touch `raw/`; data retention (60 months) is enforced by P4-6.
+- Closing and revising never touch `raw/`; the retention policy (§8) never deletes closed-month snapshots and revisions (`processed/closes/`).
 
 ### 3.5 Where it appears
 
@@ -106,7 +106,7 @@ An audit must be able to answer "when was a seat granted to whom, and when was i
 | Issues, PRs, chat | **Never** | The CSV is handed to authorized internal reviewers only |
 
 - Real, non-pseudonymized events (real GitHub logins) are valid only where the repository and Pages are private / internal and access-controlled (SDD-04 §5 premise), or the deployment runs with `ANONYMIZE_USERS=true` and a strong `ANONYMIZE_SECRET`. In pseudonymized mode the events carry HMAC pseudonyms only; raw seat data, avatar URLs, numeric IDs and original CSVs are never published. Pseudonyms are still personal data (SDD-04 §5.2 limits).
-- Retention follows the raw-data retention (60 months, enforced by P4-6).
+- Retention follows the raw-data retention (60 months, §8): `audit/seat-events/{YYYY-MM}.json` of an expired month is deleted by `npm run retention:apply`.
 
 ### 4.4 CSV export
 
@@ -191,7 +191,7 @@ title: Monthly cost summary
 description: optional text
 schedule: monthly-close           # monthly-close | weekly | (omitted = manual only)
 dataset: monthly                  # monthly | reports
-privacy_tier: aggregate-only      # only this tier is accepted in this task (§6.6)
+privacy_tier: aggregate-only      # aggregate-only (default) | identified (§7)
 language: ja                      # ja (default) | en
 outputs: [markdown, csv]
 sections:
@@ -229,7 +229,7 @@ A strict schema (unknown keys are errors) plus semantic checks. `npm run reports
 | A metric not in the metric catalog | `unknown metric "x" (not in the metric catalog)` |
 | A catalog metric the dataset cannot provide | `metric "x" is not available from dataset "monthly"` |
 | Unknown `group_by`, column, `sort_by` (not among the columns) or filter column | `unknown group` / `unknown column` / `sort_by` |
-| `privacy_tier: identified` | `not supported yet; it is specified by P4-6 (#202)` |
+| An unknown `privacy_tier` | `unknown tier "x" (use "aggregate-only" or "identified")` (`identified` is valid; generating it needs the gate of §7.3) |
 | Duplicate section id or metric; `id` differing from the file name; duplicate report id across files | |
 | Invalid YAML, a file over 64 KiB | YAML is read with the safe default schema (no type tags) |
 
@@ -249,7 +249,7 @@ Both are also due again when the **definition changed** (its SHA-256 differs fro
 
 ### 6.5 Output
 
-- Files: `audit/report-outputs/{report_id}/{period}.md` and `.csv`; the list `audit/report-outputs/index.json` records per output `report_id`, `period`, `data_month`, `generated_at`, `definition_sha256` (the definition version), `outputs` and `demo`.
+- Files: `audit/report-outputs/{report_id}/{period}.md` and `.csv`; the list `audit/report-outputs/index.json` records per output `report_id`, `period`, `data_month`, `generated_at`, `definition_sha256` (the definition version), `outputs`, `demo` and `privacy_tier` (P4-6; an older entry without it is read as `aggregate-only`).
 - Quality attributes (metric catalog): every value is shown with its quality, `[estimated]` / `[missing]` / `[demo]` for non-measured values. A missing value is **「—（reason）」**, never 0 or an empty table; demo data carries the demo notice. The Markdown header shows the period, the data month, the dataset, the privacy tier, the definition version and, for a closed month, the current month-close checksum (SDD-17 §3).
 - CSV: UTF-8 **with BOM**, **CRLF**, RFC 4180 quoting, columns `section, group, item, value, unit, quality` (long format; `value` is the raw number, a missing value is an empty cell with quality `missing`). The CSV-injection rule of §4.4 applies to every cell.
 
@@ -262,13 +262,99 @@ Both are also due again when the **definition changed** (its SHA-256 differs fro
 | `main` branch | Definitions only (`reports/*.yaml`) | Definitions hold ids, titles and column names, never data. Outputs are never committed to `main` |
 
 - Why not Pages: Pages sites are public by default (`security-zero-leakage.md` §2.3), and a definition can name groups (cost centers, organizations, departments) whose names are internal structure. The same figures stay visible in the dashboard through the datasets it already publishes.
-- **Privacy tiers**: only `aggregate-only` (no user-level row) is accepted. `identified` (user-level rows, only for a private repository / Pages or `ANONYMIZE_USERS=true`) is specified together with the retention policy in P4-6 (#202); until then a definition that asks for it fails validation.
+- **Privacy tiers**: a definition declares `aggregate-only` (default) or `identified`; the tiers, the gate that `identified` needs and the checks are specified in §7. The outputs of both tiers stay under `audit/` and are never published on Pages. Retention of the outputs: §8.
 - Samples and tests use fictitious values only.
 
 ### 6.7 Adding a report
 
 1. Write `reports/<id>.yaml` (§6.1). 2. `npm run reports:validate`. 3. `npm run reports:generate -- --id <id> --demo` to preview against demo data. 4. Merge: the daily workflow generates it from then on. A new *kind* of value (a metric or a column no dataset binding provides yet) is the only case that needs code: add the metric to the catalog (SDD-16 §2, §6) and its binding to `METRIC_BINDINGS`.
 
-## 7. Planned Sections (not yet specified)
+## 7. Privacy Tiers and Publication Profile (P4-6 / E-05)
 
-Privacy tiers and the retention policy (P4-6) are specified here when the task lands.
+The deployment premise is internal use (SDD-01 §1.1, SDD-04 §5): a private / internal repository, access-controlled Pages, employees only. Under that premise **one build is enough**; a second, anonymized build is not required (decision #2 of the parent plan). What is needed is a **declaration** of how identifying each published artifact is, and a **check** that the declaration and what is really published agree.
+
+### 7.1 Tiers
+
+| Tier | Meaning | Where it is used |
+|:--|:--|:--|
+| `aggregate-only` | No user-level row: no login, name, department or per-user figure. Counts, amounts, dates, group totals | Default of a report definition; `index.json`, `error-log.json`, `processed/{trends,quality,closes}`, `catalog/`, `audit/billing-reconciliation/`, `audit/retention/` |
+| `identified` | May contain user-level rows (a login or a resolved name, department, per-user usage; a pseudonym in `ANONYMIZE_USERS=true` mode) | `processed/{monthly,reports,deep-analysis,custom,daily}`, `raw/`, original CSVs, `audit/seat-events/`, a report definition that declares it |
+
+A definition declares its tier with `privacy_tier` (§6.1). Both tiers are valid in the validator (§6.3); an unknown tier is an error. Today every section type (`kpi`, `breakdown` by group) is aggregate; the tier is the ceiling a definition declares so that a future user-level section cannot be added to an `aggregate-only` report unnoticed.
+
+### 7.2 Publication profile
+
+`src/domain/privacy-profile.ts` (`PUBLICATION_PROFILE`) declares per artifact (path under `data/`): the **tier**, whether it is **published on Pages**, and its **retention class**.
+
+| Artifact | Tier | Pages | Retention (§8) |
+|:--|:--|:--|:--|
+| `index.json`, `error-log.json`, `catalog/` | aggregate-only | yes | retained |
+| `processed/{monthly,reports,deep-analysis,custom,daily}` | identified | yes (premise: restricted to the enterprise) | retained |
+| `processed/{trends,quality,closes}` | aggregate-only | yes | retained (**`closes/` is never deleted**) |
+| `raw/` (daily partitions, Run Manifests, landing objects), `reports/monthly/` (original CSVs) | identified | **never** | raw: expires |
+| `config/` (encrypted mapping) | identified | **never** | retained |
+| `audit/seat-events/` | identified | **never** | audit: expires |
+| `audit/billing-reconciliation/` | aggregate-only | **never** | audit: expires |
+| `audit/report-outputs/` | per report (`index.json` `privacy_tier`) | **never** | audit: expires |
+| `audit/retention/` | aggregate-only | **never** | retained |
+
+Rules: an artifact that is not published stays off `pages:stage` and is on the `pages:verify` deny-list (`FORBIDDEN_DIST_PATHS`); the only `identified` artifacts on Pages are the `processed/*` scopes of the premise; everything else that identifies a person stays in `copilot-data` (same visibility as the repository, guarded by the exposure check) or is not stored at all.
+
+### 7.3 Gate for `identified` output
+
+An `identified` report is generated only when **either** holds; otherwise `reports:generate` refuses (`refused`, exit 1, nothing written):
+
+1. **Pseudonymization**: `ANONYMIZE_USERS=true` with `ANONYMIZE_SECRET` of at least 16 characters (SDD-04 §5.2; keyed HMAC-SHA256). The data the report reads is then pseudonyms.
+2. **Explicit allowance** by the operator: the Actions variable `COPILOT_ALLOW_IDENTIFIED_REPORTS=true`, a declaration that the repository and Pages are restricted to the enterprise (SDD-04 §5).
+
+`COPILOT_ALLOW_PUBLIC_DATA` does **not** open the gate. The gate is an extra condition; it never replaces or relaxes the exposure check of §7.4.
+
+### 7.4 Checks
+
+| Check | What fails |
+|:--|:--|
+| `npm run pages:verify` | The profile and the staging configuration disagree (a staged `processed/` directory that is undeclared or declared as not published; a "never published" top-level path missing from the deny-list; an `identified` artifact declared as published outside `processed/`); plus the existing checks (staged files missing from `dist/data/`; `raw`, `config`, `audit`, original CSVs in `dist/data/`) |
+| `npm run fork:verify` (offline part, category *Publication Profile*) | The same profile consistency; `dashboard/public/data/` holding `audit/`, `raw/`, `config/` or CSVs; `audit/report-outputs/index.json` recording an unknown tier, or an `identified` output while the gate of §7.3 is closed (demo outputs excluded). Data past the retention period is a **warning** |
+| `npm run fork:verify` (exposure check, SDD-04 §5.3) | **Unchanged.** Real user-level data readable by the public still fails. `COPILOT_ALLOW_PUBLIC_DATA` keeps its documented meaning and is not extended |
+
+So a declaration that differs from what is delivered fails the build; nothing in this section weakens the existing checks.
+
+## 8. Retention Policy (P4-6 / E-05)
+
+Raw data is kept for **5 years**. The retention is declared, shown before it is applied, applied only by an explicit operation, and recorded.
+
+### 8.1 Setting and expiry
+
+- `COPILOT_DATA_RETENTION_MONTHS` (Actions variable; integer **12 to 600**, default **60**). An invalid value falls back to 60 with a message. (The older `index.json` field `data_retention_days` is a fixed display value and does not control deletion.)
+- The latest N calendar months **including the current month** are kept. Month `M` is expired when it is more than N months before the current month (N = 60 on 2026-10: 2021-11 is kept, 2021-10 and earlier expire). Dates are UTC. The cutoff is reported as `keep_from`.
+
+### 8.2 What expires and what never does
+
+| Expires (by month) | Condition |
+|:--|:--|
+| `raw/YYYY/MM/` (daily raw partitions) | The month is **closed** (`processed/closes/{month}.json` exists); otherwise it is kept and reported as `not_closed` |
+| `reports/monthly/YYYY-MM/` (original CSVs) | The month is closed (same) |
+| `raw/landing/manifests/{run_id}.json` | The month of the run id; and the `raw/landing/objects/` files that no remaining manifest references any more. If a manifest cannot be read, no object is deleted |
+| `audit/seat-events/{month}.json`, `audit/billing-reconciliation/{month}.json` | The month (no close needed) |
+| `audit/report-outputs/{id}/{period}.{md,csv}` and its row in `index.json` | The period: `YYYY-MM`, or for `YYYY-Www` the month of the ISO week's Thursday |
+
+**Never deleted by retention**: `processed/**` (monthly / reports / deep-analysis / custom / daily aggregates, trends, quality history and **`processed/closes/`: the closed-month snapshots, checksums and revision history**), `index.json`, `error-log.json`, `catalog/`, `config/`, `audit/retention/`, and everything outside `data/`. The planner is built so that these are never enumerated.
+
+### 8.3 Operation and safety
+
+| Step | Command | Behaviour |
+|:--|:--|:--|
+| Plan (dry run, the default) | `npm run retention:plan` (also `retention:apply` without `--execute`) | Lists the expired items per category (count, size, months or ids) and the kept-because-not-closed ones. **Changes nothing, writes nothing.** The daily workflow runs it (`continue-on-error`) and raises a `::warning::` when something is overdue |
+| Apply (explicit) | `npm run retention:apply -- --execute --confirm <keep_from> [--actor <alias>]` | `--confirm` must equal the cutoff month of the current plan (a stale plan is refused). Deletes the planned items and records the run |
+
+- **Refusals**: demo data (`data/demo`) is never touched; the run is refused when files under `data/` are tracked by Git outside the `copilot-data` branches (a contaminated `main`, SDD-05); symbolic links are neither listed nor followed; every path is rebuilt from validated names (month, run id, object hash, report id, period) and must stay inside `data/`. It does not run in CI and is never run against `main`.
+- **No weakening**: `fork:verify` and `pages:verify` are not touched by a retention run; the retention check of `fork:verify` only warns.
+- **Where**: run it on the `copilot-data` checkout, then commit that branch. **Git history keeps the deleted files** until the branch history is rewritten; if the expiry is a privacy or legal requirement, rewrite the history of `copilot-data` separately (outside this tool).
+
+### 8.4 Record
+
+`audit/retention/log.json` (`schema_version`, `runs[]`, at most 1000 runs): `run_id`, `started_at`, `finished_at`, `status` (`started` -> `completed` / `failed`), `retention_months`, `keep_from`, `actor` (an alias or role chosen by the operator; never taken from the CI user or GitHub login), per category `count` / `keys` (months, run ids, `{report_id}/{period}`; no personal data) / `bytes`, `skipped[]` and `errors[]`. The **intent is written first** (`started`), then the deletion runs, then the record is completed, so an interrupted run is visible. A failure on one item does not stop the others; the run is then `failed`. Because the closed-month records stay, the audit trail of figures (§3) outlives the raw data.
+
+## 9. Remaining Sections
+
+None. P4-7 (#203) is the completeness and consistency pass over SDD-16 and SDD-17.
