@@ -2,12 +2,12 @@
 
 - [x] Issue・親 Issue・前提（P1-2 マージ済み）確認
 - [x] implementation_plan.md / task.md を単独コミット
-- [ ] ドメイン・純関数（差分 → イベント、CSV）
-- [ ] 保存とパイプライン結線・CLI
-- [ ] 公開範囲（pages-staging 禁止パス）
-- [ ] テスト
-- [ ] SDD-17 / SDD-04 / SDD-05 更新（日英）
-- [ ] 品質ゲート + lint + pages:verify
-- [ ] walkthrough.md
+- [x] ドメイン・純関数（差分 → イベント、CSV）
+- [x] 保存とパイプライン結線・CLI
+- [x] 公開範囲（pages-staging 禁止パス）
+- [x] テスト
+- [x] SDD-17 / SDD-04 / SDD-05 更新（日英）
+- [x] 品質ゲート + lint + pages:verify
+- [x] walkthrough.md
 - [ ] PR 作成 (Closes #199)
 - [ ] `change-dev:finish` でマージ
