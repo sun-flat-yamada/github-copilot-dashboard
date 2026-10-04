@@ -132,7 +132,7 @@ describe('UserDetailRows: ライブと月次を同じ形式にそろえる', () 
       { model: 'm2', share: 0.3 },
       { model: 'm3', share: 0.15 },
     ]);
-    assert.equal(formatTopModels(r.top_models), 'm1 50%; m2 30%; m3 15%');
+    assert.equal(formatTopModels(r.top_models), '50% m1; 30% m2; 15% m3');
   });
 
   it('月次: 内訳が無ければ主利用モデルのみ (比率は null)', () => {

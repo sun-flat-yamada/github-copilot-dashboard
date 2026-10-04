@@ -44,9 +44,9 @@ export function formatShare(share: number): string {
   return `${Math.round(share * 100)}%`;
 }
 
-/** CSV / 検索用の文字列: `A 50%; B 30%; C 20%` (比率が無いモデルは名前のみ) */
+/** CSV / 検索用の文字列: `50% A; 30% B; 20% C` (比率が無いモデルは名前のみ) */
 export function formatTopModels(models: TopModelShare[]): string {
-  return models.map((m) => (m.share === null ? m.model : `${m.model} ${formatShare(m.share)}`)).join('; ');
+  return models.map((m) => (m.share === null ? m.model : `${formatShare(m.share)} ${m.model}`)).join('; ');
 }
 
 /** 全項目が必須。そのソースに無い値は null / false を明示し、キー集合はソースによらず同一 */
