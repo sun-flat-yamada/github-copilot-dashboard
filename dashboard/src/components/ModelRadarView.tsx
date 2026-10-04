@@ -1222,6 +1222,14 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                           {focusedModel.extended_capabilities.tier.toUpperCase()} TIER
                         </span>
                       )}
+                      {focusedModel.is_estimated && (
+                        <span
+                          className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-orange-950/80 text-orange-300 border-orange-700/60"
+                          title="公式・実測のベンチマーク値が未確認のため、同系統モデルを基準にした推測値です (要検証)"
+                        >
+                          推測値
+                        </span>
+                      )}
                       {focusedModel.extended_capabilities?.release_status && (
                         <span
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
@@ -1849,6 +1857,14 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                                   : 'bg-sky-950/80 text-sky-300'
                               }`}>
                                 {m.extended_capabilities.tier}
+                              </span>
+                            )}
+                            {m.is_estimated && (
+                              <span
+                                className="text-[9px] text-orange-300 font-mono"
+                                title="ベンチマーク値は推測値 (要検証)"
+                              >
+                                推測値
                               </span>
                             )}
                             {m.extended_capabilities?.release_status && (

@@ -96,13 +96,15 @@ test('AI Model Radar Comparison Presets Tests', async (t) => {
     assert.ok(!openaiPreset.modelIds.includes('gpt-5-5'), 'vendor-openai must NOT include gpt-5-5');
     assert.ok(!openaiPreset.modelIds.includes('gpt-5-4'), 'vendor-openai must NOT include gpt-5-4');
     assert.ok(!openaiPreset.modelIds.includes('gpt-5-mini'), 'vendor-openai must NOT include gpt-5-mini');
-    assert.strictEqual(openaiPreset.modelIds.length, 3, 'vendor-openai should contain 3 models');
+    assert.ok(openaiPreset.modelIds.includes('gpt-6-1-sol'), 'vendor-openai must include gpt-6-1-sol');
+    assert.strictEqual(openaiPreset.modelIds.length, 4, 'vendor-openai should contain 4 models');
 
     // vendor-anthropic: includes opus-5.5 and keeps opus-5
     const anthropicPreset = PRESETS.find((p) => p.id === 'vendor-anthropic');
     assert.ok(anthropicPreset);
     assert.ok(anthropicPreset.modelIds.includes('claude-opus-5-5'));
     assert.ok(anthropicPreset.modelIds.includes('claude-opus-5'));
+    assert.ok(anthropicPreset.modelIds.includes('claude-sonnet-5-5'));
   });
 
   await t.test('all presets have unique IDs and non-empty metadata', () => {

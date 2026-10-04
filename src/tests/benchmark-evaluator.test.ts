@@ -263,13 +263,13 @@ describe('AI Model Benchmark Evaluator Tests', () => {
     );
   });
 
-  it('guarantees zero vendor mismatches across all 43 benchmark dataset models', () => {
+  it('guarantees zero vendor mismatches across all 45 benchmark dataset models', () => {
     const datasetPath = path.resolve(process.cwd(), 'dashboard/public/data/model-benchmarks.json');
     if (!fs.existsSync(datasetPath)) {
       runBenchmarkUpdate();
     }
     const dataset = JSON.parse(fs.readFileSync(datasetPath, 'utf8'));
-    assert.strictEqual(dataset.models.length, 43, 'Must have exactly 43 evaluated models');
+    assert.strictEqual(dataset.models.length, 45, 'Must have exactly 45 evaluated models');
 
     dataset.models.forEach((m: any) => {
       const buzz = m.evaluation.buzz;

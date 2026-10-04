@@ -15,6 +15,7 @@ export interface ModelCatalogEntry {
 export const MODEL_CATALOG: ModelCatalogEntry[] = [
   { id: 'gpt-6-astra', aliases: ['gpt-6-astra', 'GPT-6 Astra', 'GPT-6', 'GPT 6', 'astra'] },
   { id: 'gpt-6-sol', aliases: ['gpt-6-sol', 'GPT-6 Sol'] },
+  { id: 'gpt-6-1-sol', aliases: ['gpt-6-1-sol', 'GPT-6.1 Sol', 'GPT 6.1 Sol'] },
   { id: 'gpt-6-luna', aliases: ['gpt-6-luna', 'GPT-6 Luna'] },
   { id: 'gpt-5-6-sol', aliases: ['gpt-5-6-sol', 'GPT-5.6 Sol'] },
   { id: 'gpt-5-6-terra', aliases: ['gpt-5-6-terra', 'GPT-5.6 Terra'] },
@@ -25,6 +26,7 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
   { id: 'gpt-5-4-nano', aliases: ['gpt-5-4-nano', 'GPT-5.4 nano (Utility)', 'GPT-5.4 nano'] },
   { id: 'gpt-5-3-codex', aliases: ['gpt-5-3-codex', 'GPT-5.3-Codex (LTS)', 'GPT-5.3-Codex', 'GPT-5.3 Codex'] },
   { id: 'gpt-5-mini', aliases: ['gpt-5-mini', 'GPT-5 mini'] },
+  { id: 'claude-sonnet-5-5', aliases: ['claude-sonnet-5-5', 'Claude Sonnet 5.5', 'Claude 5.5 Sonnet'] },
   { id: 'claude-sonnet-5', aliases: ['claude-sonnet-5', 'Claude Sonnet 5', 'Claude 5 Sonnet', 'claude-5-sonnet'] },
   { id: 'claude-opus-5-5', aliases: ['claude-opus-5-5', 'Claude Opus 5.5'] },
   { id: 'claude-opus-5', aliases: ['claude-opus-5', 'Claude Opus 5', 'Claude 5 Opus'] },
