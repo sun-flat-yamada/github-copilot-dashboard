@@ -153,6 +153,8 @@ jobs:
           COPILOT_COST_CENTER_BUDGETS: ${{ vars.COPILOT_COST_CENTER_BUDGETS || secrets.COPILOT_COST_CENTER_BUDGETS }}
           # 請求設定 (EA 契約価格・為替・割引)。未設定なら価格カタログの既定値。不正な JSON は issue として記録される
           COPILOT_BILLING_CONFIG: ${{ vars.COPILOT_BILLING_CONFIG || secrets.COPILOT_BILLING_CONFIG }}
+          # 月次締めの営業日カレンダー (JSON、任意)。未設定なら翌月の第 5 営業日・土日休み。不正な値は issue として記録される
+          COPILOT_BUSINESS_CALENDAR: ${{ vars.COPILOT_BUSINESS_CALENDAR }}
           # 匿名化 (仮名化)。ANONYMIZE_USERS=true のときは秘密鍵 ANONYMIZE_SECRET (16 文字以上) が必須 (無ければ停止する)
           ANONYMIZE_USERS: ${{ vars.ANONYMIZE_USERS }}
           ANONYMIZE_SECRET: ${{ secrets.ANONYMIZE_SECRET }}

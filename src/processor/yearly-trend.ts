@@ -1,9 +1,11 @@
+import type { BusinessCalendarConfig } from '../domain/entities/month-close.js';
+import { DEFAULT_BUSINESS_CALENDAR, DEFAULT_CLOSE_BUSINESS_DAYS } from '../domain/entities/month-close.js';
+import { monthCloseDate, shiftMonth } from './month-close.js';
 import type {
   RollingTrendEntry,
   YearlyTrendCloseRule,
   YearlyTrendMetricKey,
   YearlyTrendPoint,
-  YearlyTrendStatus,
   YearlyTrendYoy,
 } from '../types/copilot.js';
 
@@ -11,16 +13,22 @@ import type {
  * 1 年推移 (P3-6 / B-01)。保存済みの月次集計から暦月 12 か月の系列を作り、
  * 確定 / 暫定 / 欠損を区別して前年同月比を付ける。欠損月は 0 で補完しない。
  *
- * 月次締め (P4-2: 凍結・チェックサム・改訂版) は未実装のため、締めは暦から導出する:
- * 翌月の第 5 営業日 (平日のみ。祝日は考慮しない) を過ぎた月を「確定」とする。
- * 確定は「締め日を過ぎた」ことだけを示し、数値の不変性は P4-2 で保証する。
+ * 確定 (closed) は、月次締め (P4-2) の確定スナップショットがある月だけである。締め日 (翌月の第 N 営業日、
+ * 営業日カレンダーは設定可能) を過ぎただけでは確定にしない。確定後の改訂は `revision_count` に表れる。
  */
-export const MONTH_CLOSE_BUSINESS_DAYS = 5;
+export const MONTH_CLOSE_BUSINESS_DAYS = DEFAULT_CLOSE_BUSINESS_DAYS;
 
-export const YEARLY_TREND_CLOSE_RULE: YearlyTrendCloseRule = {
-  business_days_after_month_end: MONTH_CLOSE_BUSINESS_DAYS,
-  note: '翌月の第 5 営業日 (平日のみ・祝日は考慮しない) を過ぎた月を確定とする。数値の凍結・改訂履歴は月次締め (P4-2) で扱う。',
-};
+export { shiftMonth, monthCloseDate };
+
+export function buildYearlyTrendCloseRule(calendar: BusinessCalendarConfig = DEFAULT_BUSINESS_CALENDAR): YearlyTrendCloseRule {
+  const holidays = calendar.holidays.length > 0 ? `・祝日 ${calendar.holidays.length} 件を休業日に追加` : '';
+  return {
+    business_days_after_month_end: calendar.close_business_days,
+    note: `翌月の第 ${calendar.close_business_days} 営業日 (土日除外${holidays}) に数値を確定 (凍結) し、チェックサムを付ける。確定後の変更は改訂として履歴に残る。確定スナップショットが無い月は暫定とする。`,
+  };
+}
+
+export const YEARLY_TREND_CLOSE_RULE: YearlyTrendCloseRule = buildYearlyTrendCloseRule();
 
 export const YEARLY_TREND_METRIC_KEYS: readonly YearlyTrendMetricKey[] = [
   'total_spend_usd',
@@ -30,44 +38,6 @@ export const YEARLY_TREND_METRIC_KEYS: readonly YearlyTrendMetricKey[] = [
   'total_chats',
   'total_ai_credits_used',
 ];
-
-const MONTH_RE = /^\d{4}-\d{2}$/;
-
-function parseMonth(month: string): { y: number; m: number } {
-  if (!MONTH_RE.test(month)) throw new Error(`Invalid month: ${month}`);
-  return { y: Number(month.slice(0, 4)), m: Number(month.slice(5, 7)) };
-}
-
-function formatMonth(y: number, m: number): string {
-  return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}`;
-}
-
-/** month から n か月ずらした月 (n は負も可) */
-export function shiftMonth(month: string, n: number): string {
-  const { y, m } = parseMonth(month);
-  const idx = y * 12 + (m - 1) + n;
-  return formatMonth(Math.floor(idx / 12), (idx % 12) + 1);
-}
-
-/** 翌月の第 N 営業日 (UTC, 平日のみ) の日付 (YYYY-MM-DD) */
-export function monthCloseDate(month: string, businessDays: number = MONTH_CLOSE_BUSINESS_DAYS): string {
-  const next = shiftMonth(month, 1);
-  const { y, m } = parseMonth(next);
-  let counted = 0;
-  for (let day = 1; day <= 31; day++) {
-    const d = new Date(Date.UTC(y, m - 1, day));
-    if (d.getUTCMonth() !== m - 1) break;
-    const dow = d.getUTCDay();
-    if (dow !== 0 && dow !== 6) counted++;
-    if (counted === businessDays) return d.toISOString().slice(0, 10);
-  }
-  throw new Error(`Cannot compute close date for ${month}`);
-}
-
-/** 締め日 (UTC) を過ぎていれば closed。締め日当日から確定とする */
-export function monthCloseStatus(month: string, now: Date): Exclude<YearlyTrendStatus, 'missing'> {
-  return now.toISOString().slice(0, 10) >= monthCloseDate(month) ? 'closed' : 'provisional';
-}
 
 /** 窓 (終端月を含む 12 か月) と、その前年同月 12 か月。保存済み月次の読み込み対象 */
 export function yearlyTrendMonthsNeeded(endMonth: string): string[] {
@@ -93,11 +63,14 @@ export interface BuildYearlyTrendInput {
   endMonth: string;
   /** 月 (YYYY-MM) -> 保存済み月次集計から作ったエントリ。保存が無い月は含めない */
   entries: ReadonlyMap<string, RollingTrendEntry>;
-  now: Date;
+  /** 月次締め (P4-2) の確定スナップショットがある月 -> 改訂回数。ここに無い月は暫定 */
+  closedMonths: ReadonlyMap<string, { revision_count: number }>;
+  /** 営業日カレンダー (締め日の表示用)。省略時は既定 (土日除外・第 5 営業日) */
+  calendar?: BusinessCalendarConfig;
 }
 
 /** 終端月までの暦月 12 か月 (古い順)。保存が無い月は missing (値 null) とし、0 で補完しない */
-export function buildYearlyTrend({ endMonth, entries, now }: BuildYearlyTrendInput): YearlyTrendPoint[] {
+export function buildYearlyTrend({ endMonth, entries, closedMonths, calendar }: BuildYearlyTrendInput): YearlyTrendPoint[] {
   const points: YearlyTrendPoint[] = [];
   for (let i = 11; i >= 0; i--) {
     const month = shiftMonth(endMonth, -i);
@@ -109,10 +82,12 @@ export function buildYearlyTrend({ endMonth, entries, now }: BuildYearlyTrendInp
     for (const key of YEARLY_TREND_METRIC_KEYS) {
       yoy[key] = yoyOf(entry ? entry[key] : null, prior ? prior[key] : null, monthMissing);
     }
+    const closed = closedMonths.get(month);
     points.push({
       month,
-      status: entry === null ? 'missing' : monthCloseStatus(month, now),
-      closes_on: monthCloseDate(month),
+      status: entry === null ? 'missing' : closed ? 'closed' : 'provisional',
+      closes_on: monthCloseDate(month, calendar),
+      ...(closed ? { revision_count: closed.revision_count } : {}),
       entry,
       prior_month: priorMonth,
       yoy,

@@ -819,13 +819,13 @@ export interface RollingTrendDataset {
 }
 
 export interface YearlyTrendCloseRule {
-  /** 翌月の第 N 営業日 (平日のみ。祝日は考慮しない) に締める */
+  /** 翌月の第 N 営業日 (営業日カレンダーは設定可能。既定は土日除外) に締める */
   business_days_after_month_end: number;
-  /** 確定の意味。P4-2 (凍結・チェックサム) までは「締め日を過ぎた」ことだけを示す */
+  /** 確定の意味 (月次締め P4-2: 締め日に数値を凍結しチェックサムを付ける。改訂は履歴に残る) */
   note: string;
 }
 
-/** closed=締め日を過ぎた (確定) / provisional=締め前 (暫定) / missing=その月の保存済み集計が無い */
+/** closed=確定スナップショットあり / provisional=締め前 (暫定) / missing=その月の保存済み集計が無い */
 export type YearlyTrendStatus = 'closed' | 'provisional' | 'missing';
 
 export type YearlyTrendMetricKey =
@@ -852,6 +852,8 @@ export interface YearlyTrendPoint {
   status: YearlyTrendStatus;
   /** 締め日 (YYYY-MM-DD, UTC) */
   closes_on: string;
+  /** closed のとき、確定後の改訂回数 (0 = 未改訂) */
+  revision_count?: number;
   /** missing のとき null */
   entry: RollingTrendEntry | null;
   /** 前年同月 (YYYY-MM) */

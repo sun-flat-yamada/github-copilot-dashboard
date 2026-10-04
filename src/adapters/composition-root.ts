@@ -1,4 +1,5 @@
 import { PipelineOrchestrator } from '../application/pipeline/PipelineOrchestrator.js';
+import type { RevisionRequest } from '../application/pipeline/month-close.js';
 import { ICopilotDataSource } from '../domain/ports/ICopilotDataSource.js';
 import { IAttributeResolver } from '../domain/ports/IAttributeResolver.js';
 import { GitHubApiCopilotDataSource } from './github-api/GitHubApiCopilotDataSource.js';
@@ -79,6 +80,8 @@ export interface ReprocessAppConfig {
   runId?: string;
   mappingConfig?: string;
   anonymize?: boolean;
+  /** 確定済みの月の改訂を許可する (`--revise <month> --reason ...`)。無ければ確定月は書き換えない (P4-2) */
+  revision?: RevisionRequest;
 }
 
 /**
@@ -112,6 +115,7 @@ export function createReprocessApp(config: ReprocessAppConfig = {}): { orchestra
     isMock: false,
     anonymize,
     run: { runId, reprocessed: true, finishLanding: () => true },
+    revision: config.revision,
   });
   return { orchestrator, runId };
 }

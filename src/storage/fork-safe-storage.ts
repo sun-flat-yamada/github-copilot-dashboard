@@ -1,4 +1,5 @@
 import type { DataQualityHistory } from '../domain/entities/data-quality.js';
+import type { MonthCloseIndex, MonthCloseRecord } from '../domain/entities/month-close.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import {
@@ -143,6 +144,48 @@ export class ForkSafeStorage {
 
   public loadDataQualityHistory(): DataQualityHistory | null {
     return this.readJson<DataQualityHistory>(path.join(this.baseDir, 'processed', 'quality', 'history.json'));
+  }
+
+  /**
+   * 月次締めの記録 (processed/closes/{month}.json) と一覧 (index.json) を保存する (P4-2)。
+   * 数値・日付・チェックサムのみで個人情報を含まないため、配信用にも複製する。
+   */
+  public saveMonthClose(record: MonthCloseRecord, index: MonthCloseIndex): void {
+    const targetDir = path.join(this.baseDir, 'processed', 'closes');
+    this.ensureDirectory(targetDir);
+    const files: Array<[string, string]> = [
+      [`${record.month}.json`, JSON.stringify(record, null, 2)],
+      ['index.json', JSON.stringify(index, null, 2)],
+    ];
+    for (const [name, body] of files) fs.writeFileSync(path.join(targetDir, name), body, 'utf-8');
+    if (this.publicDir) {
+      const publicTargetDir = path.join(this.publicDir, 'closes');
+      this.ensureDirectory(publicTargetDir);
+      for (const [name, body] of files) fs.writeFileSync(path.join(publicTargetDir, name), body, 'utf-8');
+    }
+  }
+
+  public loadMonthClose(month: string): MonthCloseRecord | null {
+    if (!/^\d{4}-\d{2}$/.test(month)) return null;
+    return this.readJson<MonthCloseRecord>(path.join(this.baseDir, 'processed', 'closes', `${month}.json`));
+  }
+
+  /** 締め済みの月 (降順) */
+  public getClosedMonths(): string[] {
+    const dir = path.join(this.baseDir, 'processed', 'closes');
+    if (!fs.existsSync(dir)) return [];
+    return fs
+      .readdirSync(dir)
+      .map((f) => f.replace(/\.json$/, ''))
+      .filter((m) => /^\d{4}-\d{2}$/.test(m))
+      .sort()
+      .reverse();
+  }
+
+  /** 保存済みの月次レポート集計 (processed/reports/{month}.json)。未保存・破損時は null */
+  public loadReportData(month: string): MonthlyReportAggregatedData | null {
+    if (!/^\d{4}-\d{2}$/.test(month)) return null;
+    return this.readJson<MonthlyReportAggregatedData>(path.join(this.baseDir, 'processed', 'reports', `${month}.json`));
   }
 
   /**

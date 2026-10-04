@@ -1,4 +1,5 @@
 import type { DataQualityHistory } from '../entities/data-quality.js';
+import type { MonthCloseIndex, MonthCloseRecord } from '../entities/month-close.js';
 import {
   CopilotDailyMetrics,
   CopilotSeatAssignment,
@@ -35,6 +36,12 @@ export interface IStorageWriter {
   /** データ品質レポートの履歴 (P1-7)。未対応の実装では未定義 */
   saveDataQualityHistory?(history: DataQualityHistory): void;
   loadDataQualityHistory?(): DataQualityHistory | null;
+  /** 月次締め (P4-2)。未対応の実装では未定義 (締めを行わない) */
+  saveMonthClose?(record: MonthCloseRecord, index: MonthCloseIndex): void;
+  loadMonthClose?(month: string): MonthCloseRecord | null;
+  getClosedMonths?(): string[];
+  /** 保存済みの月次レポート集計 (確定する数値の取得用) */
+  loadReportData?(month: string): MonthlyReportAggregatedData | null;
   /** 前回保存した index.json。未保存・破損時は null */
   loadIndex(): IndexMetadata | null;
   /** 保存済みのスコープ集計 (daily / monthly / custom)。未保存・破損時は null */

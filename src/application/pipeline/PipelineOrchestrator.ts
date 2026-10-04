@@ -9,7 +9,9 @@ import { ReportParser } from '../../processor/report-parser.js';
 import { enrichUserProfiles } from '../../processor/profile-enricher.js';
 import { carryOverUsageSections } from '../../processor/scope-merge.js';
 import { buildRollingTrendEntry } from '../../processor/rolling-trend.js';
-import { buildYearlyTrend, YEARLY_TREND_CLOSE_RULE, yearlyTrendMonthsNeeded } from '../../processor/yearly-trend.js';
+import { buildYearlyTrend, buildYearlyTrendCloseRule, yearlyTrendMonthsNeeded } from '../../processor/yearly-trend.js';
+import { extractMonthlyFigures, extractReportFigures, parseBusinessCalendar } from '../../processor/month-close.js';
+import { MonthCloseService, type RevisionRequest } from './month-close.js';
 import { MockDataGenerator, MOCK_DATA_UNAVAILABLE_ORGS } from '../../collector/mock-generator.js';
 import {
   CostCenterBudget,
@@ -54,6 +56,11 @@ export interface PipelineOrchestratorDependencies {
     /** 収集 (fetch*) の完了後に 1 回呼ぶ。Run Manifest の書き出し。書けなかった場合は false を返す */
     finishLanding?: () => boolean;
   };
+  /**
+   * 確定済みの月 (月次締め, P4-2) の改訂を許可する指定。無い場合、確定月の数値は書き換えない
+   * (差が出るときは書き込まず issue にする)。
+   */
+  revision?: RevisionRequest;
 }
 
 /** 設定 (環境変数 / 設定ファイル) の不備を、画面から気付けるよう issue として表す */
@@ -76,6 +83,7 @@ export class PipelineOrchestrator {
   private isMock: boolean;
   private anonymize: boolean;
   private runInfo?: PipelineOrchestratorDependencies['run'];
+  private revision?: RevisionRequest;
 
   constructor(deps: PipelineOrchestratorDependencies) {
     this.dataSource = deps.dataSource;
@@ -84,6 +92,7 @@ export class PipelineOrchestrator {
     this.isMock = deps.isMock ?? false;
     this.anonymize = deps.anonymize ?? process.env.ANONYMIZE_USERS === 'true';
     this.runInfo = deps.run;
+    this.revision = deps.revision;
   }
 
   async run(): Promise<void> {
@@ -130,6 +139,26 @@ export class PipelineOrchestrator {
       );
     }
     const billingConfig = billingLoad.config;
+
+    // 月次締め (P4-2): 営業日カレンダー (翌月の第 N 営業日に締める)。不正な設定は既定値で続行し issue にする
+    const calendarLoad = parseBusinessCalendar(process.env.COPILOT_BUSINESS_CALENDAR);
+    if (calendarLoad.error) {
+      configIssues.push(
+        makeConfigIssue(
+          'config:COPILOT_BUSINESS_CALENDAR',
+          'Business calendar configuration is invalid; the default calendar (weekends off, 5th business day) is used instead.',
+          calendarLoad.error
+        )
+      );
+    }
+    const monthClose = new MonthCloseService(this.storage, {
+      now: new Date(nowIso),
+      calendar: calendarLoad.config,
+      runId: this.runInfo?.runId,
+      revision: this.revision,
+    });
+    // 確定月の数値が、改訂の記録なしに変わっていないか (書き込み前に検査する)
+    monthClose.reportProblems(monthClose.verify());
 
     // 1. データ収集
     console.log('📡 Fetching Copilot Metrics, Seat assignments, and Cost Centers...');
@@ -292,11 +321,13 @@ export class PipelineOrchestrator {
         costCenterBudgets,
         userProfiles
       );
-      this.storage.saveScopeData('monthly', monthlyData.scope_key, monthlyData);
+      // 確定月は、改訂の指定が無い限り上書きしない (P4-2)
+      const monthlyWritten = monthClose.allowWrite(monthKey, 'monthly', extractMonthlyFigures(monthlyData));
+      if (monthlyWritten) this.storage.saveScopeData('monthly', monthlyData.scope_key, monthlyData);
       monthlyGenerated = true;
 
       // Deep Analysis アーカイブ保存 (ユーザー別プロファイルがある場合のみ。空のアーカイブで上書きしない)
-      if (userProfiles.length > 0) {
+      if (monthlyWritten && userProfiles.length > 0) {
         this.storage.saveDeepAnalysisArchive(monthKey, userProfiles);
       }
 
@@ -338,7 +369,9 @@ export class PipelineOrchestrator {
         previousMonthly,
         metricsStatus?.last_success_at ?? previousIndex?.generated_at
       );
-      this.storage.saveScopeData('monthly', monthlyData.scope_key, monthlyData);
+      if (monthClose.allowWrite(monthKey, 'monthly', extractMonthlyFigures(monthlyData))) {
+        this.storage.saveScopeData('monthly', monthlyData.scope_key, monthlyData);
+      }
       monthlyGenerated = true;
     }
 
@@ -394,13 +427,24 @@ export class PipelineOrchestrator {
           duplicates_skipped: merged.duplicatesSkipped,
           csv_reports: csvReports,
         });
-        this.storage.saveReportData(repMonth, aggregatedReport);
+        if (monthClose.allowWrite(repMonth, 'report', extractReportFigures(aggregatedReport))) {
+          this.storage.saveReportData(repMonth, aggregatedReport);
+        }
         console.log(
           `✅ Aggregated monthly report for ${repMonth}: ${merged.records.length} records from ${merged.sourceFiles.length} file(s)` +
             (merged.duplicatesSkipped > 0 ? ` (${merged.duplicatesSkipped} duplicate row(s) skipped)` : '') +
             `, $${aggregatedReport.overview.total_net_spend_usd} total net spend.`
         );
       }
+    }
+
+    // 月次締め (P4-2): 改訂の指定を反映し、締め日 (翌月の第 N 営業日) を迎えた月を確定する
+    monthClose.finalize();
+    monthClose.closeDueMonths();
+    const closeIssues = monthClose.getIssues();
+    if (closeIssues.length > 0) {
+      issues.push(...closeIssues);
+      this.storage.saveErrorLog(issues);
     }
 
     // 7. ローリング1年トレンド (保存済みの月次集計から実値で構成する)
@@ -426,7 +470,7 @@ export class PipelineOrchestrator {
       const entry = entryByMonth.get(m);
       if (entry) rollingTrendEntries.push(entry);
     }
-    const yearlyPoints = endMonth ? buildYearlyTrend({ endMonth, entries: entryByMonth, now: new Date(nowIso) }) : [];
+    const yearlyPoints = endMonth ? buildYearlyTrend({ endMonth, entries: entryByMonth, closedMonths: monthClose.closedMonthsMap(), calendar: calendarLoad.config }) : [];
 
     this.storage.saveRolling1YearTrend({
       generated_at: nowIso,
@@ -436,7 +480,7 @@ export class PipelineOrchestrator {
       ...(yearlyPoints.length > 0
         ? { window: { start: yearlyPoints[0].month, end: yearlyPoints[yearlyPoints.length - 1].month } }
         : {}),
-      close_rule: YEARLY_TREND_CLOSE_RULE,
+      close_rule: buildYearlyTrendCloseRule(calendarLoad.config),
       points: yearlyPoints,
     });
 

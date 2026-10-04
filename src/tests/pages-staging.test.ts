@@ -34,6 +34,8 @@ describe('Pages staging: real processed data (past months included) reaches the 
     write(path.join(dataDir, 'processed/trends/rolling-1year.json'));
     write(path.join(dataDir, 'processed/custom/latest-30d.json'));
     write(path.join(dataDir, 'processed/quality/history.json')); // データ品質の履歴 (件数・日付のみ)
+    write(path.join(dataDir, 'processed/closes/2026-08.json')); // 月次締めの確定スナップショットと改訂履歴 (数値・チェックサムのみ)
+    write(path.join(dataDir, 'processed/closes/index.json'));
     write(path.join(dataDir, 'processed/daily/2026-09-10.json'));
     write(path.join(dataDir, 'processed/daily/2026-09-09.json'));
     write(path.join(dataDir, 'processed/daily/2026-01-05.json')); // index に載っていない古い日 (UI から参照されない)
@@ -52,6 +54,8 @@ describe('Pages staging: real processed data (past months included) reaches the 
     const targets = planStaging(dataDir).map((e) => e.to.split(path.sep).join('/')).sort();
     assert.deepEqual(targets, [
       'catalog/exchange-rates.json',
+      'closes/2026-08.json',
+      'closes/index.json',
       'custom/latest-30d.json',
       'daily/2026-09-09.json',
       'daily/2026-09-10.json',
@@ -69,7 +73,7 @@ describe('Pages staging: real processed data (past months included) reaches the 
 
   it('copies past months and never copies raw data, original CSVs, the encrypted mapping or demo', () => {
     const { copied } = stageData(dataDir, publicDir);
-    assert.equal(copied, 13);
+    assert.equal(copied, 15);
 
     assert.ok(fs.existsSync(path.join(publicDir, 'monthly/2026-08.json')), 'a past month must be staged (it used to 404 on Pages)');
     assert.ok(fs.existsSync(path.join(publicDir, 'deep-analysis/2026-08.json')));
