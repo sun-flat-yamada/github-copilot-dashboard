@@ -1,3 +1,4 @@
+import type { BillingReconciliationMonthDocument } from '../../domain/entities/billing-reconciliation.js';
 import type { DataQualityHistory } from '../../domain/entities/data-quality.js';
 import type { MonthCloseIndex, MonthCloseRecord } from '../../domain/entities/month-close.js';
 import type { SeatAuditMonthDocument } from '../../domain/entities/seat-audit.js';
@@ -94,6 +95,18 @@ export class ForkSafeStorageWriter implements IStorageWriter {
 
   getSeatAuditMonths(): string[] {
     return this.storage.getSeatAuditMonths();
+  }
+
+  saveBillingReconciliationMonth(doc: BillingReconciliationMonthDocument): void {
+    this.storage.saveBillingReconciliationMonth(doc);
+  }
+
+  loadBillingReconciliationMonth(month: string): BillingReconciliationMonthDocument | null {
+    return this.storage.loadBillingReconciliationMonth(month);
+  }
+
+  getBillingReconciliationMonths(): string[] {
+    return this.storage.getBillingReconciliationMonths();
   }
 
   loadReportData(month: string): MonthlyReportAggregatedData | null {

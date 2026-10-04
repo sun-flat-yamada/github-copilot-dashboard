@@ -1,4 +1,5 @@
 import type { DataQualityHistory } from '../domain/entities/data-quality.js';
+import type { BillingReconciliationMonthDocument } from '../domain/entities/billing-reconciliation.js';
 import type { SeatAuditMonthDocument } from '../domain/entities/seat-audit.js';
 import type { MonthCloseIndex, MonthCloseRecord } from '../domain/entities/month-close.js';
 import * as fs from 'fs';
@@ -226,6 +227,35 @@ export class ForkSafeStorage {
   /** シート監査イベントのある月 (降順) */
   public getSeatAuditMonths(): string[] {
     const dir = path.join(this.baseDir, 'audit', 'seat-events');
+    if (!fs.existsSync(dir)) return [];
+    return fs
+      .readdirSync(dir)
+      .map((f) => f.replace(/\.json$/, ''))
+      .filter((m) => /^\d{4}-\d{2}$/.test(m))
+      .sort()
+      .reverse();
+  }
+
+  /**
+   * 請求突合の月次文書 (audit/billing-reconciliation/{month}.json) を保存する (P4-4)。
+   * 実際の請求額に由来するため processed/ の外に置き、配信用ディレクトリ (Pages) へは複製しない。
+   */
+  public saveBillingReconciliationMonth(doc: BillingReconciliationMonthDocument): void {
+    const dir = path.join(this.baseDir, 'audit', 'billing-reconciliation');
+    this.ensureDirectory(dir);
+    fs.writeFileSync(path.join(dir, `${doc.month}.json`), JSON.stringify(doc, null, 2), 'utf-8');
+  }
+
+  public loadBillingReconciliationMonth(month: string): BillingReconciliationMonthDocument | null {
+    if (!/^\d{4}-\d{2}$/.test(month)) return null;
+    return this.readJson<BillingReconciliationMonthDocument>(
+      path.join(this.baseDir, 'audit', 'billing-reconciliation', `${month}.json`)
+    );
+  }
+
+  /** 請求突合の文書がある月 (降順) */
+  public getBillingReconciliationMonths(): string[] {
+    const dir = path.join(this.baseDir, 'audit', 'billing-reconciliation');
     if (!fs.existsSync(dir)) return [];
     return fs
       .readdirSync(dir)

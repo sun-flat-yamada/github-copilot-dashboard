@@ -1,3 +1,4 @@
+import type { BillingReconciliationMonthDocument } from '../entities/billing-reconciliation.js';
 import type { DataQualityHistory } from '../entities/data-quality.js';
 import type { MonthCloseIndex, MonthCloseRecord } from '../entities/month-close.js';
 import type { SeatAuditMonthDocument } from '../entities/seat-audit.js';
@@ -47,6 +48,10 @@ export interface IStorageWriter {
   saveSeatAuditMonth?(doc: SeatAuditMonthDocument): void;
   loadSeatAuditMonth?(month: string): SeatAuditMonthDocument | null;
   getSeatAuditMonths?(): string[];
+  /** 請求突合 (P4-4)。未対応の実装では未定義 (突合しない)。請求額に由来するため Pages へは配信しない */
+  saveBillingReconciliationMonth?(doc: BillingReconciliationMonthDocument): void;
+  loadBillingReconciliationMonth?(month: string): BillingReconciliationMonthDocument | null;
+  getBillingReconciliationMonths?(): string[];
   /** 保存済みの月次レポート集計 (確定する数値の取得用) */
   loadReportData?(month: string): MonthlyReportAggregatedData | null;
   /** 前回保存した index.json。未保存・破損時は null */
