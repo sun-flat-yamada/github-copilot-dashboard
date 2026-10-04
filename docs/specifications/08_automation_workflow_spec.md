@@ -7,7 +7,7 @@
 - **Document ID**: SPEC-COPILOT-008
 - **Status**: Approved / Active
 - **Target Version**: 2026.09-LTS
-- **Date**: 2026-09-10 (revised 2026-10-01: exposure pre-flight, staging/verification steps, new secrets/variables, per-source degradation)
+- **Date**: 2026-09-10 (revised 2026-10-01: exposure pre-flight, staging/verification steps, new secrets/variables, per-source degradation; revised 2026-10-04, P4-7: reconciliation / report / retention steps and variables, `issues: write`)
 
 ---
 
@@ -110,6 +110,10 @@ When running in real-data mode (`MOCK_MODE` unset or `false`) without `COPILOT_E
 - `GITHUB_API_VERSION`: Value of the `X-GitHub-Api-Version` header (default `2026-03-10`, SDD-03 §1.1).
 - `COPILOT_ALLOW_PUBLIC_DATA` (Optional): `true` downgrades the exposure pre-flight failure to a warning. Use only when publishing the data publicly is an explicit, accepted decision.
 - `COPILOT_PAGES_URL` (Optional): The public URL of the dashboard when it is served from a custom domain, so the exposure check probes the right address (default `https://<owner>.github.io/<repo>/`).
+- `COPILOT_BUSINESS_CALENDAR` (Optional): JSON `{ "close_business_days": 5, "weekend_days": [0, 6], "holidays": [...] }` for the monthly close date. Unset → the 5th business day of the following month, Saturday and Sunday off. An invalid value falls back to the default and is recorded as an issue (SDD-17 §3.1).
+- `COPILOT_RECONCILIATION_TOLERANCE` (Optional): JSON `{"absolute_usd":1,"percent":1}`; omitted keys keep the default (1 USD and 1 %). A difference above both opens a reconciliation Issue (SDD-17 §5.2).
+- `COPILOT_ALLOW_IDENTIFIED_REPORTS` (Optional): `true` allows reports of the `identified` privacy tier to be generated without pseudonymization. Use only when the repository and Pages are restricted to the enterprise; `COPILOT_ALLOW_PUBLIC_DATA` does not open this gate (SDD-17 §7.3).
+- `COPILOT_DATA_RETENTION_MONTHS` (Optional): integer 12 to 600, default 60. Used by the retention dry run (`retention:plan`) and by the operator's `retention:apply`; the workflow never deletes (SDD-17 §8.1).
 - `MOCK_MODE`: Set to `true` (or pass `mock_mode: true` to `workflow_dispatch`) to run the pipeline using simulation data without live API tokens. Simulated data is written only to the isolated `copilot-data-mock` branch (never `copilot-data`), and the workflow skips the SPA build and GitHub Pages deployment steps entirely — see [Section 2.1.2](#212-important-notes-for-personal-free-accounts) and [SDD-05 Section 1.3](05_data_storage_and_fork_isolation_spec.md#13-mockreal-data-branch-separation).
 
 ---
@@ -123,6 +127,7 @@ permissions:
   contents: write      # Required for committing data to copilot-data branch
   pages: write         # Required for deploying to GitHub Pages
   id-token: write      # Required for GitHub Pages OIDC authentication
+  issues: write        # Required to file billing reconciliation Issues (billing:issues, SDD-17 §5.5)
 ```
 
 > [!NOTE]
@@ -135,11 +140,15 @@ permissions:
 4. *(Optional)* Decrypt a large user mapping via the GPG encryption workaround: runs only if both `data/config/copilot-user-mapping.json.gpg` and the `COPILOT_USER_MAPPING_PASSPHRASE` Secret are present, decrypting into `$RUNNER_TEMP` and setting `COPILOT_USER_MAPPING_FILE` automatically (see [SDD-04 Section 6](04_user_attribute_mapping_spec.md#6-gpg-encryption-workaround-for-mappings-exceeding-48kb-optional)).
 5. *(Real-data runs only)* **Exposure pre-flight** (`npm run fork:verify`): anonymously probes the repository API, the raw `copilot-data` branch index and the Pages index; fails when real, non-anonymized user-level data is (or is about to be) publicly readable (SDD-04 §5.3). Offline / rate-limited probes only warn.
 6. Execute data pipeline runner (`npm run pipeline:run`) — completes successfully even with zero Copilot Metrics/Seats credentials (see Section 2.3).
-7. Push newly generated data to the target branch: incremental commit to `copilot-data` for real runs, or a force-pushed orphan reset of `copilot-data-mock` for mock runs (no historical accumulation of simulated data).
-8. *(Real-data runs only)* Update the AI model benchmark dataset, then **stage the processed data** (`npm run pages:stage`): the allow-listed `index.json`, `error-log.json`, all `processed/*` months and the indexed daily files are copied to `dashboard/public/data/`; raw data, original CSVs and the encrypted mapping are never copied. The DEMO partition is staged separately under `data/demo/`.
-9. *(Real-data runs only)* Build SPA dashboard (`npm run build`).
-10. *(Real-data runs only)* **Verify the Pages artifact** (`npm run pages:verify`): every staged file (including past months) must be in `dist/data/` and nothing private (raw, config, original CSVs) may be in it (SDD-05 §2.2a).
-11. *(Real-data runs only)* Upload static deployment artifact via `actions/upload-pages-artifact@v5`.
-12. *(Real-data runs only)* Publish to GitHub Pages via `actions/deploy-pages@v5`.
+7. Update the exchange-rate catalog (`npm run catalog:fx`, ECB monthly averages; a failure keeps the existing catalog and the run continues).
+8. *(Real-data runs only, `continue-on-error`)* **File billing reconciliation Issues** (`npm run billing:issues`): a month whose calculated amount differs from the Billing API (AI Credits) by more than the tolerance (`COPILOT_RECONCILIATION_TOLERANCE`, default 1 USD and 1 %) opens one Issue per month (no duplicates). Billing amounts are not written into the Issue (SDD-17 §5). Needs `issues: write`.
+9. *(Real-data runs only, `continue-on-error`)* **Generate definition-driven reports** (`npm run reports:generate -- --due`): reports defined in `reports/*.yaml` that are due (closed months, this week) are written to `data/audit/report-outputs/` and never published on Pages (SDD-17 §6). A definition of the `identified` tier is refused unless pseudonymization is on (`ANONYMIZE_USERS=true` with `ANONYMIZE_SECRET`) or the operator set `COPILOT_ALLOW_IDENTIFIED_REPORTS=true` (SDD-17 §7.3). The month close itself runs inside the pipeline (step 6) using `COPILOT_BUSINESS_CALENDAR` (SDD-17 §3.1).
+10. *(Real-data runs only, `continue-on-error`)* **Retention dry run** (`npm run retention:plan`): lists data older than `COPILOT_DATA_RETENTION_MONTHS` (default 60) and raises a `::warning::` when something is overdue. **It deletes nothing**; deletion is an explicit operator action on a `copilot-data` checkout (`npm run retention:apply -- --execute --confirm <month>`, SDD-17 §8.3).
+11. Push newly generated data to the target branch: incremental commit to `copilot-data` for real runs, or a force-pushed orphan reset of `copilot-data-mock` for mock runs (no historical accumulation of simulated data).
+12. *(Real-data runs only)* Update the AI model benchmark dataset, then **stage the processed data** (`npm run pages:stage`): the allow-listed `index.json`, `error-log.json`, all `processed/*` months and the indexed daily files are copied to `dashboard/public/data/`; raw data, original CSVs and the encrypted mapping are never copied. The DEMO partition is staged separately under `data/demo/`.
+13. *(Real-data runs only)* Build SPA dashboard (`npm run build`).
+14. *(Real-data runs only)* **Verify the Pages artifact** (`npm run pages:verify`): every staged file (including past months) must be in `dist/data/` and nothing private (raw, config, original CSVs) may be in it (SDD-05 §2.2a).
+15. *(Real-data runs only)* Upload static deployment artifact via `actions/upload-pages-artifact@v5`.
+16. *(Real-data runs only)* Publish to GitHub Pages via `actions/deploy-pages@v5`.
 
-> Mock runs (`MOCK_MODE=true`) intentionally stop after step 7: they never build or deploy the dashboard, so the production GitHub Pages site is never overwritten with simulated data.
+> Mock runs (`MOCK_MODE=true`) intentionally stop after step 11: they never build or deploy the dashboard, so the production GitHub Pages site is never overwritten with simulated data.

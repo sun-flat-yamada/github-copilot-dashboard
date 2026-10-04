@@ -69,8 +69,8 @@ flowchart TD
 | **SDD-13** | Fork-Restricted Environment Setup Guide | [EN](13_fork_restricted_environment_setup_guide.md) \| [JA](13_fork_restricted_environment_setup_guide.ja.md) | Mirror-based duplication procedure for EMU and restricted enterprises | Active (2026.09) |
 | **SDD-14** | Development Workflow & Git Ops Specification | [EN](14_development_workflow_and_git_ops_spec.md) \| [JA](14_development_workflow_and_git_ops_spec.ja.md) | Multi-agent parallel Worktree operations, Issue driven, PR & Rebase merge, permission model | Active (2026.09) |
 | **SDD-15** | Data-Centric Reactivity Design Specification | [EN](15_data_centric_reactivity_design_spec.md) \| [JA](15_data_centric_reactivity_design_spec.ja.md) | Cross-View tracking of active selected data (source/scope/tags), React implementation conventions, known anti-patterns | Active (2026.09) |
-| **SDD-16** | Data Contract & Metric Catalog Specification | [EN](16_data_contract_and_metric_catalog_spec.md) \| [JA](16_data_contract_and_metric_catalog_spec.ja.md) | Metric catalog v1 (definition / window / source of every KPI), personal-metric positioning | Active (2026.10) |
-| **SDD-17** | Audit & Report Specification | [EN](17_audit_and_report_spec.md) \| [JA](17_audit_and_report_spec.ja.md) | Audit requirements, audit & data quality view, monthly close / revisions / diff (P4-2), seat audit events (P4-3), billing reconciliation (P4-4) | Active (2026.10) |
+| **SDD-16** | Data Contract & Metric Catalog Specification | [EN](16_data_contract_and_metric_catalog_spec.md) \| [JA](16_data_contract_and_metric_catalog_spec.ja.md) | Metric catalog (definition / window / source of all 28 KPIs), personal-metric positioning, data-contract index (canonical facts and persisted files) | Active (2026.10) |
+| **SDD-17** | Audit & Report Specification | [EN](17_audit_and_report_spec.md) \| [JA](17_audit_and_report_spec.ja.md) | Audit requirements, audit & data quality view, monthly close / revisions / diff (P4-2), seat audit events (P4-3), billing reconciliation (P4-4), definition-driven reports (P4-5), privacy tiers and retention (P4-6), sync status and known gaps (P4-7) | Active (2026.10) |
 
 ---
 

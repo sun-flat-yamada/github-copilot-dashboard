@@ -7,7 +7,7 @@
 - **文書番号**: SPEC-COPILOT-008
 - **ステータス**: Approved / Active
 - **対象バージョン**: 2026.09-LTS
-- **作成日**: 2026-09-10 (2026-10-01 改訂: 公開範囲の事前検査、ステージング/検証ステップ、新しい Secrets/Variables、ソース別縮退)
+- **作成日**: 2026-09-10 (2026-10-01 改訂: 公開範囲の事前検査、ステージング/検証ステップ、新しい Secrets/Variables、ソース別縮退。2026-10-04 改訂 (P4-7): 請求突合・レポート・保持期間のステップと変数、`issues: write`)
 
 ---
 
@@ -110,6 +110,10 @@ GitHubの最新仕様に基づき、**Fine-grained Personal Access Token (推奨
 - `GITHUB_API_VERSION`: `X-GitHub-Api-Version` ヘッダーの値 (既定 `2026-03-10`、SDD-03 §1.1)。
 - `COPILOT_ALLOW_PUBLIC_DATA` (オプション): `true` にすると、公開範囲の事前検査の失敗が警告に格下げされる。データを公開することが明示的に受け入れられた判断である場合のみ使用する。
 - `COPILOT_PAGES_URL` (オプション): カスタムドメインで配信している場合のダッシュボードの公開 URL。公開範囲の検査が正しいアドレスを調べるために使う (既定 `https://<owner>.github.io/<repo>/`)。
+- `COPILOT_BUSINESS_CALENDAR` (オプション): 月次締めの日付を決める JSON `{ "close_business_days": 5, "weekend_days": [0, 6], "holidays": [...] }`。未設定なら翌月の第 5 営業日・土日休み。不正な値は既定値で続行し、Issue として記録する (SDD-17 §3.1)
+- `COPILOT_RECONCILIATION_TOLERANCE` (オプション): JSON `{"absolute_usd":1,"percent":1}`。省略したキーは既定 (1 USD かつ 1 %) のまま。両方を超える差で突合の Issue を起票する (SDD-17 §5.2)
+- `COPILOT_ALLOW_IDENTIFIED_REPORTS` (オプション): `true` にすると、`identified` 階層のレポートを仮名化なしで生成できる。リポジトリと Pages が社内限定のときだけ使う。`COPILOT_ALLOW_PUBLIC_DATA` ではこのゲートは開かない (SDD-17 §7.3)
+- `COPILOT_DATA_RETENTION_MONTHS` (オプション): 12〜600 の整数、既定 60。保持期間のドライラン (`retention:plan`) と運用者の `retention:apply` が使う。ワークフローは削除しない (SDD-17 §8.1)
 - `MOCK_MODE`: 実APIトークンなしでデモ・テスト運用する場合は `true` を指定（または `workflow_dispatch` 実行時に `mock_mode: true` を指定）。シミュレーションデータは実データの `copilot-data` には一切保存されず、隔離された `copilot-data-mock` ブランチにのみ書き込まれる。またSPAビルド・GitHub Pagesデプロイの各ステップは完全にスキップされる。詳細は[2.1.2節](#212-個人契約freeプランgithubアカウント利用時の重要注意点)および[SDD-05 1.3節](05_data_storage_and_fork_isolation_spec.ja.md#13-モック実データブランチ分離)を参照。
 
 ---
@@ -123,6 +127,7 @@ permissions:
   contents: write      # copilot-data ブランチへのデータコミット用
   pages: write         # GitHub Pages へのデプロイ用
   id-token: write      # GitHub Pages OIDCトークン用
+  issues: write        # 請求突合の Issue を起票する用 (billing:issues、SDD-17 §5.5)
 ```
 
 > [!NOTE]
@@ -135,11 +140,15 @@ permissions:
 4. *(オプション)* GPG暗号化ワークアラウンドによる大容量ユーザーマッピングの復号: `data/config/copilot-user-mapping.json.gpg` と `COPILOT_USER_MAPPING_PASSPHRASE` Secret が両方存在する場合のみ実行され、`$RUNNER_TEMP` 配下に復号後 `COPILOT_USER_MAPPING_FILE` を自動設定する(詳細は[SDD-04 第6章](04_user_attribute_mapping_spec.ja.md#6-48kb超マッピング向け-gpg暗号化ワークアラウンド-オプション)を参照)
 5. *(実データ運用のみ)* **公開範囲の事前検査** (`npm run fork:verify`): リポジトリ API・`copilot-data` ブランチの生 index・Pages の index を匿名で調べ、実在の・仮名化されていないユーザー単位のデータが公開されている (または公開されようとしている) 場合は失敗させる (SDD-04 §5.3)。オフライン・レート制限で調べられない場合は警告のみ
 6. データ収集・集計スクリプト実行 (`npm run pipeline:run`)。Copilot Metrics/Seats の認証情報が0件でも正常終了する(2.3節参照)
-7. 新規データを対象ブランチへ保存: 実データ運用は `copilot-data` への追記コミット、モック運用は `copilot-data-mock` の force-pushによるオーファンブランチ再構築(履歴を蓄積しない)
-8. *(実データ運用のみ)* AI モデルベンチマークデータセットを更新し、**processed データをステージ** (`npm run pages:stage`): 許可リストの `index.json`・`error-log.json`・全月の `processed/*`・index に載っている日次ファイルを `dashboard/public/data/` へコピーする。Raw データ・元 CSV・暗号化マッピングは決してコピーしない。DEMO パーティションは `data/demo/` から別途ステージする
-9. *(実データ運用のみ)* SPAダッシュボードのビルド (`npm run build`)
-10. *(実データ運用のみ)* **Pages 成果物の検証** (`npm run pages:verify`): ステージした全ファイル (過去月を含む) が `dist/data/` にあり、非公開のもの (raw・config・元 CSV) が含まれていないことを確認する (SDD-05 §2.2a)
-11. *(実データ運用のみ)* `actions/upload-pages-artifact@v5` で静的アーティファクトをアップロード
-12. *(実データ運用のみ)* `actions/deploy-pages@v5` でGitHub Pagesへ公開
+7. 為替カタログを更新する (`npm run catalog:fx`、ECB の月次平均。失敗しても既存カタログを保って続行する)
+8. *(実データ運用のみ、`continue-on-error`)* **請求突合の Issue 起票** (`npm run billing:issues`): 計算額と Billing API (AI Credits) の差が許容差 (`COPILOT_RECONCILIATION_TOLERANCE`、既定 1 USD かつ 1 %) を超えた月を、月ごとに 1 件の Issue にする (重複しない)。請求額は Issue に書かない (SDD-17 §5)。`issues: write` が必要
+9. *(実データ運用のみ、`continue-on-error`)* **定義駆動レポートの生成** (`npm run reports:generate -- --due`): `reports/*.yaml` の定義のうち期限が来たもの (締め済みの月、今週分) を `data/audit/report-outputs/` に出力し、Pages へは公開しない (SDD-17 §6)。`identified` 階層の定義は、仮名化 (`ANONYMIZE_USERS=true` と `ANONYMIZE_SECRET`) か、運用者による `COPILOT_ALLOW_IDENTIFIED_REPORTS=true` がなければ生成を拒否する (SDD-17 §7.3)。月次締め自体はパイプライン (ステップ 6) の中で `COPILOT_BUSINESS_CALENDAR` に従って実行する (SDD-17 §3.1)
+10. *(実データ運用のみ、`continue-on-error`)* **保持期間のドライラン** (`npm run retention:plan`): `COPILOT_DATA_RETENTION_MONTHS` (既定 60) を過ぎたデータを一覧し、期限超過があれば `::warning::` を出す。**何も削除しない**。削除は運用者が `copilot-data` のチェックアウトで明示的に行う (`npm run retention:apply -- --execute --confirm <月>`、SDD-17 §8.3)
+11. 新規データを対象ブランチへ保存: 実データ運用は `copilot-data` への追記コミット、モック運用は `copilot-data-mock` の force-pushによるオーファンブランチ再構築(履歴を蓄積しない)
+12. *(実データ運用のみ)* AI モデルベンチマークデータセットを更新し、**processed データをステージ** (`npm run pages:stage`): 許可リストの `index.json`・`error-log.json`・全月の `processed/*`・index に載っている日次ファイルを `dashboard/public/data/` へコピーする。Raw データ・元 CSV・暗号化マッピングは決してコピーしない。DEMO パーティションは `data/demo/` から別途ステージする
+13. *(実データ運用のみ)* SPAダッシュボードのビルド (`npm run build`)
+14. *(実データ運用のみ)* **Pages 成果物の検証** (`npm run pages:verify`): ステージした全ファイル (過去月を含む) が `dist/data/` にあり、非公開のもの (raw・config・元 CSV) が含まれていないことを確認する (SDD-05 §2.2a)
+15. *(実データ運用のみ)* `actions/upload-pages-artifact@v5` で静的アーティファクトをアップロード
+16. *(実データ運用のみ)* `actions/deploy-pages@v5` でGitHub Pagesへ公開
 
-> モック実行 (`MOCK_MODE=true`) はステップ7で意図的に終了する。ダッシュボードのビルド・デプロイは一切行われないため、本番のGitHub Pagesサイトがシミュレーションデータで上書きされることはない。
+> モック実行 (`MOCK_MODE=true`) はステップ11で意図的に終了する。ダッシュボードのビルド・デプロイは一切行われないため、本番のGitHub Pagesサイトがシミュレーションデータで上書きされることはない。
