@@ -146,6 +146,15 @@ copilot-data (Orphan Data Branch)
   - `npm run demo:generate`: Generates/updates the complete 2026 LTS Auto-collected DEMO bundle under `data/demo/` and `dashboard/public/data/demo/`.
   - `npm run demo:sync [-- --push]`: Safely commits and syncs `data/demo/` to the `copilot-data` branch in an isolated temporary worktree.
 
+#### DEMO Display-Pattern Coverage
+The DEMO dataset is generated deterministically (seeded) so that every display pattern can be checked on screen. `src/application/pipeline/demo-history.ts` runs only in `MOCK_MODE`; it never runs for real data.
+- **History**: 23 past months (plus the current month) of monthly scopes, 11 months of monthly usage reports and 5 months of Deep Analysis. `2026-01` (inside the 1-year window) and `2025-03` (prior-year month) are intentionally absent, so the trend shows `closed`, `provisional` and `missing` months and year-over-year both with and without a prior year.
+- **Month close**: one month (`2026-04`) is closed and then revised (reason, actor, diff). Closed months are never rewritten on re-run.
+- **Data quality**: `quality/history.json` contains `ok` / `warning` / `error` runs, missing days and quarantined records; the latest run is `warning` with the `recovered` trend.
+- **Sources and issues**: `index.json` carries `source_status` of `ok` / `partial` / `failed` and sample issues of several severities and categories (these are samples, not real failures).
+- **Seats and budgets**: the seats include `active`, `low_active`, `idle`, `never_used`, `onboarding` and an unconfirmed plan; Cost Center budgets cover `normal`, `warning` and `exceeded`. Model names follow the current model catalog (`src/processor/model-catalog.ts`).
+- `npm run demo:generate` deletes the previous DEMO outputs (`processed/`, `quality/`, `audit/`, `raw/`) before regenerating. Coverage is asserted by `src/tests/demo-data.test.ts`.
+
 ### 2.2 Dual Hierarchy Convention: Persistent Storage (`processed/`) vs. SPA Distribution Root
 
 To prevent routing and 404 discrepancies across environments, the following conventions are strictly enforced:

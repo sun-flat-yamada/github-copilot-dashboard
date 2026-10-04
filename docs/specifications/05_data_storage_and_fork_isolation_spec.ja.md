@@ -147,6 +147,15 @@ copilot-data (独立データ永続化ブランチ)
   - `npm run demo:generate`: 2026年最新仕様の完全な自動収集DEMOデータセット（Auto-collected DEMO Dataset）を `data/demo/` および `dashboard/public/data/demo/` に生成。
   - `npm run demo:sync [-- --push]`: 隔離された一時ワークツリーを経由して `data/demo/` を `copilot-data` ブランチへ安全にコミット・反映（`main` ブランチは一切無変更）。
 
+#### DEMO の表示パターン網羅
+DEMO データは決定的 (seed 固定) に生成し、全ての表示パターンを画面で確認できるようにする。`src/application/pipeline/demo-history.ts` は `MOCK_MODE` のときだけ動き、実データでは動かない。
+- **履歴**: 過去 23 か月 (+当月) の月次スコープ、11 か月の月次利用レポート、5 か月の Deep Analysis。`2026-01` (1 年の窓の中) と `2025-03` (前年同月) を意図的に欠かし、トレンドで `closed` / `provisional` / `missing` の各月と、前年あり・なし両方の前年同月比を確認できる。
+- **月次締め**: 1 か月 (`2026-04`) を確定後に改訂した履歴 (理由・担当・差分)。確定済みの月は再実行しても書き換えない。
+- **データ品質**: `quality/history.json` に `ok` / `warning` / `error` の実行、欠損日、隔離を含む。最新の実行は `warning` で、傾向は `recovered`。
+- **ソースと issue**: `index.json` の `source_status` は `ok` / `partial` / `failed`、issue は重大度・分類の異なる見本 (実際の障害ではない)。
+- **シートと予算**: シートは `active` / `low_active` / `idle` / `never_used` / `onboarding` とプラン未確定を含み、Cost Center 予算は `normal` / `warning` / `exceeded` を網羅する。モデル名は現行のモデルカタログ (`src/processor/model-catalog.ts`) に従う。
+- `npm run demo:generate` は再生成の前に前回の DEMO 生成物 (`processed/` / `quality/` / `audit/` / `raw/`) を削除する。網羅性は `src/tests/demo-data.test.ts` で検査する。
+
 ### 2.2 永続ストレージ階層 (`processed/`) と SPA公開パスの二重構造および同期規約 (ナレッジ・再発防止)
 
 永続化ストレージ（`copilot-data` ブランチ）と、Web配信用の静的ホスティング領域（`dashboard/public/data/` およびビルド成果物 `dist/data/`）では、ディレクトリ構造の設計目的が異なるため、以下の不整合防止規約を遵守する：
