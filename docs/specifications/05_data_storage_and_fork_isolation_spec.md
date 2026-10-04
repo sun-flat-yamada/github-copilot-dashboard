@@ -110,9 +110,11 @@ data/
 │   └── reports/
 │       ├── 2026-08.json              # Monthly report precomputed data
 │       └── 2026-09.json              # Monthly report precomputed data
-└── audit/                            # User-level audit data, NOT published on Pages (P4-3, SDD-17 §4)
+└── audit/                            # Audit data (user-level / billing-derived), NOT published on Pages (P4-3 / P4-4, SDD-17 §4, §5)
     ├── seat-events/
     │   └── 2026-09.json              # Seat audit events (month of detection)
+    ├── billing-reconciliation/
+    │   └── 2026-09.json              # Billing reconciliation per month (P4-4, SDD-17 §5)
     └── exports/                      # CSV exports for authorized reviewers
 ```
 
@@ -257,6 +259,10 @@ Built on every run from the stored `processed/monthly/{YYYY-MM}.json` files (nev
 ### 2.8 Seat Audit Files (`audit/seat-events/`, P4-3)
 
 `audit/seat-events/{YYYY-MM}.json` holds the seat audit events generated from the daily seat snapshots in `raw/` (SDD-17 §4). Unlike `processed/`, it is **user-level data**: it is outside `processed/`, is **not** on the `pages:stage` allow-list, is never copied to `dashboard/public/data/`, and `pages:verify` fails if `audit` appears in `dist/data/`. It is written by `ForkSafeStorage.saveSeatAuditMonth` and lives in `copilot-data` with `raw/` (same visibility as the repository, guarded by the `fork:verify` exposure check; never in `main`).
+
+### 2.9 Billing Reconciliation Files (`audit/billing-reconciliation/`, P4-4)
+
+`audit/billing-reconciliation/{YYYY-MM}.json` holds the per-day AI Credits quantities and amounts collected from the Billing API and the versions / tolerance used for the reconciliation (SDD-17 §5). It is derived from real billing amounts, so it follows the rule of `audit/`: outside `processed/`, **not** on the `pages:stage` allow-list, never copied to `dashboard/public/data/`, and `pages:verify` fails if `audit` appears in `dist/data/`. It carries no user, organization or cost center identifier. It is written by `ForkSafeStorage.saveBillingReconciliationMonth` and lives in `copilot-data` (never in `main`).
 
 ## 3. Metadata Index (`index.json`) Specification
 

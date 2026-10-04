@@ -215,6 +215,10 @@ Pure functions in `src/processor/yearly-trend.ts` (the current time is injected;
 
 The catalog entries are `yoy_spend_change` and `yoy_active_seats_change`.
 
+### 4.7 Reconciliation with the Billing API (P4-4 / E-03)
+
+The amounts in this document are **computed** (price catalog + usage); they are not guaranteed to equal what GitHub bills. For AI Credits, the computed amount (billed quantity x unit price in USD) is reconciled with the Billing API amount (`grossAmount`) per month, with a configurable tolerance (default 1 USD **and** 1 %); a month beyond the tolerance becomes a GitHub issue and the result records the price catalog and exchange-rate catalog versions. A month with no billing data is `unavailable`, never 0 USD. The data is private (`audit/billing-reconciliation/`, not published). Details: SDD-17 §5.
+
 ---
 
 ## 5. Usage Insights per User (usage, tokens, unit cost, session-bloat signals)

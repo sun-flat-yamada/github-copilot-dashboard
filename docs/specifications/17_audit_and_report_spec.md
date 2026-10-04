@@ -5,9 +5,9 @@
 # SDD-17: Audit & Report Specification
 
 - **Document ID**: SPEC-COPILOT-017
-- **Status**: Approved / Active (grows with Phase 4; sections are added by P4-2 to P4-6)
+- **Status**: Approved / Active (grows with Phase 4; sections are added by P4-2 to P4-6; P4-4 adds §5)
 - **Target Version**: 2026.10
-- **Date**: 2026-10-04 (P4-1 / #197: audit and data quality view; P4-2 / #198: monthly close and revisions; P4-3 / #199: seat audit events)
+- **Date**: 2026-10-04 (P4-1 / #197: audit and data quality view; P4-2 / #198: monthly close and revisions; P4-3 / #199: seat audit events; P4-4 / #200: billing reconciliation)
 - **Related**: [SDD-05 §2.3 / §2.5 / §2.7](05_data_storage_and_fork_isolation_spec.md), [SDD-07 §2.19](07_dashboard_ui_ux_spec.md), [SDD-16 Data Contract & Metric Catalog](16_data_contract_and_metric_catalog_spec.md)
 
 ---
@@ -120,6 +120,65 @@ An audit must be able to answer "when was a seat granted to whom, and when was i
 | CSV injection | A cell that starts with `=`, `+`, `-`, `@`, tab or CR gets a leading `'` so a spreadsheet never evaluates it as a formula. Applies to every cell |
 | Warning | The command states whether the file holds pseudonyms only or real logins and that it must be shared only with authorized reviewers |
 
-## 5. Planned Sections (not yet specified)
+## 5. Billing Reconciliation Report (P4-4 / E-03)
 
-Billing reconciliation (P4-4), definition-driven reports (P4-5), privacy tiers and retention policy (P4-6) are specified here when each task lands.
+The dashboard's amounts come from its own calculation (price catalog + usage). Nothing guaranteed that they equal what GitHub bills. The reconciliation compares them per month and makes a difference visible; a difference beyond the tolerance becomes a GitHub issue.
+
+### 5.1 What is compared
+
+| Item | Rule |
+|:--|:--|
+| Source of the billed side | `GET /enterprises/{enterprise}/settings/billing/ai_credit/usage` (the P1-5 client; one request per day). Confirmed against the GitHub REST API description (`ghec.2022-11-28.json`) on 2026-10-04 |
+| Scope | AI Credits only. Seat licence amounts are out of scope (`billing/usage`, `billing/usage/summary` and `billing/premium_request/usage` exist for later tasks) |
+| Computed amount | Billed quantity (`grossQuantity`) x the dashboard's unit price in USD (billing configuration, defaulting to the price catalog) |
+| Billed amount | `grossAmount`. `discountAmount` and `netAmount` are kept for reference: the dashboard has no discount / included-credit model, so the verdict uses gross |
+| Currency | The API returns none. The amounts are used as GitHub bills them and assumed to be USD (`currency_assumed`) |
+| Breakdown | Per SKU x model. No user, organization or cost center identifier is read or stored |
+
+### 5.2 Verdict and tolerance
+
+| Status | Meaning |
+|:--|:--|
+| `match` | The difference is below 0.005 USD (rounding) |
+| `within_tolerance` | There is a difference, but it does not exceed **both** the absolute and the relative tolerance |
+| `exceeded` | The difference exceeds both the absolute tolerance (USD) **and** the relative tolerance (%). Subject to issue filing |
+| `unavailable` | No billing data for the month (API missing, permission, source failed). Never reconciled as 0 USD, never `exceeded`, never `match` |
+
+- Default tolerance: **1 USD and 1 %**. Configure with the environment variable `COPILOT_RECONCILIATION_TOLERANCE` (JSON `{"absolute_usd":1,"percent":1}`; omitted keys keep the default; the Actions variable of the same name is passed to the pipeline and to `billing:issues`). An invalid value (not JSON, negative, not a number) falls back to the default and is recorded as a warning issue `env:COPILOT_RECONCILIATION_TOLERANCE`.
+- The percentage is `|difference| / |billed gross| x 100`. When the billed amount is 0 and the computed amount is not, the percentage is undefined and counts as exceeded.
+- `npm run billing:report` re-judges every stored month with the current tolerance, so changing the tolerance applies to past months too.
+
+### 5.3 Versions recorded with every result
+
+`versions.pricing_catalog_version` (`PRICING_CATALOG_VERSION`), `versions.exchange_rate_catalog` (`fetched_at` and number of months of the P1-6 catalog, or `null`), `versions.unit_price_usd` and `tolerance`. The comparison itself is in USD; the exchange-rate catalog is recorded to identify the rate set used for display conversion at that time.
+
+### 5.4 Generation and storage
+
+- `BillingReconciliationService.record()` runs in every pipeline run after the AI Credits are collected, **only when the `ai_credits` source is usable and the run is not a reprocess**. A failed or skipped source writes nothing (the stored values are kept). A failure becomes a warning issue `audit:billing-reconciliation` and never stops the pipeline.
+- File `audit/billing-reconciliation/{YYYY-MM}.json`: `schema_version`, `month`, `scope`, `days` (day -> rows of SKU x model: `quantity`, `billed_gross`, `billed_discount`, `billed_net`), `updated_at`, `versions`, `tolerance`. A re-fetched day replaces the stored day (idempotent); the verdict is derived from the stored days each time. `days_covered` shows how many days a month has (the collection window can cover a month only partly).
+- A month that exceeds the tolerance also appears in the error log as a warning issue `billing:ai_credits:{month}`.
+
+### 5.5 Issue filing (no duplicates)
+
+`npm run billing:issues [-- --month YYYY-MM] [--dry-run]` (the daily workflow runs it after the pipeline with `issues: write`, `continue-on-error`, not in mock mode).
+
+- One issue per exceeded month, label `billing-reconciliation`, hidden marker `<!-- billing-reconciliation:YYYY-MM -->` in the body.
+- **No duplicates**: existing issues with the label (open **and** closed) are listed first and a month whose marker already exists is skipped, so closing an issue does not cause a new one. If the existing issues cannot be listed (HTTP error), nothing is created.
+- `--dry-run` creates nothing (it still reads existing issues when `GITHUB_TOKEN` is available).
+
+### 5.6 Publication scope (zero leakage)
+
+| Where | Reconciliation data | Why |
+|:--|:--|:--|
+| GitHub Pages / `dist/data/` | **Never** | Derived from real billing amounts. `audit/` is not on the `pages:stage` allow-list and `pages:verify` fails if `audit` appears in `dist/data/` |
+| `copilot-data` branch | Yes, under `audit/` | Same visibility as the repository (guarded by the existing `fork:verify` exposure check, not weakened) |
+| GitHub issue | Month, verdict, tolerance, versions and (private repository only) the difference in USD and the percentage. **Never the billed or computed totals** | The totals stay in `copilot-data`. In a **public** repository the issue carries no amount or percentage at all |
+| `main` branch, tests, fixtures | **Never** real data | Tests use fictitious SKUs, models and amounts only |
+
+### 5.7 Verification status
+
+The reconciliation logic is verified with synthetic data (match, within tolerance, exceeded, missing data, negative adjustment rows, idempotent merge, no duplicate issues). **It has not been verified against the real API**: that needs an Enterprise token with billing read permission, which the development environment does not have. The response shape is covered by the P1-5 schema and contract tests. Verify with the first real run: `npm run billing:report` after a pipeline run with `COPILOT_ENTERPRISE` and `COPILOT_READ_TOKEN`.
+
+## 6. Planned Sections (not yet specified)
+
+Definition-driven reports (P4-5), privacy tiers and retention policy (P4-6) are specified here when each task lands.

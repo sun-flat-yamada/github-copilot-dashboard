@@ -215,6 +215,10 @@ Onboarding のシートは除外する。プラン未確定のシートは 0 と
 
 カタログ登録は `yoy_spend_change` と `yoy_active_seats_change`。
 
+### 4.7 Billing API との突合 (P4-4 / E-03)
+
+本書の金額は**計算値**（価格カタログ + 使用量）で、GitHub の請求額と一致する保証はない。AI Credits については、計算額（請求 API の数量 × USD の単価）と Billing API の金額（`grossAmount`）を月ごとに突合する。許容差は設定でき（既定は 1 USD **かつ** 1 %）、超えた月は GitHub issue になり、結果に価格カタログと為替カタログの版を記録する。請求データのない月は `unavailable` で、0 USD とは扱わない。データは非公開（`audit/billing-reconciliation/`、配信しない）。詳細は SDD-17 §5。
+
 ---
 
 ## 5. ユーザー別の使用量インサイト（使用量・トークン・単価・長大化の兆候）
