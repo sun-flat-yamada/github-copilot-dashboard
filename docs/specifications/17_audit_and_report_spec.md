@@ -325,7 +325,7 @@ Raw data is kept for **5 years**. The retention is declared, shown before it is 
 
 ### 8.1 Setting and expiry
 
-- `COPILOT_DATA_RETENTION_MONTHS` (Actions variable; integer **12 to 600**, default **60**). An invalid value falls back to 60 with a message. (The older `index.json` field `data_retention_days` is a fixed display value and does not control deletion.)
+- `COPILOT_DATA_RETENTION_MONTHS` (Actions variable; integer **12 to 600**, default **60**). An invalid value falls back to 60 with a message. (`index.json` carries the value as `data_retention_months` for the About modal; it does not control deletion. The older fixed field `data_retention_days` is deprecated.)
 - The latest N calendar months **including the current month** are kept. Month `M` is expired when it is more than N months before the current month (N = 60 on 2026-10: 2021-11 is kept, 2021-10 and earlier expire). Dates are UTC. The cutoff is reported as `keep_from`.
 
 ### 8.2 What expires and what never does
@@ -379,6 +379,6 @@ P4-7 is the last Phase 4 change. It compared the specifications with the impleme
 
 | Gap | Where | Handling |
 |:--|:--|:--|
-| `index.json` `data_retention_days` is a fixed display value (365) and the About modal shows it as the retention period, which disagrees with the 60-month policy | `PipelineOrchestrator`, `dashboard/src/components/AboutModal.tsx` | Documented in §8.1 and SDD-07. Changing it touches code, the index type and many test fixtures, so it is a separate Issue (#257) |
+| `index.json` `data_retention_days` was a fixed 365 shown by the About modal, which disagreed with the 60-month policy | `PipelineOrchestrator`, `dashboard/src/components/AboutModal.tsx` | Fixed in Issue #257: `data_retention_months` is written and shown; the old field is deprecated (§8.1, SDD-05 §3, SDD-07) |
 | The repository rules and `AGENTS.md` named `dashboard/src/data/models.ts`, which does not exist (the UI registry is `dashboard/src/components/radar/radar-constants.ts`) | `.agents/rules/model-benchmark-management.md`, `AGENTS.md` | Corrected in Issue #258 to the same sync targets as SDD-10 §6.1.2 |
 | Live verification: the Reports / Billing APIs and the schema-drift workflow have not run against a real enterprise from the development environment | SDD-03, SDD-08 §1, §5.7 | Stated where each feature is specified; needs an enterprise PAT |

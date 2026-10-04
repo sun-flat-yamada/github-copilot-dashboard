@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { IndexMetadata } from '../../../src/types/copilot';
 import { isMockModeData } from '../utils/dataStatus';
+import { formatRetention } from '../utils/retentionLabel';
 import {
   X,
   Clock,
@@ -200,7 +201,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({
                 <span>データ保持期間:</span>
               </div>
               <span className="font-semibold text-slate-200">
-                {indexMeta?.data_retention_days || 365} 日間 (copilot-data 分離ブランチ)
+                {formatRetention(indexMeta?.data_retention_months)} (copilot-data 分離ブランチ)
               </span>
             </div>
 
