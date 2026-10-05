@@ -7,7 +7,7 @@
 - **Document ID**: SPEC-COPILOT-002
 - **Status**: Approved / Active
 - **Target Version**: 2026.09-LTS
-- **Date**: 2026-09-10 (revised 2026-10-01: collector resilience, per-source degradation, as-built wiring, delivery staging)
+- **Date**: 2026-09-10 (revised 2026-10-01: collector resilience, per-source degradation, as-built wiring, delivery staging; 2026-10-05: application → adapter dependencies replaced by injected ports)
 
 ---
 
@@ -165,7 +165,7 @@ flowchart TD
         Entities["Entities\n- copilot.ts / deep-analysis.ts\n- model-benchmark.ts / views.ts"]
         VO["Value Objects\n- Money / HealthScore"]
         Rules["Business Rules\n- SeatClassification / BudgetUtilization\n- AdoptionPhaseRule / SeatBillingRule"]
-        Ports["Ports (Interfaces)\n- ICopilotDataSource / IStorageWriter\n- IAttributeResolver / IMetricsRepository"]
+        Ports["Ports (Interfaces)\n- ICopilotDataSource / IStorageWriter\n- IAttributeResolver / IMetricsRepository\n- IBillingConfigProvider"]
     end
 
     subgraph Application["2. Application Layer (Use Cases & State)"]
@@ -197,7 +197,14 @@ flowchart TD
 3. **Interface Adapters (`src/adapters/`)**: External API resilience (`RawApiFetcher`, Zod Schemas), storage adapters, and pure presentation logic (`Presenters`). It must not import from `dashboard/`.
 4. **Frameworks & Drivers (`dashboard/`, `src/cli/`)**: the React SPA and CLI entrypoints.
 
-**Import direction** is enforced by `src/tests/layer-boundaries.test.ts`: `src/**` never imports from `dashboard/` (the SPA depends on `src/`, not the reverse), and `src/domain/**` never imports from `application/`, `adapters/` or `frameworks/`. Known remaining violation to fix separately (C-07): `CreditsBillingService` → `BillingConfigLoader` (application → adapter).
+**Import direction** is enforced by `src/tests/layer-boundaries.test.ts`: `src/**` never imports from `dashboard/` (the SPA depends on `src/`, not the reverse), and `src/domain/**` never imports from `application/`, `adapters/` or `frameworks/`. `src/application/**` never imports from `adapters/` or `frameworks/`, and `src/domain/**` never reads `process.env` (C-07, #225). The application layer receives what it needs from outside through ports injected by the Composition Root (`src/adapters/composition-root.ts`):
+
+| Port (domain / application) | Adapter injected | Consumer |
+| :--- | :--- | :--- |
+| `IBillingConfigProvider` (`src/domain/ports/`) | `billingConfigProvider` (`BillingConfigLoader`: `COPILOT_BILLING_CONFIG` / `data/config/billing.json`) | `PipelineOrchestrator` (`billingConfig` dependency), `CreditsBillingService.useBillingConfigProvider` (fallback when no config is passed; catalog defaults when nothing is injected) |
+| `RetentionLandingIndex` (`src/application/pipeline/retention.ts`) | `RawLandingStore` | `RetentionService` (second constructor argument; wired by `src/cli/retention.ts`) |
+
+Configuration values read from the environment are passed in by the caller: for example `getSeatPricing(override)` in `Money` receives `COPILOT_SEAT_PRICING_OVERRIDE` from the processor.
 
 ---
 

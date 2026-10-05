@@ -7,7 +7,7 @@
 - **文書番号**: SPEC-COPILOT-002
 - **ステータス**: Approved / Active
 - **対象バージョン**: 2026.09-LTS
-- **作成日**: 2026-09-10 (2026-10-01 改訂: 収集の耐障害性、ソース別縮退、実際の結線、配信ステージング)
+- **作成日**: 2026-09-10 (2026-10-01 改訂: 収集の耐障害性、ソース別縮退、実際の結線、配信ステージング。2026-10-05: application → adapter の依存を Port の注入に置換)
 
 ---
 
@@ -165,7 +165,7 @@ flowchart TD
         Entities["Entities\n- copilot.ts / deep-analysis.ts\n- model-benchmark.ts / views.ts"]
         VO["Value Objects\n- Money / HealthScore"]
         Rules["Business Rules\n- SeatClassification / BudgetUtilization\n- AdoptionPhaseRule / SeatBillingRule"]
-        Ports["Ports (Interfaces)\n- ICopilotDataSource / IStorageWriter\n- IAttributeResolver / IMetricsRepository"]
+        Ports["Ports (Interfaces)\n- ICopilotDataSource / IStorageWriter\n- IAttributeResolver / IMetricsRepository\n- IBillingConfigProvider"]
     end
 
     subgraph Application["2. Application Layer (ユースケース・ステート)"]
@@ -197,7 +197,14 @@ flowchart TD
 3. **Interface Adapters (`src/adapters/`)**: 外部API（GitHub REST API）のスキーマ防壁（ACL: `RawApiFetcher`, Zod Schemas）、ストレージアダプタ、および表示ロジックを純粋関数化する Presenters（DOM非依存・単体テスト可能）。`dashboard/` を import してはならない。
 4. **Frameworks & Drivers (`dashboard/`, `src/cli/`)**: React SPA と CLI エントリポイント。
 
-**import 方向**は `src/tests/layer-boundaries.test.ts` で検査する: `src/**` は `dashboard/` を import しない（SPA が `src/` に依存し、逆は不可）。`src/domain/**` は `application/`・`adapters/`・`frameworks/` を import しない。別タスクで解消する既知の違反 (C-07): `CreditsBillingService` → `BillingConfigLoader`（application → adapter）。
+**import 方向**は `src/tests/layer-boundaries.test.ts` で検査する: `src/**` は `dashboard/` を import しない（SPA が `src/` に依存し、逆は不可）。`src/domain/**` は `application/`・`adapters/`・`frameworks/` を import しない。`src/application/**` は `adapters/`・`frameworks/` を import しない。`src/domain/**` は `process.env` を読まない（C-07, #225）。application 層が外部から必要とするものは、Composition Root（`src/adapters/composition-root.ts`）が注入する Port 経由で受け取る:
+
+| Port（domain / application） | 注入する Adapter | 利用側 |
+| :--- | :--- | :--- |
+| `IBillingConfigProvider`（`src/domain/ports/`） | `billingConfigProvider`（`BillingConfigLoader`: `COPILOT_BILLING_CONFIG` / `data/config/billing.json`） | `PipelineOrchestrator`（依存 `billingConfig`）、`CreditsBillingService.useBillingConfigProvider`（設定を渡されなかったときの取得元。未注入なら価格カタログの既定値） |
+| `RetentionLandingIndex`（`src/application/pipeline/retention.ts`） | `RawLandingStore` | `RetentionService`（コンストラクタの第 2 引数。`src/cli/retention.ts` が結線） |
+
+環境変数から読む設定値は呼び出し側が渡す。例: `Money` の `getSeatPricing(override)` は、processor から `COPILOT_SEAT_PRICING_OVERRIDE` を受け取る。
 
 ---
 
