@@ -2,11 +2,11 @@
 
 - [x] Issue #226 read; production references re-checked with grep
 - [x] Implementation plan (per-presenter decision)
-- [ ] Delete the six presenters and their dedicated tests
-- [ ] `MoneyDualCurrency.test.ts` without `BudgetPresenter`
-- [ ] Layer-boundary test: deleted presenters stay deleted
-- [ ] SDD-02 (EN + JA)
-- [ ] Quality gate (+ lint)
-- [ ] Walkthrough
+- [x] Delete the six presenters and their dedicated tests
+- [x] `MoneyDualCurrency.test.ts` without `BudgetPresenter`
+- [x] Layer-boundary test: deleted presenters stay deleted
+- [x] SDD-02 (EN + JA)
+- [x] Quality gate (+ lint)
+- [x] Walkthrough
 - [ ] PR (ready, Auto-Pilot)
 - [ ] Merge with `change-dev:finish`
