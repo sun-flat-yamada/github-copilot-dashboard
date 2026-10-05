@@ -77,13 +77,25 @@ export class MockCopilotDataSource implements ICopilotDataSource {
     const at = new Date().toISOString();
     return [
       {
-        id: 'demo_issue_ai_credits_auth',
+        id: 'demo_issue_enterprise_fallback',
+        timestamp: at,
+        severity: 'warning',
+        category: 'api_auth',
+        target: 'copilot/billing/seats (enterprise:proud-enterprise)',
+        message:
+          'Access to enterprise:proud-enterprise was denied (HTTP 403); its seats are excluded and the other accessible scopes were collected.',
+        details:
+          'Enterprise endpoints require an enterprise owner or billing manager token. Collection continued with the organization scope (COPILOT_ORGS, or the organizations discovered via GET /user/orgs).',
+        http_status: 403,
+      },
+      {
+        id: 'demo_issue_ai_credits_server_error',
         timestamp: at,
         severity: 'error',
-        category: 'api_auth',
-        target: 'api:ai-credits',
-        message: 'Billing API (AI credit usage) returned 403. The token lacks the billing scope; AI credit amounts are kept from the last successful run.',
-        http_status: 403,
+        category: 'server_error',
+        target: 'billing/ai_credit/usage',
+        message: 'Billing API (AI credit usage) returned 502 for every day after retries; AI credit amounts are kept from the last successful run.',
+        http_status: 502,
       },
       {
         id: 'demo_issue_rate_limit',
@@ -158,7 +170,7 @@ export class MockCopilotDataSource implements ICopilotDataSource {
         records: 0,
         last_attempt_at: now,
         last_success_at: week,
-        error: 'Billing API returned 403 (token lacks the billing scope)',
+        error: 'all 30 request(s) failed: HTTP 502 from the Billing API (AI credit usage)',
       },
     ];
   }

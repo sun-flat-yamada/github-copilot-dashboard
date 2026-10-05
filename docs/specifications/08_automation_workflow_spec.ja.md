@@ -30,7 +30,7 @@
 ### 2.1 Secrets
 - `COPILOT_READ_TOKEN`:
   - GitHub Enterprise または対象Orgの管理者権限を持つPersonal Access Token (PAT) または GitHub App。
-  - ※ モックモード (`MOCK_MODE=true`) 実行時は未設定でも動作可能。実データ運用でも、`COPILOT_ENTERPRISE`/`COPILOT_ORGS` が未設定ならライブのソースは `skipped`、トークンが無い・権限(Enterprise Owner/Org Admin)不足なら `failed` として記録され、いずれの場合もパイプラインは中断しなくなった。詳細は[2.3節](#23-copilot-metricsseats-の認証情報が無い場合の動作)を参照。
+  - ※ モックモード (`MOCK_MODE=true`) 実行時は未設定でも動作可能。実データ運用でも、`COPILOT_ENTERPRISE`/`COPILOT_ORGS` が未設定ならライブのソースは `skipped`、トークンが無い・読めるスコープが 1 つも無いなら `failed` として記録され (Enterprise Owner 権限が無いときは Organization スコープで代替収集し、Cost Centers / AI Credits は `skipped`。SDD-03 §1.2)、いずれの場合もパイプラインは中断しなくなった。詳細は[2.3節](#23-copilot-metricsseats-の認証情報が無い場合の動作)を参照。
 - `ANONYMIZE_SECRET` (**`ANONYMIZE_USERS=true` のとき必須**):
   - 秘密鍵付き HMAC-SHA256 仮名化の秘密鍵 (ランダムな 16 文字以上。例: `openssl rand -hex 32`)。`ANONYMIZE_USERS=true` で鍵が無い (または短い) 場合、パイプラインは何も公開せずに停止する (fail closed)。鍵を変更するとすべての仮名が変わる。詳細は [SDD-04 第5章](04_user_attribute_mapping_spec.ja.md) を参照。
 - `COPILOT_USER_MAPPING_PASSPHRASE` (オプション):

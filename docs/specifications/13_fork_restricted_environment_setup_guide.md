@@ -127,6 +127,20 @@ gh variable set COPILOT_USER_MAPPING --repo $repo --body '[{"github_user":"...",
 > [!IMPORTANT]
 > Confirm the exact PAT scope/permission requirements against your enterprise's current GitHub Copilot API documentation — see [SDD-08 §2.1.1](08_automation_workflow_spec.md#211-token-types-and-permissions) for the two supported token types.
 
+#### 3.4.1 Without Enterprise Owner permission (organization-level token)
+
+A token of a department administrator or an engineer usually cannot read the `/enterprises/{enterprise}/...` endpoints (HTTP 403). The collector degrades gracefully instead of failing ([SDD-03 §1.2](03_github_copilot_api_spec_2026.md#12-permission-levels--graceful-fallback-issue-234)):
+
+| Setting | What is collected |
+| :--- | :--- |
+| `COPILOT_ENTERPRISE` set, `COPILOT_ORGS` unset | The enterprise scope is tried; on 403 the organizations the token belongs to are discovered with `GET /user/orgs` and collected instead (warning in the error log). |
+| `COPILOT_ORGS=<org1,org2>` | Only those organizations (recommended: explicit and stable). An organization answering 403 is skipped with a warning; the others are collected. |
+| `COPILOT_ORGS=auto` | The organizations returned by `GET /user/orgs`, without an enterprise. |
+
+- Cost Centers and AI credit usage are enterprise-only: with an organization-level token they are recorded as **skipped** (with a warning), not failed. Put the `cost_center` attribute in `COPILOT_USER_MAPPING` to keep cost allocation per cost center, and import the Monthly Usage Report (CSV) for AI credit amounts.
+- `GET /user/orgs` needs a user token (classic PAT with `read:org`, or a fine-grained PAT). With a GitHub App installation token, set `COPILOT_ORGS` explicitly.
+- The dashboard shows the affected sources as "partial" or "skipped"; the error log names each denied scope (`enterprise:<slug>` / `org:<slug>`).
+
 ### 3.5 Phase 5 — Verify
 
 ```powershell
@@ -159,6 +173,7 @@ Per [SDD-05](05_data_storage_and_fork_isolation_spec.md), `main` never contains 
 | No fork-network PR flow to upstream | EMU accounts additionally cannot open issues/PRs on repositories outside their enterprise at all, independent of forking — a personal (non-EMU) GitHub identity is required to contribute back upstream |
 | Inherited `copilot-data` content | The mirrored `copilot-data` branch carries over the upstream owner's existing data partitions until your own workflow run overwrites/appends to them |
 | Manual Actions/Pages setup | Unlike a fork of a repository you already configured, a fresh mirror always starts with Actions/Pages unconfigured (Section 3.3) |
+| No Enterprise Owner permission | Enterprise-wide metrics, seats, Cost Centers and AI credit usage cannot be read; the organization scope is collected instead and Cost Centers / AI credits are skipped (Section 3.4.1) |
 
 ---
 

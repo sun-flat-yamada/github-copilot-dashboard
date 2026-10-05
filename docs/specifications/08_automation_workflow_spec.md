@@ -30,7 +30,7 @@
 ### 2.1 Secrets
 - `COPILOT_READ_TOKEN`:
   - Personal Access Token (PAT) or GitHub App with administrative read permissions for GitHub Enterprise or target Organizations.
-  - *Note*: Optional when running in mock mode (`MOCK_MODE=true`). Also optional for real-data mode: if `COPILOT_ENTERPRISE`/`COPILOT_ORGS` are unset the live sources are `skipped`, and if the token is missing or the credential lacks Enterprise Owner/Org Admin permission they are recorded as `failed`; the pipeline no longer aborts in either case — see [Section 2.3](#23-graceful-operation-without-copilot-metricsseats-credentials) below.
+  - *Note*: Optional when running in mock mode (`MOCK_MODE=true`). Also optional for real-data mode: if `COPILOT_ENTERPRISE`/`COPILOT_ORGS` are unset the live sources are `skipped`, and if the token is missing or no scope the credential can read is left they are recorded as `failed` (without Enterprise Owner permission the organization scope is collected instead and Cost Centers / AI credits are `skipped`, SDD-03 §1.2); the pipeline no longer aborts in either case — see [Section 2.3](#23-graceful-operation-without-copilot-metricsseats-credentials) below.
 - `ANONYMIZE_SECRET` (**required when `ANONYMIZE_USERS=true`**):
   - Secret key (random, at least 16 characters, e.g. `openssl rand -hex 32`) for the keyed HMAC-SHA256 pseudonymization. With `ANONYMIZE_USERS=true` and no (or too short a) secret the pipeline stops without publishing anything (fail closed). Changing the key changes every pseudonym. See [SDD-04 Section 5](04_user_attribute_mapping_spec.md#5-public-exposure--pseudonymization-e-05).
 - `COPILOT_USER_MAPPING_PASSPHRASE` (Optional):
