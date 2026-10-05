@@ -12,6 +12,8 @@ import {
 import { BudgetUtilizationRule } from '../../domain/rules/BudgetUtilizationRule.js';
 import { monthlyIdleSavingsUsd, seatCostForScope } from '../../domain/rules/ScopeCostRule.js';
 import {
+  PRICING_CATALOG,
+  PRICING_CATALOG_VERIFICATION,
   PRICING_CATALOG_VERSION,
   computeCreditsPoolUtilizationPercent,
   estimateIncludedCreditsPool,
@@ -106,6 +108,19 @@ describe('Pricing catalog: the single source of prices (P0-5)', () => {
     assert.equal(resolvePricingEntry('2026-08').id, 'usage-billing-transition-promotion-2026-06');
     assert.equal(resolvePricingEntry('2026-09').id, 'baseline');
     assert.ok(PRICING_CATALOG_VERSION.length > 0);
+  });
+
+  it('records the primary-source verification of every catalog entry (Issue #212)', () => {
+    // A verified catalog carries no `unverified` marker; an entry without a verification record would need one.
+    assert.ok(!PRICING_CATALOG_VERSION.includes('unverified'));
+    assert.match(PRICING_CATALOG_VERIFICATION.verifiedAt, /^\d{4}-\d{2}-\d{2}$/);
+    assert.match(PRICING_CATALOG_VERIFICATION.commit, /^[0-9a-f]{40}$/);
+    for (const entry of PRICING_CATALOG) {
+      assert.ok(entry.verification, `${entry.id} has no verification record`);
+      assert.equal(entry.verification.verifiedAt, PRICING_CATALOG_VERIFICATION.verifiedAt);
+      assert.ok(entry.verification.sources.length > 0);
+      for (const source of entry.verification.sources) assert.match(source, /@[0-9a-f]{40}$/);
+    }
   });
 
   it('pools included credits per billing entity and flags seats whose plan is unknown', () => {
