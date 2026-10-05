@@ -143,6 +143,25 @@ describe('UserDetailRows: ライブと月次を同じ形式にそろえる', () 
     }
   });
 
+  it('月次: requests と net 費用が 0 でも gross 費用 → usage_insight の順で比率を出す', () => {
+    const base = report.user_details[0];
+    const mk = (extra: Record<string, unknown>) =>
+      buildReportRows({
+        ...report,
+        user_details: [{ ...base, primary_model: 'm1', model_requests: {}, model_spend_usd: {}, model_gross_usd: {}, usage_insight: undefined, ...extra }],
+      }).rows[0].top_models;
+    assert.deepEqual(mk({ model_gross_usd: { m1: 3, m2: 1 } }), [
+      { model: 'm1', share: 0.75 },
+      { model: 'm2', share: 0.25 },
+    ]);
+    const insight = (by_model: unknown) => ({ ...(base.usage_insight as object), by_model }) as never;
+    assert.deepEqual(mk({ usage_insight: insight([{ model: 'm1', tokens: 10, gross_usd: 1, per_million_tokens_usd: null }, { model: 'm2', tokens: 10, gross_usd: 1, per_million_tokens_usd: null }]) }), [
+      { model: 'm1', share: 0.5 },
+      { model: 'm2', share: 0.5 },
+    ]);
+    assert.deepEqual(mk({}), [{ model: 'm1', share: null }]);
+  });
+
   it('ライブ: プラン未確定のシートは費用を算定せず null (0 と区別)', () => {
     const r = buildLiveRows(scope([seat('a', { cost_unconfirmed: true })])).rows[0];
     assert.equal(r.usage_cost_usd, null);
