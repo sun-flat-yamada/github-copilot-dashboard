@@ -255,6 +255,8 @@ Overall level: `review` if any valid signal is `review`; `watch` if two or more 
 
 The organisation baseline (medians, model costs) is computed from **all users of the month before any display filter**, so applying a filter never changes a user's level.
 
+**Verified against real data (Issue #170; 5 months of production "AI usage report" CSVs, 2026-06 to 2026-09)**: the overall-level distribution computed by `aggregate()` matched the original design target (roughly 5–10% `review`, ≈20% `review`+`watch` combined, see Issue #170) only in the two months without token columns (`review` ≈ 12–13%, combined ≈ 20%; S2 was `insufficient` there, since it needs the token fields). Once token columns were present, `review` rose to ≈ 27–29% and combined to ≈ 39–41%, because S2 could then be evaluated and triggered far more often than the other signals. S2's thresholds (`dayRatio: 3`, `watchDays: 2`, `reviewDays: 3`, `reviewShare: 0.3`, in `usage-insight-definitions.ts`) are unchanged by this verification: recalibrating them is a product decision (what counts as a "high-token day" for a given organization's workload) that needs sign-off, not a parsing defect, so it is tracked as a follow-up issue rather than changed here.
+
 ### 5.4 Presentation rules
 - Wording is a recommendation, never an accusation: "確認を推奨" / "参考", never "不当", "違反" or "問題".
 - The screen always states that the signals are estimates from daily aggregates, that conversation content is not read, and that they are not a personal evaluation (`USAGE_INSIGHT_DISCLAIMER`).
