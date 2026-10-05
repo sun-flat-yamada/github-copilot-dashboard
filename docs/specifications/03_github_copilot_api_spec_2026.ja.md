@@ -108,6 +108,8 @@ GitHub公式データにおける「受諾率」は、APIレスポンスのイ�
 
 ### 2.3 旧レスポンススキーマ (廃止されたエンドポイント。参考)
 
+> この形式のスキーマ・正規化処理はアダプターから削除した（`metrics-schema.ts`・`teams-metrics-schema.ts`・`normalizers/metrics-2026-03-10.ts`・`normalizers/teams-2026-03-10.ts`。Issue #241）。下の例は、Reports API の写像（§2.1）が今も出力する内部モデル `CopilotDailyMetrics` の項目名を説明するためだけに残す。
+
 ```json
 [
   {
@@ -165,6 +167,25 @@ GitHub公式データにおける「受諾率」は、APIレスポンスのイ�
   }
 ]
 ```
+
+### 2.4 チーム別メトリクス (導出。Issue #241)
+
+廃止済み API のチーム用エンドポイント（`GET /orgs/{org}/teams/{team}/copilot/metrics`。他の `/copilot/metrics` と同じく 2026年4月に Sunset）は**呼ばない**。`fetchTeamMetrics(teamSlug)` は、同じ実行で取得済みのデータからチームの値を導出する。
+
+- **入力**: `fetchMetrics` の重複排除済み `users-1-day` 行（§2.1）と `fetchSeats` のシート（§3）。チームの `slug` がシートの `assigning_teams` に含まれる（その配列が無い・空なら `assigning_team.slug` と一致する）ユーザーをチームの所属とする（§3.2）。slug とログインは大文字小文字を区別せずに比較する。追加の API 呼び出しはしない。
+- **日ごと**（所属ユーザーの行が 1 件以上ある日だけ。0 で埋めない）: `total_active_users` = 所属ユーザーの行数、`total_engaged_users` = 何らかの利用があったユーザー数、`total_code_suggestions` / `total_code_acceptances` = `code_completion` のみ、`total_chat_turns` = `chat_*` 機能のやり取り数（全体の日次メトリクスと同じユーザー単位の切り出し。§2.2 のサーフェス分離）、`ai_credits_used` = `ai_credits_used` の合計（どの行にも無ければ出力しない）。`total_agent_sessions` は出力しない（レポートにセッション数が無い）。`team_name` はシートのチームオブジェクトから採る。
+- **前提 / 状態**: `fetchMetrics` と `fetchSeats` の後に呼ぶ。どちらかが未実行・失敗なら空配列を返し、issue は記録しない（失敗は `metrics` / `seats` のソース状態に記録済み）。
+- **「チーム」の範囲**: 所属は**そのチーム経由でシートが割り当てられた**ユーザーであり、チームの全メンバーではない。ユーザーへ直接割り当てたシートはどのチームにも属さない。
+- **`user-teams-1-day` を使わない理由**: Reports API にはユーザー×チーム単位のレポートがある（§2.1）が、その行スキーマは本仕様に記録が無く検証もできていない。フィールド名は推測しない。スキーマを実 Enterprise で確認した後の切り替えは後続の対応とする（下の「未検証事項」）。
+- **DEMO**: `MockCopilotDataSource.fetchTeamMetrics` も同じ方法（シートの `assigning_team` × ユーザーの `daily_history`）で導出する。定数の行や、レポートに無い agent セッション数は返さない。
+- **呼び出し元**: チーム別メトリクスを使うパイプライン処理・画面はまだ無い。メソッドは任意のポート（`ICopilotDataSource.fetchTeamMetrics`）。
+
+#### 未検証事項（実 Enterprise 環境が必要）
+| 項目 | 確認すること |
+| :--- | :--- |
+| `user-teams-1-day` の行スキーマ | ユーザー×チーム単位レポートのフィールド名とチーム識別子。上記の導出と値が一致するか |
+| `assigning_teams` | 複数チーム経由で付与されたシートに、シート API が `assigning_team` に加えて `assigning_teams`（複数）を返すか |
+| 廃止済みチームエンドポイント | `GET /orgs/{org}/teams/{team}/copilot/metrics` が現在返すステータス（404 か 410）。呼ばないため依存はしない |
 
 ---
 
@@ -263,6 +284,12 @@ Cost Center は Enterprise Billing の機能。Org 単体運用では、該当�
 ```
 
 ---
+
+### 4.3 Cost Center 予算（API からは取得しない。Issue #241）
+
+- Cost Center の利用上限と無料枠は GitHub から**読まない**。出所は管理者の宣言 `COPILOT_COST_CENTER_BUDGETS`（SDD-08・SDD-12）だけで、パイプラインがシート費用と突き合わせて評価する（`BillingCalculator.computeCostCenterBudgets`、SDD-06 §1.2）。値を生成・推測しない。
+- そのため `GitHubApiCopilotDataSource.fetchCostCenterBudgets()` は**契約として**空配列を返す。HTTP リクエストを送らず、issue もソース状態も記録しない（障害ではない）。DEMO のデータソースは生成した予算を返す。
+- **未検証**: GitHub には Enterprise 向けの課金予算 (budgets) の REST エンドポイント（例: `/enterprises/{enterprise}/settings/billing/` 配下）がある可能性がある。本仕様には記録が無く、開発環境から応答を検証できないため、呼び出さず、そのフィールドもモデル化しない。採用するには、実 Enterprise でエンドポイント・必要な権限・予算を Cost Center 単位に設定できるかを確認する。
 
 ### 4a. AI Credit 利用量 API (Billing)
 
