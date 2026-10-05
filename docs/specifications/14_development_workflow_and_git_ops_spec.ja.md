@@ -171,8 +171,11 @@ npm ci
    npm run typecheck     # TypeScript型チェック
    npm test              # ユニットテスト
    npm run secret-scan   # シークレット・メールアドレス・絶対パスの検査 (Exit Code 0 必須)
-   npm run build         # SPA本番ビルド検証
+   npm run build         # SPA本番ビルド検証 (tsc による型チェックおよびバンドル検証を含む)
    ```
+   > [!CAUTION]
+   > `npx vite build` などのトランスパイル専用コマンドで `npm run build` を代用することは固く禁じられる。Vite は高速化のため型チェックを行わないため、TypeScript の未使用 import（`noUnusedLocals` / TS6133）等のコンパイルエラーを検出できず、CI/CD や Pages デプロイパイプラインでビルド停止を引き起こす。必ず `npm run typecheck` および `npm run build` を通過させること。
+
    `npm run secret-scan`（`scripts/scan-secrets.ts`）は、走査対象の全ファイルで秘密情報のパターンと許可リスト（予約ドメイン、GitHub、`noreply`）外のメールアドレスを、`.devs/changes/` でのみマシン固有の絶対パス（ホームディレクトリ、`/tmp/<entry>`、`file:///` URI）を検出する。検出結果は `secret` / `PII` / `path` に分類し、個人情報と絶対パスの値は `<email>` / `<abs-path>` に置き換えて出力する。実名・部署・GitHub ログインはパターンでは検出できないため、引き続き目視で確認する。
 
 ---
@@ -296,6 +299,25 @@ git branch -d feat/42-cost-center-export
 
 ---
 
+### 3.8. ステップ 8: デプロイ結果の検証 (GitHub Pages Deployment Verification)
+
+PR のマージ完了後、AIエージェントおよび開発者は直ちに作業完了として報告してはならない。
+`main` への push によりトリガーされる GitHub Pages デプロイパイプライン（`Copilot Analytics Daily Sync & Pages Deploy`）が正常に完了したことを必ず確認する。
+
+1. **デプロイステータスの検証コマンド**:
+   ```bash
+   # デプロイが完了 (SUCCESS) するまで待機・確認
+   npm run pages:wait
+
+   # または現在の最新ステータスを即時確認
+   npm run pages:status
+   ```
+2. **完了条件**:
+   - `Status: SUCCESS`（GitHub Deployment API の `state: success`）が返ること。
+   - `failure` または `error` の場合は、Action Logs のリンクから失敗原因（型エラー、ビルド失敗、ステージング漏れ等）を直ちに特定し、即座に修正対応を実施すること。
+
+---
+
 ## 4. エージェント向けセーフガード
 
 1. **メイン作業ツリーの保護**:
@@ -308,3 +330,8 @@ git branch -d feat/42-cost-center-export
    `implementation_plan.md`（ステップ 2）より前に実装をコミットしてはならない。違反した PR は `change-dev:finish` がマージを拒否する。
 5. **リポジトリ定義を既定より優先**:
    リポジトリで定義した指示はクラウドセッションの既定指示より優先する。競合は最終の実施結果でのみ報告する。
+6. **デプロイ結果の確認必須**:
+   マージ完了後、`npm run pages:wait` または `npm run pages:status` を実行し、GitHub Pages へのデプロイが `state: success` に到達したことを確認してからユーザーへ完了報告すること。
+7. **部分ビルド・トランスパイル単体実行の禁止**:
+   ローカル品質ゲートにおいて `npx vite build` などの型検査を伴わないコマンドによる代用を禁止し、必ず `npm run typecheck` および `npm run build` を実行すること。
+

@@ -321,3 +321,34 @@ jobs:
         if: env.MOCK_MODE != 'true'
         id: deployment
         uses: actions/deploy-pages@v5
+
+      - name: Alert on deployment or sync failure
+        if: failure() && (github.repository == 'sun-flat-yamada/github-copilot-dashboard' || github.repository_id == '1364445722')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.run_id }}
+          REF_NAME: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          echo "🚨 Deployment or sync workflow failed! Creating alert issue..."
+          ISSUE_TITLE="🚨 [Urgent] GitHub Pages deployment / sync failed on ${REF_NAME}"
+          EXISTING_ISSUE=$(gh issue list --state open --search "${ISSUE_TITLE} in:title" --json number --jq '.[0].number' 2>/dev/null || echo "")
+          BODY="### 🚨 GitHub Pages Deployment / Sync Failure Alert
+
+          - **Workflow Run**: https://github.com/${{ github.repository }}/actions/runs/${RUN_ID}
+          - **Triggered Branch / Ref**: \`${REF_NAME}\`
+          - **Commit SHA**: \`${SHA}\`
+          - **Event**: \`${EVENT_NAME}\`
+
+          #### Required Action
+          Check the failed logs at the link above and resolve the build or deployment failure immediately."
+
+          if [ -n "$EXISTING_ISSUE" ]; then
+            echo "Commenting on existing open issue #${EXISTING_ISSUE}..."
+            gh issue comment "$EXISTING_ISSUE" --body "⚠️ Repeated failure on run: https://github.com/${{ github.repository }}/actions/runs/${RUN_ID} (commit: \`${SHA}\`)"
+          else
+            echo "Opening new alert issue..."
+            gh issue create --title "$ISSUE_TITLE" --body "$BODY" --label "bug" || echo "Failed to create alert issue"
+          fi
+
