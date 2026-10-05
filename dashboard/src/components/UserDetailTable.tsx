@@ -69,6 +69,12 @@ export type UserSortMetric =
 /** 表のデータ列の数。ドリルダウン行や空行の colSpan に使う (列を足したら更新する) */
 export const USER_DETAIL_COLUMN_COUNT = 22;
 
+/** 固定表示列 (ユーザー列) の幅に関する定数 (ピクセル単位) */
+export const DEFAULT_USER_COL_WIDTH = 180;
+export const MIN_USER_COL_WIDTH = 100;
+export const MAX_USER_COL_WIDTH = 500;
+export const PINNED_WIDTH_STORAGE_KEY = 'copilot-dashboard:user-detail-pinned-width';
+
 const SIGNAL_RANK = { insufficient: -1, none: 0, watch: 1, review: 2 } as const;
 
 /** ソースに値が無いセルの理由 (「—」のツールチップ)。0 と区別して欠損を示す */
@@ -189,6 +195,139 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
       window.removeEventListener('resize', updateScrollState);
     };
   }, [updateScrollState, users.length]);
+
+  // 固定表示列 (ユーザー列) の幅。初期値は localStorage から復元
+  const [userColWidth, setUserColWidth] = useState<number>(() => {
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem(PINNED_WIDTH_STORAGE_KEY) : null;
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed >= MIN_USER_COL_WIDTH && parsed <= MAX_USER_COL_WIDTH) {
+          return parsed;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return DEFAULT_USER_COL_WIDTH;
+  });
+
+  const [isResizing, setIsResizing] = useState(false);
+
+  // 固定表示幅の変更に伴うスクロール状態の再計算
+  useEffect(() => {
+    updateScrollState();
+  }, [userColWidth, updateScrollState]);
+
+  // リサイズ処理 (Pointer Events)
+  const handleResizeStart = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const startX = e.clientX;
+      const startWidth = userColWidth;
+      setIsResizing(true);
+
+      const target = e.currentTarget;
+      try {
+        target.setPointerCapture(e.pointerId);
+      } catch {
+        // fallback
+      }
+
+      const prevUserSelect = document.body.style.userSelect;
+      const prevCursor = document.body.style.cursor;
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
+
+      const onPointerMove = (ev: PointerEvent) => {
+        const deltaX = ev.clientX - startX;
+        const nextWidth = Math.max(
+          MIN_USER_COL_WIDTH,
+          Math.min(MAX_USER_COL_WIDTH, Math.round(startWidth + deltaX))
+        );
+        setUserColWidth(nextWidth);
+      };
+
+      const onPointerUp = (ev: PointerEvent) => {
+        try {
+          target.releasePointerCapture(ev.pointerId);
+        } catch {
+          // ignore
+        }
+        setIsResizing(false);
+        document.body.style.userSelect = prevUserSelect;
+        document.body.style.cursor = prevCursor;
+
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+        window.removeEventListener('pointercancel', onPointerUp);
+
+        setUserColWidth((finalWidth) => {
+          try {
+            if (finalWidth === DEFAULT_USER_COL_WIDTH) {
+              localStorage.removeItem(PINNED_WIDTH_STORAGE_KEY);
+            } else {
+              localStorage.setItem(PINNED_WIDTH_STORAGE_KEY, String(finalWidth));
+            }
+          } catch {
+            // ignore
+          }
+          return finalWidth;
+        });
+      };
+
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerUp);
+    },
+    [userColWidth]
+  );
+
+  const handleResetWidth = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setUserColWidth(DEFAULT_USER_COL_WIDTH);
+    try {
+      localStorage.removeItem(PINNED_WIDTH_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const handleResizeKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      let nextWidth: number | null = null;
+      if (e.key === 'ArrowLeft') {
+        nextWidth = Math.max(MIN_USER_COL_WIDTH, userColWidth - 10);
+      } else if (e.key === 'ArrowRight') {
+        nextWidth = Math.min(MAX_USER_COL_WIDTH, userColWidth + 10);
+      } else if (e.key === 'Home') {
+        nextWidth = MIN_USER_COL_WIDTH;
+      } else if (e.key === 'End') {
+        nextWidth = MAX_USER_COL_WIDTH;
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        nextWidth = DEFAULT_USER_COL_WIDTH;
+      }
+
+      if (nextWidth !== null) {
+        e.preventDefault();
+        e.stopPropagation();
+        setUserColWidth(nextWidth);
+        try {
+          if (nextWidth === DEFAULT_USER_COL_WIDTH) {
+            localStorage.removeItem(PINNED_WIDTH_STORAGE_KEY);
+          } else {
+            localStorage.setItem(PINNED_WIDTH_STORAGE_KEY, String(nextWidth));
+          }
+        } catch {
+          // ignore
+        }
+      }
+    },
+    [userColWidth]
+  );
 
   const scrollTable = (direction: 'left' | 'right') => {
     const el = tableContainerRef.current;
@@ -629,16 +768,46 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
             <tr className="border-b border-slate-800">
               <th className="sticky top-0 left-0 z-30 bg-slate-950 border-b border-slate-800 px-2.5 py-2 text-center w-12 min-w-[48px] max-w-[48px] cursor-pointer select-none hover:text-slate-200" onClick={handleDefaultSort} title="標準順">#</th>
               <th
-                className="sticky top-0 left-12 z-30 bg-slate-950 border-b border-slate-800 px-2.5 py-2 min-w-[140px] w-36 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                style={{ width: `${userColWidth}px`, minWidth: `${userColWidth}px`, maxWidth: `${userColWidth}px` }}
+                className="sticky top-0 left-12 z-30 bg-slate-950 border-b border-slate-800 px-2.5 py-2 border-r border-slate-700/80 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.5)] cursor-pointer select-none hover:text-slate-200 transition-colors group relative"
                 onClick={() => handleSort('user')}
               >
                 <div className="flex items-center space-x-1">
                   <span>ユーザー</span>
                   {renderSortIcon('user')}
                 </div>
+                {/* 固定表示幅ドラッグ変更ハンドル */}
+                <div
+                  role="separator"
+                  aria-orientation="vertical"
+                  aria-label="固定表示幅の変更ハンドル"
+                  aria-valuenow={userColWidth}
+                  aria-valuemin={MIN_USER_COL_WIDTH}
+                  aria-valuemax={MAX_USER_COL_WIDTH}
+                  tabIndex={0}
+                  title={`ドラッグして固定表示幅を変更 (${userColWidth}px) / ダブルクリックで既定値に戻す`}
+                  className={`absolute top-0 right-0 bottom-0 w-3 translate-x-1.5 cursor-col-resize z-40 flex items-center justify-center select-none group/resizer ${
+                    isResizing ? 'bg-indigo-500/30' : 'hover:bg-indigo-500/20'
+                  }`}
+                  onPointerDown={handleResizeStart}
+                  onDoubleClick={handleResetWidth}
+                  onKeyDown={handleResizeKeyDown}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div
+                    className={`w-0.5 h-4 rounded-full transition-colors ${
+                      isResizing ? 'bg-indigo-400' : 'bg-slate-600 group-hover/resizer:bg-indigo-400'
+                    }`}
+                  />
+                  {isResizing && (
+                    <div className="absolute -top-7 right-0 px-1.5 py-0.5 bg-indigo-600 text-white text-[10px] font-mono rounded shadow pointer-events-none whitespace-nowrap">
+                      {userColWidth}px
+                    </div>
+                  )}
+                </div>
               </th>
               <th
-                className="sticky top-0 left-[188px] z-30 bg-slate-950 border-b border-slate-800 px-2.5 py-2 min-w-[140px] w-36 border-r border-slate-700/80 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.5)] cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 min-w-[140px] cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('display_name')}
               >
                 <div className="flex items-center space-x-1">
@@ -776,7 +945,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                 </div>
               </th>
               <th
-                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 min-w-[90px] cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('signal')}
                 title="長大化・混在の兆候 (1 日単位の集計からの推定。会話の内容は見ていません)"
               >
@@ -850,9 +1019,12 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                         {index + 1}
                       </td>
 
-                      <td className={`sticky left-12 z-10 px-2.5 py-2 min-w-[140px] w-36 transition-colors ${
-                        isSelected ? 'bg-indigo-950' : 'bg-slate-900 group-hover:bg-slate-800/90'
-                      }`}>
+                      <td
+                        style={{ width: `${userColWidth}px`, minWidth: `${userColWidth}px`, maxWidth: `${userColWidth}px` }}
+                        className={`sticky left-12 z-10 px-2.5 py-2 border-r border-slate-700/80 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.5)] transition-colors ${
+                          isSelected ? 'bg-indigo-950' : 'bg-slate-900 group-hover:bg-slate-800/90'
+                        }`}
+                      >
                         <div className="flex items-center space-x-2">
                           {u.avatar_url ? (
                             <img
@@ -873,9 +1045,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                         </div>
                       </td>
 
-                      <td className={`sticky left-[188px] z-10 px-2.5 py-2 min-w-[140px] w-36 border-r border-slate-700/80 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.5)] transition-colors ${
-                        isSelected ? 'bg-indigo-950' : 'bg-slate-900 group-hover:bg-slate-800/90'
-                      }`}>
+                      <td className="px-2.5 py-2 min-w-[140px]">
                         <div className="flex items-center space-x-1.5">
                           <span className="font-semibold text-slate-200 truncate">{u.display_name}</span>
                           {isSelected && (
@@ -1017,7 +1187,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                       ) : (
                         na(ins ? UNAVAILABLE_REASON.noTokens : UNAVAILABLE_REASON.noInsight)
                       )}
-                      <td className="px-2.5 py-2">
+                      <td className="px-2.5 py-2 min-w-[90px]">
                         {ins ? (
                           <UsageSignalBadge level={ins.level} title={describeInsightTooltip(ins.signals)} />
                         ) : (

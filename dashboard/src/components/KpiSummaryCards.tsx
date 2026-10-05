@@ -186,11 +186,13 @@ export const KpiSummaryCards: React.FC<KpiSummaryCardsProps> = ({ data, isDemo =
             )}
             {(isChatMissing || isLanguageMissing) && (
               <span
-                className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-950 text-rose-300 border border-rose-800 flex items-center space-x-1"
-                title="一部のメトリクスがAPIエラーにより取得不能でした"
+                className="p-1 rounded text-[10px] font-bold bg-rose-950 text-rose-300 border border-rose-800 flex items-center justify-center shrink-0 cursor-help"
+                title="データ一部不明: 一部のメトリクスがAPIエラーにより取得不能でした"
+                aria-label="データ一部不明: 一部のメトリクスがAPIエラーにより取得不能でした"
+                data-testid="missing-metrics-badge"
               >
-                <AlertTriangle className="w-3 h-3 text-rose-400" />
-                <span>データ一部不明</span>
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-400" aria-hidden="true" />
+                <span className="sr-only">データ一部不明</span>
               </span>
             )}
             <div className="p-2 rounded-lg bg-purple-950/80 border border-purple-800/60 text-purple-400">
