@@ -33,6 +33,21 @@ GitHub REST API はカレンダーベースのバージョン体系を採用し�
 **失敗と「データなし」の区別**: データソースの各 `fetch*` は配列を返し、例外を投げない。失敗はソース別ステータス（`ok` / `partial` / `failed` / `skipped`、SDD-05 §3）と `DataFetchIssue` で表現する。呼び出し側は、空配列だけから「失敗」「データなし」を推測してはならない。
 
 **クライアント契約と記録**: ソースは `RawApiClient` (`fetchRaw` / `fetchRawAllowing` / `fetchPaginated` / `downloadSigned`) だけを通して API を呼ぶ。ライブ実行では、全ての応答を Run Manifest 付きで不変保存し (SDD-05 §2.3)、オフラインで再生できる (`npm run pipeline:reprocess`、SDD-02 §2.8)。署名付きレポート URL は署名を除いて記録する。
+
+### 1.2 権限レベルと段階的フォールバック (Issue #234)
+
+`/enterprises/{enterprise}/...` のエンドポイント (利用状況レポート・Billing Seats・Cost Centers・AI Credit 利用量) は **Enterprise Owner / Billing Manager** のトークンを必要とする。部署管理者やエンジニアは通常 Organization 単位の権限しか持たず、これらは **HTTP 403** になる。収集側は失敗させず、トークンが読めるスコープで収集を続ける。
+
+| レベル | スコープ | 動作 |
+| :--- | :--- | :--- |
+| 1 | Enterprise (`COPILOT_ENTERPRISE`) | 最初に試す。拒否 (401 / 403。Seats は 404 も、利用状況レポートは全日 404 も含む) は、他のスコープが取得できれば `warning` (`api_auth` / `not_found`) として記録し、レベル 2 へフォールバックする。 |
+| 2 | Organization (`COPILOT_ORGS`) | 設定どおりに使う。`COPILOT_ORGS` が **未設定で Enterprise スコープが拒否された** とき、または `COPILOT_ORGS=auto` のときは、`GET /user/orgs` (ページング対応。1 回の実行で 1 度だけ呼び、メトリクスとシートで共有) で Organization を探索する。各 Organization の利用状況レポートとシートを §2.1 / §3.1 と同じ規則でマージ・重複排除する。 |
+| — | Enterprise 専用機能 | Cost Centers (§4) と AI Credit 利用量 (§4a) が 401 / 403 のときは、`warning` (`api_auth`、`http_status: 403`) を 1 件記録して `skipped` とする。費用の配賦は `COPILOT_USER_MAPPING` の `cost_center` 属性 (SDD-04) で、AI Credit の金額は Monthly Usage Report (CSV) で継続する。 |
+
+- **スコープ単位の耐障害性**: 401 / 403 (Seats は 404 も) で拒否されたスコープは除外し、スコープ名 (`enterprise:<slug>` / `org:<slug>`) を示す `warning` を記録して、他のスコープは収集を続ける。ソースの状態は `partial`。**どのスコープも** 読めないときはソースを `failed` とし、拒否は `error` とする。
+- **一時的な失敗は拒否ではない**: 5xx・429・通信エラーは従来どおり扱う (Seats は不完全な席数を公開しないよう、ソース全体を失敗にする。§3.1)。
+- **探索の失敗**: `GET /user/orgs` はユーザーのトークン (`read:org` の classic PAT、または fine-grained PAT) を必要とし、GitHub App のインストールトークンでは呼べない。探索の失敗や 0 件は `config:org-discovery` の `warning` とし、それだけでソースを失敗にしない。探索の成功は issue にしない。実際に収集した Organization は Run Manifest (`config.orgs`) に残し、再処理が同じエンドポイントを要求できるようにする。
+- **未設定**: `COPILOT_ENTERPRISE` と `COPILOT_ORGS` がどちらも無いときは探索せず、ソースは `skipped` のまま (認証情報なしモード)。Enterprise なしで探索を使うときは `COPILOT_ORGS=auto` を設定する。
 ---
 
 ## 2. Copilot Metrics & Reports API
@@ -55,8 +70,8 @@ GitHub REST API はカレンダーベースのバージョン体系を採用し�
 - **提供範囲**: レポートは 2025-10-10 以降に存在し、1 日レポートは最大 1 年前まで取得できる。対象の日は集計が完了している必要がある (最新の日は未生成で `404` になることがある。Organization は `204` を返すことがある)。
 - **認証** (PAT。2026-10-01 の決定): Enterprise レポートは `manage_billing:copilot` または `read:enterprise` の PAT (classic。呼び出し側が Enterprise owner / billing manager、または fine-grained の「View Enterprise Copilot Metrics」権限を持つこと)、Organization レポートは `read:org` の PAT (classic。Organization owner、または「View Organization Copilot Metrics」)。
 - **署名付きのダウンロードリンクは `Authorization` ヘッダーなしで取得する** (リンクは `api.github.com` ではなくオブジェクトストレージを指す。そこへ PAT を送ると漏えいする)。アダプタは `https` のリンクだけを受け付け、ファイルサイズにも上限を設ける。
-- **収集**: パイプラインは、Enterprise **と** 設定された全 Organization について、昨日 (UTC) までの 30 日 (当月の月初のほうが早ければ月初まで遡る) の各日の `users-1-day` を、3 並列で取得する。同じ日に複数のスコープへ現れるユーザーは **1 件** として数える (`user_id` で照合し、Enterprise の行を採る)。集計レポートは使わず、全体の値は重複排除したユーザー行から導出する。
-- **状態**: 全日取得 → `ok`、一部の日が失敗または行を隔離 → `partial` (+ issue)、1 件も読めない → `failed` (+ 必要なトークンのスコープを示す issue)。最新の日だけが無いことは障害としない。
+- **収集**: パイプラインは、Enterprise **と** 設定された (または §1.2 で探索した) 全 Organization について、昨日 (UTC) までの 30 日 (当月の月初のほうが早ければ月初まで遡る) の各日の `users-1-day` を、3 並列で取得する。同じ日に複数のスコープへ現れるユーザーは **1 件** として数える (`user_id` で照合し、Enterprise の行を採る)。集計レポートは使わず、全体の値は重複排除したユーザー行から導出する。
+- **状態**: 全日取得 → `ok`、一部の日・スコープが失敗、Enterprise スコープが拒否され Organization スコープで代替した (§1.2)、または行を隔離 → `partial` (+ issue)、1 件も読めない → `failed` (+ 必要なトークンのスコープを示す issue)。最新の日だけが無いことは障害としない。
 
 #### フィールド対応 (users-1-day の行 → 内部のメトリクス)
 行のフィールド (公式名): `day`、`user_id`、`user_login`、`enterprise_id`、`organization_id`、`ai_credits_used`、`user_initiated_interaction_count`、`code_generation_activity_count`、`code_acceptance_activity_count`、`loc_suggested_to_add_sum`、`loc_suggested_to_delete_sum`、`loc_added_sum`、`loc_deleted_sum`、`used_agent` / `used_chat` / `used_cli` / `used_copilot_app` / `used_copilot_cloud_agent` (boolean)、配列 `totals_by_ide`・`totals_by_feature`・`totals_by_language_feature`・`totals_by_language_model`・`totals_by_model_feature`。`feature` の値には `code_completion`、`chat_inline`、`chat_panel_{ask,edit,agent,plan,custom,unknown}_mode`、`agent_edit`、`copilot_cli`、`copilot_app`、`others` があり、未知の値は捨てずに保持する。
@@ -162,7 +177,7 @@ GitHub公式データにおける「受諾率」は、APIレスポンスのイ�
 - Organization: `GET /orgs/{org}/copilot/billing/seats`
 - ページネーション: `per_page=100` を指定し、`Link: <...>; rel="next"` ヘッダーを最終ページまで追従する。次ページ URL は API ベース URL と **同一オリジンの場合のみ** 追従する（`Authorization` ヘッダーを別オリジンへ送らない）。安全弁として 1,000 ページで打ち切り、到達した場合は `data_integrity` の警告（「シート一覧が不完全な可能性」）を出す。
 - 整合性チェック: 各対象の先頭ページの `total_seats` の合計と、取得したレコード数を照合する。不一致なら `data_integrity` の警告を出し、ソース状態は `partial` になる。
-- 失敗時の扱い: 対象（Enterprise / いずれかの Org）の **どれか 1 つでも** 失敗した場合は、`seats` ソース全体を `failed` として空配列を返す。不完全な席数を現在値として公開しないためで、パイプラインは前回成功時の成果物を維持する（SDD-05 §3）。
+- 失敗時の扱い: 401 / 403 / 404 (権限不足・不可視。再試行しても変わらない) で拒否された対象は `warning` を記録して除外し、他の対象のシートを採用して `partial` とする。Enterprise が拒否され `COPILOT_ORGS` が未設定のときは Organization を探索する（§1.2）。一時的な失敗 (5xx・429・通信エラー) が **1 つでも** ある場合、またはどの対象も読めない場合は、`seats` ソース全体を `failed` として空配列を返す。不完全な席数を現在値として公開しないためで、パイプラインは前回成功時の成果物を維持する（SDD-05 §3）。`total_seats` の照合とログイン名でのマージは、実際に読めた対象で行う。
 
 ### 3.2 レスポンススキーマ
 
@@ -221,7 +236,7 @@ GitHub EnterpriseのBilling機能である「Cost Center」一覧とリソース
 
 公開ドキュメント上のレスポンスキーは `costCenters`。旧キー `cost_centers` と素の配列も受け付ける。各レコードは `id` と `name` が必須で、`cost_center_code` と `state` は任意（公開 API は `cost_center_code` を返さない）。`state` が `deleted` の Cost Center は配賦の対象から外す。`resources[].type` の表記ゆれはドメインの種別へ正規化する（`Organization` → `Org`、`Repo` → `Repository`、`User`）。未知の種別はそのまま保持する。
 
-Cost Center は Enterprise Billing の機能。Org 単体運用では、該当ソースを `skipped`（障害ではない）として記録する。
+Cost Center は Enterprise Billing の機能。Org 単体運用では、該当ソースを `skipped`（障害ではない）として記録する。Enterprise Billing の権限が無いトークン (401 / 403) も `warning` 付きの `skipped` とし、配賦は `COPILOT_USER_MAPPING` の `cost_center` 属性で行う（§1.2）。その他のエラーは `failed`。
 
 ```json
 {
@@ -257,7 +272,7 @@ REST API description (`ghec.2022-11-28.json`。`raw.githubusercontent.com/github
 - 応答: `{ timePeriod: { year, month?, day? }, enterprise, user?, organization?, product?, model?, costCenter?, usageItems: [ { product, sku, model, unitType, pricePerUnit, grossQuantity, grossAmount, discountQuantity, discountAmount, netQuantity, netAmount } ] }`。ページングも署名付き URL も無い。応答には**通貨が書かれていない**。
 - アダプタ (`src/adapters/github-api/ai-credits/`): レポート日ごとに 1 リクエスト (Reports API と同じ窓)。明細は 1 件ずつ検証し、不正な明細は値を出さずに隔離する (調整行は負になりうるので負の金額は許容)。別の期間の応答は拒否する。
 - 写像: 各明細を `fact.cost_line` (SDD-05 §2.4) にする。`user_key: null` (ユーザー別には取得しない)、`quantity = grossQuantity`、`unit_type` は応答のまま (単位の異なる値は合算しない)、`currency: null` (断定しない)、`source: "api"`。
-- `SourceStatus` の `ai_credits`: 全日取得 → `ok`、一部の日の失敗・明細の隔離 → `partial`、1 日も読めない → `failed` (権限のヒント付き)、Enterprise 未設定 → `skipped`、収集時に記録の無い古い run の再処理 → `skipped`。失敗が他のソースを止めることはない。取得した明細の集計への反映は Phase 2。
+- `SourceStatus` の `ai_credits`: 全日取得 → `ok`、一部の日の失敗・明細の隔離 → `partial`、1 日も読めない → `failed` (権限のヒント付き)、全リクエストが 401 / 403 → `warning` 1 件付きの `skipped` (§1.2)、Enterprise 未設定 → `skipped`、収集時に記録の無い古い run の再処理 → `skipped`。失敗が他のソースを止めることはない。取得した明細の集計への反映は Phase 2。
 
 ## 5. 課金モデル & 料金テーブル (2026年9月基準)
 

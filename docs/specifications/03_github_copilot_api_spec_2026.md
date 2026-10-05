@@ -33,6 +33,21 @@ The client layer (`RawApiFetcher`) intercepts both status signals and raises a `
 **Failure vs. empty**: every `fetch*` of the data source returns an array and never throws; failures are expressed by the per-source status (`ok` / `partial` / `failed` / `skipped`, SDD-05 §3) plus `DataFetchIssue`s. Callers must not infer "failure" or "no data" from an empty array.
 
 **Client contract and recording**: sources call the API only through `RawApiClient` (`fetchRaw` / `fetchRawAllowing` / `fetchPaginated` / `downloadSigned`). In live runs every response is landed immutably with a Run Manifest (SDD-05 §2.3) and can be replayed offline (`npm run pipeline:reprocess`, SDD-02 §2.8). Signed report URLs are recorded without their signature.
+
+### 1.2 Permission levels & graceful fallback (Issue #234)
+
+The `/enterprises/{enterprise}/...` endpoints (usage reports, billing seats, Cost Centers, AI credit usage) need an **enterprise owner / billing manager** token. A department administrator or an engineer usually holds organization-level permission only, and those endpoints answer **HTTP 403**. The collector then uses the scopes the token can read instead of failing:
+
+| Level | Scope | Behavior |
+| :--- | :--- | :--- |
+| 1 | Enterprise (`COPILOT_ENTERPRISE`) | Tried first. Denial (401 / 403; for seats also 404; for usage reports a 404 on every day) is recorded as a `warning` (`api_auth` / `not_found`) when another scope is collected, and collection falls back to Level 2. |
+| 2 | Organizations (`COPILOT_ORGS`) | Used as configured. When `COPILOT_ORGS` is **unset and the enterprise scope is denied**, or when `COPILOT_ORGS=auto`, the organizations are discovered with `GET /user/orgs` (paginated, called once per run and shared by metrics and seats). Usage reports and seats of every organization are merged and de-duplicated as in §2.1 / §3.1. |
+| — | Enterprise-only features | Cost Centers (§4) and AI credit usage (§4a) answering 401 / 403 are recorded as `skipped` with one `warning` (`api_auth`, `http_status: 403`); cost allocation continues with the `cost_center` attribute of `COPILOT_USER_MAPPING` (SDD-04), and AI credit amounts with the Monthly Usage Report (CSV). |
+
+- **Per-scope tolerance**: a scope denied with 401 / 403 (seats: also 404) is excluded and recorded as a `warning` naming the scope (`enterprise:<slug>` / `org:<slug>`) while the other scopes are collected; the source status is `partial`. When **no** scope can be read, the source is `failed` and the denial is an `error`.
+- **Transient failures are not denials**: 5xx, 429 and network errors keep their previous semantics (seats: the whole source fails so a partial headcount is never published, §3.1).
+- **Discovery failure**: `GET /user/orgs` needs a user token (classic PAT with `read:org`, or a fine-grained PAT); GitHub App installation tokens cannot call it. A failed or empty discovery is a `warning` on `config:org-discovery` and never fails a source by itself. A successful discovery is not an issue; the organizations actually collected are recorded in the Run Manifest (`config.orgs`) so that a reprocess requests the same endpoints.
+- **Not configured**: with neither `COPILOT_ENTERPRISE` nor `COPILOT_ORGS`, no discovery is attempted and the sources stay `skipped` (no-credentials mode). Set `COPILOT_ORGS=auto` to opt in to discovery without an enterprise.
 ---
 
 ## 2. Copilot Metrics & Reports API
@@ -55,8 +70,8 @@ The legacy metrics endpoints (`/enterprises/{enterprise}/copilot/metrics`, `/org
 - **Availability**: reports exist from 2025-10-10; 1-day reports are available for up to 1 year back. The day must be complete (the latest day may not be generated yet → `404`; an organization may answer `204`).
 - **Authentication** (PAT, per decision 2026-10-01): classic PAT with `manage_billing:copilot` or `read:enterprise` for the Enterprise reports (the caller must be an enterprise owner / billing manager, or hold the fine-grained "View Enterprise Copilot Metrics" permission); classic PAT with `read:org` for Organization reports (organization owner, or "View Organization Copilot Metrics").
 - **The signed download link must be fetched without the `Authorization` header** (it points at object storage, not at `api.github.com`; sending the PAT there would leak it). The adapter also accepts `https` links only and caps the file size.
-- **Collection**: the pipeline requests `users-1-day` for the Enterprise **and** for every configured Organization, for each day of the 30 days ending yesterday (UTC), extended back to the first day of the current month if that is earlier, 3 requests in parallel. A user who appears in more than one scope on the same day is counted **once** (the Enterprise row wins, matched by `user_id`). The aggregate reports are not used: overall figures are derived from the de-duplicated user rows.
-- **Status**: every day fetched → `ok`; some days failed or rows were quarantined → `partial` (+ issue); not a single report could be read → `failed` (+ issue naming the required token scopes). A missing latest day alone is not an error.
+- **Collection**: the pipeline requests `users-1-day` for the Enterprise **and** for every configured (or discovered, §1.2) Organization, for each day of the 30 days ending yesterday (UTC), extended back to the first day of the current month if that is earlier, 3 requests in parallel. A user who appears in more than one scope on the same day is counted **once** (the Enterprise row wins, matched by `user_id`). The aggregate reports are not used: overall figures are derived from the de-duplicated user rows.
+- **Status**: every day fetched → `ok`; some days or scopes failed, the enterprise scope was denied and the organization scope was used instead (§1.2), or rows were quarantined → `partial` (+ issue); not a single report could be read → `failed` (+ issue naming the required token scopes). A missing latest day alone is not an error.
 
 #### Field mapping (users-1-day row → internal metrics)
 Row fields (official names): `day`, `user_id`, `user_login`, `enterprise_id`, `organization_id`, `ai_credits_used`, `user_initiated_interaction_count`, `code_generation_activity_count`, `code_acceptance_activity_count`, `loc_suggested_to_add_sum`, `loc_suggested_to_delete_sum`, `loc_added_sum`, `loc_deleted_sum`, `used_agent` / `used_chat` / `used_cli` / `used_copilot_app` / `used_copilot_cloud_agent` (booleans) and the arrays `totals_by_ide`, `totals_by_feature`, `totals_by_language_feature`, `totals_by_language_model`, `totals_by_model_feature`. `feature` values include `code_completion`, `chat_inline`, `chat_panel_{ask,edit,agent,plan,custom,unknown}_mode`, `agent_edit`, `copilot_cli`, `copilot_app`, `others`; unknown values are kept, never dropped.
@@ -162,7 +177,7 @@ Retrieves all users assigned a Copilot seat, assignment timestamps, and last act
 - Organization: `GET /orgs/{org}/copilot/billing/seats`
 - Pagination: `per_page=100` and follow the `Link: <...>; rel="next"` response header until the last page. The next URL is followed **only when it has the same origin** as the API base URL (the `Authorization` header is never sent to another origin). A safety limit of 1,000 pages applies; reaching it raises a `data_integrity` warning ("the seat list may be incomplete").
 - Integrity check: the sum of `total_seats` (first page of each target) is compared with the number of retrieved records; a mismatch raises a `data_integrity` warning and the source status becomes `partial`.
-- Failure semantics: if **any** target (enterprise / one of the orgs) fails, the whole `seats` source is `failed` and an empty list is returned, so a partial headcount is never published as the current value (the pipeline keeps the last-known-good artifacts, SDD-05 §3).
+- Failure semantics: a target denied with 401 / 403 / 404 (no permission or not visible; retrying does not change it) is excluded with a `warning`, the seats of the other targets are used and the status is `partial`; when the enterprise target is denied and `COPILOT_ORGS` is unset, the organizations are discovered (§1.2). If **any** target fails transiently (5xx, 429, network) or no target can be read, the whole `seats` source is `failed` and an empty list is returned, so a partial headcount is never published as the current value (the pipeline keeps the last-known-good artifacts, SDD-05 §3). The `total_seats` check and the per-login merge use the targets actually read.
 
 ### 3.2 Response Schema
 
@@ -221,7 +236,7 @@ Retrieves Cost Centers defined in GitHub Enterprise Billing and their mapped res
 
 The documented response key is `costCenters`; the legacy key `cost_centers` and a bare array are also accepted. Each record needs `id` and `name`; `cost_center_code` and `state` are optional (the public API does not return `cost_center_code`). Cost Centers whose `state` is `deleted` are excluded from allocation. `resources[].type` aliases are normalized to the domain kinds (`Organization` → `Org`, `Repo` → `Repository`, `User`); unknown kinds are kept as-is.
 
-Cost Centers are an Enterprise Billing feature: for organization-only operation the source is recorded as `skipped` (not a failure).
+Cost Centers are an Enterprise Billing feature: for organization-only operation the source is recorded as `skipped` (not a failure). A token without enterprise billing permission (401 / 403) is also `skipped`, with a `warning`; allocation then uses the `cost_center` attribute of `COPILOT_USER_MAPPING` (§1.2). Other errors are `failed`.
 
 ```json
 {
@@ -257,7 +272,7 @@ Verified against the REST API description (`ghec.2022-11-28.json`, via `raw.gith
 - Response: `{ timePeriod: { year, month?, day? }, enterprise, user?, organization?, product?, model?, costCenter?, usageItems: [ { product, sku, model, unitType, pricePerUnit, grossQuantity, grossAmount, discountQuantity, discountAmount, netQuantity, netAmount } ] }`. No pagination and no signed URLs. The response does **not** state a currency.
 - Adapter (`src/adapters/github-api/ai-credits/`): one request per report day (the same window as the Reports API), items validated one by one (an invalid item is quarantined, without echoing values; negative amounts are allowed because adjustments can be negative), a response for another period is rejected.
 - Mapping: each item becomes a `fact.cost_line` (SDD-05 §2.4) with `user_key: null` (not fetched per user), `quantity = grossQuantity`, `unit_type` kept as returned (units are never added together), `currency: null` (not assumed), `source: "api"`.
-- `SourceStatus` `ai_credits`: all days read → `ok`; some days failed or items quarantined → `partial`; no day readable → `failed` (with the permission hint); no enterprise configured → `skipped`; replaying an older run that never recorded the request → `skipped`. A failure never stops the other sources. Consuming the lines in aggregation is Phase 2.
+- `SourceStatus` `ai_credits`: all days read → `ok`; some days failed or items quarantined → `partial`; no day readable → `failed` (with the permission hint); every request denied with 401 / 403 → `skipped` with one `warning` (§1.2); no enterprise configured → `skipped`; replaying an older run that never recorded the request → `skipped`. A failure never stops the other sources. Consuming the lines in aggregation is Phase 2.
 
 ## 5. Billing Model & Pricing Table (September 2026 Baseline)
 
