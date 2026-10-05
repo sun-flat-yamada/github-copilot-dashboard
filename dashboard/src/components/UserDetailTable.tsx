@@ -56,6 +56,8 @@ export type UserSortMetric =
   | 'plan'
   | 'status'
   | 'primary_model'
+  | 'top_model_2'
+  | 'top_model_3'
   | 'requests'
   | 'suggestions'
   | 'acceptances'
@@ -69,7 +71,7 @@ export type UserSortMetric =
   | 'last_activity';
 
 /** 表のデータ列の数。ドリルダウン行や空行の colSpan に使う (列を足したら更新する) */
-export const USER_DETAIL_COLUMN_COUNT = 22;
+export const USER_DETAIL_COLUMN_COUNT = 24;
 
 /** 固定表示列 (ユーザー列) の幅に関する定数 (ピクセル単位) */
 export const DEFAULT_USER_COL_WIDTH = 180;
@@ -117,6 +119,14 @@ const compareNullable = (a: number | null, b: number | null, order: 'asc' | 'des
 
 const compareText = (a: string | null | undefined, b: string | null | undefined, order: 'asc' | 'desc'): number => {
   const cmp = (a || '').localeCompare(b || '');
+  return order === 'asc' ? cmp : -cmp;
+};
+
+const compareModelText = (a: string | null | undefined, b: string | null | undefined, order: 'asc' | 'desc'): number => {
+  if (!a && !b) return 0;
+  if (!a) return 1;
+  if (!b) return -1;
+  const cmp = a.localeCompare(b);
   return order === 'asc' ? cmp : -cmp;
 };
 
@@ -428,7 +438,9 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
         u.department.toLowerCase().includes(q) ||
         u.cost_center.toLowerCase().includes(q) ||
         u.organization.toLowerCase().includes(q) ||
-        u.tags.some((t) => t.toLowerCase().includes(q));
+        u.tags.some((t) => t.toLowerCase().includes(q)) ||
+        u.top_models.some((m) => m.model.toLowerCase().includes(q)) ||
+        (u.primary_model ? u.primary_model.toLowerCase().includes(q) : false);
       const matchesStatus = statusFilter === 'all' || u.status === statusFilter;
       const matchesGroup = !activeGroup || activeGroup === 'all' || groupOf(u) === activeGroup;
       const matchesReview = !onlyReview || u.usage_insight?.level === 'review';
@@ -457,8 +469,21 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
           return compareText(a.plan, b.plan, sortOrder);
         case 'status':
           return compareNullable(a.days_inactive, b.days_inactive, sortOrder);
-        case 'primary_model':
-          return compareText(a.primary_model, b.primary_model, sortOrder);
+        case 'primary_model': {
+          const ma = a.top_models[0]?.model ?? a.primary_model;
+          const mb = b.top_models[0]?.model ?? b.primary_model;
+          return compareModelText(ma, mb, sortOrder);
+        }
+        case 'top_model_2': {
+          const ma = a.top_models[1]?.model ?? null;
+          const mb = b.top_models[1]?.model ?? null;
+          return compareModelText(ma, mb, sortOrder);
+        }
+        case 'top_model_3': {
+          const ma = a.top_models[2]?.model ?? null;
+          const mb = b.top_models[2]?.model ?? null;
+          return compareModelText(ma, mb, sortOrder);
+        }
         case 'requests':
           return compareNullable(a.requests, b.requests, sortOrder);
         case 'suggestions':
@@ -508,7 +533,9 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
       'プラン',
       'ステータス',
       '非アクティブ日数',
-      '主利用モデル',
+      '主要モデル (Top 1)',
+      '主要モデル (Top 2)',
+      '主要モデル (Top 3)',
       'リクエスト数',
       '提案数',
       '受諾採用数',
@@ -533,6 +560,18 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
 
     const rows = filteredUsers.map((u, idx) => {
       const ins = u.usage_insight;
+      const models = u.top_models.length > 0 ? u.top_models : (u.primary_model ? [{ model: u.primary_model, share: null }] : []);
+      const formatModelForCsv = (index: number) => {
+        if (u.primary_model === null && models.length === 0) return '';
+        const m = models[index];
+        if (m) {
+          return m.share !== null ? `${formatShare(m.share)} ${m.model}` : m.model;
+        }
+        if (models[0]?.share === null) return '— (内訳なし)';
+        if (models.length === 1) return 'なし (1種のみ利用)';
+        if (models.length === 2) return 'なし (2種のみ利用)';
+        return 'なし';
+      };
       return [
         idx + 1,
         u.login,
@@ -544,7 +583,9 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
         u.plan ?? '',
         u.status ?? '',
         u.days_inactive === null ? '' : u.days_inactive === 999 ? 'N/A' : u.days_inactive,
-        q(formatTopModels(u.top_models)),
+        q(formatModelForCsv(0)),
+        q(formatModelForCsv(1)),
+        q(formatModelForCsv(2)),
         n(u.requests),
         n(u.suggestions),
         n(u.acceptances),
@@ -627,6 +668,52 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
       —
     </td>
   );
+
+  /** 主要モデル (Top 1, Top 2, Top 3) のセルを描画。対象モデルがない場合はそれとわかる表示にする */
+  const renderModelCell = (u: UserDetailRow, index: 0 | 1 | 2) => {
+    const models = u.top_models.length > 0 ? u.top_models : (u.primary_model ? [{ model: u.primary_model, share: null }] : []);
+    if (u.primary_model === null && models.length === 0) {
+      return unavailable(UNAVAILABLE_REASON.noProfile, 'left');
+    }
+
+    const m = models[index];
+    if (m) {
+      return (
+        <td className="px-2.5 py-2">
+          <span
+            className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium border ${
+              index === 0
+                ? 'bg-purple-950/60 text-purple-300 border-purple-800/50'
+                : 'bg-slate-800/60 text-slate-300 border-slate-700/50'
+            }`}
+          >
+            {m.share !== null && `${formatShare(m.share)} `}
+            {m.model}
+          </span>
+        </td>
+      );
+    }
+
+    if (models[0]?.share === null) {
+      return (
+        <td className="px-2.5 py-2 font-mono text-slate-500 text-[11px]" title="モデル別の内訳データがないため取得できません">
+          — (内訳なし)
+        </td>
+      );
+    }
+
+    const count = models.length;
+    const title = count === 1 ? '利用モデルが1種類のみのため該当モデルなし' : '利用モデルが2種類のみのため該当モデルなし';
+    const label = count === 1 ? 'なし (1種のみ利用)' : 'なし (2種のみ利用)';
+
+    return (
+      <td className="px-2.5 py-2" title={title}>
+        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] text-slate-400 bg-slate-800/40 border border-slate-700/50 font-medium">
+          {label}
+        </span>
+      </td>
+    );
+  };
 
   const money = (usd: number) => formatMoney(usd);
 
@@ -874,10 +961,31 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
               <th
                 className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('primary_model')}
+                title="主要モデル (Top 1) で並び替え"
               >
                 <div className="flex items-center space-x-1">
-                  <span>主利用モデル</span>
+                  <span>主要モデル (Top 1)</span>
                   {renderSortIcon('primary_model')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('top_model_2')}
+                title="主要モデル (Top 2) で並び替え"
+              >
+                <div className="flex items-center space-x-1">
+                  <span>主要モデル (Top 2)</span>
+                  {renderSortIcon('top_model_2')}
+                </div>
+              </th>
+              <th
+                className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 cursor-pointer select-none hover:text-slate-200 transition-colors group"
+                onClick={() => handleSort('top_model_3')}
+                title="主要モデル (Top 3) で並び替え"
+              >
+                <div className="flex items-center space-x-1">
+                  <span>主要モデル (Top 3)</span>
+                  {renderSortIcon('top_model_3')}
                 </div>
               </th>
               <th
@@ -1138,27 +1246,9 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                         <td className="px-2.5 py-2">{getStatusBadge(u.status, u.days_inactive)}</td>
                       )}
 
-                      {u.primary_model === null ? (
-                        unavailable(UNAVAILABLE_REASON.noProfile, 'left')
-                      ) : (
-                        <td className="px-2.5 py-2">
-                          <div className="flex flex-col gap-0.5 items-start">
-                            {(u.top_models.length > 0 ? u.top_models : [{ model: u.primary_model, share: null }]).map((m, i) => (
-                              <span
-                                key={m.model}
-                                className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${
-                                  i === 0
-                                    ? 'bg-purple-950/60 text-purple-300 border-purple-800/50'
-                                    : 'bg-slate-800/60 text-slate-300 border-slate-700/50'
-                                }`}
-                              >
-                                {m.share !== null && `${formatShare(m.share)} `}
-                                {m.model}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                      )}
+                      {renderModelCell(u, 0)}
+                      {renderModelCell(u, 1)}
+                      {renderModelCell(u, 2)}
 
                       {u.requests === null ? (
                         na(UNAVAILABLE_REASON.usage)
