@@ -29,7 +29,7 @@ export const getCopilotPricing = (targetMonth?: string): Record<PricedPlanType, 
       enterprise: ent,
     };
   }
-  const pricing = getSeatPricing();
+  const pricing = getSeatPricing(typeof process !== 'undefined' ? process.env?.COPILOT_SEAT_PRICING_OVERRIDE : undefined);
   return {
     business: pricing.business.amount,
     enterprise: pricing.enterprise.amount,
@@ -155,7 +155,7 @@ export class BillingCalculator {
     const aiCreditsCostUsd = CreditsBillingService.calculateCreditsCost(
       aiCreditsUsed28d,
       undefined,
-      undefined,
+      BillingConfigLoader.loadForMonth(targetMonth),
       targetMonth
     ).amount;
 

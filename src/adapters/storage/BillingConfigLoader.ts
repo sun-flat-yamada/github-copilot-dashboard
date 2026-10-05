@@ -8,6 +8,7 @@ import {
   resolveBillingConfigForMonth,
 } from '../../domain/entities/billing-config.js';
 import { BASELINE_PRICING } from '../../domain/pricing/pricing-catalog.js';
+import type { BillingConfigLoadResult, IBillingConfigProvider } from '../../domain/ports/IBillingConfigProvider.js';
 
 export const CurrencyConfigSchema = z.object({
   code: z.string().min(1),
@@ -184,16 +185,7 @@ export const BillingConfigSchema = z.preprocess(
   })
 );
 
-export interface BillingConfigLoadResult {
-  config: EnterpriseBillingConfig;
-  /** 設定の取得元。'default' は設定なし (価格カタログの既定値) */
-  source: 'argument' | 'env' | 'file' | 'default';
-  /**
-   * 設定が不正で既定値にフォールバックした場合の要約 (設定値そのものは含めない)。
-   * 呼び出し側 (パイプライン) は issue として記録し、画面上で気付けるようにする。
-   */
-  error?: string;
-}
+export type { BillingConfigLoadResult } from '../../domain/ports/IBillingConfigProvider.js';
 
 /** 検証エラーを、入力値 (契約単価など) を含まない 1 行の要約にする */
 function summarizeConfigError(err: any): string {
@@ -275,3 +267,9 @@ export class BillingConfigLoader {
     return resolveBillingConfigForMonth(baseConfig, targetMonth);
   }
 }
+
+/** IBillingConfigProvider adapter: reads `COPILOT_BILLING_CONFIG` / `data/config/billing.json` (Composition Root wires it). */
+export const billingConfigProvider: IBillingConfigProvider = {
+  loadForMonth: (targetMonth) => BillingConfigLoader.loadForMonth(targetMonth),
+  loadWithDiagnostics: () => BillingConfigLoader.loadWithDiagnostics(),
+};

@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import * as assert from 'node:assert/strict';
-import { Money } from '../../domain/value-objects/Money.js';
+import { Money, getSeatPricing } from '../../domain/value-objects/Money.js';
+import { BASELINE_PRICING } from '../../domain/pricing/pricing-catalog.js';
 import { HealthScore } from '../../domain/value-objects/HealthScore.js';
 import { DomainError } from '../../domain/value-objects/DomainError.js';
 
@@ -67,5 +68,28 @@ describe('Domain Value Objects Tests', () => {
       assert.throws(() => new HealthScore(-1), { name: 'DomainError' });
       assert.throws(() => new HealthScore(101), { name: 'DomainError' });
     });
+  });
+});
+
+describe('getSeatPricing (no environment access in the domain, C-07)', () => {
+  it('returns the catalog prices without an override, even when COPILOT_SEAT_PRICING_OVERRIDE is set', () => {
+    const saved = process.env.COPILOT_SEAT_PRICING_OVERRIDE;
+    process.env.COPILOT_SEAT_PRICING_OVERRIDE = '{"business": 1, "enterprise": 2}';
+    try {
+      const p = getSeatPricing();
+      assert.equal(p.business.amount, BASELINE_PRICING.seatPriceUsd.business);
+      assert.equal(p.enterprise.amount, BASELINE_PRICING.seatPriceUsd.enterprise);
+    } finally {
+      if (saved === undefined) delete process.env.COPILOT_SEAT_PRICING_OVERRIDE;
+      else process.env.COPILOT_SEAT_PRICING_OVERRIDE = saved;
+    }
+  });
+
+  it('applies an override passed by the caller (JSON and key=value forms)', () => {
+    assert.equal(getSeatPricing('{"business": 21}').business.amount, 21);
+    assert.equal(getSeatPricing('{"business": 21}').enterprise.amount, BASELINE_PRICING.seatPriceUsd.enterprise);
+    const kv = getSeatPricing('business=20,enterprise=40.5');
+    assert.equal(kv.business.amount, 20);
+    assert.equal(kv.enterprise.amount, 40.5);
   });
 });

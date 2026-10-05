@@ -153,11 +153,14 @@ export interface SeatPricing {
   enterprise: Money;
 }
 
-export function getSeatPricing(): SeatPricing {
-  // 既定のシート単価は価格カタログ (src/domain/pricing) が唯一のソース
+/**
+ * シート単価。既定値は価格カタログ (src/domain/pricing) が唯一のソース。
+ * overrideStr は上書き指定 (JSON `{"business":..,"enterprise":..}` または `business=..,enterprise=..`)。
+ * ドメイン層は環境変数を読まないため、呼び出し側が `COPILOT_SEAT_PRICING_OVERRIDE` などから渡す。
+ */
+export function getSeatPricing(overrideStr?: string): SeatPricing {
   const defaultBusiness = BASELINE_PRICING.seatPriceUsd.business;
   const defaultEnterprise = BASELINE_PRICING.seatPriceUsd.enterprise;
-  const overrideStr = typeof process !== 'undefined' ? process.env?.COPILOT_SEAT_PRICING_OVERRIDE : undefined;
   if (overrideStr) {
     try {
       const parsed = JSON.parse(overrideStr);

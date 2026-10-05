@@ -5,7 +5,8 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // Import-direction guard (C-07): the Clean Architecture layers under `src/` must not
-// depend on the SPA (`dashboard/`), and the domain layer must not depend on outer layers.
+// depend on the SPA (`dashboard/`), the domain layer must not depend on outer layers or read the
+// environment, and the application layer must not depend on adapters (it receives ports instead).
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SRC_ROOT = path.join(REPO_ROOT, 'src');
@@ -48,6 +49,21 @@ describe('Layer boundaries (import direction)', () => {
     const offenders = files
       .filter((f) => f.startsWith(path.join(SRC_ROOT, 'domain') + path.sep))
       .filter((f) => resolvedImports(f).some((r) => outer.some((o) => (r + path.sep).startsWith(o))));
+    assert.deepEqual(offenders.map((f) => path.relative(REPO_ROOT, f)), []);
+  });
+
+  it('src/application/** never imports from adapters or frameworks (ports are injected by the Composition Root)', () => {
+    const outer = ['adapters', 'frameworks'].map((d) => path.join(SRC_ROOT, d) + path.sep);
+    const offenders = files
+      .filter((f) => f.startsWith(path.join(SRC_ROOT, 'application') + path.sep))
+      .filter((f) => resolvedImports(f).some((r) => outer.some((o) => (r + path.sep).startsWith(o))));
+    assert.deepEqual(offenders.map((f) => path.relative(REPO_ROOT, f)), []);
+  });
+
+  it('src/domain/** never reads process.env (callers pass configuration values in)', () => {
+    const offenders = files
+      .filter((f) => f.startsWith(path.join(SRC_ROOT, 'domain') + path.sep))
+      .filter((f) => /\bprocess\s*\.\s*env\b|\bprocess\?\.env\b/.test(fs.readFileSync(f, 'utf-8')));
     assert.deepEqual(offenders.map((f) => path.relative(REPO_ROOT, f)), []);
   });
 

@@ -4,6 +4,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { evaluateIdentifiedGate, isPrivacyTier } from '../src/domain/privacy-profile.js';
 import { FORBIDDEN_DIST_PATHS, publicationProfileProblems } from './pages-staging.js';
+import { RawLandingStore } from '../src/adapters/raw-landing/RawLandingStore.js';
 import { RetentionService } from '../src/application/pipeline/retention.js';
 import { parseRetentionMonths } from '../src/processor/retention.js';
 import { ForkSafeStorage } from '../src/storage/fork-safe-storage.js';
@@ -274,7 +275,8 @@ export function checkPublicationProfile(options: PublicationProfileOptions = {})
   if (fs.existsSync(dataDir)) {
     try {
       const { months } = parseRetentionMonths(env.COPILOT_DATA_RETENTION_MONTHS);
-      const plan = new RetentionService(new ForkSafeStorage({ baseDir: dataDir, publicDir: undefined })).plan(options.now ?? new Date(), months);
+      const retentionStorage = new ForkSafeStorage({ baseDir: dataDir, publicDir: undefined });
+      const plan = new RetentionService(retentionStorage, new RawLandingStore(retentionStorage.getBaseDir())).plan(options.now ?? new Date(), months);
       results.push(
         plan.items.length === 0
           ? { category, name: 'Data retention', status: 'pass', message: `Nothing is past the ${months}-month retention period.` }

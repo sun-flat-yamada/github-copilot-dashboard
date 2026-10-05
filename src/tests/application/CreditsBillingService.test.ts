@@ -3,6 +3,8 @@ import * as assert from 'node:assert/strict';
 import { CreditsBillingService } from '../../application/services/CreditsBillingService.js';
 import { Money } from '../../domain/value-objects/Money.js';
 import { getCreditUnitPriceUsd } from '../../domain/pricing/pricing-catalog.js';
+import { DEFAULT_BILLING_CONFIG } from '../../domain/entities/billing-config.js';
+import type { IBillingConfigProvider } from '../../domain/ports/IBillingConfigProvider.js';
 
 describe('CreditsBillingService Tests (P6-A-9)', () => {
   describe('calculateCreditsCost', () => {
@@ -26,6 +28,28 @@ describe('CreditsBillingService Tests (P6-A-9)', () => {
     it('supports custom credit rates', () => {
       const cost = CreditsBillingService.calculateCreditsCost(200, 0.08);
       assert.equal(cost.amount, 16.0);
+    });
+
+    it('reads the config through the injected IBillingConfigProvider port when none is passed (C-07)', () => {
+      const months: Array<string | undefined> = [];
+      const provider: IBillingConfigProvider = {
+        loadForMonth: (m) => {
+          months.push(m);
+          return { ...DEFAULT_BILLING_CONFIG, creditsPricing: { ...DEFAULT_BILLING_CONFIG.creditsPricing, costPerCreditUSD: 0.02 } };
+        },
+        loadWithDiagnostics: () => ({ config: DEFAULT_BILLING_CONFIG, source: 'default' }),
+      };
+      try {
+        CreditsBillingService.useBillingConfigProvider(provider);
+        assert.equal(CreditsBillingService.calculateCreditsCost(100, undefined, undefined, '2026-09').amount, 2);
+        assert.deepEqual(months, ['2026-09']);
+        // an explicit config wins over the provider
+        assert.equal(CreditsBillingService.calculateCreditsCost(100, undefined, DEFAULT_BILLING_CONFIG).amount, 1);
+        assert.deepEqual(months, ['2026-09']);
+      } finally {
+        CreditsBillingService.useBillingConfigProvider();
+      }
+      assert.equal(CreditsBillingService.calculateCreditsCost(100).amount, 1, 'reset to the catalog defaults');
     });
 
     it('calculates cost using EA contractual custom rate (e.g. 1.273 JPY/AIC)', () => {
