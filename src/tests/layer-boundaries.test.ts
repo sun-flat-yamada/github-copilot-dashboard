@@ -56,4 +56,11 @@ describe('Layer boundaries (import direction)', () => {
       assert.equal(fs.existsSync(path.join(REPO_ROOT, p)), false, `${p} must not exist (ADR-0001 §5)`);
     }
   });
+
+  it('presenters unused by the production path stay removed (#226)', () => {
+    for (const name of ['Trend', 'Overview', 'Budget', 'ModelRadar', 'Users', 'DeepAnalysis']) {
+      const p = `src/adapters/presenters/${name}Presenter.ts`;
+      assert.equal(fs.existsSync(path.join(REPO_ROOT, p)), false, `${p} must not exist (the view builds its own view model)`);
+    }
+  });
 });
