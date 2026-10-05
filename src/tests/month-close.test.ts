@@ -4,6 +4,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { PipelineOrchestrator } from '../application/pipeline/PipelineOrchestrator.js';
+import { billingConfigProvider } from '../adapters/storage/BillingConfigLoader.js';
 import { MonthCloseService } from '../application/pipeline/month-close.js';
 import { ForkSafeStorageWriter } from '../adapters/storage/ForkSafeStorageWriter.js';
 import { parseReprocessArgs } from '../cli/reprocess-args.js';
@@ -244,6 +245,7 @@ describe('month close wired into the pipeline (P4-2)', () => {
       dataSource: fakeSource(chats),
       resolver: emptyResolver,
       storage,
+      billingConfig: billingConfigProvider,
       isMock: false,
       anonymize: false,
       revision,

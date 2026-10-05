@@ -3,7 +3,10 @@ import {
   EnterpriseBillingConfig,
   calculateEffectiveCreditRate,
 } from '../../domain/entities/billing-config.js';
-import { BillingConfigLoader } from '../../adapters/storage/BillingConfigLoader.js';
+import {
+  CATALOG_BILLING_CONFIG_PROVIDER,
+  type IBillingConfigProvider,
+} from '../../domain/ports/IBillingConfigProvider.js';
 import { getCreditUnitPriceUsd } from '../../domain/pricing/pricing-catalog.js';
 
 export interface ModelCreditsDetail {
@@ -39,6 +42,17 @@ export interface CostCenterCreditsBudgetEvaluation {
  */
 export class CreditsBillingService {
   /**
+   * 設定を渡されなかったときの取得元 (Port)。Composition Root が BillingConfigLoader のアダプタを注入する。
+   * 未注入なら価格カタログの既定値 (I/O なし)。
+   */
+  private static billingConfig: IBillingConfigProvider = CATALOG_BILLING_CONFIG_PROVIDER;
+
+  /** 請求設定の取得元を差し替える (Composition Root / テスト用)。引数なしで価格カタログの既定値へ戻す */
+  static useBillingConfigProvider(provider: IBillingConfigProvider = CATALOG_BILLING_CONFIG_PROVIDER): void {
+    this.billingConfig = provider;
+  }
+
+  /**
    * Calculates cost for consumed AI Credits using effective rate from config or provided override.
    * 設定が無ければ価格カタログの単価 ($0.01 / credit) になる。
    */
@@ -48,7 +62,7 @@ export class CreditsBillingService {
     config?: EnterpriseBillingConfig,
     targetMonth?: string
   ): Money {
-    const resolvedConfig = config ?? BillingConfigLoader.loadForMonth(targetMonth);
+    const resolvedConfig = config ?? this.billingConfig.loadForMonth(targetMonth);
     if (creditsConsumed <= 0) return Money.zero(resolvedConfig.currency.code);
     const effectiveRate =
       typeof ratePerCredit === 'number' ? ratePerCredit : calculateEffectiveCreditRate(resolvedConfig);

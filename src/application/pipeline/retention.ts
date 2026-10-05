@@ -10,7 +10,6 @@ import {
   type RetentionPlan,
   type RetentionRunRecord,
 } from '../../domain/entities/retention.js';
-import { RawLandingStore } from '../../adapters/raw-landing/RawLandingStore.js';
 import { buildRetentionPlan, type RetentionInventory } from '../../processor/retention.js';
 import type { ReportOutputIndex } from '../../domain/entities/report-definition.js';
 
@@ -35,6 +34,14 @@ export interface RetentionStorage {
   getClosedMonths(): string[];
   loadReportOutputIndex(): ReportOutputIndex | null;
   saveReportOutputIndex(index: ReportOutputIndex): void;
+}
+
+/** Raw Landing の一覧 (RawLandingStore が満たす)。Composition Root / CLI が注入する */
+export interface RetentionLandingIndex {
+  /** data/raw/landing の絶対パス */
+  readonly root: string;
+  /** manifests/ にある run id の一覧 */
+  listRunIds(): string[];
 }
 
 function isDir(p: string): boolean {
@@ -94,7 +101,10 @@ function removeIfEmpty(dir: string, stopAt: string): void {
 export class RetentionService {
   private readonly base: string;
 
-  constructor(private readonly storage: RetentionStorage) {
+  constructor(
+    private readonly storage: RetentionStorage,
+    private readonly landing: RetentionLandingIndex
+  ) {
     this.base = path.resolve(storage.getBaseDir());
   }
 
@@ -106,7 +116,7 @@ export class RetentionService {
       for (const mm of listDirs(path.join(rawDir, year)).filter((m) => MM.test(m))) rawDailyMonths.push(`${year}-${mm}`);
     }
 
-    const landing = new RawLandingStore(this.base);
+    const landing = this.landing;
     const landingManifests: RetentionInventory['landingManifests'] = [];
     let landingUnreadable = false;
     for (const runId of landing.listRunIds()) {

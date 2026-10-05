@@ -9,6 +9,7 @@ import { AttributeResolverAdapter } from '../adapters/storage/AttributeResolverA
 import { BillingCalculator } from '../processor/billing-calculator.js';
 import { ReportParser } from '../processor/report-parser.js';
 import { PipelineOrchestrator } from '../application/pipeline/PipelineOrchestrator.js';
+import { billingConfigProvider } from '../adapters/storage/BillingConfigLoader.js';
 import { ICopilotDataSource } from '../domain/ports/ICopilotDataSource.js';
 import { IAttributeResolver } from '../domain/ports/IAttributeResolver.js';
 import { IStorageWriter } from '../domain/ports/IStorageWriter.js';
@@ -369,6 +370,7 @@ describe('Pipeline in anonymization mode leaves no recoverable identifiers in an
       dataSource: new SeatsOnlySource(),
       resolver: noopResolver,
       storage,
+      billingConfig: billingConfigProvider,
       isMock: false,
       anonymize,
     });

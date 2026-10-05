@@ -29,7 +29,7 @@ import {
 import { AttributeResolver } from '../../collector/attribute-resolver.js';
 import { loadUserMappingFromFile } from '../../collector/mapping-file-loader.js';
 import { loadDemoUserMapping } from '../../collector/demo-mapping-loader.js';
-import { BillingConfigLoader } from '../../adapters/storage/BillingConfigLoader.js';
+import type { IBillingConfigProvider } from '../../domain/ports/IBillingConfigProvider.js';
 import { isIdleSeatStatus } from '../../domain/rules/SeatClassificationRule.js';
 import {
   computeCreditsPoolUtilizationPercent,
@@ -44,6 +44,11 @@ export interface PipelineOrchestratorDependencies {
   dataSource: ICopilotDataSource;
   resolver: IAttributeResolver;
   storage: IStorageWriter;
+  /**
+   * 請求設定 (COPILOT_BILLING_CONFIG / data/config/billing.json) の取得元 (Port)。
+   * Composition Root が BillingConfigLoader のアダプタを注入する (application 層は adapter を import しない)。
+   */
+  billingConfig: IBillingConfigProvider;
   isMock?: boolean;
   /**
    * 匿名化 (仮名化) モード。省略時は環境変数 ANONYMIZE_USERS=true。
@@ -85,6 +90,7 @@ export class PipelineOrchestrator {
   private dataSource: ICopilotDataSource;
   private resolver: IAttributeResolver;
   private storage: IStorageWriter;
+  private billingConfig: IBillingConfigProvider;
   private isMock: boolean;
   private anonymize: boolean;
   private runInfo?: PipelineOrchestratorDependencies['run'];
@@ -94,6 +100,7 @@ export class PipelineOrchestrator {
     this.dataSource = deps.dataSource;
     this.resolver = deps.resolver;
     this.storage = deps.storage;
+    this.billingConfig = deps.billingConfig;
     this.isMock = deps.isMock ?? false;
     this.anonymize = deps.anonymize ?? process.env.ANONYMIZE_USERS === 'true';
     this.runInfo = deps.run;
@@ -133,7 +140,7 @@ export class PipelineOrchestrator {
 
     // 設定の不備は黙ってフォールバックせず、issue として記録する
     const configIssues: DataFetchIssue[] = [];
-    const billingLoad = BillingConfigLoader.loadWithDiagnostics();
+    const billingLoad = this.billingConfig.loadWithDiagnostics();
     if (billingLoad.error) {
       configIssues.push(
         makeConfigIssue(
@@ -498,7 +505,7 @@ export class PipelineOrchestrator {
         const reports = new BillingReconciliationService(this.storage).record(aiCreditLines, {
           now: nowIso,
           tolerance: parsedTolerance.tolerance,
-          unitPriceUsd: (m) => BillingConfigLoader.loadForMonth(m).creditsPricing.costPerCreditUSD,
+          unitPriceUsd: (m) => this.billingConfig.loadForMonth(m).creditsPricing.costPerCreditUSD,
           exchangeCatalog: this.storage.loadCatalog?.<ExchangeRateCatalog>('exchange-rates') ?? null,
         });
         for (const r of reports) {

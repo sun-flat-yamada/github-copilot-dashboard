@@ -1,6 +1,7 @@
 import { describe, it, beforeEach, afterEach, mock } from 'node:test';
 import * as assert from 'node:assert/strict';
 import { PipelineOrchestrator } from '../application/pipeline/PipelineOrchestrator.js';
+import { billingConfigProvider } from '../adapters/storage/BillingConfigLoader.js';
 import { ICopilotDataSource } from '../domain/ports/ICopilotDataSource.js';
 import { IAttributeResolver } from '../domain/ports/IAttributeResolver.js';
 import type { DataQualityHistory, QualityObservations } from '../domain/entities/data-quality.js';
@@ -203,6 +204,7 @@ async function runPipeline(
     dataSource: source,
     resolver: emptyResolver,
     storage,
+    billingConfig: billingConfigProvider,
     isMock: opts.isMock ?? false,
     anonymize: opts.anonymize ?? false,
   });

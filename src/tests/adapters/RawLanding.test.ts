@@ -11,6 +11,7 @@ import { ReplayFetcher, ReplayMissError } from '../../adapters/raw-landing/Repla
 import { canonicalRequestKey, downloadKey } from '../../adapters/raw-landing/request-key.js';
 import { ForkSafeStorageWriter } from '../../adapters/storage/ForkSafeStorageWriter.js';
 import { PipelineOrchestrator } from '../../application/pipeline/PipelineOrchestrator.js';
+import { billingConfigProvider } from '../../adapters/storage/BillingConfigLoader.js';
 import { AttributeResolverAdapter } from '../../adapters/storage/AttributeResolverAdapter.js';
 import { createPipelineApp, createReprocessApp } from '../../adapters/composition-root.js';
 
@@ -158,6 +159,7 @@ function collectingApp(baseDir: string, fake: ReturnType<typeof createFakeGitHub
     dataSource: source,
     resolver: new AttributeResolverAdapter(undefined, false),
     storage,
+    billingConfig: billingConfigProvider,
     isMock: false,
     anonymize: false,
     run: { runId: recorder.runId, finishLanding: () => recorder.finish(source.getCollectionConfig()) !== null },

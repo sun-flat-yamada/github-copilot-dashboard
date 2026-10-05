@@ -4,6 +4,8 @@ import { ICopilotDataSource } from '../domain/ports/ICopilotDataSource.js';
 import { IAttributeResolver } from '../domain/ports/IAttributeResolver.js';
 import { GitHubApiCopilotDataSource } from './github-api/GitHubApiCopilotDataSource.js';
 import { MockCopilotDataSource } from './github-api/MockCopilotDataSource.js';
+import { CreditsBillingService } from '../application/services/CreditsBillingService.js';
+import { billingConfigProvider } from './storage/BillingConfigLoader.js';
 import { AttributeResolverAdapter } from './storage/AttributeResolverAdapter.js';
 import { DemoAttributeResolver } from './storage/DemoAttributeResolver.js';
 import { ForkSafeStorageWriter } from './storage/ForkSafeStorageWriter.js';
@@ -59,10 +61,12 @@ export function createPipelineApp(config: PipelineAppConfig = {}): PipelineOrche
       ? new DemoAttributeResolver()
       : new AttributeResolverAdapter(config.mappingConfig, anonymize);
 
+  CreditsBillingService.useBillingConfigProvider(billingConfigProvider);
   return new PipelineOrchestrator({
     dataSource,
     resolver,
     storage,
+    billingConfig: billingConfigProvider,
     isMock,
     anonymize,
     run:
@@ -108,10 +112,12 @@ export function createReprocessApp(config: ReprocessAppConfig = {}): { orchestra
   });
   const resolver: IAttributeResolver = new AttributeResolverAdapter(config.mappingConfig, anonymize);
 
+  CreditsBillingService.useBillingConfigProvider(billingConfigProvider);
   const orchestrator = new PipelineOrchestrator({
     dataSource,
     resolver,
     storage,
+    billingConfig: billingConfigProvider,
     isMock: false,
     anonymize,
     run: { runId, reprocessed: true, finishLanding: () => true },

@@ -4,6 +4,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { ReportGenerationService } from '../application/pipeline/report-generation.js';
+import { RawLandingStore } from '../adapters/raw-landing/RawLandingStore.js';
 import { RetentionService } from '../application/pipeline/retention.js';
 import {
   checkProfileConsistency,
@@ -250,7 +251,7 @@ describe('retention service on a temporary data directory (P4-6)', () => {
 
   it('plans without changing anything (dry run)', () => {
     const before = snapshot();
-    const service = new RetentionService(storage);
+    const service = new RetentionService(storage, new RawLandingStore(storage.getBaseDir()));
     const plan = service.plan(NOW, 60);
     assert.ok(plan.items.length >= 7);
     assert.deepEqual(plan.skipped, [], 'the month 2020-03 is closed');
@@ -260,20 +261,20 @@ describe('retention service on a temporary data directory (P4-6)', () => {
 
   it('never plans processed/**, closes, metadata or the retention log itself', () => {
     put('processed/closes/2020-03.json'); // (re-written; already there)
-    const plan = new RetentionService(storage).plan(NOW, 60);
+    const plan = new RetentionService(storage, new RawLandingStore(storage.getBaseDir())).plan(NOW, 60);
     const text = JSON.stringify(plan);
     assert.ok(!/processed|closes|index\.json|error-log/.test(text.replace('report_outputs', '')), text);
   });
 
   it('plans raw and CSV originals only for closed months', () => {
     fs.rmSync(path.join(data, 'processed/closes/2020-03.json'));
-    const plan = new RetentionService(storage).plan(NOW, 60);
+    const plan = new RetentionService(storage, new RawLandingStore(storage.getBaseDir())).plan(NOW, 60);
     assert.deepEqual(plan.skipped.map((s) => `${s.category}:${s.key}`).sort(), ['raw_daily:2020-03', 'report_csv:2020-03']);
     assert.ok(!plan.items.some((i) => i.category === 'raw_daily' || i.category === 'report_csv'));
   });
 
   it('executes the plan, keeps closed snapshots and recent data, and records what was deleted', () => {
-    const service = new RetentionService(storage);
+    const service = new RetentionService(storage, new RawLandingStore(storage.getBaseDir()));
     const plan = service.plan(NOW, 60);
     const record = service.execute(plan, '20261004T000000Z-cafe', NOW, 'finance-ops');
     assert.equal(record.status, 'completed', record.errors.join('\n'));
@@ -313,7 +314,7 @@ describe('retention service on a temporary data directory (P4-6)', () => {
       during = JSON.parse(fs.readFileSync(path.join(data, 'audit/retention/log.json'), 'utf-8')).runs[0]?.status;
       real(index);
     };
-    const service = new RetentionService(storage);
+    const service = new RetentionService(storage, new RawLandingStore(storage.getBaseDir()));
     service.execute(service.plan(NOW, 60), '20261004T000001Z-beef', NOW);
     assert.equal(during, 'started');
     assert.equal(service.loadLog().runs[0].status, 'completed');
@@ -325,7 +326,7 @@ describe('retention service on a temporary data directory (P4-6)', () => {
     fs.writeFileSync(path.join(outside, 'keep.txt'), 'keep');
     fs.rmSync(path.join(data, 'raw/2020/03'), { recursive: true });
     fs.symlinkSync(outside, path.join(data, 'raw/2020/03'));
-    const service = new RetentionService(storage);
+    const service = new RetentionService(storage, new RawLandingStore(storage.getBaseDir()));
     const plan = service.plan(NOW, 60);
     assert.ok(!plan.items.some((i) => i.category === 'raw_daily'), 'a linked month directory is not listed');
     // swapped for a link after the plan was made: the delete is refused and reported
