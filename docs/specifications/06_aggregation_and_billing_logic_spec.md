@@ -51,6 +51,8 @@ Calculates the following financial indicators against each Cost Center budget de
 - KPI summary cards, table headers, and UI tooltips clearly denote this as GitHub Catalog Price (USD).
 - Unified **"EA Contract Rate Sub-Currency Units (EA-USD, EA-JPY, EA-EUR)"** are provided, allowing side-by-side comparison between the catalog list price and user-configured EA contract rate effective prices (e.g. `$39.00 ($33.15 EA)`, `$39.00 (¥4,973)`, `$39.00 (€30.50)`). Options omit bracket descriptions and are unified under a top comment.
 
+> **Verification note (Issue #212, 2026-10-06)**: the baseline catalog price list (Business \$19/month, Enterprise \$39/month, 1 AI credit = \$0.01) was cross-checked against the live GitHub documentation — [Plans for GitHub Copilot](https://docs.github.com/en/copilot/get-started/plans) and [Usage-based billing for organizations and enterprises](https://docs.github.com/en/copilot/concepts/billing-and-usage/organizations-and-enterprises/billing) — and found to match exactly (`src/domain/pricing/pricing-catalog.ts`, `BASELINE_ENTRY`). The time-boxed transition-promotion entry (2026-06 to 2026-08) could not be verified the same way, since the live documentation no longer publishes rates for an already-expired promotional period; it remains a secondary-source value.
+
 #### 1.3.2 Period-Based Parameter Configuration (`periods`)
 To adapt to corporate fiscal years and contract cycles, parameters can be customized for specific date ranges from `startMonth` (YYYY-MM) to `endMonth` (YYYY-MM):
 1. **Copilot Seat Pricing**: Monthly cost and currency unit for Enterprise and Business plans (e.g. `customSeatPricing: { businessMonthly: 2500, enterpriseMonthly: 5000, currency: "JPY" }`).
@@ -67,6 +69,8 @@ To adapt to corporate fiscal years and contract cycles, parameters can be custom
 - **Only completed months** are stored and a stored month is never overwritten, so a past month's conversion depends on neither the viewing date nor the update date (the browser no longer fetches live rates).
 - A month missing from the catalog uses the **nearest earlier month's rate** (never a later month or a constant). With no earlier month either, there is no rate and the conversion options (EA-JPY / EA-EUR) are not offered. **The code holds no table of exchange rates.**
 - A failed fetch leaves the existing catalog untouched and collection continues with a warning. Demo data has no catalog, so conversion is USD only.
+
+> **Verification note (Issue #212, 2026-10-06)**: `npm run catalog:fx` was run against the live ECB endpoint (`https://data-api.ecb.europa.eu/service/data/EXR/...`) and completed successfully. The fetched rate was independently cross-checked by re-querying the same ECB series directly and manually reproducing the `toUsdBase()` conversion by hand; the result matched the catalog's stored 2025-01 JPY/USD value exactly. The ECB endpoint and the conversion formula are both confirmed reachable and correct from this environment.
 
 ### 1.4 Scope-Dependent Cost Units
 

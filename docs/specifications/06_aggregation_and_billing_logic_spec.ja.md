@@ -51,6 +51,8 @@ GitHub Enterprise Billingで定義された各Cost CenterのBudgetに対して�
 - 画面上の各KPIカード、テーブル見出し、およびツールチップにおいて「GitHubのカタログ価格(USD)」であることを明記する。
 - これに伴い、サブ表示通貨に **「EA契約レートによるサブ表示単位（EA-USD, EA-JPY, EA-EUR）」** を提供し、カタログUSD定価とユーザーが設定したEA契約レートによる実効価格（例: `$39.00 ($33.15 EA)`、`$39.00 (¥4,973)`、`$39.00 (€30.50)`）を並列比較可能とする。選択肢には `[]` 説明を付与せず、冒頭の統一コメントにより説明を完結する。
 
+> **検証メモ (Issue #212, 2026-10-06)**: カタログ基準価格 (Business \$19/月、Enterprise \$39/月、1 AI credit = \$0.01) を GitHub 公式ドキュメント — [Plans for GitHub Copilot](https://docs.github.com/en/copilot/get-started/plans)、[Usage-based billing for organizations and enterprises](https://docs.github.com/en/copilot/concepts/billing-and-usage/organizations-and-enterprises/billing) — と照合し、完全に一致することを確認した (`src/domain/pricing/pricing-catalog.ts` の `BASELINE_ENTRY`)。期間限定の移行プロモーション (2026-06〜2026-08) は、現在の公式ドキュメントに期限切れのプロモーション期間のレートが掲載されていないため同様の方法では照合できず、二次情報に基づく値のままとなっている。
+
 #### 1.4.2 期間別パラメータ設定 (`periods`)
 企業の契約年度・改定サイクルに対応するため、開始年月 (`startMonth`: YYYY-MM) から終了年月 (`endMonth`: YYYY-MM) の範囲で以下のパラメータを設定可能とする：
 1. **Copilot seat価格**: Enterprise、Business毎の月額および通貨単位（例: `customSeatPricing: { businessMonthly: 2500, enterpriseMonthly: 5000, currency: "JPY" }`）。
@@ -67,6 +69,8 @@ GitHub Enterprise Billingで定義された各Cost CenterのBudgetに対して�
 - **終了した月だけ** を保存し、保存済みの月は上書きしない。過去月の換算値は閲覧日にも更新日にも依存しない (ブラウザからの最新レート取得は行わない)。
 - カタログに無い月は、**それより前で最も近い月のレート** を引き継ぐ (未来の月や固定値では補わない)。前の月も無ければレート無しとして、換算表示 (EA-JPY / EA-EUR) を選択肢から外す。**コードに為替の数値表は持たない**。
 - 取得に失敗しても既存カタログは変更せず、警告のみで収集を続行する。デモデータにはカタログが無いため、換算は USD のみ。
+
+> **検証メモ (Issue #212, 2026-10-06)**: 実際の ECB エンドポイント (`https://data-api.ecb.europa.eu/service/data/EXR/...`) に対して `npm run catalog:fx` を実行し、正常に完了することを確認した。取得したレートは、同じ ECB 系列を別経路で再取得し `toUsdBase()` の変換式を手計算で再現することで独立に照合し、カタログに保存された 2025-01 の JPY/USD 値と完全に一致した。この環境から ECB エンドポイントへの到達性と変換式の正しさの両方を確認済み。
 
 ### 1.5 スコープ別の費用の単位
 
