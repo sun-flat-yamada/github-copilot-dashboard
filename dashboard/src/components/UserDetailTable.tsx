@@ -40,7 +40,6 @@ import {
   UserDetailRow,
   UserDetailRowSet,
   formatShare,
-  formatTopModels,
 } from '../../../src/adapters/presenters/UserDetailRows';
 import { PERSONAL_METRICS_NOTICE } from '../../../src/domain/metrics/metric-registry';
 import { describeInsightTooltip } from '../../../src/processor/usage-insight-definitions';
