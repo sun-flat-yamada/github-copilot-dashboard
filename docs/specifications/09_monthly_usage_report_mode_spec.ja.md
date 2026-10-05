@@ -142,7 +142,15 @@ npm run report:import -- ./path/to/copilot-report.csv 2026-08
   - `model` の例はスラッグ（`claude-sonnet-4`）、REST の例は表示名（`GPT-5`）。モデル名は書かれたとおりに照合するため、ソースによって同じモデルが 2 通りの表記で現れうる。
   - **公開されていない**: CSV の列順と、CSV の `unit_type` の正確な文字列。パーサーは列をヘッダー名で、`unit_type` は部分文字列 `credit` で判定する。
   - 存在するが本リポジトリでは未実装の取得経路: 上記の REST エンドポイント（enterprise のほか org / user でも）と、非同期のエクスポート API（`POST /enterprises/{enterprise}/settings/billing/reports`、`report_type: ai_credit`。完成したエクスポートは 31 日間ダウンロードできる）。Organization のオーナーは UI でユーザー別に絞り込めず、レポートをダウンロードする必要がある。
-- **デモデータ**: `MockDataGenerator.generateAiUsageReportCSV()` は上記の項目と単価に従う（列は公式の項目のみ、`date × model × username` ごとに 1 行、割引はダミーの付与クレジット額）。整合はテストで確認する。
+- **実際のエクスポートファイルで確認済み（Issue #170。本番環境の「AI usage report」CSV 5 か月分、2026-06〜2026-09。PII を含まない gitignore 対象のローカル作業領域で読み取り、実データはリポジトリにコミットしていない）**:
+  - `parseRecordsWithReport()` は 5 ファイルすべてで取込行数 100%（想定外の `stop_reason` やスキップ理由なし）。全行で `gross_amount − discount_amount == net_amount` を手計算で再確認し、過不足なく一致した。
+  - 単位: `unit_type` はどのファイル・どの行でも、ハイフン区切りの文字列 `ai-credits` そのもの（`credits` でも `ai_credits` でもない）。`classifyUnit` の部分一致規則、および §3.4 の例で使っているキー `"ai-credits"` と一致する。
+  - モデル名: カタログに載った名称のほかに、実ファイルにはモデル選択の「Auto」モードを示す `Auto: <model>` というラベルや、モデル名ではない汎用の機能ラベル（`Code Review model` / `Coding Agent model`）が含まれる。パーサーはすべての値をそのまま保持する（行を落とさない）が、`model-catalog.ts` はどちらのパターンもまだ認識しておらず `unknown:<raw>` に落ちる — 本 PR では直さず、別の issue で追跡する。
+  - 実ファイルには公式のフィールド仕様に無い列が 4 つある: `total_monthly_quota`、`repository`、`aic_quantity`、`aic_gross_amount`。これらは `columns.unrecognized`（§3.6）として正しく報告され、どの集計にも混ざらない。コード変更は不要だった。
+  - `cache_read` / `cache_write` の有無は、この組織のエクスポートでは時期に依存する: 2026-08 より前は無く、2026-08 以降は有る。どちらも上表のとおり元々任意項目であり、月によって有無が分かれても実ファイルとして正当であることを確認しただけである。
+  - ファイルごとに 0.1〜0.3% の行で `username` が空だった。既にスキップ理由 `ユーザー名が空`（§3.6）として扱われており、架空の「unknown」ユーザーに割り当てられることはない。
+  - 「`date × model × username` ごとに合算する」（上記）は意味上のキーであり、1 キー = 1 行であることを保証するものではない: 実ファイルには同じ `date × model × username` の行が複数存在しうる（例: `sku` が異なる別の計量行）。`aggregate()` は元々これらの行すべてにわたって `quantity` / `spend` を合算する実装であるため、コード変更は不要だった。`src/tests/CsvImportReport.test.ts` に、この形を模した架空データの回帰テストを追加した。
+- **デモデータ**: `MockDataGenerator.generateAiUsageReportCSV()` は上記の項目と単価に従う（列は公式の項目のみ、`date × model × username` ごとに 1 行、割引はダミーの付与クレジット額）。整合はテストで確認する。上記の `Auto:` / 汎用ラベルや追加列のパターンは再現していない。これらは Issue #170 で追加した回帰テストでカバーする。
 
 ---
 
