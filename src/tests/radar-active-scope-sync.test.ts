@@ -105,3 +105,11 @@ test('AI Model Radar Active Scope Sync (Top3 default & filter reactivity) Tests'
     );
   });
 });
+
+// 回帰防止: レポート/アップロード選択時に Live スコープが優先されると Top3 とシェア(%)が選択データと食い違う
+test('Model radar view passes only the active source data to ModelRadarView', () => {
+  const src = fs.readFileSync(path.resolve(process.cwd(), 'dashboard/src/views/model_radar/View.tsx'), 'utf-8');
+  assert.ok(src.includes('isReportSource'), 'View must branch on isReportSource');
+  assert.ok(src.includes('aggregatedData={aggregatedData}') && src.includes('monthlyReportData={monthlyReportData}'));
+  assert.ok(!src.includes('aggregatedData={currentData}'), 'must not pass the live scope unconditionally');
+});
