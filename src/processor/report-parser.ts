@@ -543,6 +543,7 @@ export class ReportParser {
         netSpendUsd: number;
         modelCounts: Record<string, number>;
         modelSpend: Record<string, number>;
+        modelGross: Record<string, number>;
         lastActivityDate?: string;
         surface?: string;
         usage: UserUsageAccumulator;
@@ -620,6 +621,7 @@ export class ReportParser {
           netSpendUsd: 0,
           modelCounts: {},
           modelSpend: {},
+          modelGross: {},
           lastActivityDate: rec.date || rec.last_activity_at?.substring(0, 10),
           surface: rec.last_surface_used,
           usage: createUserUsageAccumulator(),
@@ -648,6 +650,7 @@ export class ReportParser {
       userStat.netSpendUsd += netSpend;
       userStat.modelCounts[model] = (userStat.modelCounts[model] || 0) + reqCount;
       userStat.modelSpend[model] = (userStat.modelSpend[model] || 0) + netSpend;
+      userStat.modelGross[model] = (userStat.modelGross[model] || 0) + grossSpend;
       if (rec.date && (!userStat.lastActivityDate || rec.date > userStat.lastActivityDate)) {
         userStat.lastActivityDate = rec.date;
         // ユーザー別の属性は最新の利用日の実効属性にそろえる (集計軸の配賦はレコード単位で既に分かれている)
@@ -806,8 +809,9 @@ export class ReportParser {
           net_spend_usd: Number(u.netSpendUsd.toFixed(2)),
           primary_model: topM,
           // フィルター後のモデル別内訳を正確に再集計できるよう、ユーザー別のモデル内訳を保持する
-          model_requests: roundMap(u.modelCounts, 0),
+          model_requests: roundMap(u.modelCounts, 2),
           model_spend_usd: roundMap(u.modelSpend, 4),
+          model_gross_usd: roundMap(u.modelGross, 4),
           last_activity_date: u.lastActivityDate,
           // 実データが無い場合に既定のサーフェス (VS Code) を捏造しない
           surface: u.surface,

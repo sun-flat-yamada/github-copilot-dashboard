@@ -584,6 +584,8 @@ export interface ReportUserDetail {
   model_requests?: Record<string, number>;
   /** モデル別の費用 (net, USD) */
   model_spend_usd?: Record<string, number>;
+  /** モデル別の利用費用 (gross, USD)。requests・net が 0 の credits / token 系レポートでも比率を出すために保持する */
+  model_gross_usd?: Record<string, number>;
   last_activity_date?: string;
   surface?: string;
   tags?: string[];
