@@ -47,7 +47,7 @@ function main(): number {
   if (error) console.warn(`⚠️ ${error}`);
 
   const storage = new ForkSafeStorage();
-  const service = new RetentionService(storage);
+  const service = new RetentionService(storage, new RawLandingStore(storage.getBaseDir()));
   const now = new Date();
   const plan = service.plan(now, months);
   const summary = service.summarizePlan(plan);
