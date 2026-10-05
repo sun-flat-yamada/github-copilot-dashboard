@@ -127,6 +127,20 @@ gh variable set COPILOT_USER_MAPPING --repo $repo --body '[{"github_user":"...",
 > [!IMPORTANT]
 > `COPILOT_READ_TOKEN` に必要な正確なスコープ/権限は、貴社GitHub Enterprise環境の最新のCopilot API仕様に基づいて確認してください。対応する2種類のトークン方式については [SDD-08 §2.1.1](08_automation_workflow_spec.ja.md#211-認証トークンの種別と付与権限-permissions) を参照。
 
+#### 3.4.1 Enterprise Owner 権限が無い場合 (Organization 単位のトークン)
+
+部署管理者やエンジニアのトークンは、通常 `/enterprises/{enterprise}/...` のエンドポイントを読めません (HTTP 403)。収集は失敗させず、段階的に縮退します ([SDD-03 §1.2](03_github_copilot_api_spec_2026.ja.md#12-権限レベルと段階的フォールバック-issue-234))。
+
+| 設定 | 収集される範囲 |
+| :--- | :--- |
+| `COPILOT_ENTERPRISE` を設定、`COPILOT_ORGS` は未設定 | Enterprise スコープを試し、403 ならトークンが所属する Organization を `GET /user/orgs` で探索して代わりに収集する (エラーログに警告)。 |
+| `COPILOT_ORGS=<org1,org2>` | 指定した Organization のみ (推奨: 明示的で安定)。403 の Organization は警告を残して除外し、他は収集する。 |
+| `COPILOT_ORGS=auto` | Enterprise なしで、`GET /user/orgs` が返す Organization を収集する。 |
+
+- Cost Centers と AI Credit 利用量は Enterprise 専用です。Organization 単位のトークンでは、失敗ではなく **対象外 (skipped)** として警告付きで記録されます。Cost Center 別の配賦を続けるには `COPILOT_USER_MAPPING` に `cost_center` 属性を入れ、AI Credit の金額は Monthly Usage Report (CSV) を取り込んでください。
+- `GET /user/orgs` はユーザーのトークン (`read:org` の classic PAT、または fine-grained PAT) が必要です。GitHub App のインストールトークンを使う場合は `COPILOT_ORGS` を明示してください。
+- ダッシュボードでは該当ソースが「一部のみ」または「対象外」と表示され、エラーログに拒否されたスコープ (`enterprise:<slug>` / `org:<slug>`) が記録されます。
+
 ### 3.5 フェーズ5 — 動作確認
 
 ```powershell
@@ -159,6 +173,7 @@ git push origin main
 | Upstreamへのfork経由PRフローが使えない | EMUアカウントはForkの可否に関わらず、そもそもエンタープライズ外リポジトリへのissue/PR作成ができない。Upstreamへの貢献が必要な場合は私用の個人(非EMU)GitHubアカウントが別途必要 |
 | `copilot-data` の内容を引き継ぐ | ミラー複製された `copilot-data` ブランチには、自組織のワークフローが上書き・追記するまでの間、複製元メンテナーの既存データパーティションがそのまま残る |
 | Actions/Pagesの手動設定が必要 | 既に設定済みのリポジトリをForkする場合と異なり、新規ミラー複製では常にActions/Pages未設定の状態から開始する（第3.3節） |
+| Enterprise Owner 権限が無い | Enterprise 全体のメトリクス・シート・Cost Centers・AI Credit 利用量は読めない。Organization スコープで代わりに収集し、Cost Centers / AI Credits は対象外 (skipped) とする（第3.4.1節） |
 
 ---
 
