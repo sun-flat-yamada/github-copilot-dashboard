@@ -140,6 +140,55 @@ describe('CSV format profiles and import report (P1-5)', () => {
     assert.match(html, /1\/1 行を取り込みました/);
   });
 
+  // Regression fixture for Issue #170 (verified against real production "AI usage report" CSV
+  // exports; all values below are fabricated, no real organization data). Encodes 4 findings that
+  // only showed up in a real file and were absent from the hand-written fixtures above:
+  // (a) unit_type is the literal, hyphenated string "ai-credits" (not "credits" or "tokens"),
+  // (b) the model column can hold a model-picker label such as "Auto: <model>" or a generic
+  //     feature name ("Coding Agent model") instead of a catalog model name,
+  // (c) real exports carry extra columns with no public field reference (here:
+  //     total_monthly_quota / repository / aic_quantity / aic_gross_amount),
+  // (d) a date × model × username combination is not guaranteed to appear on a single row; two
+  //     metered lines (different sku) for the same day/model/user both exist and both must count.
+  const AI_USAGE_REPORT_HEADER =
+    'date,username,product,sku,model,quantity,unit_type,applied_cost_per_quantity,gross_amount,discount_amount,net_amount,organization,cost_center_name,input,output,cache_read,cache_write,total_monthly_quota,repository,aic_quantity,aic_gross_amount';
+
+  it('matches the real-world AI usage report shape confirmed in Issue #170 (fabricated data)', () => {
+    const { records, report } = parser.parseRecordsWithReport(
+      csv(
+        AI_USAGE_REPORT_HEADER,
+        '2026-09-01,user-a,copilot,copilot_premium_request,"Auto: claude-sonnet-4",120,ai-credits,0.01,1.20,0,1.20,sample-org,CC-A,1000,200,50,10,500,sample-org/sample-repo,120,1.20',
+        '2026-09-01,user-a,copilot,coding_agent_ai_credit,"Auto: claude-sonnet-4",45,ai-credits,0.01,0.45,0,0.45,sample-org,CC-A,400,80,10,2,500,sample-org/sample-repo,45,0.45',
+        '2026-09-01,user-b,copilot,copilot_premium_request,"Coding Agent model",30,ai-credits,0.01,0.30,0,0.30,sample-org,CC-A,250,60,5,1,500,sample-org/sample-repo,30,0.30',
+        '2026-09-02,,copilot,copilot_premium_request,GPT-5,10,ai-credits,0.01,0.10,0,0.10,sample-org,CC-A,80,20,5,1,500,sample-org/sample-repo,10,0.10'
+      ),
+      'ai-usage.csv'
+    );
+
+    // the combined billing + token-column header is still detected as the AI usage report profile
+    assert.equal(report.profile?.id, 'ai-usage-report');
+    // the 4 columns absent from the public field reference are listed, never silently folded into an aggregate
+    assert.deepEqual(report.columns.unrecognized, ['total_monthly_quota', 'repository', 'aic_quantity', 'aic_gross_amount']);
+    // the blank-username row is skipped with a reason, not crashed on and not attributed to "unknown"
+    assert.deepEqual(report.rows.skipped_by_reason, { ユーザー名が空: 1 });
+    assert.equal(records.length, 3);
+
+    const aggregated = parser.aggregate(records, '2026-09', 'ai-usage.csv');
+    // all 3 imported rows use the literal "ai-credits" unit; none is miscounted as a request
+    assert.equal(aggregated.overview.quantity_by_unit?.['ai-credits'], 195); // 120 + 45 + 30
+    assert.equal(aggregated.overview.total_requests, 0);
+
+    // two rows share the same date × model × username (different sku): both are kept and summed,
+    // refuting a "one row per date × model × username" assumption.
+    const autoModel = aggregated.model_breakdown.find((m) => m.model_name === 'Auto: claude-sonnet-4');
+    assert.ok(autoModel, 'a raw "Auto: <model>" label is kept verbatim, not dropped or merged into "unknown"');
+    assert.equal(autoModel?.total_spend_usd, 1.65); // 1.20 + 0.45 from the two same-model rows
+    assert.equal(autoModel?.active_users, 1);
+
+    const genericModel = aggregated.model_breakdown.find((m) => m.model_name === 'Coding Agent model');
+    assert.ok(genericModel, 'a generic feature-name label (not a catalog model name) is also kept verbatim');
+  });
+
   it('formats the report as text for the CLI', () => {
     const { report } = parser.parseRecordsWithReport(csv(BILLING_HEADER, '2026-09-01,user-a,copilot,Premium Request,10,requests,0.4,0,0.4,CC-A,x'), 'usage.csv');
     const text = formatCsvImportReport(report).join('\n');
