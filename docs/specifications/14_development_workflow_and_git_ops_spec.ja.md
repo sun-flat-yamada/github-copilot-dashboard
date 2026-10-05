@@ -88,7 +88,7 @@
    - **計画レビューの待ちは `CHG_DEV_AUTO_PILOT` で分岐する**（`npm run change-dev:mode` で確認）。
      - オートパイロット無効: `RequestFeedback: true` によりAntigravity UIに対話型の **"Proceed"** ボタンを表示させ、ユーザーの承認（またはフィードバック）を得るまでコード変更を実行しない。
      - オートパイロット有効: 承認を待たない（Antigravity では `RequestFeedback: false`）。計画をコミットして要約を報告し、そのまま実装へ進む。計画は PR で改めてレビューされる。前提が未マージ、Issue の範囲が曖昧、取り消せない・破壊的な手順（データ削除、履歴の書き換え、認証情報の変更）がある場合だけ、止まって確認する。
-   - 計画書には、変更コンテキスト、ユーザー確認必須事項（`> [!IMPORTANT]` 等）、変更対象ファイル（`[NEW]`, `[MODIFY]`, `[DELETE]` と `file:///` リンク）、自動/手動検証計画を明記する。
+   - 計画書には、変更コンテキスト、ユーザー確認必須事項（`> [!IMPORTANT]` 等）、変更対象ファイル（`[NEW]`, `[MODIFY]`, `[DELETE]` とリポジトリ相対リンク。例: 変更ディレクトリからの `../../../scripts/scan-secrets.ts`。`file:///` URI やマシン固有の絶対パスは使わない。`file:///` リンクを残した Antigravity の作業用コピーは、完成版を `.devs/changes/` に置くときに相対リンクへ直す）、自動/手動検証計画を明記する。
 2. **`task.md` の初期化**:
    - チェックリスト形式（`- [ ]`, `- [/]`, `- [x]`）で進捗を追跡するタスクファイルを初期化（`RequestFeedback: false`）。最後の項目は PR とマージ（オートパイロット有効なら `change-dev:finish`）にする。
 3. **計画先行（強制）**:
@@ -170,9 +170,10 @@ npm ci
    npm run fork:verify   # コード・データ分離(SDD-05)の確認
    npm run typecheck     # TypeScript型チェック
    npm test              # ユニットテスト
-   npm run secret-scan   # シークレット/PIIゼロ漏洩の検証 (Exit Code 0 必須)
+   npm run secret-scan   # シークレット・メールアドレス・絶対パスの検査 (Exit Code 0 必須)
    npm run build         # SPA本番ビルド検証
    ```
+   `npm run secret-scan`（`scripts/scan-secrets.ts`）は、走査対象の全ファイルで秘密情報のパターンと許可リスト（予約ドメイン、GitHub、`noreply`）外のメールアドレスを、`.devs/changes/` でのみマシン固有の絶対パス（ホームディレクトリ、`/tmp/<entry>`、`file:///` URI）を検出する。検出結果は `secret` / `PII` / `path` に分類し、個人情報と絶対パスの値は `<email>` / `<abs-path>` に置き換えて出力する。実名・部署・GitHub ログインはパターンでは検出できないため、引き続き目視で確認する。
 
 ---
 
