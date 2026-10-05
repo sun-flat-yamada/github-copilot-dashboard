@@ -2,7 +2,7 @@
   "report_month": "2026-09",
   "source_type": "persisted",
   "file_name": "copilot_monthly_usage_2026-09.csv",
-  "parsed_at": "2026-10-05T12:42:03.372Z",
+  "parsed_at": "2026-10-05T12:52:48.899Z",
   "overview": {
     "total_net_spend_usd": 338.65,
     "total_gross_spend_usd": 340.33,
@@ -332,6 +332,254 @@
       "active_users": 8
     }
   ],
+  "cost_center_daily": {
+    "FinTech-Division": [
+      {
+        "date": "2026-09-01",
+        "spend_usd": 97.84
+      },
+      {
+        "date": "2026-09-02",
+        "spend_usd": 0.88
+      },
+      {
+        "date": "2026-09-03",
+        "spend_usd": 1.03
+      },
+      {
+        "date": "2026-09-04",
+        "spend_usd": 0.88
+      },
+      {
+        "date": "2026-09-07",
+        "spend_usd": 0.63
+      },
+      {
+        "date": "2026-09-08",
+        "spend_usd": 4.02
+      },
+      {
+        "date": "2026-09-09",
+        "spend_usd": 2.74
+      },
+      {
+        "date": "2026-09-10",
+        "spend_usd": 2.32
+      },
+      {
+        "date": "2026-09-11",
+        "spend_usd": 1.16
+      },
+      {
+        "date": "2026-09-14",
+        "spend_usd": 1.25
+      },
+      {
+        "date": "2026-09-15",
+        "spend_usd": 2.84
+      },
+      {
+        "date": "2026-09-16",
+        "spend_usd": 3.85
+      },
+      {
+        "date": "2026-09-17",
+        "spend_usd": 0.52
+      },
+      {
+        "date": "2026-09-18",
+        "spend_usd": 3.58
+      },
+      {
+        "date": "2026-09-21",
+        "spend_usd": 1.34
+      },
+      {
+        "date": "2026-09-22",
+        "spend_usd": 2.38
+      },
+      {
+        "date": "2026-09-23",
+        "spend_usd": 2.13
+      },
+      {
+        "date": "2026-09-24",
+        "spend_usd": 1.58
+      },
+      {
+        "date": "2026-09-25",
+        "spend_usd": 2.54
+      },
+      {
+        "date": "2026-09-28",
+        "spend_usd": 1.47
+      }
+    ],
+    "IT-Infrastructure": [
+      {
+        "date": "2026-09-01",
+        "spend_usd": 96.73
+      },
+      {
+        "date": "2026-09-02",
+        "spend_usd": 1.78
+      },
+      {
+        "date": "2026-09-03",
+        "spend_usd": 2.32
+      },
+      {
+        "date": "2026-09-04",
+        "spend_usd": 1.44
+      },
+      {
+        "date": "2026-09-07",
+        "spend_usd": 2.25
+      },
+      {
+        "date": "2026-09-08",
+        "spend_usd": 1.27
+      },
+      {
+        "date": "2026-09-09",
+        "spend_usd": 1.26
+      },
+      {
+        "date": "2026-09-10",
+        "spend_usd": 1.64
+      },
+      {
+        "date": "2026-09-11",
+        "spend_usd": 1.14
+      },
+      {
+        "date": "2026-09-14",
+        "spend_usd": 1.81
+      },
+      {
+        "date": "2026-09-15",
+        "spend_usd": 2.36
+      },
+      {
+        "date": "2026-09-16",
+        "spend_usd": 2.41
+      },
+      {
+        "date": "2026-09-17",
+        "spend_usd": 0.97
+      },
+      {
+        "date": "2026-09-18",
+        "spend_usd": 0.6
+      },
+      {
+        "date": "2026-09-21",
+        "spend_usd": 1.43
+      },
+      {
+        "date": "2026-09-22",
+        "spend_usd": 3.18
+      },
+      {
+        "date": "2026-09-23",
+        "spend_usd": 3.72
+      },
+      {
+        "date": "2026-09-24",
+        "spend_usd": 0.39
+      },
+      {
+        "date": "2026-09-25",
+        "spend_usd": 1.33
+      },
+      {
+        "date": "2026-09-28",
+        "spend_usd": 0.97
+      }
+    ],
+    "Data-AI-Lab": [
+      {
+        "date": "2026-09-01",
+        "spend_usd": 58.88
+      },
+      {
+        "date": "2026-09-02",
+        "spend_usd": 0.24
+      },
+      {
+        "date": "2026-09-03",
+        "spend_usd": 2
+      },
+      {
+        "date": "2026-09-04",
+        "spend_usd": 0.12
+      },
+      {
+        "date": "2026-09-07",
+        "spend_usd": 1.83
+      },
+      {
+        "date": "2026-09-08",
+        "spend_usd": 0.51
+      },
+      {
+        "date": "2026-09-09",
+        "spend_usd": 0.4
+      },
+      {
+        "date": "2026-09-10",
+        "spend_usd": 0.94
+      },
+      {
+        "date": "2026-09-11",
+        "spend_usd": 1.35
+      },
+      {
+        "date": "2026-09-14",
+        "spend_usd": 0.33
+      },
+      {
+        "date": "2026-09-15",
+        "spend_usd": 1.74
+      },
+      {
+        "date": "2026-09-16",
+        "spend_usd": 1.21
+      },
+      {
+        "date": "2026-09-17",
+        "spend_usd": 1.15
+      },
+      {
+        "date": "2026-09-18",
+        "spend_usd": 0.89
+      },
+      {
+        "date": "2026-09-21",
+        "spend_usd": 0.28
+      },
+      {
+        "date": "2026-09-22",
+        "spend_usd": 0.44
+      },
+      {
+        "date": "2026-09-23",
+        "spend_usd": 1.65
+      },
+      {
+        "date": "2026-09-24",
+        "spend_usd": 0.32
+      },
+      {
+        "date": "2026-09-25",
+        "spend_usd": 1.06
+      },
+      {
+        "date": "2026-09-28",
+        "spend_usd": 1.01
+      }
+    ]
+  },
   "user_details": [
     {
       "login": "kenji-sato",
