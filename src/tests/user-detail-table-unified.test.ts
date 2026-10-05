@@ -121,4 +121,51 @@ describe('UserDetailTable: 表示経路・View によらず同じ形式', () => 
     assert.doesNotMatch(reportHtml, /全ステータス/);
     assert.match(liveHtml, /全ステータス/);
   });
+
+  it('主要モデルのTop3が1列1モデルに分離され、1種類や2種類のみ利用の場合は該当なしが明示される', () => {
+    // 列ヘッダーに主要モデル (Top 1), (Top 2), (Top 3) が含まれる
+    for (const html of [liveHtml, reportHtml]) {
+      for (const h of ['主要モデル (Top 1)', '主要モデル (Top 2)', '主要モデル (Top 3)']) {
+        assert.ok(html.includes(`<span>${h}`), `${h} の列が無い`);
+      }
+    }
+
+    // live (alice, bob は gpt-5 の1モデルのみ利用) では Top 2, Top 3 が「なし (1種のみ利用)」と表示される
+    assert.match(liveHtml, /なし \(1種のみ利用\)/);
+    assert.match(liveHtml, /title="利用モデルが1種類のみのため該当モデルなし"/);
+
+    // 2モデルのみ利用のテスト
+    const p2: UserUsageProfile = {
+      ...profile('charlie'),
+      model_usage_totals: { 'claude-3-7-sonnet': 70, 'gpt-4o': 30 },
+    };
+    const live2 = {
+      ...live,
+      users: [seat('charlie')],
+    } as unknown as ScopeAggregatedData;
+    const live2Html = renderToStaticMarkup(
+      React.createElement(UserDetailTable, { data: live2, userProfiles: [p2] })
+    );
+    assert.match(live2Html, /claude-3-7-sonnet/);
+    assert.match(live2Html, /gpt-4o/);
+    assert.match(live2Html, /なし \(2種のみ利用\)/);
+    assert.match(live2Html, /title="利用モデルが2種類のみのため該当モデルなし"/);
+
+    // 3モデル利用のテスト
+    const p3: UserUsageProfile = {
+      ...profile('david'),
+      model_usage_totals: { m1: 50, m2: 30, m3: 20 },
+    };
+    const live3 = {
+      ...live,
+      users: [seat('david')],
+    } as unknown as ScopeAggregatedData;
+    const live3Html = renderToStaticMarkup(
+      React.createElement(UserDetailTable, { data: live3, userProfiles: [p3] })
+    );
+    assert.match(live3Html, /50% m1/);
+    assert.match(live3Html, /30% m2/);
+    assert.match(live3Html, /20% m3/);
+    assert.doesNotMatch(live3Html, /なし \([12]種のみ利用\)/);
+  });
 });
