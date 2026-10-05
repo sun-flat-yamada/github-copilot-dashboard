@@ -11,6 +11,7 @@ import {
 import type { QualityObservations } from '../../domain/entities/data-quality.js';
 import { TeamDailyMetrics } from '../../domain/entities/agent-metrics.js';
 import { MockDataGenerator, MockDataBundle } from '../../collector/mock-generator.js';
+import { resolveTeamMembers } from './usage-reports/team-metrics-mapper.js';
 
 export interface MockDataSourceConfig {
   days?: number;
@@ -51,23 +52,41 @@ export class MockCopilotDataSource implements ICopilotDataSource {
     return [...this.bundle.userProfiles];
   }
 
+  /**
+   * DEMO のチーム別日次メトリクス。実データ (SDD-03 §2.4) と同じく、シートの割り当てチームと
+   * ユーザー別の日次履歴を結合して作る (定数の行やレポートに無い agent セッション数は作らない)。
+   */
   async fetchTeamMetrics(teamSlug: string): Promise<TeamDailyMetrics[]> {
-    const today = new Date().toISOString().slice(0, 10);
-    return [
-      {
-        team_slug: teamSlug,
-        team_name: teamSlug.replace(/-/g, ' ').toUpperCase(),
-        date: today,
-        total_active_users: 15,
-        total_engaged_users: 12,
-        total_code_suggestions: 240,
-        total_code_acceptances: 85,
-        total_chat_turns: 45,
-        total_agent_sessions: 18,
-        ai_credits_used: 120,
-      },
-    ];
+    const { logins, teamName } = resolveTeamMembers(teamSlug, this.bundle.seats);
+    if (logins.size === 0) return [];
+    const byDay = new Map<string, TeamDailyMetrics>();
+    for (const profile of this.bundle.userProfiles) {
+      if (!logins.has(profile.login.toLowerCase())) continue;
+      for (const h of profile.daily_history) {
+        const entry = byDay.get(h.date) ?? {
+          team_slug: teamSlug,
+          team_name: teamName ?? teamSlug,
+          date: h.date,
+          total_active_users: 0,
+          total_engaged_users: 0,
+          total_code_suggestions: 0,
+          total_code_acceptances: 0,
+          total_chat_turns: 0,
+        };
+        entry.total_active_users++;
+        if (h.suggestions > 0 || h.total_chats > 0) entry.total_engaged_users++;
+        entry.total_code_suggestions = (entry.total_code_suggestions ?? 0) + h.suggestions;
+        entry.total_code_acceptances = (entry.total_code_acceptances ?? 0) + h.acceptances;
+        entry.total_chat_turns = (entry.total_chat_turns ?? 0) + h.total_chats;
+        if (h.ai_credits_consumed !== undefined) {
+          entry.ai_credits_used = (entry.ai_credits_used ?? 0) + h.ai_credits_consumed;
+        }
+        byDay.set(h.date, entry);
+      }
+    }
+    return [...byDay.values()].sort((a, b) => a.date.localeCompare(b.date));
   }
+
 
   /**
    * 代表的な issue (エラーログ画面の表示パターン用)。severity / category を一通り含む。
