@@ -569,6 +569,12 @@ export interface ReportDailyTrend {
   model_breakdown?: Record<string, number>;
 }
 
+/** Cost Center ごとの日別利用費用 (gross, USD)。日付のあるレコードのみ。予算の時系列グラフ用 */
+export interface ReportCostCenterDailyEntry {
+  date: string;
+  spend_usd: number;
+}
+
 export interface ReportUserDetail {
   login: string;
   display_name: string;
@@ -708,6 +714,8 @@ export interface MonthlyReportAggregatedData {
   model_breakdown: ReportModelBreakdown[];
   sku_breakdown: ReportSkuBreakdown[];
   daily_trends: ReportDailyTrend[];
+  /** Cost Center 名 → 日別の利用費用 (gross)。旧形式のレポートには無い */
+  cost_center_daily?: Record<string, ReportCostCenterDailyEntry[]>;
   user_details: ReportUserDetail[];
   /** フィルター適用中のとき、適用対象外 (全体値のまま) のセクション */
   filter_notice?: FilterScopeNotice;

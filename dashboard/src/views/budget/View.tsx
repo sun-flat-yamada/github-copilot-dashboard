@@ -1,6 +1,7 @@
 import React from 'react';
 import { CostAllocationCharts } from '../../components/CostAllocationCharts';
 import { CostCenterBudgetCards } from '../../components/CostCenterBudgetCards';
+import { CostCenterBudgetTimeline } from '../../components/CostCenterBudgetTimeline';
 import { MonthlyReportCharts } from '../../components/monthly-report/MonthlyReportCharts';
 import { UserDetailTable } from '../../components/UserDetailTable';
 import type { ViewContext } from '../types';
@@ -24,6 +25,7 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
       {isReportSource && currentReportData && (
         <div className="flex flex-col space-y-6 w-full">
           <CostCenterBudgetCards budgets={reportBudgets} />
+          <CostCenterBudgetTimeline reportData={currentReportData} budgets={reportBudgets} />
           <MonthlyReportCharts
             reportData={currentReportData}
             grouping="cost_center"
