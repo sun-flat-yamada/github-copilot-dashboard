@@ -299,7 +299,7 @@ npm run fork:verify
 ```text
 [同期後検証チェックリスト]
 ☐ 1. データ保全性チェック: copilot-data ブランチの履歴と最新パーティションが存在すること
-☐ 2. セキュリティ & PII 監査: npm run secret-scan が 0 件で合格すること
+☐ 2. セキュリティ & PII 監査: npm run secret-scan が 0 件で合格すること(秘密情報・メールアドレス・成果物の絶対パス)
 ☐ 3. 型安全性 & 自動テスト: npm run typecheck && npm test が全件合格すること
 ☐ 4. パイプライン実行確認: copilot-analysis-cron.yml が正常完了（緑アイコン）であること
 ☐ 5. GitHub Pages 表示確認: 公開URLにアクセスし、ダッシュボードの新機能や集計結果が正しく描画されること
@@ -389,7 +389,7 @@ Fork 先で開発した汎用的なバグ修正、新しいモデルのベンチ
    ```
 2. **社内情報・PII・実データの完全排除**(必須。両方とも exit 0 であること):
    - `COPILOT_USER_MAPPING` に含まれる実際の氏名・部署・社員番号、または組織固有のCopilot利用実績・請求データが、コード・テストフィクスチャ・ドキュメントのいずれにも混入していないことを確認。
-   - `npm run secret-scan` を実行(作業ツリー全体を対象にした汎用シークレット/PIIパターンスキャン)。
+   - `npm run secret-scan` を実行(作業ツリーの秘密情報パターンとメールアドレス、および `.devs/changes/` のマシン固有の絶対パスを検出する。`.devs/changes/` 以外のドットディレクトリは対象外。実名・部署はパターンでは検出できないため目視で確認する)。
    - `npm run upstream:audit -- upstream/main feature/my-improvement` を実行([6.1節](#61-upstream-データ流出防止機構-npm-run-upstreamaudit)参照)。候補ブランチと `upstream/main` との差分を専用にチェックし、実データ保護パターン(`AIUsageReport*.csv`・`*<yyyymm>.csv`・`data/`・ユーザーマッピング/組織図ダンプ等)に一致するファイルが1つでもあれば失敗する。secret-scanの再実行も含む。
 3. **PR 作成**:
    - 本リポジトリが upstream のネイティブGitHub forkである場合は、`origin` にブランチをpushし、通常通りGitHub UI上でPRを作成する。

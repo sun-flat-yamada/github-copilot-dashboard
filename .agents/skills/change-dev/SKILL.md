@@ -38,8 +38,9 @@ Artifacts are **not** written under `<appDataDir>`. They are output beneath the 
 - **Google Antigravity**: When running in Google Antigravity, a finished copy of every artifact (`implementation_plan.md`, `task.md`, `walkthrough.md`) must be placed in this directory upon completion, even if Antigravity's own artifact runtime keeps an internal working copy.
 - **Scratch Scripts & Temporary Data**: Keep out of the repository (use the agent's scratch area) and never commit them.
 - Artifacts must not contain secrets, PII, or machine-specific absolute paths:
+  - Link files with repository-relative links (for example `[scripts/scan-secrets.ts](../../../scripts/scan-secrets.ts)` from `.devs/changes/<dir>/`), never `file:///` URIs or home-directory paths. An Antigravity working copy may keep `file:///` links; the finished copy placed in `.devs/changes/` is rewritten with relative links.
   - `npm run secret-scan` covers `.devs/changes/` (it does not scan the rest of `.devs/` or other dot-directories). Run it before committing artifacts.
-  - The scanner only matches secret patterns (tokens, keys, credentials). Check artifacts for PII and absolute paths by review.
+  - The scanner matches secret patterns (tokens, keys, credentials) and email addresses outside its allowlist (reserved example domains, GitHub, `noreply`) in every scanned file, and machine-specific absolute paths (home directories, `/tmp/<entry>`, `file:///` URIs; `<placeholder>` segments and `/home/runner/` are allowed) in `.devs/changes/` only. Real names, departments and GitHub logins are not detectable by pattern: check artifacts for them by review.
 
 ### 2. Canonical Antigravity Artifact Triad
 
@@ -92,13 +93,13 @@ When calling `write_to_file` to create or update artifact files in the change ar
 
 ## Proposed Changes
 ### <Component / Domain Area 1>
-#### [NEW] [filepath](file:///absolute/path/to/file)
+#### [NEW] [path/from/repo-root](../../../path/from/repo-root)
 - Purpose and key functionality.
 
-#### [MODIFY] [filepath](file:///absolute/path/to/file)
+#### [MODIFY] [path/from/repo-root](../../../path/from/repo-root)
 - Targeted changes and method additions.
 
-#### [DELETE] [filepath](file:///absolute/path/to/file)
+#### [DELETE] [path/from/repo-root](../../../path/from/repo-root)
 - Rationale for deletion.
 
 ## Verification Plan
@@ -135,8 +136,7 @@ When calling `write_to_file` to create or update artifact files in the change ar
 
 ## Changes Made
 ### <Domain Area>
-- [file.ts](file:///absolute/path/to/file): Description of modification.
-`render_diffs(file:///absolute/path/to/file)`
+- [path/from/repo-root/file.ts](../../../path/from/repo-root/file.ts): Description of modification.
 
 ## Verification Results
 ### Automated Quality Gates
@@ -211,7 +211,7 @@ Before writing any application code or provisioning worktrees:
 
 1. **Formulate `implementation_plan.md`**:
    - Write to `<repo-root>/.devs/changes/yyyy-mm-dd_<ChangeTitle>/implementation_plan.md` with `ArtifactMetadata` (`RequestFeedback: true`, `UserFacing: true`).
-   - Detail user reviews, proposed file modifications with `file:///` links, and verification commands.
+   - Detail user reviews, proposed file modifications with repository-relative links (`../../../<path>` from the change directory), and verification commands.
 2. **Initialize `task.md`** (same directory):
    - Write to `<repo-root>/.devs/changes/yyyy-mm-dd_<ChangeTitle>/task.md` with `ArtifactMetadata` (`RequestFeedback: false`, `UserFacing: true`).
 3. **Plan Review Gate (branches on `CHG_DEV_AUTO_PILOT`)**: check the mode first with `npm run change-dev:mode`.
@@ -420,26 +420,25 @@ Facts about the cloud environment (Claude Code docs *Configure cloud environment
 Always reference and adhere to the repository's specifications and rule files:
 
 - **System Specifications (`docs/specifications/`)**:
-  - [SDD-14: 開発運用ワークフロー & Git Ops 仕様書](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/docs/specifications/14_development_workflow_and_git_ops_spec.ja.md) ([English Specification](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/docs/specifications/14_development_workflow_and_git_ops_spec.md))
-  - [SDD-05: データ永続化 & Fork非競合ストレージ仕様書](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/docs/specifications/05_data_storage_and_fork_isolation_spec.ja.md) ([English Specification](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/docs/specifications/05_data_storage_and_fork_isolation_spec.md))
-  - [SDD-12: Fork先変更反映 & 運用保守仕様書](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/docs/specifications/12_fork_sync_and_customization_ops_spec.ja.md) ([English Specification](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/docs/specifications/12_fork_sync_and_customization_ops_spec.md))
-  - [SDD-13: 制限環境セットアップ手順書](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/docs/specifications/13_fork_restricted_environment_setup_guide.ja.md) ([English Guide](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/docs/specifications/13_fork_restricted_environment_setup_guide.md))
+  - [SDD-14: 開発運用ワークフロー & Git Ops 仕様書](../../../docs/specifications/14_development_workflow_and_git_ops_spec.ja.md) ([English Specification](../../../docs/specifications/14_development_workflow_and_git_ops_spec.md))
+  - [SDD-05: データ永続化 & Fork非競合ストレージ仕様書](../../../docs/specifications/05_data_storage_and_fork_isolation_spec.ja.md) ([English Specification](../../../docs/specifications/05_data_storage_and_fork_isolation_spec.md))
+  - [SDD-12: Fork先変更反映 & 運用保守仕様書](../../../docs/specifications/12_fork_sync_and_customization_ops_spec.ja.md) ([English Specification](../../../docs/specifications/12_fork_sync_and_customization_ops_spec.md))
+  - [SDD-13: 制限環境セットアップ手順書](../../../docs/specifications/13_fork_restricted_environment_setup_guide.ja.md) ([English Guide](../../../docs/specifications/13_fork_restricted_environment_setup_guide.md))
 
 - **Agent Guardrails & Operating Rules (`.agents/rules/`)**:
-  - [Development Workflow Policy](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/.agents/rules/development-workflow.md)
-  - [Security & Zero-Leakage Policy](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/.agents/rules/security-zero-leakage.md)
-  - [Storage & Data Routing Policy](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/.agents/rules/storage-and-data-routing.md)
+  - [Development Workflow Policy](../../../.agents/rules/development-workflow.md)
+  - [Security & Zero-Leakage Policy](../../../.agents/rules/security-zero-leakage.md)
+  - [Storage & Data Routing Policy](../../../.agents/rules/storage-and-data-routing.md)
 
 - **Autonomous Agent Personas (`.agents/`)**:
-  - [Change Dev Agent (`change-dev.agent.md`)](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/.agents/change-dev.agent.md)
-  - [Fork Synchronization Agent (`fork-sync.agent.md`)](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/.agents/fork-sync.agent.md)
+  - [Change Dev Agent (`change-dev.agent.md`)](../../../.agents/change-dev.agent.md)
+  - [Fork Synchronization Agent (`fork-sync.agent.md`)](../../../.agents/fork-sync.agent.md)
 
-- **Antigravity Customization System & Built-in Guides**:
-  - [Google Antigravity Guide Skill](file:///C:/Users/sun_flat/.gemini/antigravity/builtin/skills/antigravity_guide/SKILL.md)
-  - [Antigravity Customizations Skill](file:///C:/Users/sun_flat/.gemini/antigravity/builtin/skills/agy-customizations/SKILL.md)
-  - [Antigravity 2.0 Desktop Application Reference](file:///C:/Users/sun_flat/.gemini/antigravity/builtin/skills/antigravity_guide/references/app.md)
-  - [Antigravity IDE Reference](file:///C:/Users/sun_flat/.gemini/antigravity/builtin/skills/antigravity_guide/references/ide.md)
-  - [Antigravity CLI Reference](file:///C:/Users/sun_flat/.gemini/antigravity/builtin/skills/antigravity_guide/references/cli.md)
+- **Antigravity Customization System & Guides** (official documentation; see *Authoritative Official Documentation Endpoints* below):
+  - [Antigravity Documentation Home](https://antigravity.google/docs)
+  - [Antigravity Skills Reference](https://antigravity.google/docs/skills)
+  - [Antigravity Rules & Workflows](https://antigravity.google/docs/rules-workflows)
+  - [Antigravity CLI Features](https://antigravity.google/docs/cli/features)
 
 ---
 
@@ -492,7 +491,7 @@ Before finalizing any task or proposing changes, execute this verification check
    - Do `task.md` and `walkthrough.md` have `RequestFeedback: false`?
    - Are repository source files written without `ArtifactMetadata`?
 3. **Link & Formatting Compliance**:
-   - Are all file references formatted as clickable `file:///` markdown links (with forward slashes for Windows)?
+   - Are all file references repository-relative markdown links (no `file:///` URIs or machine-specific absolute paths; `npm run secret-scan` fails on them in `.devs/changes/`)?
    - Do alert blocks use standard GitHub Alert syntax (`> [!IMPORTANT]`, `> [!WARNING]`, `> [!NOTE]`)?
 4. **Local Quality Gate Assertion**:
    - Run the 5-stage validation suite:

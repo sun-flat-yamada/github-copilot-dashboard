@@ -90,7 +90,7 @@ Before provisioning worktrees or modifying code, autonomous agents must formulat
    - **Whether to wait for plan review branches on `CHG_DEV_AUTO_PILOT`** (check with `npm run change-dev:mode`).
      - Auto-Pilot off: `RequestFeedback: true` instructs the Antigravity UI to render the interactive **Proceed** button, pausing execution until the user provides review and approval.
      - Auto-Pilot on: do not wait (`RequestFeedback: false` on Antigravity). Commit the plan, report a summary, and continue; the plan is reviewed again in the PR. Stop and ask only when a prerequisite is not merged, the Issue's scope is ambiguous, or a step is irreversible or destructive (data deletion, history rewrite, credential changes).
-   - The plan details user reviews (`> [!IMPORTANT]`), proposed changes categorized by `[NEW]`, `[MODIFY]`, `[DELETE]` with clickable `file:///` links, and the automated/manual verification plan.
+   - The plan details user reviews (`> [!IMPORTANT]`), proposed changes categorized by `[NEW]`, `[MODIFY]`, `[DELETE]` with repository-relative links (for example `../../../scripts/scan-secrets.ts` from the change directory; never `file:///` URIs or machine-specific absolute paths, and an Antigravity working copy that keeps `file:///` links is rewritten when its finished copy is placed in `.devs/changes/`), and the automated/manual verification plan.
 2. **`task.md` Initialization**:
    - Initialize a dynamic task tracking checklist (`- [ ]`, `- [/]`, `- [x]`) with `ArtifactMetadata` (`RequestFeedback: false`, `UserFacing: true`). Its last items are the PR and the merge (`change-dev:finish` when Auto-Pilot is on).
 3. **Plan First (enforced)**:
@@ -171,9 +171,10 @@ npm ci
    npm run fork:verify   # Code-Data Decoupling (SDD-05) verification
    npm run typecheck     # TypeScript compiler checks
    npm test              # Vitest test suite
-   npm run secret-scan   # Zero secrets & PII audit (Exit 0 mandatory)
+   npm run secret-scan   # Secret / email / absolute-path audit (Exit 0 mandatory)
    npm run build         # Production SPA build
    ```
+   `npm run secret-scan` (`scripts/scan-secrets.ts`) checks secret patterns and email addresses outside its allowlist (reserved example domains, GitHub, `noreply`) in every scanned file, and machine-specific absolute paths (home directories, `/tmp/<entry>`, `file:///` URIs) in `.devs/changes/` only. Findings are labelled `secret` / `PII` / `path`, and PII / path values are printed as `<email>` / `<abs-path>`. Real names, departments and GitHub logins are not detectable by pattern and remain a review item.
 
 ---
 

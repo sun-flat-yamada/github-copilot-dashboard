@@ -290,7 +290,7 @@ Maintainers should verify these 5 checkpoints following synchronization:
 ```text
 [Post-Sync Verification Checklist]
 ☐ 1. Data Integrity: Historical data in copilot-data orphan branch is intact and unbroken.
-☐ 2. Security & Zero-Leakage: npm run secret-scan exits with code 0 (zero leaks).
+☐ 2. Security & Zero-Leakage: npm run secret-scan exits with code 0 (no secrets, emails or artifact absolute paths).
 ☐ 3. Type Safety & Tests: npm run typecheck && npm test all pass cleanly.
 ☐ 4. Pipeline Execution: copilot-analysis-cron.yml finishes with green status.
 ☐ 5. GitHub Pages Deployment: Live URL correctly displays updated UI and recent metrics.
@@ -367,7 +367,7 @@ When submitting upstream contributions (general bug fixes, new model benchmarks,
    ```
 2. **Zero-PII, Secret & Real-Data Audit** (mandatory, both must exit 0):
    - Ensure no real employee names, emails, tokens, or organization-specific usage/billing data are included in code, test fixtures, or docs.
-   - Run `npm run secret-scan` (generic secret/PII pattern scan across the whole working tree).
+   - Run `npm run secret-scan` (secret patterns and email addresses across the working tree, plus machine-specific absolute paths in `.devs/changes/`; dot-directories other than `.devs/changes/` are skipped, and real names / departments are not detectable by pattern, so review them).
    - Run `npm run upstream:audit -- upstream/main feature/my-improvement` (see [Section 6.1](#61-upstream-data-leak-guard-npm-run-upstreamaudit) below) — this specifically diffs the candidate branch against `upstream/main` and fails if any file in that diff matches a real-data protection pattern (`AIUsageReport*.csv`, `*<yyyymm>.csv`, `data/`, user-mapping/org-chart dumps, etc.), in addition to re-running the secret scan.
 3. **Open Pull Request**:
    - If this repository is a native GitHub fork of upstream, push the branch to `origin` and open a PR from the GitHub UI as usual.

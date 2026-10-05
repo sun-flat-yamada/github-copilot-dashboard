@@ -44,10 +44,10 @@ Specialized autonomous agent responsible for managing the end-to-end development
 
 ## 🛠️ Bound Skill & Specifications
 
-- **Bound Skill**: [.agents/skills/change-dev/SKILL.md](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/.agents/skills/change-dev/SKILL.md)
+- **Bound Skill**: [.agents/skills/change-dev/SKILL.md](skills/change-dev/SKILL.md)
 - **Related Specifications & Rules**:
-  - [SDD-14: 開発運用ワークフロー & Git Ops 仕様書](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/docs/specifications/14_development_workflow_and_git_ops_spec.ja.md) ([English](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/docs/specifications/14_development_workflow_and_git_ops_spec.md))
-  - [SDD-05: データ永続化 & Fork非競合ストレージ仕様書](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/docs/specifications/05_data_storage_and_fork_isolation_spec.ja.md) ([English](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/docs/specifications/05_data_storage_and_fork_isolation_spec.md))
-  - [SDD-12: Fork先変更反映 & 運用保守仕様書](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/docs/specifications/12_fork_sync_and_customization_ops_spec.ja.md) ([English](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/docs/specifications/12_fork_sync_and_customization_ops_spec.md))
-  - [Rule: Development Workflow Policy](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/.agents/rules/development-workflow.md)
-  - [Rule: Security & Zero-Leakage Policy](file:///c:/Users/sun_flat/Documents/antigravity/proud-noether/.agents/rules/security-zero-leakage.md)
+  - [SDD-14: 開発運用ワークフロー & Git Ops 仕様書](../docs/specifications/14_development_workflow_and_git_ops_spec.ja.md) ([English](../docs/specifications/14_development_workflow_and_git_ops_spec.md))
+  - [SDD-05: データ永続化 & Fork非競合ストレージ仕様書](../docs/specifications/05_data_storage_and_fork_isolation_spec.ja.md) ([English](../docs/specifications/05_data_storage_and_fork_isolation_spec.md))
+  - [SDD-12: Fork先変更反映 & 運用保守仕様書](../docs/specifications/12_fork_sync_and_customization_ops_spec.ja.md) ([English](../docs/specifications/12_fork_sync_and_customization_ops_spec.md))
+  - [Rule: Development Workflow Policy](rules/development-workflow.md)
+  - [Rule: Security & Zero-Leakage Policy](rules/security-zero-leakage.md)
