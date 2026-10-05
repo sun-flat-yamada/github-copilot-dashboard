@@ -108,6 +108,8 @@ In GitHub Copilot telemetry, acceptance rate is derived from IDE inline ghost-te
 
 ### 2.3 Legacy Response Schema (retired endpoint; for reference only)
 
+> The adapter no longer contains a schema or normalizer for this format: `metrics-schema.ts`, `teams-metrics-schema.ts`, `normalizers/metrics-2026-03-10.ts` and `normalizers/teams-2026-03-10.ts` were removed (Issue #241). The example is kept only to explain the field names of the internal `CopilotDailyMetrics` model, which the Reports API mapper (§2.1) still produces.
+
 ```json
 [
   {
@@ -165,6 +167,25 @@ In GitHub Copilot telemetry, acceptance rate is derived from IDE inline ghost-te
   }
 ]
 ```
+
+### 2.4 Team Metrics (derived; Issue #241)
+
+The team endpoint of the retired API (`GET /orgs/{org}/teams/{team}/copilot/metrics`, sunset with the other `/copilot/metrics` endpoints in April 2026) is **not called**. `fetchTeamMetrics(teamSlug)` derives team figures from data the run has already collected:
+
+- **Inputs**: the de-duplicated `users-1-day` rows of `fetchMetrics` (§2.1) and the seats of `fetchSeats` (§3). A user belongs to a team when the team's `slug` is in the seat's `assigning_teams`, or, when that list is absent or empty, equals `assigning_team.slug` (§3.2). Slugs and logins are compared case-insensitively. No additional API call is made.
+- **Per day** (only days with at least one member row; no day is filled with 0): `total_active_users` = member rows; `total_engaged_users` = members with any activity; `total_code_suggestions` / `total_code_acceptances` = `code_completion` only; `total_chat_turns` = interactions of the `chat_*` features (the same per-user extraction as the organization-wide metrics, surface isolation §2.2); `ai_credits_used` = sum of `ai_credits_used`, omitted when no member row carries it. `total_agent_sessions` is never produced (the reports carry no session counts). `team_name` comes from the seat's team object.
+- **Precondition / status**: call it after `fetchMetrics` and `fetchSeats`. When either has not run or failed, the result is empty and no issue is recorded (the failure is already reported on the `metrics` / `seats` sources).
+- **Scope of "team"**: membership is the team **through which the seat was assigned**, not the full team membership; seats assigned directly to users belong to no team.
+- **Why not `user-teams-1-day`**: the Reports API lists a per user-team report (§2.1), but its row schema is not recorded in this specification and could not be verified; fields are never guessed. Switching to it is a follow-up once its schema is confirmed against a real Enterprise (see "Unverified items" below).
+- **DEMO**: `MockCopilotDataSource.fetchTeamMetrics` derives its rows the same way (seat `assigning_team` x the users' `daily_history`); it no longer returns a constant row with invented agent session counts.
+- **Callers**: no pipeline step or view consumes team metrics yet; the method is an optional port (`ICopilotDataSource.fetchTeamMetrics`).
+
+#### Unverified items (need a live Enterprise)
+| Item | What must be confirmed |
+| :--- | :--- |
+| `user-teams-1-day` row schema | Field names and team identifiers of the per user-team report; whether its figures match the derivation above |
+| `assigning_teams` | Whether the seat API returns `assigning_teams` (multiple teams) in addition to `assigning_team` for seats granted through several teams |
+| Retired team endpoint | The exact status returned today by `GET /orgs/{org}/teams/{team}/copilot/metrics` (404 or 410); not called, so not relied on |
 
 ---
 
@@ -263,6 +284,12 @@ Cost Centers are an Enterprise Billing feature: for organization-only operation 
 ```
 
 ---
+
+### 4.3 Cost Center Budgets (not an API source; Issue #241)
+
+- Spending limits and free tiers of Cost Centers are **not** read from GitHub. They come only from the administrator declaration `COPILOT_COST_CENTER_BUDGETS` (SDD-08, SDD-12) and are evaluated against the seat cost by the pipeline (`BillingCalculator.computeCostCenterBudgets`, SDD-06 §1.2). Nothing is generated or guessed.
+- `GitHubApiCopilotDataSource.fetchCostCenterBudgets()` therefore returns an empty list **by contract**: it makes no HTTP request, records no issue and sets no source status (it is not a failure). The DEMO source returns generated budgets.
+- **Unverified**: GitHub may offer a billing budgets REST endpoint for enterprises (for example under `/enterprises/{enterprise}/settings/billing/`). It is not recorded in this specification and its response could not be verified from the development environment, so it is not called and no field of it is modelled. Adopting it requires checking the endpoint, its permissions and whether a budget can be scoped to a Cost Center against a real Enterprise.
 
 ### 4a. AI Credit Usage API (Billing)
 
