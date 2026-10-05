@@ -234,6 +234,43 @@ function projectLimit(a: ProjectArgs): LimitForecast {
   };
 }
 
+export interface ReachSpan {
+  /** 到達予想の幅を月内の日 (1 始まり) で表したもの。月末を超える側は月末に丸める */
+  fromDay: number;
+  toDay: number;
+  /** 中心線の到達日 (月内の日)。月末を超えるとき null */
+  expectedDay: number | null;
+  /** 幅または中心の日付が翌月以降だった (丸めた) か */
+  beyondMonthEnd: boolean;
+}
+
+/**
+ * 到達予想日 (最早 / 期待 / 最遅) を、時間軸に描ける月内の日の幅へ変換する。
+ * 予測が ok で、最早の到達日が分かるときだけ返す (値を作らない)。月外の日付は月末に丸める。
+ */
+export function forecastReachSpan(timeline: BudgetTimeline): ReachSpan | null {
+  const f = timeline.forecast;
+  if (f.status !== 'ok') return null;
+  const first = f.earliestDate ?? f.reachDate;
+  if (!first) return null;
+  const toDay = (date: string | undefined): number | null => {
+    if (!date) return null;
+    return dayOfMonth(timeline.month, date) ?? (date > timeline.month ? timeline.daysInMonth + 1 : null);
+  };
+  const fromRaw = toDay(first);
+  if (fromRaw === null) return null;
+  const toRaw = toDay(f.latestDate) ?? timeline.daysInMonth + 1; // 最遅が範囲外 = 月末以降
+  const expectedRaw = toDay(f.reachDate);
+  const clamp = (d: number) => Math.min(d, timeline.daysInMonth);
+  const beyond = fromRaw > timeline.daysInMonth || toRaw > timeline.daysInMonth || (expectedRaw ?? 0) > timeline.daysInMonth;
+  return {
+    fromDay: clamp(fromRaw),
+    toDay: clamp(Math.max(fromRaw, toRaw)),
+    expectedDay: expectedRaw !== null && expectedRaw <= timeline.daysInMonth ? expectedRaw : null,
+    beyondMonthEnd: beyond,
+  };
+}
+
 function round(v: number): number {
   return Number(v.toFixed(2));
 }

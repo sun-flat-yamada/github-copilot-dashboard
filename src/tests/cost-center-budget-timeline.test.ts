@@ -2,12 +2,35 @@ import { describe, it } from 'node:test';
 import * as assert from 'node:assert/strict';
 import { ReportParser } from '../processor/report-parser.js';
 import { AttributeResolver } from '../collector/attribute-resolver.js';
-import { buildBudgetTimeline, daysInMonth } from '../../dashboard/src/utils/budgetForecast.js';
+import { buildBudgetTimeline, daysInMonth, forecastReachSpan } from '../../dashboard/src/utils/budgetForecast.js';
 
 const month = '2026-08';
 const day = (d: number) => `${month}-${String(d).padStart(2, '0')}`;
 const steady = (days: number, perDay: number) =>
   Array.from({ length: days }, (_, i) => ({ date: day(i + 1), spend_usd: perDay }));
+
+describe('forecastReachSpan', () => {
+  it('turns the reach window into a day span within the month with the expected day', () => {
+    const t = buildBudgetTimeline({ month, daily: steady(10, 10), freeTierUsd: 0, spendingLimitUsd: 250 });
+    const span = forecastReachSpan(t)!;
+    assert.strictEqual(span.expectedDay, 25);
+    assert.ok(span.fromDay <= 25 && span.toDay >= 25 && span.toDay <= daysInMonth(month));
+    assert.strictEqual(span.beyondMonthEnd, false);
+  });
+
+  it('clamps a window that runs past month end and flags it', () => {
+    const t = buildBudgetTimeline({ month, daily: steady(10, 10), freeTierUsd: 0, spendingLimitUsd: 2000 });
+    const span = forecastReachSpan(t)!;
+    assert.strictEqual(span.toDay, daysInMonth(month));
+    assert.strictEqual(span.expectedDay, null);
+    assert.strictEqual(span.beyondMonthEnd, true);
+  });
+
+  it('returns null when there is no ok forecast', () => {
+    assert.strictEqual(forecastReachSpan(buildBudgetTimeline({ month, daily: steady(10, 10), freeTierUsd: 0, spendingLimitUsd: 60 })), null);
+    assert.strictEqual(forecastReachSpan(buildBudgetTimeline({ month, daily: steady(3, 10), freeTierUsd: 0, spendingLimitUsd: 100 })), null);
+  });
+});
 
 describe('buildBudgetTimeline', () => {
   it('covers day 1 to month end and accumulates actuals only through the last observed day', () => {
