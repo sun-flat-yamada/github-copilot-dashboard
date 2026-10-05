@@ -68,6 +68,21 @@ GitHub Enterprise Billingで定義された各Cost CenterのBudgetに対して�
 - カタログに無い月は、**それより前で最も近い月のレート** を引き継ぐ (未来の月や固定値では補わない)。前の月も無ければレート無しとして、換算表示 (EA-JPY / EA-EUR) を選択肢から外す。**コードに為替の数値表は持たない**。
 - 取得に失敗しても既存カタログは変更せず、警告のみで収集を続行する。デモデータにはカタログが無いため、換算は USD のみ。
 
+#### 1.4.4 価格カタログの一次情報照合
+既定価格 (`src/domain/pricing/pricing-catalog.ts`、版 `2026-10-05-v2`) とトークン単価表 (`docs/models_pricing.md`) を **2026-10-05 に GitHub 公式ドキュメントと照合した**。開発環境から `docs.github.com` には到達できないため、そのソースリポジトリ `github/docs` をコミット `45a0f053ac67e8d1f56fc8f7ee38f0b2a58925c3` で読んだ。
+
+| 値 | 公式の出典 (`github/docs`) | 結果 |
+| :--- | :--- | :--- |
+| Business \$19 / Enterprise \$39 (1 ユーザー・月) | `data/variables/copilot.yml` (`cfb_price_per_month`、`ce_price_per_month`)、`content/copilot/concepts/billing-and-usage/organizations-and-enterprises/seats-and-billing-cycles.md` | 一致 |
+| 1 AI クレジット = \$0.01、2026-06-01 から使用量ベース課金 | `data/variables/product.yml` (`prodname_ai_credits_value`)、`content/copilot/reference/copilot-billing/request-based-billing-legacy/what-changed-with-billing.md` | 一致 |
+| 包含量 Business 1,900 / Enterprise 3,900 クレジット (ユーザー・月)、請求エンティティ単位のプール | `data/variables/copilot.yml` (`ai_credits_per_user_*`)、`content/copilot/concepts/billing-and-usage/organizations-and-enterprises/billing.md` | 一致 |
+| 移行プロモーション 2026-06〜2026-08: 3,000 / 7,000 クレジット | `data/variables/copilot.yml` (`*_promo`)、`.../organizations-and-enterprises/billing.md` のコミット `f169461e985f3820a38233db99648dc0e75fd4dc` 時点 (期限切れとして `19a110200a3b` (2026-09-11) で削除済み) | 値と期間 (2026-06-01〜2026-09-01) は一致。**適用範囲の差異**: 公式は *既存顧客* のみが対象だが、カタログは全シートに適用している (Issue #296) |
+| `docs/models_pricing.md` の全モデルのトークン単価 | `data/tables/copilot/models-and-pricing.yml` | 掲載価格はすべて一致。モデル一覧が古かったため同期した (6 モデル追加、2026-10-02 リタイアの 4 モデル削除、Gemini プロモーションの脚注更新) |
+
+- カタログの各エントリは `verification` (`verifiedAt`、コミット付きの `sources`) を持ち、`PRICING_CATALOG_VERIFICATION` に照合日・リポジトリ・コミットを記録する。照合できない値を追加するときは、版名に `unverified` を付け `verification` を付けない (推測値を照合済みとして扱わない)。
+- 範囲外の突き合わせ: `scripts/benchmark-data/benchmark-records.json` の入力・キャッシュ入力・出力単価は公式と一致したが、GPT-6.1 Sol にキャッシュ書き込みと長コンテキストの単価が無い (Issue #297)。
+- 未照合のまま残るもの: §1.4.3 の ECB への実接続 (`npm run catalog:fx`、Issue #212)。
+
 ### 1.5 スコープ別の費用の単位
 
 費用の単位はスコープごとに異なり、`seatCostForScope` が 1 か所で定義する：
