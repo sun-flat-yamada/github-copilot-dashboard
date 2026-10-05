@@ -9,9 +9,7 @@ import {
   DEFAULT_BILLING_CONFIG,
   EnterpriseBillingConfig,
 } from '../../domain/entities/billing-config.js';
-import { BudgetPresenter } from '../../adapters/presenters/BudgetPresenter.js';
 import { CreditsPresenter } from '../../adapters/presenters/CreditsPresenter.js';
-import { CostCenterBudget } from '../../domain/entities/copilot.js';
 
 describe('Money Value Object Dual Currency Tests', () => {
   it('formats USD alone when sub-currency is null or undefined', () => {
@@ -183,35 +181,24 @@ describe('calculateDualCreditRate Tests', () => {
   });
 });
 
-describe('Presenter Dual Currency Integration Tests', () => {
-  it('BudgetPresenter formats spending limit with dual amounts', () => {
-    const mockBudgets: CostCenterBudget[] = [
-      {
-        cost_center_id: 'cc-1',
-        cost_center_code: 'CC-FE-01',
-        cost_center_name: 'Frontend Engineering',
-        spending_limit_usd: 1000,
-        current_spend_usd: 600,
-        free_tier_budget_usd: 100,
-        net_billable_spend_usd: 500,
-        remaining_budget_usd: 500,
-        budget_utilization_percent: 50,
-        status: 'normal',
-      },
-    ];
-
-    const vm = BudgetPresenter.present({
-      budgets: mockBudgets,
-      activeSource: 'live_metrics',
-    });
-
-    assert.strictEqual(vm.currencySymbol, '$');
-    assert.strictEqual(vm.cards.length, 1);
-    const card = vm.cards[0];
-    assert.ok(card.spendingLimitFormatted.startsWith('$1,000.00'));
-    assert.strictEqual(card.spendingLimitUsd, '$1,000.00');
+describe('Money dual amounts for budget figures (formerly asserted through BudgetPresenter)', () => {
+  it('formats a USD budget amount alone when there is no sub-currency or it is USD', () => {
+    for (const sub of [null, undefined, DEFAULT_CURRENCY_USD]) {
+      const dual = Money.formatDualAmount(1000, sub);
+      assert.strictEqual(dual.usd, '$1,000.00');
+      assert.strictEqual(dual.sub, undefined);
+      assert.strictEqual(dual.combined, '$1,000.00');
+    }
   });
 
+  it('keeps USD primary and appends the sub-currency for a budget amount', () => {
+    const dual = Money.formatDualAmount(1000, DEFAULT_CURRENCY_JPY);
+    assert.strictEqual(dual.usd, '$1,000.00');
+    assert.strictEqual(dual.combined, '$1,000.00 (¥150,000)');
+  });
+});
+
+describe('Presenter Dual Currency Integration Tests', () => {
   it('CreditsPresenter formats effectiveRate and costs with USD primary', () => {
     const vm = CreditsPresenter.present({
       currentData: {
