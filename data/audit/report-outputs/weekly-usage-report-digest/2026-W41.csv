@@ -1,0 +1,22 @@
+﻿section,group,item,value,unit,quality
+headline,,report_net_spend,338.65,usd,measured
+headline,,report_gross_spend,340.33,usd,measured
+headline,,report_requests,2636,count,measured
+headline,,report_active_users,10,users,measured
+headline,,report_top_model,Claude 3.7 Sonnet,name,measured
+top-models,Claude 3.7 Sonnet,total_requests,755,count,measured
+top-models,Claude 3.7 Sonnet,total_spend_usd,29.52,usd,measured
+top-models,Claude 3.7 Sonnet,active_users,10,users,measured
+top-models,Claude 3.7 Sonnet,percentage,28.6,count,measured
+top-models,o1,total_requests,549,count,measured
+top-models,o1,total_spend_usd,27.17,usd,measured
+top-models,o1,active_users,10,users,measured
+top-models,o1,percentage,20.8,count,measured
+top-models,GPT-4o,total_requests,604,count,measured
+top-models,GPT-4o,total_spend_usd,17.66,usd,measured
+top-models,GPT-4o,active_users,10,users,measured
+top-models,GPT-4o,percentage,22.9,count,measured
+top-models,Gemini 2.0 Flash,total_requests,728,count,measured
+top-models,Gemini 2.0 Flash,total_spend_usd,14.31,usd,measured
+top-models,Gemini 2.0 Flash,active_users,10,users,measured
+top-models,Gemini 2.0 Flash,percentage,27.6,count,measured
