@@ -123,9 +123,9 @@ describe('UserDetailTable: 表示経路・View によらず同じ形式', () => 
   });
 
   it('主利用モデルのTop3が1列1モデルに分離され、1種類や2種類のみ利用の場合は該当なしが明示される', () => {
-    // 列ヘッダーに主利用モデル (Top 1), (Top 2), (Top 3) が含まれる
+    // 列ヘッダーに主利用モデル1, 主利用モデル2, 主利用モデル3 が含まれる
     for (const html of [liveHtml, reportHtml]) {
-      for (const h of ['主利用モデル (Top 1)', '主利用モデル (Top 2)', '主利用モデル (Top 3)']) {
+      for (const h of ['主利用モデル1', '主利用モデル2', '主利用モデル3']) {
         assert.ok(html.includes(`<span>${h}`), `${h} の列が無い`);
       }
     }
