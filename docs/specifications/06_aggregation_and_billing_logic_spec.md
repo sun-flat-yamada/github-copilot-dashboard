@@ -68,6 +68,21 @@ To adapt to corporate fiscal years and contract cycles, parameters can be custom
 - A month missing from the catalog uses the **nearest earlier month's rate** (never a later month or a constant). With no earlier month either, there is no rate and the conversion options (EA-JPY / EA-EUR) are not offered. **The code holds no table of exchange rates.**
 - A failed fetch leaves the existing catalog untouched and collection continues with a warning. Demo data has no catalog, so conversion is USD only.
 
+#### 1.3.4 Pricing Catalog Verification against Official Documentation
+The default prices (`src/domain/pricing/pricing-catalog.ts`, version `2026-10-05-v2`) and the per-token price table (`docs/models_pricing.md`) were **verified on 2026-10-05** against GitHub's official documentation. `docs.github.com` is not reachable from the development environment, so its source repository `github/docs` was read at commit `45a0f053ac67e8d1f56fc8f7ee38f0b2a58925c3`.
+
+| Value | Official source (`github/docs`) | Result |
+| :--- | :--- | :--- |
+| Business \$19 / Enterprise \$39 per user per month | `data/variables/copilot.yml` (`cfb_price_per_month`, `ce_price_per_month`); `content/copilot/concepts/billing-and-usage/organizations-and-enterprises/seats-and-billing-cycles.md` | Match |
+| 1 AI credit = \$0.01; usage-based billing from 2026-06-01 | `data/variables/product.yml` (`prodname_ai_credits_value`); `content/copilot/reference/copilot-billing/request-based-billing-legacy/what-changed-with-billing.md` | Match |
+| Included 1,900 (Business) / 3,900 (Enterprise) credits per user per month, pooled per billing entity | `data/variables/copilot.yml` (`ai_credits_per_user_*`); `content/copilot/concepts/billing-and-usage/organizations-and-enterprises/billing.md` | Match |
+| Transition promotion 2026-06..2026-08: 3,000 / 7,000 credits | `data/variables/copilot.yml` (`*_promo`); `.../organizations-and-enterprises/billing.md` at `f169461e985f3820a38233db99648dc0e75fd4dc` (the section was removed as expired by `19a110200a3b`, 2026-09-11) | Values and period (June 1 - September 1, 2026) match. **Scope difference**: officially for *existing* customers only; the catalog applies it to every seat (Issue #296) |
+| Per-token prices of every model in `docs/models_pricing.md` | `data/tables/copilot/models-and-pricing.yml` | All listed prices match. The model list was stale and was synchronised (6 models added, 4 models retired on 2026-10-02 removed, Gemini promo footnote updated) |
+
+- Each catalog entry records `verification` (`verifiedAt`, `sources` with the commit); `PRICING_CATALOG_VERIFICATION` holds the date, repository and commit. A value that cannot be verified is added only with `unverified` in the version and without `verification` (a guess is never presented as verified).
+- Cross-check outside this scope: `scripts/benchmark-data/benchmark-records.json` matches the official input / cached input / output prices, but GPT-6.1 Sol lacks the cache write and long-context prices (Issue #297).
+- Still unverified: the live ECB connection of §1.3.3 (`npm run catalog:fx` against ECB, Issue #212).
+
 ### 1.4 Scope-Dependent Cost Units
 
 The unit of a cost figure depends on the scope and is defined once, by `seatCostForScope`:
