@@ -17,7 +17,7 @@ export const LIVE_UNFILTERABLE_SECTIONS: readonly string[] = [
 ];
 
 /** 月次レポート (MonthlyReportAggregatedData) でフィルター非対応のセクション */
-export const REPORT_UNFILTERABLE_SECTIONS: readonly string[] = ['daily_trends', 'sku_breakdown'];
+export const REPORT_UNFILTERABLE_SECTIONS: readonly string[] = ['daily_trends', 'cost_center_daily', 'sku_breakdown'];
 
 /** 注記バッジに表示する文言 */
 export const UNFILTERED_SECTION_NOTICE = '全社値 (フィルター非対応)';

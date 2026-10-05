@@ -6,6 +6,7 @@ import {
   MonthlyReportAggregatedData,
   MonthlyUsageReportRawRecord,
   ReportDailyTrend,
+  ReportCostCenterDaily,
   ReportImportSummary,
   ReportModelBreakdown,
   ReportSkuBreakdown,
@@ -559,6 +560,8 @@ export class ReportParser {
     // SKU は単位ごとに行を分ける (単位の異なる数量を 1 行に合算しない)
     const skuMap = new Map<string, { sku: string; quantity: number; spend: number; unitType: string }>();
     const dailyMap = new Map<string, { requests: number; spend: number; users: Set<string> }>();
+    // Cost Center 別の日次費用 (Cost Center -> 日付 -> gross / net)
+    const ccDailyMap = new Map<string, Map<string, { gross: number; net: number }>>();
 
     let skippedOutOfMonth = 0;
 
@@ -702,6 +705,16 @@ export class ReportParser {
       // 日別推移 (日付が無い行は推移に載せない)
       const dayKey = rec.date;
       if (dayKey) {
+        let ccDays = ccDailyMap.get(costCenter);
+        if (!ccDays) {
+          ccDays = new Map();
+          ccDailyMap.set(costCenter, ccDays);
+        }
+        const ccDay = ccDays.get(dayKey) ?? { gross: 0, net: 0 };
+        ccDay.gross += grossSpend;
+        ccDay.net += netSpend;
+        ccDays.set(dayKey, ccDay);
+
         let dayStat = dailyMap.get(dayKey);
         if (!dayStat) {
           dayStat = { requests: 0, spend: 0, users: new Set() };
@@ -782,6 +795,13 @@ export class ReportParser {
       }))
       .sort((a, b) => this.compareDateStrings(a.date, b.date));
 
+    const costCenterDaily: Record<string, ReportCostCenterDaily[]> = {};
+    ccDailyMap.forEach((days, name) => {
+      costCenterDaily[name] = Array.from(days.entries())
+        .map(([date, v]) => ({ date, gross_usd: Number(v.gross.toFixed(4)), net_usd: Number(v.net.toFixed(4)) }))
+        .sort((a, b) => this.compareDateStrings(a.date, b.date));
+    });
+
     // 使用量・兆候の組織基準は全ユーザーから作る (表示のフィルターで基準が動かないようにする)
     const orgBaseline = computeOrgBaseline(Array.from(userSummaryMap.values(), (u) => u.usage));
 
@@ -842,6 +862,7 @@ export class ReportParser {
       model_breakdown: modelBreakdown,
       sku_breakdown: skuBreakdown,
       daily_trends: dailyTrends,
+      ...(Object.keys(costCenterDaily).length > 0 ? { cost_center_daily: costCenterDaily } : {}),
       user_details: userDetails,
       ...(importSummary
         ? { import_summary: { ...importSummary, ...(undatedRecords > 0 ? { undated_records: undatedRecords } : {}) } }

@@ -153,7 +153,7 @@ describe('Query layer: the same condition yields the same number on every screen
 
   it('declares the sections that do not follow filters', () => {
     assert.ok(queryCapabilities('live_metrics').unfilterableSections.length > 0);
-    assert.deepEqual([...queryCapabilities('monthly_report').unfilterableSections], ['daily_trends', 'sku_breakdown']);
+    assert.deepEqual([...queryCapabilities('monthly_report').unfilterableSections], ['daily_trends', 'cost_center_daily', 'sku_breakdown']);
   });
 });
 

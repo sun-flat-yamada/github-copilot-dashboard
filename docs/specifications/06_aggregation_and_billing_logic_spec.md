@@ -44,6 +44,12 @@ Calculates the following financial indicators against each Cost Center budget de
 - The Cost Center budget is a **monthly** frame, so the usage evaluated against it is always the monthly seat cost (the same basis as the pipeline), even when the dashboard shows a daily or custom scope.
 - Limits and free tiers come only from the administrator's declaration (`COPILOT_COST_CENTER_BUDGETS`); GitHub's public API does not return them and nothing is generated or guessed. An unparsable declaration is recorded as a configuration issue.
 
+#### 1.2.1 Monthly timeline and limit-reach forecast (Budget view)
+- **Series**: `MonthlyReportAggregatedData.cost_center_daily[costCenter]` holds the daily gross / net spend per Cost Center, aggregated from the dated records of the report (rows without a date are not included; nothing is generated). The chart plots the cumulative gross spend from the first to the last day of the month. The live-metrics scope has no per-Cost-Center daily data, so the chart shows an explicit "no daily data" state.
+- **Reference lines** (on the gross axis): free tier $B_{\text{free}}$, and the limit line $B_{\text{free}} + B_{\text{limit}}$ (the limit applies to the billable amount, §1.2). The first day the cumulative spend exceeds each line is marked.
+- **Forecast** (`BudgetForecastRule`): the expected daily rate is the mean of the trailing 7 observed days; the band is built from that rate, the month-to-date mean and their standard error, giving an earliest / expected / latest date for reaching the limit line, drawn as a shaded range. It is an estimate, not a commitment. No forecast is shown (with the reason) when no limit is set, there are fewer than 3 observed days, there is no spend, or the limit has already been reached (the crossing day is shown instead). Dates after month end are labelled as crossing the month.
+- `cost_center_daily` is listed in the report's unfilterable sections (same as `daily_trends`).
+
 ### 1.3 Enterprise Agreement (EA) Contract Pricing, Period Configuration & Public Exchange Rate Auto-Calculation
 
 #### 1.3.1 Baseline USD Definition (GitHub Catalog Price)

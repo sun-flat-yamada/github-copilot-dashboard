@@ -44,6 +44,12 @@ GitHub Enterprise Billingで定義された各Cost CenterのBudgetに対して�
 - Cost Center の予算は **月次** の枠なので、評価に使う使用額は、画面が日次・期間スコープを表示していても、常に月額のシート費用（パイプラインと同じ基準）とする。
 - 上限額と無料枠は、管理者の宣言（`COPILOT_COST_CENTER_BUDGETS`）だけから取得する。GitHub の公開 API は返さず、生成も推測もしない。解釈できない宣言は、設定の不備として issue に記録する。
 
+#### 1.3.1 月内推移と上限Budget到達予想 (CostCenter予算ビュー)
+- **系列**: `MonthlyReportAggregatedData.cost_center_daily[costCenter]` に Cost Center 別の日次 gross / net 費用を保持する。月次レポートの日付付き明細から集計し、日付の無い行は含めず、値は生成しない。グラフは月初から月末までの gross 累計を描く。ライブ集計スコープには Cost Center 別の日次データが無いため、「日次データなし」と明示する。
+- **基準線** (gross 軸): 無料枠 $B_{\text{free}}$ と、上限線 $B_{\text{free}} + B_{\text{limit}}$ (上限は課金対象額に対する枠のため。§1.3)。累計が各線を最初に超えた日をマークする。
+- **到達予想** (`BudgetForecastRule`): 期待の日額は直近 7 観測日の平均。幅はその値・月初からの平均・標準誤差から作り、上限線への最早 / 期待 / 最遅の到達日を網掛けの範囲で示す。推定であり確定値ではない。上限未設定・観測 3 日未満・利用実績なし・既に到達済み (到達日を表示) のときは理由を付けて予想を出さない。月末を超える日付は月またぎと明記する。
+- `cost_center_daily` はレポートのフィルター非対応セクション (`daily_trends` と同じ)。
+
 ### 1.4 Enterprise Agreement (EA) 契約料金・期間別パラメータ設定 & 公的為替レート自動算出
 
 #### 1.4.1 USD表記の基準定義 (GitHubカタログ価格)

@@ -569,6 +569,15 @@ export interface ReportDailyTrend {
   model_breakdown?: Record<string, number>;
 }
 
+/** Cost Center 別の日次費用 (月次レポートの日付付き明細から集計。日付の無い行は含めない) */
+export interface ReportCostCenterDaily {
+  date: string;
+  /** 利用費用 (gross。予算カードの current_spend_usd と同じ基準) */
+  gross_usd: number;
+  /** 超過請求費用 (net) */
+  net_usd: number;
+}
+
 export interface ReportUserDetail {
   login: string;
   display_name: string;
@@ -708,6 +717,8 @@ export interface MonthlyReportAggregatedData {
   model_breakdown: ReportModelBreakdown[];
   sku_breakdown: ReportSkuBreakdown[];
   daily_trends: ReportDailyTrend[];
+  /** Cost Center 別の日次費用 (日付昇順)。旧形式のレポートには無い */
+  cost_center_daily?: Record<string, ReportCostCenterDaily[]>;
   user_details: ReportUserDetail[];
   /** フィルター適用中のとき、適用対象外 (全体値のまま) のセクション */
   filter_notice?: FilterScopeNotice;

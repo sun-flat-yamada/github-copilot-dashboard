@@ -171,4 +171,20 @@ describe('ReportParser (Monthly Usage Report CSV)', () => {
     assert.deepStrictEqual(dates, ['2026-09-01', '2026-09-02']);
     assert.ok(!dates.some((d) => d.startsWith('2026-08')));
   });
+
+  it('aggregates per-Cost-Center daily spend from dated records only', () => {
+    const parser = new ReportParser(new AttributeResolver(JSON.stringify([])));
+    const csvText = `date,username,sku,model,quantity,unit_type,gross_amount,discount_amount,net_amount,cost_center_name
+2026-08-02,dev_a,copilot_premium_request,GPT-4o,5,requests,1.00,0.40,0.60,CC-A
+2026-08-01,dev_a,copilot_premium_request,GPT-4o,5,requests,2.00,0.00,2.00,CC-A
+2026-08-02,dev_b,copilot_premium_request,GPT-4o,5,requests,0.50,0.00,0.50,CC-A
+2026-08-02,dev_c,copilot_premium_request,GPT-4o,5,requests,4.00,0.00,4.00,CC-B
+`;
+    const agg = parser.aggregate(parser.parseRecords(csvText), '2026-08', 'r.csv');
+    assert.deepStrictEqual(agg.cost_center_daily?.['CC-A'], [
+      { date: '2026-08-01', gross_usd: 2, net_usd: 2 },
+      { date: '2026-08-02', gross_usd: 1.5, net_usd: 1.1 },
+    ]);
+    assert.deepStrictEqual(agg.cost_center_daily?.['CC-B'], [{ date: '2026-08-02', gross_usd: 4, net_usd: 4 }]);
+  });
 });
