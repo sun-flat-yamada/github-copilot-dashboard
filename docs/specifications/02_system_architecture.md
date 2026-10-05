@@ -136,7 +136,7 @@ A run must never publish "empty" as if it were a measurement. The pipeline (`Pip
 |:--|:--|:--|
 | SPA state | Dataset Loader + Query layer | As described: `main.tsx` renders `App.tsx`; `useDashboardData` binds the Dataset Loader (`dashboard/src/dataset/`) and the Query layer (`dashboard/src/query/`) (SDD-15 §7). The DataStore path was removed in P2-5. |
 | Views | View Registry | `dashboard/src/views/` is the only rendering entry. |
-| Presenters | Dataset-driven view models | The Credits / Agent / Adoption presenters are used by the views; the others are pure view-model helpers kept with their tests. |
+| Presenters | Dataset-driven view models | Only the Credits / Agent / Adoption presenters (and the `UserDetailRows` row model) exist, and the views use them. The Overview / Users / Trend / Budget / DeepAnalysis / ModelRadar presenters were removed (#226): their views build the view model in the component, so the presenters were unused duplicates. |
 | Pipeline | `createPipelineApp` → `PipelineOrchestrator` | As described (this is the live path). |
 
 Converging the front end on one architecture (and the Dataset Loader / Query layer) is **Phase 2 of the improvement plan** and the decision is recorded in [ADR-0001](../adr/0001-single-frontend-architecture.md) (hook path → Dataset + Registry; the DataStore path and `VITE_USE_NEW_STORE` were removed in P2-5). The rules of SDD-15 (single filter engine, one definition per concept, lint-enforced hook rules) apply to the live path.
@@ -177,7 +177,7 @@ flowchart TD
         ACL["Anti-Corruption Layer (ACL)\n- RawApiFetcher (Retry & Calendar Version)\n- ResponseNormalizer / NormalizerRegistry\n- Zod Schemas"]
         DataSources["Data Sources\n- GitHubApiCopilotDataSource\n- MockCopilotDataSource\n- StaticJsonMetricsRepository"]
         StorageAdapters["Storage Adapters\n- ForkSafeStorageWriter\n- AttributeResolverAdapter / DemoAttributeResolver"]
-        Presenters["Presenters (DOM-Independent Pure TS)\n- Overview / Users / Trend\n- Budget / DeepAnalysis / ModelRadar\n- Credits / Agent / Adoption"]
+        Presenters["Presenters (DOM-Independent Pure TS)\n- Credits / Agent / Adoption\n- UserDetailRows"]
     end
 
     subgraph Frameworks["4. Frameworks & Drivers (React & CLI)"]
@@ -259,7 +259,7 @@ Enforces AES-256 symmetric GPG encryption for enterprise user mappings exceeding
 │   ├── adapters/                       # Layer 3: Adapters
 │   │   ├── github-api/                 # ACL, RawApiFetcher, Normalizers, Zod Schemas
 │   │   ├── storage/                    # HttpJsonMetricsRepository, BillingConfigLoader
-│   │   ├── presenters/                 # Overview, Users, Trend, Budget, DeepAnalysis, ModelRadar, Credits, Agent, Adoption
+│   │   ├── presenters/                 # Credits, Agent, Adoption, UserDetailRows
 │   │   └── composition-root.ts         # Backend Composition Root (createPipelineApp)
 │   ├── collector/                      # Collection helpers: attribute-resolver.ts, pseudonymizer.ts (browser-safe, no static Node imports)
 │   ├── processor/                      # Aggregation: metrics-aggregator, billing-calculator, report-parser, rolling-trend, scope-merge, inefficiency-*
