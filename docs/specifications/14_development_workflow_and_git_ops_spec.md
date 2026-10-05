@@ -172,8 +172,11 @@ npm ci
    npm run typecheck     # TypeScript compiler checks
    npm test              # Vitest test suite
    npm run secret-scan   # Secret / email / absolute-path audit (Exit 0 mandatory)
-   npm run build         # Production SPA build
+   npm run build         # Production SPA build (including tsc typecheck and bundle check)
    ```
+   > [!CAUTION]
+   > Substituting `npm run build` with transpilation-only tools like `npx vite build` is strictly prohibited. Vite skips TypeScript type checks for speed, meaning unused imports (`noUnusedLocals` / TS6133) and compiler errors pass silently locally but cause fatal build failures during CI and GitHub Pages deployment. Always run `npm run typecheck` and `npm run build`.
+
    `npm run secret-scan` (`scripts/scan-secrets.ts`) checks secret patterns and email addresses outside its allowlist (reserved example domains, GitHub, `noreply`) in every scanned file, and machine-specific absolute paths (home directories, `/tmp/<entry>`, `file:///` URIs) in `.devs/changes/` only. Findings are labelled `secret` / `PII` / `path`, and PII / path values are printed as `<email>` / `<abs-path>`. Real names, departments and GitHub logins are not detectable by pattern and remain a review item.
 
 ---
@@ -287,6 +290,25 @@ git branch -d feat/42-cost-center-export
 
 ---
 
+### 3.8. Step 8: Deployment Verification (GitHub Pages Deployment Verification)
+
+After merging a PR, agents and developers must not immediately report task completion.
+Always verify that the GitHub Pages deployment pipeline (`Copilot Analytics Daily Sync & Pages Deploy`) triggered by pushing to `main` has completed cleanly:
+
+1. **Verification Command**:
+   ```bash
+   # Wait and verify until the deployment reaches SUCCESS
+   npm run pages:wait
+
+   # Or query the latest status immediately
+   npm run pages:status
+   ```
+2. **Acceptance Criteria**:
+   - Must return `Status: SUCCESS` (`state: success` via GitHub Deployments API).
+   - If `failure` or `error` is returned, check the action logs link immediately to determine root cause and fix the failure.
+
+---
+
 ## 4. Safeguards for Autonomous AI Agents
 
 1. **Main Working Tree Protection**: AI agents must not modify files directly on the primary root working tree. Always create a dedicated sibling worktree.
@@ -294,3 +316,6 @@ git branch -d feat/42-cost-center-export
 3. **Zero Secret Leakage**: No PR may be submitted if `npm run secret-scan` fails or yields any detected secrets.
 4. **Plan First**: No implementation may be committed before `implementation_plan.md` (Step 2). `change-dev:finish` refuses to merge a PR that violates it.
 5. **Repository Definitions Over Defaults**: Repository-defined instructions override the Cloud Session defaults; conflicts are reported only in the final result.
+6. **Mandatory Deployment Status Verification**: Following PR merge, agents must run `npm run pages:wait` or `npm run pages:status` to verify that GitHub Pages deployment reaches `state: success` before concluding the interaction.
+7. **Prohibition of Partial/Transpile-Only Builds**: In local quality gates, agents must never substitute `npm run build` with `npx vite build` or other transpile-only tools. Full TypeScript typechecks (`npm run typecheck`) and complete production build validation are strictly mandatory.
+
