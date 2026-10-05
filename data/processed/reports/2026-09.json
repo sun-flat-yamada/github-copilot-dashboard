@@ -2,7 +2,7 @@
   "report_month": "2026-09",
   "source_type": "persisted",
   "file_name": "copilot_monthly_usage_2026-09.csv",
-  "parsed_at": "2026-10-05T04:25:08.714Z",
+  "parsed_at": "2026-10-05T07:22:08.014Z",
   "overview": {
     "total_net_spend_usd": 338.65,
     "total_gross_spend_usd": 340.33,
@@ -357,6 +357,13 @@
         "o1": 4.5,
         "GPT-4o": 1.41
       },
+      "model_gross_usd": {
+        "Standard Completion": 39,
+        "Gemini 2.0 Flash": 2.38,
+        "Claude 3.7 Sonnet": 2.72,
+        "o1": 4.5,
+        "GPT-4o": 1.47
+      },
       "last_activity_date": "2026-09-28",
       "usage_insight": {
         "usage": {
@@ -574,6 +581,13 @@
         "Gemini 2.0 Flash": 1.392,
         "Claude 3.7 Sonnet": 2.72
       },
+      "model_gross_usd": {
+        "Standard Completion": 39,
+        "GPT-4o": 1.77,
+        "o1": 2.35,
+        "Gemini 2.0 Flash": 1.44,
+        "Claude 3.7 Sonnet": 2.72
+      },
       "last_activity_date": "2026-09-28",
       "usage_insight": {
         "usage": {
@@ -777,6 +791,13 @@
         "GPT-4o": 1.47,
         "o1": 1.02
       },
+      "model_gross_usd": {
+        "Standard Completion": 39,
+        "Gemini 2.0 Flash": 1.1,
+        "Claude 3.7 Sonnet": 3.72,
+        "GPT-4o": 1.47,
+        "o1": 1.05
+      },
       "last_activity_date": "2026-09-28",
       "usage_insight": {
         "usage": {
@@ -979,6 +1000,13 @@
         "o1": 4.78,
         "Gemini 2.0 Flash": 1.7,
         "GPT-4o": 1.668
+      },
+      "model_gross_usd": {
+        "Standard Completion": 19,
+        "Claude 3.7 Sonnet": 2.72,
+        "o1": 4.85,
+        "Gemini 2.0 Flash": 1.7,
+        "GPT-4o": 1.74
       },
       "last_activity_date": "2026-09-28",
       "usage_insight": {
@@ -1195,6 +1223,13 @@
         "Claude 3.7 Sonnet": 2.932,
         "GPT-4o": 1.53,
         "o1": 3.09,
+        "Gemini 2.0 Flash": 2
+      },
+      "model_gross_usd": {
+        "Standard Completion": 19,
+        "Claude 3.7 Sonnet": 3.04,
+        "GPT-4o": 1.53,
+        "o1": 3.2,
         "Gemini 2.0 Flash": 2
       },
       "last_activity_date": "2026-09-28",
@@ -1414,6 +1449,13 @@
         "o1": 3.6,
         "Gemini 2.0 Flash": 0.74
       },
+      "model_gross_usd": {
+        "Standard Completion": 19,
+        "Claude 3.7 Sonnet": 2.36,
+        "GPT-4o": 2.52,
+        "o1": 3.6,
+        "Gemini 2.0 Flash": 0.74
+      },
       "last_activity_date": "2026-09-24",
       "usage_insight": {
         "usage": {
@@ -1615,6 +1657,13 @@
         "Gemini 2.0 Flash": 1.732,
         "Claude 3.7 Sonnet": 2.964,
         "GPT-4o": 1.503,
+        "o1": 2.65
+      },
+      "model_gross_usd": {
+        "Standard Completion": 19,
+        "Gemini 2.0 Flash": 1.78,
+        "Claude 3.7 Sonnet": 3.08,
+        "GPT-4o": 1.56,
         "o1": 2.65
       },
       "last_activity_date": "2026-09-28",
@@ -1820,6 +1869,13 @@
         "GPT-4o": 1.503,
         "o1": 2.65
       },
+      "model_gross_usd": {
+        "Standard Completion": 19,
+        "Gemini 2.0 Flash": 1.78,
+        "Claude 3.7 Sonnet": 3.08,
+        "GPT-4o": 1.56,
+        "o1": 2.65
+      },
       "last_activity_date": "2026-09-28",
       "usage_insight": {
         "usage": {
@@ -2023,6 +2079,13 @@
         "o1": 1.55,
         "Gemini 2.0 Flash": 0.524
       },
+      "model_gross_usd": {
+        "Standard Completion": 19,
+        "Claude 3.7 Sonnet": 3.04,
+        "GPT-4o": 3.03,
+        "o1": 1.55,
+        "Gemini 2.0 Flash": 0.54
+      },
       "last_activity_date": "2026-09-25",
       "usage_insight": {
         "usage": {
@@ -2225,6 +2288,13 @@
         "Claude 3.7 Sonnet": 3.616,
         "GPT-4o": 1.47,
         "o1": 1.02
+      },
+      "model_gross_usd": {
+        "Standard Completion": 19,
+        "Gemini 2.0 Flash": 1.1,
+        "Claude 3.7 Sonnet": 3.72,
+        "GPT-4o": 1.47,
+        "o1": 1.05
       },
       "last_activity_date": "2026-09-28",
       "usage_insight": {
