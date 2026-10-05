@@ -5,6 +5,7 @@ import {
   GroupSummary,
   MonthlyReportAggregatedData,
   MonthlyUsageReportRawRecord,
+  ReportCostCenterDailyEntry,
   ReportDailyTrend,
   ReportImportSummary,
   ReportModelBreakdown,
@@ -560,6 +561,9 @@ export class ReportParser {
     const skuMap = new Map<string, { sku: string; quantity: number; spend: number; unitType: string }>();
     const dailyMap = new Map<string, { requests: number; spend: number; users: Set<string> }>();
 
+    // Cost Center × 日付の利用費用 (gross)。日付の無いレコードは時系列に載せない
+    const ccDailyMap = new Map<string, Map<string, number>>();
+
     let skippedOutOfMonth = 0;
 
     for (const rec of records) {
@@ -677,6 +681,14 @@ export class ReportParser {
       };
       accumulate(deptMap, department);
       accumulate(ccMap, costCenter);
+      if (rec.date) {
+        let byDate = ccDailyMap.get(costCenter);
+        if (!byDate) {
+          byDate = new Map();
+          ccDailyMap.set(costCenter, byDate);
+        }
+        byDate.set(rec.date, (byDate.get(rec.date) || 0) + grossSpend);
+      }
       accumulate(orgMap, organization);
 
       // モデル別集計
@@ -782,6 +794,13 @@ export class ReportParser {
       }))
       .sort((a, b) => this.compareDateStrings(a.date, b.date));
 
+    const costCenterDaily: Record<string, ReportCostCenterDailyEntry[]> = {};
+    ccDailyMap.forEach((byDate, name) => {
+      costCenterDaily[name] = Array.from(byDate.entries())
+        .map(([date, spend]) => ({ date, spend_usd: Number(spend.toFixed(4)) }))
+        .sort((a, b) => this.compareDateStrings(a.date, b.date));
+    });
+
     // 使用量・兆候の組織基準は全ユーザーから作る (表示のフィルターで基準が動かないようにする)
     const orgBaseline = computeOrgBaseline(Array.from(userSummaryMap.values(), (u) => u.usage));
 
@@ -842,6 +861,7 @@ export class ReportParser {
       model_breakdown: modelBreakdown,
       sku_breakdown: skuBreakdown,
       daily_trends: dailyTrends,
+      ...(ccDailyMap.size > 0 ? { cost_center_daily: costCenterDaily } : {}),
       user_details: userDetails,
       ...(importSummary
         ? { import_summary: { ...importSummary, ...(undatedRecords > 0 ? { undated_records: undatedRecords } : {}) } }

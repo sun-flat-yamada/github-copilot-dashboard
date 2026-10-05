@@ -20,7 +20,7 @@ In the Cost Center budget view, show a per-Cost-Center time-series chart for the
 3. `dashboard/src/utils/budgetForecast.ts` (pure): build the cumulative series over the full period, find the free-tier crossing date, and project forward with a least-squares line through the cumulative series. Confidence band = prediction interval from the regression residuals (t-approximated 80%/95%); projected limit-reach date = first day the central line, and the optimistic/pessimistic band edges, cross the limit. No projection (and an explicit reason) when there are fewer than 5 observed days, no growth, or no limit set. Nothing is fabricated: unobserved days are never filled with zeros as actuals.
 4. `dashboard/src/components/CostCenterBudgetTimeline.tsx` (recharts): per-Cost-Center selector, actual cumulative line, projection line, confidence band area, free-tier and limit reference lines, summary of the projected date. Added to `dashboard/src/views/budget/View.tsx` for report sources, following the existing dark-slate styling and `useCurrency`.
 5. Tests: forecast util (crossing, band, edge cases), parser per-Cost-Center daily output.
-6. Docs: SDD-07 (dashboard UI/UX) and SDD-06 (aggregation) EN + JA.
+6. Docs: SDD-07 (dashboard UI/UX) EN + JA.
 
 ## Defaults chosen
 - Period = the report month, x axis from day 1 to the last day of the month.

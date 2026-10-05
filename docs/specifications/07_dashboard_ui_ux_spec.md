@@ -122,6 +122,7 @@ Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint 
 ### 2.8 Cost Center Budget Cards
 - Displays budget limit, free allowance, current expenditure, and remaining capacity with color-coded progress bars.
 - 80% threshold surfaces warning (amber); 100% surfaces alert (animated red), accompanied by a company-wide summary bar.
+- **Budget timeline & limit-reach forecast** (`CostCenterBudgetTimeline`, monthly report / upload sources): a per-Cost-Center chart over the report month (day 1 to month end) with a Cost Center selector. It plots cumulative gross usage (solid), the free-tier line with a marker on the day it is exceeded, and the limit line at `free tier + spending limit` (the limit applies to net billable spend). From the observed days it fits a least-squares line to the cumulative series and draws the projection (dashed) from the last observed day with an 80% prediction band; the projected limit-reach date is shown with the earliest/latest dates of the band. No forecast (with the reason shown) when fewer than 5 days are observed, spend is not growing, or no limit is set; `reached` when actuals already crossed the limit. Source: `cost_center_daily` (Cost Center x date gross spend) emitted by the report parser; reports without it show no chart, and no values are filled in. The series is not re-aggregated by the header filters. Live sources are not covered yet.
 
 ### 2.9 Responsive Header, Active Data Selector & View Navigation
 1. **Fork-Safe Repository Link**:
