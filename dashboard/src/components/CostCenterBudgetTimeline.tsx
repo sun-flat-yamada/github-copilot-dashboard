@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import {
-  Area, CartesianGrid, ComposedChart, Line, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Area, CartesianGrid, ComposedChart, Line, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { LineChart as LineChartIcon } from 'lucide-react';
 import type { CostCenterBudget, MonthlyReportAggregatedData } from '../../../src/types/copilot';
-import { buildBudgetTimeline } from '../utils/budgetForecast';
+import { buildBudgetTimeline, forecastReachSpan } from '../utils/budgetForecast';
 import { useCurrency } from '../contexts/CurrencyContext';
 
 interface Props {
@@ -44,6 +44,8 @@ export const CostCenterBudgetTimeline: React.FC<Props> = ({ reportData, budgets 
 
   const fmt = (v: number) => formatMoney(v, { precisionUSD: 0, precisionSub: 0 }).usd;
   const { forecast } = timeline;
+  const span = forecastReachSpan(timeline);
+  const reachedDay = forecast.status === 'reached' && forecast.reachDate ? Number(forecast.reachDate.slice(8, 10)) : null;
   const forecastText =
     forecast.status === 'reached'
       ? `${forecast.reachDate} に上限へ到達済み`
@@ -80,7 +82,7 @@ export const CostCenterBudgetTimeline: React.FC<Props> = ({ reportData, budgets 
           <ComposedChart data={timeline.points} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
             <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
             <XAxis dataKey="day" tick={{ fill: '#94a3b8', fontSize: 11 }} tickFormatter={(d) => `${d}日`} />
-            <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} tickFormatter={(v) => fmt(Number(v))} width={64} />
+            <YAxis domain={[0, (dataMax: number) => dataMax * 1.1]} tick={{ fill: '#94a3b8', fontSize: 11 }} tickFormatter={(v) => fmt(Number(v))} width={64} />
             <Tooltip
               contentStyle={{ background: '#0f172a', border: '1px solid #334155', fontSize: 12 }}
               labelFormatter={(d) => timeline.points[Number(d) - 1]?.date ?? ''}
@@ -89,6 +91,10 @@ export const CostCenterBudgetTimeline: React.FC<Props> = ({ reportData, budgets 
                   key === 'actual' ? '累積利用額' : key === 'projected' ? '予測' : '信頼区間'] as [string, string]
               }
             />
+            {span && (
+              <ReferenceArea x1={span.fromDay} x2={span.toDay} fill="#f43f5e" fillOpacity={0.12}
+                stroke="#f43f5e" strokeOpacity={0.5} strokeDasharray="3 3" />
+            )}
             <Area dataKey="band" stroke="none" fill="#6366f1" fillOpacity={0.2} isAnimationActive={false} />
             <Line dataKey="projected" stroke="#818cf8" strokeDasharray="5 4" dot={false} isAnimationActive={false} />
             <Line dataKey="actual" stroke="#e2e8f0" strokeWidth={2} dot={false} isAnimationActive={false} />
@@ -97,8 +103,14 @@ export const CostCenterBudgetTimeline: React.FC<Props> = ({ reportData, budgets 
                 label={{ value: `無料枠 ${fmt(timeline.freeTierUsd)}`, fill: '#34d399', fontSize: 11, position: 'insideTopLeft' }} />
             )}
             {timeline.limitLineUsd !== null && (
-              <ReferenceLine y={timeline.limitLineUsd} stroke="#f43f5e"
-                label={{ value: `上限 (無料枠+Limit) ${fmt(timeline.limitLineUsd)}`, fill: '#f43f5e', fontSize: 11, position: 'insideTopLeft' }} />
+              <ReferenceLine y={timeline.limitLineUsd} stroke="#f43f5e" strokeWidth={2} ifOverflow="extendDomain"
+                label={{ value: `上限 (無料枠+Limit) ${fmt(timeline.limitLineUsd)}`, fill: '#f43f5e', fontSize: 11, position: 'insideBottomRight' }} />
+            )}
+            {span?.expectedDay != null && timeline.limitLineUsd !== null && (
+              <ReferenceDot x={span.expectedDay} y={timeline.limitLineUsd} r={5} fill="#f43f5e" stroke="#0f172a" />
+            )}
+            {reachedDay !== null && (
+              <ReferenceDot x={reachedDay} y={timeline.points[reachedDay - 1]?.actual} r={6} fill="#f43f5e" stroke="#0f172a" />
             )}
             {timeline.freeTierExceededDate && (
               <ReferenceDot
@@ -110,8 +122,11 @@ export const CostCenterBudgetTimeline: React.FC<Props> = ({ reportData, budgets 
           </ComposedChart>
         </ResponsiveContainer>
       </div>
+      {span?.beyondMonthEnd && (
+        <p className="text-[11px] text-slate-400 mt-2">※ 到達予想の幅が月末を超えています (赤い帯は月末まで表示。月内に到達しない見込みの側を含みます)</p>
+      )}
       <p className="text-[11px] text-slate-500 mt-2">
-        実線: 累積利用額 (無料枠控除前) / 点線・帯: 直近の傾向からの予測と信頼区間 /
+        実線: 累積利用額 (無料枠控除前) / 点線・青い帯: 直近の傾向からの予測と信頼区間 / 赤い帯: 上限到達予想日の幅 /
         {timeline.freeTierExceededDate ? ` ● 無料枠超過: ${timeline.freeTierExceededDate}` : ' 無料枠は未超過'}
       </p>
     </div>
