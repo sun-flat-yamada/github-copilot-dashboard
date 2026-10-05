@@ -533,9 +533,9 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
       'プラン',
       'ステータス',
       '非アクティブ日数',
-      '主利用モデル (Top 1)',
-      '主利用モデル (Top 2)',
-      '主利用モデル (Top 3)',
+      '主利用モデル1',
+      '主利用モデル2',
+      '主利用モデル3',
       'リクエスト数',
       '提案数',
       '受諾採用数',
@@ -669,7 +669,7 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
     </td>
   );
 
-  /** 主利用モデル (Top 1, Top 2, Top 3) のセルを描画。対象モデルがない場合はそれとわかる表示にする */
+  /** 主利用モデル (1, 2, 3) のセルを描画。対象モデルがない場合はそれとわかる表示にする */
   const renderModelCell = (u: UserDetailRow, index: 0 | 1 | 2) => {
     const models = u.top_models.length > 0 ? u.top_models : (u.primary_model ? [{ model: u.primary_model, share: null }] : []);
     if (u.primary_model === null && models.length === 0) {
@@ -961,30 +961,30 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
               <th
                 className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('primary_model')}
-                title="主利用モデル (Top 1) で並び替え"
+                title="主利用モデル1 で並び替え"
               >
                 <div className="flex items-center space-x-1">
-                  <span>主利用モデル (Top 1)</span>
+                  <span>主利用モデル1</span>
                   {renderSortIcon('primary_model')}
                 </div>
               </th>
               <th
                 className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('top_model_2')}
-                title="主利用モデル (Top 2) で並び替え"
+                title="主利用モデル2 で並び替え"
               >
                 <div className="flex items-center space-x-1">
-                  <span>主利用モデル (Top 2)</span>
+                  <span>主利用モデル2</span>
                   {renderSortIcon('top_model_2')}
                 </div>
               </th>
               <th
                 className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 cursor-pointer select-none hover:text-slate-200 transition-colors group"
                 onClick={() => handleSort('top_model_3')}
-                title="主利用モデル (Top 3) で並び替え"
+                title="主利用モデル3 で並び替え"
               >
                 <div className="flex items-center space-x-1">
-                  <span>主利用モデル (Top 3)</span>
+                  <span>主利用モデル3</span>
                   {renderSortIcon('top_model_3')}
                 </div>
               </th>
