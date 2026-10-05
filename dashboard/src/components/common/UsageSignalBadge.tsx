@@ -15,11 +15,11 @@ interface UsageSignalBadgeProps {
   title?: string;
 }
 
-/** 兆候の段階バッジ。色だけに頼らずラベルを併記する。 */
+/** 兆候の段階バッジ。色だけに頼らずラベルを併記する。横幅を確保し改行を防止。 */
 export const UsageSignalBadge: React.FC<UsageSignalBadgeProps> = ({ level, title }) => (
   <span
     title={title}
-    className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium border whitespace-nowrap ${STYLE[level]}`}
+    className={`inline-flex items-center justify-center shrink-0 px-2 py-0.5 rounded text-[10px] font-medium border whitespace-nowrap min-w-[52px] text-center ${STYLE[level]}`}
   >
     {SIGNAL_LEVEL_LABELS[level]}
   </span>

@@ -65,22 +65,32 @@ describe('User Detail Table Enhancements & Compact Style Tests', () => {
       assert.match(content, /px-2\.5\s+py-2/);
     });
 
-    it('freezes the first three primary columns (index, user, display name) on horizontal scroll with proper stacking context', () => {
+    it('freezes only the first two primary columns (index, user) on horizontal scroll with draggable resizable width', () => {
       // thead itself must NOT be sticky to prevent nested sticky containing-block conflicts
       assert.doesNotMatch(content, /<thead[^>]*sticky/);
 
-      // Header sticky columns have z-30 (above both general th z-20 and sticky td z-10)
+      // Header sticky columns: only first 2 columns have sticky top-0 and left offset
       assert.match(content, /sticky\s+top-0\s+left-0\s+z-30/);
       assert.match(content, /sticky\s+top-0\s+left-12\s+z-30/);
-      assert.match(content, /sticky\s+top-0\s+left-\[188px\]\s+z-30/);
+      // Display name column is NOT pinned to the left
+      assert.doesNotMatch(content, /sticky\s+top-0\s+left-\[188px\]/);
+      assert.doesNotMatch(content, /left-\[188px\]/);
 
-      // Body sticky columns have z-10 (behind headers so headers stay visible on vertical scroll)
+      // Body sticky columns: only first 2 columns have sticky left offset
       assert.match(content, /sticky\s+left-0\s+z-10/);
       assert.match(content, /sticky\s+left-12\s+z-10/);
-      assert.match(content, /sticky\s+left-\[188px\]\s+z-10/);
+      assert.doesNotMatch(content, /sticky\s+left-\[188px\]/);
 
-      // Shadow border separation on display_name column
+      // Shadow border separation on user column (end of frozen columns)
       assert.match(content, /shadow-\[3px_0_6px_-2px_rgba\(0,0,0,0\.5\)\]/);
+
+      // Draggable resizer for pinned column width
+      assert.match(content, /cursor-col-resize/);
+      assert.match(content, /role="separator"/);
+      assert.match(content, /aria-label="固定表示幅の変更ハンドル"/);
+      assert.match(content, /handleResizeStart/);
+      assert.match(content, /userColWidth/);
+      assert.match(content, /copilot-dashboard:user-detail-pinned-width/);
     });
 
     it('provides toolbar quick navigation buttons and sticky bottom horizontal scroll controller', () => {
