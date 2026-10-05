@@ -22,13 +22,13 @@ import {
   scopeLabel,
 } from './usage-reports/UsageReportsClient.js';
 import { buildAllDailyMetrics, buildUserProfiles } from './usage-reports/user-report-mapper.js';
+import { buildTeamDailyMetrics } from './usage-reports/team-metrics-mapper.js';
 import { UserReportRow } from './usage-reports/user-report-schema.js';
 import { RawApiFetcher } from './RawApiFetcher.js';
 import { RawApiClient } from './RawApiClient.js';
 import { NormalizerRegistry } from './NormalizerRegistry.js';
 import { DomainMapper } from './DomainMapper.js';
 import { normalizeSeats20260310 } from './normalizers/seats-2026-03-10.js';
-import { normalizeTeams20260310 } from './normalizers/teams-2026-03-10.js';
 import { normalizeCostCenter20260310 } from './normalizers/cost-centers-2026-03-10.js';
 import { pickCostCenterRecords } from './schemas/cost-centers-schema.js';
 
@@ -79,8 +79,9 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
   /** 直近の fetchMetrics で取得したユーザー行 (日付 → 重複排除済み)。fetchUserProfiles が使う */
   private userRowsByDay: Map<string, UserReportRow[]> | null = null;
   private qualityObservations: QualityObservations | null = null;
+  /** 直近の fetchSeats で取得したシート (重複排除済み)。fetchTeamMetrics がチームの所属に使う */
+  private lastSeats: CopilotSeatAssignment[] | null = null;
   private seatsNormalizers = new NormalizerRegistry<unknown, CopilotSeatAssignment>();
-  private teamsNormalizers = new NormalizerRegistry<unknown, TeamDailyMetrics>();
 
   constructor(config: GitHubApiDataSourceConfig = {}) {
     this.fetcher = config.fetcher || new RawApiFetcher();
@@ -96,7 +97,6 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
 
     // 既定の Normalizers を登録
     this.seatsNormalizers.register('2026-03-10', normalizeSeats20260310);
-    this.teamsNormalizers.register('2026-03-10', normalizeTeams20260310);
   }
 
   /**
@@ -236,6 +236,7 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
   }
 
   async fetchSeats(): Promise<CopilotSeatAssignment[]> {
+    this.lastSeats = null;
     if (!this.isConfigured()) {
       this.reportMissingConfig('seats', 'config:copilot-billing-seats', 'Copilot Seats');
       return [];
@@ -370,6 +371,7 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
       records.length,
       quarantined.length
     );
+    this.lastSeats = records;
     return records;
   }
 
@@ -490,8 +492,13 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
     }
   }
 
+  /**
+   * Cost Center の予算 (上限・無料枠) は GitHub の公開 REST API から取得しない (SDD-03 §4.3)。
+   * 上限と無料枠は管理者の宣言 `COPILOT_COST_CENTER_BUDGETS` だけが出所で、パイプラインが
+   * シート費用と突き合わせて評価する (BillingCalculator.computeCostCenterBudgets, SDD-06 §1.2)。
+   * そのためこのアダプターは契約として空配列を返し、HTTP 呼び出しも障害の記録もしない (推測で値を作らない)。
+   */
   async fetchCostCenterBudgets(): Promise<CostCenterBudget[]> {
-    // 本番環境では環境変数または Enterprise API から取得
     return [];
   }
 
@@ -503,22 +510,17 @@ export class GitHubApiCopilotDataSource implements ICopilotDataSource {
     return this.userRowsByDay ? buildUserProfiles(this.userRowsByDay) : [];
   }
 
+  /**
+   * チーム別の日次メトリクス (SDD-03 §2.4)。廃止済みの `GET /orgs/{org}/teams/{team}/copilot/metrics`
+   * (2026-04 Sunset) は呼ばず、同じ実行の fetchMetrics (users-1-day の重複排除済みユーザー行) と
+   * fetchSeats (assigning_teams / assigning_team) を結合して組み立てる。追加の API 呼び出しはしない。
+   * どちらかが未取得・失敗のときは空配列 (取得状態は metrics / seats の SourceStatus に出ている)。
+   */
   async fetchTeamMetrics(teamSlug: string): Promise<TeamDailyMetrics[]> {
-    if (this.orgs.length === 0 || !this.fetcher.hasToken()) return [];
-    const apiVer = this.fetcher.getApiVersion();
-    const normalizer = this.teamsNormalizers.getNormalizer(apiVer);
-    try {
-      const raw = await this.fetcher.fetchRaw<unknown[]>(
-        '/orgs/{org}/teams/{team}/copilot/metrics',
-        { org: this.orgs[0], team: teamSlug }
-      );
-      if (!Array.isArray(raw)) return [];
-      return raw.map((item) => normalizer(item));
-    } catch (err: any) {
-      this.recordIssue(`teams/${teamSlug}/copilot/metrics`, err);
-      return [];
-    }
+    if (!this.userRowsByDay || !this.lastSeats) return [];
+    return buildTeamDailyMetrics(teamSlug, this.userRowsByDay, this.lastSeats);
   }
+
 
   getQualityObservations(): QualityObservations | null {
     return this.qualityObservations;

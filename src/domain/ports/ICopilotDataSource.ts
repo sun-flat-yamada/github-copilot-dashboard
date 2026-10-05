@@ -23,6 +23,10 @@ export interface ICopilotDataSource {
   fetchMetrics(): Promise<CopilotDailyMetrics[]>;
   fetchSeats(): Promise<CopilotSeatAssignment[]>;
   fetchCostCenters(): Promise<EnterpriseCostCenter[]>;
+  /**
+   * Cost Center 予算。GitHub の公開 API は予算 (上限・無料枠) を返さないため、実データの実装は空配列を返す
+   * (上限は COPILOT_COST_CENTER_BUDGETS の宣言をパイプラインが評価する。SDD-03 §4.3 / SDD-06 §1.2)。
+   */
   fetchCostCenterBudgets(): Promise<CostCenterBudget[]>;
   /**
    * Billing の AI credit usage (Enterprise 単位) を正準の費用行として返す (P1-5)。
@@ -30,6 +34,10 @@ export interface ICopilotDataSource {
    */
   fetchAiCreditUsage?(): Promise<CostLine[]>;
   fetchUserProfiles(): Promise<UserUsageProfile[]>;
+  /**
+   * チーム別の日次メトリクス。users-1-day の行とシートの assigning_teams から導出する (SDD-03 §2.4)。
+   * 廃止済みの /orgs/{org}/teams/{team}/copilot/metrics は呼ばない。fetchMetrics / fetchSeats の後に呼ぶ。
+   */
   fetchTeamMetrics?(teamSlug: string): Promise<TeamDailyMetrics[]>;
   getIssues(): DataFetchIssue[];
   /** ソース (metrics / seats / cost_centers) ごとの直近の取得状態 */

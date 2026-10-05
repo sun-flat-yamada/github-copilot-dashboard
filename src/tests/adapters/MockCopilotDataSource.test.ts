@@ -21,9 +21,15 @@ describe('MockCopilotDataSource Tests', () => {
     const profiles = await dataSource.fetchUserProfiles();
     assert.ok(profiles.length > 0);
 
-    const teamMetrics = await dataSource.fetchTeamMetrics('dev-team');
-    assert.equal(teamMetrics.length, 1);
-    assert.equal(teamMetrics[0].team_slug, 'dev-team');
+    // DEMO のチーム指標もシートの assigning_team x 日次履歴から導出する (SDD-03 §2.4)
+    const teamMetrics = await dataSource.fetchTeamMetrics('team-1');
+    assert.ok(teamMetrics.length > 0);
+    assert.ok(teamMetrics.every((t) => t.team_slug === 'team-1' && t.team_name === 'Team-1'));
+    assert.ok(teamMetrics.every((t) => t.total_active_users > 0));
+    assert.ok(teamMetrics.every((t) => t.total_agent_sessions === undefined), 'no invented agent session counts');
+    const dates = teamMetrics.map((t) => t.date);
+    assert.deepEqual(dates, [...dates].sort());
+    assert.deepEqual(await dataSource.fetchTeamMetrics('no-such-team'), []);
 
     const issues = dataSource.getIssues();
     // 画面の表示パターン用に、severity / category の異なる見本 issue を返す
