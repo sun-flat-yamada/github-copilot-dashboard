@@ -168,12 +168,20 @@ export function buildLiveRows(data: ScopeAggregatedData, profiles: UserUsageProf
   return { source: 'live', rows, costUnitLabel, scopeKey: data.scope_key, scopeType };
 }
 
-/** 月次: requests 内訳 → 費用内訳 → 主利用モデルのみ (比率なし) の順で使う */
+/** 月次: requests → net 費用 → gross 費用 → usage_insight (gross → tokens) → 主利用モデルのみ (比率なし) の順で使う */
 function reportTopModels(u: ReportUserDetail): TopModelShare[] {
-  const byRequests = topModelShares(u.model_requests);
-  if (byRequests.length > 0) return byRequests;
-  const bySpend = topModelShares(u.model_spend_usd);
-  if (bySpend.length > 0) return bySpend;
+  const byInsight = u.usage_insight?.by_model ?? [];
+  const sources: Array<Record<string, number> | undefined> = [
+    u.model_requests,
+    u.model_spend_usd,
+    u.model_gross_usd,
+    Object.fromEntries(byInsight.map((m) => [m.model, m.gross_usd])),
+    Object.fromEntries(byInsight.map((m) => [m.model, m.tokens])),
+  ];
+  for (const counts of sources) {
+    const shares = topModelShares(counts);
+    if (shares.length > 0) return shares;
+  }
   return u.primary_model && u.primary_model !== 'None' ? [{ model: u.primary_model, share: null }] : [];
 }
 
