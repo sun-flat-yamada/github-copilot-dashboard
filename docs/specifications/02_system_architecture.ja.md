@@ -136,7 +136,7 @@ flowchart TB
 |:--|:--|:--|
 | SPA の状態管理 | Dataset Loader + Query 層 | 記述どおり: `main.tsx` が `App.tsx` を描画し、`useDashboardData` が Dataset Loader (`dashboard/src/dataset/`) と Query 層 (`dashboard/src/query/`) を束ねる (SDD-15 §7)。DataStore 経路は P2-5 で撤去した。 |
 | ビュー | View Registry | `dashboard/src/views/` が唯一の描画入口。 |
-| Presenter | データセット駆動のビューモデル | Credits / Agent / Adoption の Presenter がビューで使われる。他は純粋なビューモデル補助で、テストとともに残す。 |
+| Presenter | データセット駆動のビューモデル | Credits / Agent / Adoption の Presenter（と行モデル `UserDetailRows`）だけがあり、ビューで使われる。Overview / Users / Trend / Budget / DeepAnalysis / ModelRadar の Presenter は削除した（#226）。対応するビューはコンポーネント内でビューモデルを作っており、Presenter は使われない重複実装だったため。 |
 | パイプライン | `createPipelineApp` → `PipelineOrchestrator` | 記述どおり (これが本番経路)。 |
 
 フロントエンドの単一アーキテクチャへの収束 (および Dataset Loader / Query 層) は**改善計画の Phase 2** であり、決定は [ADR-0001](../adr/0001-single-frontend-architecture.ja.md) に記録した (hook 経路を Dataset + Registry へ移行し、DataStore 経路と `VITE_USE_NEW_STORE` は P2-5 で撤去した)。本番経路には SDD-15 の規約 (フィルターエンジンの単一化、概念ごとの単一定義、lint で強制する Hook 規約) を適用する。
@@ -177,7 +177,7 @@ flowchart TD
         ACL["Anti-Corruption Layer (ACL)\n- RawApiFetcher (リトライ & カレンダーヘッダー)\n- ResponseNormalizer / NormalizerRegistry\n- Zod Schemas"]
         DataSources["Data Sources\n- GitHubApiCopilotDataSource\n- MockCopilotDataSource\n- StaticJsonMetricsRepository"]
         StorageAdapters["Storage Adapters\n- ForkSafeStorageWriter\n- AttributeResolverAdapter / DemoAttributeResolver"]
-        Presenters["Presenters (DOM非依存)\n- Overview / Users / Trend\n- Budget / DeepAnalysis / ModelRadar\n- Credits / Agent / Adoption"]
+        Presenters["Presenters (DOM非依存)\n- Credits / Agent / Adoption\n- UserDetailRows"]
     end
 
     subgraph Frameworks["4. Frameworks & Drivers (React & CLI & Web)"]
@@ -259,7 +259,7 @@ flowchart TD
 │   ├── adapters/                       # Layer 3: Adapters
 │   │   ├── github-api/                 # ACL, RawApiFetcher, Normalizers, Zod Schemas
 │   │   ├── storage/                    # HttpJsonMetricsRepository, BillingConfigLoader
-│   │   ├── presenters/                 # Overview, Users, Trend, Budget, DeepAnalysis, ModelRadar, Credits, Agent, Adoption
+│   │   ├── presenters/                 # Credits, Agent, Adoption, UserDetailRows
 │   │   └── composition-root.ts         # バックエンド Composition Root (createPipelineApp)
 │   ├── collector/                      # 収集補助: attribute-resolver.ts, pseudonymizer.ts (ブラウザ互換: Node の静的 import なし)
 │   ├── processor/                      # 集計: metrics-aggregator, billing-calculator, report-parser, rolling-trend, scope-merge, inefficiency-*
