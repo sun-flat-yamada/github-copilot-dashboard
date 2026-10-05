@@ -1,17 +1,24 @@
 /**
- * 暫定価格カタログ (Provisional Pricing Catalog) — 価格の単一ソース。
+ * 価格カタログ (Pricing Catalog) — 価格の単一ソース。
  *
  * これまで価格は 19 / 39 / 0.01 / 0.05 / 3,900 が各所に散在し、経路によって同じ消費量で
  * 金額が 5 倍ずれていた (AI クレジット単価 $0.05 と $0.01 の混在)。値はこのモジュールに集約し、
  * 他のモジュールはここ (または billing-config 経由) からだけ価格を取得する。
  *
- * 値の根拠 (GitHub 公開情報。出典は 2026-10-02 時点で複数の二次情報が一致したもの。
- * GitHub 公式ドキュメント本文は作業環境のネットワーク制限で直接確認できていないため、
- * **一次情報との照合は未実施** (バージョン名の `unverified`)。照合したらバージョンから外し、`verifiedAt` を記録する):
+ * 値の根拠:
  * - Copilot Business $19 / Enterprise $39 (1 ユーザー・月)
  * - 1 GitHub AI Credit = $0.01 (2026-06-01 から使用量ベース課金)
  * - 通常時の包含量: Business 1,900 / Enterprise 3,900 クレジット (ユーザー・月)。請求エンティティ単位のプール
  * - 移行プロモーション (2026-06 〜 2026-08): Business $30 = 3,000 / Enterprise $70 = 7,000 クレジット
+ *
+ * **一次情報との照合 (Issue #212, 2026-10-06)**: 上記のうち通常時の 4 値 (シート価格・クレジット単価・
+ * 通常時の包含量) は、到達可能な環境から GitHub 公式ドキュメントで確認した (`verifiedAt` 相当、
+ * バージョン名の `baseline-verified`):
+ * - https://docs.github.com/en/copilot/get-started/plans ("Copilot plans overview" 表)
+ * - https://docs.github.com/en/copilot/concepts/billing-and-usage/organizations-and-enterprises/billing
+ *   ("1 AI credit = $0.01 USD"、Business/Enterprise の包含クレジット表)
+ * 移行プロモーション (2026-06〜08 の期間限定値) は、現在の公式ドキュメントに期限切れの時限値が
+ * 残っていないため照合できず、二次情報に基づく値のまま (未照合)。差異が判明すれば修正する。
  *
  * EA 契約等の個別価格・割引は COPILOT_BILLING_CONFIG (billing-config.ts) が上書きする。
  * このカタログは「設定が無いときの既定値」と「プラン別・期間別の包含量」を提供する。
@@ -39,7 +46,7 @@ export interface PricingCatalogEntry {
   note: string;
 }
 
-export const PRICING_CATALOG_VERSION = '2026-10-02-v1-unverified';
+export const PRICING_CATALOG_VERSION = '2026-10-06-v2-baseline-verified';
 
 /** 通常時 (期間指定のないエントリ)。resolvePricingEntry の既定 */
 const BASELINE_ENTRY: PricingCatalogEntry = {

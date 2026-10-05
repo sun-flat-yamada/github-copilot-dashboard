@@ -18,6 +18,8 @@ Copilotを使用すると、対話によってトークン (入力トークン (
 
 > \[!NOTE] 追加のAI creditsを購入するオプションは、iOS または Android でCopilotを使用してGitHub Mobile プランにサブスクライブした場合、またはサブスクライブしている場合は使用できません。
 
+> \[!NOTE] **一次情報との照合 (Issue #212)**: 2026-10-06 に GitHub 公式ドキュメント ([Plans for GitHub Copilot](https://docs.github.com/en/copilot/get-started/plans), [Usage-based billing for organizations and enterprises](https://docs.github.com/en/copilot/concepts/billing-and-usage/organizations-and-enterprises/billing), [Models and pricing for GitHub Copilot](https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing)) と照合した。シート価格 (Business $19 / Enterprise $39) とクレジット換算 (1 AI credit = $0.01、Business 1,900 / Enterprise 3,900 クレジット/月) は一致を確認。モデル別価格表は、`supported_models.md` の「モデルリタイアメント履歴」に合わせて以下を更新した: 追加 — GPT-6 Luna・GPT-6 Sol・GPT-6.1 Sol (OpenAI)、Claude Opus 5.5・Claude Sonnet 5.5 (Anthropic)、Grok 4.7 (xAI)。削除 (2026-10-02 リタイア) — Claude Opus 4.7、Gemini 3.5 Flash、Gemini 3.6 Flash、Kimi K2.7 Code。
+
 ## 価格表
 
 すべての価格は **100万トークンあたりの価格です**。
@@ -26,7 +28,7 @@ Copilotを使用すると、対話によってトークン (入力トークン (
 
 > \[!NOTE] Models with a **Long context** tier, offer extended capabilities and longer context windows. See [GitHub Copilotでサポートされている AI モデル](/ja/copilot/reference/ai-models/supported-models#models-with-extended-capabilities)
 
-GPT-5.6 Sol、 GPT-5.6 Terra、 GPT-5.6 Luna、および GPT-6 Astra には、キャッシュされた入力に加えて、キャッシュ書き込みコストも含まれます。 以前の OpenAI モデルには、キャッシュ書き込みコストはありません。
+GPT-5.6 Sol、 GPT-5.6 Terra、 GPT-5.6 Luna、 GPT-6 Astra、 GPT-6 Luna、 GPT-6 Sol、および GPT-6.1 Sol には、キャッシュされた入力に加えて、キャッシュ書き込みコストも含まれます。 以前の OpenAI モデルには、キャッシュ書き込みコストはありません。
 
 | Model         | リリースの状態 | カテゴリ        | レベル          | しきい値 (入力トークン)  |     入力 | キャッシュされた入力 |      キャッシュ書き込み | アウトプット |
 | ------------- | ------- | ----------- | ------------ | -------------- | -----: | ---------: | -------------: | -----: |
@@ -63,6 +65,18 @@ GPT-5.6 Sol、 GPT-5.6 Terra、 GPT-5.6 Luna、および GPT-6 Astra には、�
 |               |         |             |              |                |        |            |                |        |
 | GPT-6 Astra   | GA      | Powerful    | Long context | > 272K         | $20.00 |      $2.00 |         $25.00 | $75.00 |
 |               |         |             |              |                |        |            |                |        |
+| GPT-6 Luna    | GA      | Lightweight | Default      | ≤ 272K         |  $0.10 |       $0.01 |          $0.125 |  $0.50 |
+|               |         |             |              |                |        |            |                |        |
+| GPT-6 Luna    | GA      | Lightweight | Long context | > 272K         |  $0.20 |       $0.02 |          $0.25 |  $0.75 |
+|               |         |             |              |                |        |            |                |        |
+| GPT-6 Sol     | GA      | Powerful    | Default      | ≤ 272K         |  $2.00 |       $0.20 |          $2.50 | $10.00 |
+|               |         |             |              |                |        |            |                |        |
+| GPT-6 Sol     | GA      | Powerful    | Long context | > 272K         |  $4.00 |       $0.40 |          $5.00 | $15.00 |
+|               |         |             |              |                |        |            |                |        |
+| GPT-6.1 Sol   | GA      | Powerful    | Default      | ≤ 272K         |  $2.00 |       $0.10 |          $2.50 | $10.00 |
+|               |         |             |              |                |        |            |                |        |
+| GPT-6.1 Sol   | GA      | Powerful    | Long context | > 272K         |  $4.00 |       $0.20 |          $5.00 | $15.00 |
+|               |         |             |              |                |        |            |                |        |
 
 ### Anthropic
 
@@ -77,13 +91,15 @@ Anthropicモデルには、キャッシュされた入力に加えて、キャ�
 |                                       |         |           |        |            |           |        |
 | Claude Sonnet 4.6                     | GA      | Versatile |  $3.00 |      $0.30 |     $3.75 | $15.00 |
 |                                       |         |           |        |            |           |        |
-| Claude Opus 4.7                       | GA      | Powerful  |  $5.00 |      $0.50 |     $6.25 | $25.00 |
-|                                       |         |           |        |            |           |        |
 | Claude Opus 4.8                       | GA      | Powerful  |  $5.00 |      $0.50 |     $6.25 | $25.00 |
 |                                       |         |           |        |            |           |        |
 | Claude Opus 5                         | GA      | Powerful  |  $5.00 |      $0.50 |     $6.25 | $25.00 |
 |                                       |         |           |        |            |           |        |
+| Claude Opus 5.5                       | GA      | Powerful  |  $4.00 |      $0.20 |     $5.00 | $20.00 |
+|                                       |         |           |        |            |           |        |
 | Claude Sonnet 5                       | GA      | Versatile |  $2.00 |      $0.20 |     $2.50 | $10.00 |
+|                                       |         |           |        |            |           |        |
+| Claude Sonnet 5.5                     | GA      | Versatile |  $2.00 |      $0.20 |     $2.50 | $10.00 |
 |                                       |         |           |        |            |           |        |
 | Claude Opus 4.8 (fast mode) (preview) | GA      | Powerful  | $10.00 |      $1.00 |    $12.50 | $50.00 |
 |                                       |         |           |        |            |           |        |
@@ -98,10 +114,6 @@ Anthropicモデルには、キャッシュされた入力に加えて、キャ�
 
 | Model                                 | リリースの状態 | カテゴリ        | レベル     | しきい値 (入力トークン)  |    入力 | キャッシュされた入力 | アウトプット |
 | ------------------------------------- | ------- | ----------- | ------- | -------------- | ----: | ---------: | -----: |
-|                                       |         |             |         |                |       |            |        |
-| Gemini 3.5 Flash                      | GA      | Lightweight | Default | Not applicable | $1.50 |      $0.15 |  $9.00 |
-|                                       |         |             |         |                |       |            |        |
-| Gemini 3.6 Flash[^gemini-flash-promo] | GA      | Versatile   | Default | Not applicable | $0.75 |     $0.075 |  $3.75 |
 |                                       |         |             |         |                |       |            |        |
 | Gemini 3.7 Flash[^gemini-flash-promo] | GA      | Versatile   | Default | Not applicable | $0.75 |     $0.075 |  $3.75 |
 |                                       |         |             |         |                |       |            |        |
@@ -137,13 +149,15 @@ Anthropicモデルには、キャッシュされた入力に加えて、キャ�
 |          |         |           |              |               |       |            |        |
 | Grok 4.6 | GA      | Versatile | Long context | > 200K        | $4.00 |      $1.00 | $12.00 |
 |          |         |           |              |               |       |            |        |
+| Grok 4.7 | GA      | Versatile | Default      | ≤ 200K        | $2.00 |      $0.50 |  $6.00 |
+|          |         |           |              |               |       |            |        |
+| Grok 4.7 | GA      | Versatile | Long context | > 200K        | $4.00 |      $1.00 | $12.00 |
+|          |         |           |              |               |       |            |        |
 
 ### ムーンショットAI
 
 | Model          | リリースの状態 | カテゴリ      |    入力 | キャッシュされた入力 | アウトプット |
 | -------------- | ------- | --------- | ----: | ---------: | -----: |
-|                |         |           |       |            |        |
-| Kimi K2.7 Code | GA      | Versatile | $0.95 |      $0.19 |  $4.00 |
 |                |         |           |       |            |        |
 | Kimi K3        | GA      | Powerful  | $3.00 |      $0.30 | $15.00 |
 |                |         |           |       |            |        |
@@ -173,4 +187,4 @@ GitHub Actionsの現在のCopilot code reviewの使用状況は、次の方法�
 Copilot Pro
 Copilot Pro+の課金モデルを使用する**既存の年次請求プラン**のサブスクライバーと\*\*\*\* サブスクライバーには、異なるモデル乗数があります。 「[リクエストベース課金の年間プラン向けモデル係数（旧）](/ja/copilot/reference/copilot-billing/request-based-billing-legacy/model-multipliers-for-annual-plans)」を参照してください。
 
-[^gemini-flash-promo]: Gemini 3.6 Flash, Gemini 3.7 Flash, and Gemini 3.8 Flash are available at the promotional pricing of $0.75 per 1M input tokens, $0.075 per 1M cached input tokens, and $3.75 per 1M output tokens through December 31, 2026.
+[^gemini-flash-promo]: Gemini 3.7 Flash and Gemini 3.8 Flash are available at the promotional pricing of $0.75 per 1M input tokens, $0.075 per 1M cached input tokens, and $3.75 per 1M output tokens through December 31, 2026.
