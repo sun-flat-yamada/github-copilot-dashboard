@@ -9,7 +9,7 @@ import {
   isUnknownModelId,
   createModelProfile,
 } from '../processor/benchmark-evaluator';
-import { MODEL_CATALOG, resolveCatalogModelId } from '../processor/model-catalog';
+import { MODEL_CATALOG, isFeatureModelId, resolveCatalogModelId } from '../processor/model-catalog';
 import {
   computeContentHash,
   generateBenchmarkDataset,
@@ -164,5 +164,17 @@ describe('content-hash dataset version (P3-7 / B-15)', () => {
   it('a legacy file without content_hash gets a version bump once (migration)', () => {
     const next = generateBenchmarkDataset({ version: '2026-10-04-0003', last_updated: d1.toISOString() }, d2, records);
     assert.strictEqual(next.version, '2026-10-04-0004');
+  });
+
+  it('resolves the "Auto:" prefix to the inner model and keeps feature labels apart from unknown', () => {
+    assert.strictEqual(normalizeModelId('Auto: GPT-4o mini'), 'gpt-4o-mini');
+    assert.strictEqual(normalizeModelId('auto:claude-3-5-sonnet'), 'claude-3-5-sonnet');
+    assert.strictEqual(normalizeModelId('Auto: GPT-6 Nova'), 'unknown:auto: gpt-6 nova');
+    assert.strictEqual(normalizeModelId('Code Review model'), 'feature:code-review');
+    assert.strictEqual(normalizeModelId('Coding Agent model'), 'feature:coding-agent');
+    assert.ok(isFeatureModelId('feature:code-review'));
+    assert.ok(!isUnknownModelId('feature:code-review'));
+    // an unlisted "<x> model" label is not guessed into a feature
+    assert.ok(isUnknownModelId(normalizeModelId('Some Other model')));
   });
 });
