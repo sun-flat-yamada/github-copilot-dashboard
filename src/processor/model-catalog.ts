@@ -66,6 +66,15 @@ export function normalizeAliasKey(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
+const AUTO_PREFIX = /^auto\s*:\s*/i;
+
+/** Generic feature labels that name a Copilot feature, not a model. Exact match on the normalised label. */
+export const FEATURE_MODEL_PREFIX = 'feature:';
+const FEATURE_LABELS: Record<string, string> = {
+  codereviewmodel: 'code-review',
+  codingagentmodel: 'coding-agent',
+};
+
 let aliasIndex: Map<string, string> | null = null;
 
 function getAliasIndex(): Map<string, string> {
@@ -89,11 +98,12 @@ function getAliasIndex(): Map<string, string> {
  * Resolve a raw model name to a canonical ID by exact alias match.
  * Accepted variations (all exact, never substring): case / punctuation, a trailing parenthetical
  * ("Kimi K3 (Moonshot)"), and a trailing release date suffix ("-20250219" / "-2025-02-19").
+ * A leading "Auto:" (Copilot's Auto model selection, "Auto: <model>") is dropped and the inner name is resolved.
  * Returns null when the catalog does not know the name.
  */
 export function resolveCatalogModelId(rawName: string): string | null {
   const index = getAliasIndex();
-  const trimmed = rawName.trim();
+  const trimmed = rawName.trim().replace(AUTO_PREFIX, '');
   const noParen = trimmed.replace(/\s*[(（][^)）]*[)）]\s*$/, '');
   const noDate = noParen.replace(/[-_ ](\d{8}|\d{4}-\d{2}-\d{2})$/, '');
   for (const candidate of [trimmed, noParen, noDate]) {
@@ -105,4 +115,17 @@ export function resolveCatalogModelId(rawName: string): string | null {
 
 export function isUnknownModelId(id: string): boolean {
   return id.startsWith(UNKNOWN_MODEL_PREFIX);
+}
+
+/**
+ * `feature:<slug>` for a generic feature label ("Code Review model"), or null. The label does not say which
+ * model served the request, so it is never mapped to a model (and is kept apart from `unknown:`).
+ */
+export function resolveFeatureModelId(rawName: string): string | null {
+  const slug = FEATURE_LABELS[normalizeAliasKey(rawName)];
+  return slug ? `${FEATURE_MODEL_PREFIX}${slug}` : null;
+}
+
+export function isFeatureModelId(id: string): boolean {
+  return id.startsWith(FEATURE_MODEL_PREFIX);
 }

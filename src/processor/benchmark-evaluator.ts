@@ -13,6 +13,7 @@ import {
   UNKNOWN_MODEL_PREFIX,
   isUnknownModelId,
   resolveCatalogModelId,
+  resolveFeatureModelId,
 } from './model-catalog.js';
 import {
   RADAR_AXIS_DEFINITIONS,
@@ -600,6 +601,8 @@ export function createModelProfile(
 export function normalizeModelId(rawName: string): string {
   const resolved = resolveCatalogModelId(rawName);
   if (resolved) return resolved;
+  const feature = resolveFeatureModelId(rawName);
+  if (feature) return feature;
   return `${UNKNOWN_MODEL_PREFIX}${rawName.toLowerCase().trim()}`;
 }
 
