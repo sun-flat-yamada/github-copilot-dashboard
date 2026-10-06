@@ -81,7 +81,8 @@ GitHub Enterprise Billingで定義された各Cost CenterのBudgetに対して�
 
 - カタログの各エントリは `verification` (`verifiedAt`、コミット付きの `sources`) を持ち、`PRICING_CATALOG_VERIFICATION` に照合日・リポジトリ・コミットを記録する。照合できない値を追加するときは、版名に `unverified` を付け `verification` を付けない (推測値を照合済みとして扱わない)。
 - 範囲外の突き合わせ: `scripts/benchmark-data/benchmark-records.json` の入力・キャッシュ入力・出力単価は公式と一致したが、GPT-6.1 Sol にキャッシュ書き込みと長コンテキストの単価が無い (Issue #297)。
-- 未照合のまま残るもの: §1.4.3 の ECB への実接続 (`npm run catalog:fx`、Issue #212)。
+- 2026-10-06 に照合済み (Issue #212): 実ネットワークに到達できる環境で `npm run catalog:fx` を実 ECB エンドポイントに対して実行し、正常終了を確認した (確定月のみ取得、既存月は上書きしない、失敗時は既存カタログを保持)。取得値は、同じ ECB 系列を直接取得して `toUsdBase()` を手計算で再現し、完全一致を確認した (例: 2025-01 の JPY/USD 月次平均)。
+- 未照合のまま残るもの: 2026-06〜08 の移行プロモーション値 (期限切れのプロモーションは公式の公開ページに残らないため。§1.4.1、適用対象は Issue #296 で追跡)。
 
 ### 1.5 スコープ別の費用の単位
 
