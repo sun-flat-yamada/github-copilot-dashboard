@@ -81,7 +81,8 @@ The default prices (`src/domain/pricing/pricing-catalog.ts`, version `2026-10-05
 
 - Each catalog entry records `verification` (`verifiedAt`, `sources` with the commit); `PRICING_CATALOG_VERIFICATION` holds the date, repository and commit. A value that cannot be verified is added only with `unverified` in the version and without `verification` (a guess is never presented as verified).
 - Cross-check outside this scope: `scripts/benchmark-data/benchmark-records.json` matches the official input / cached input / output prices, but GPT-6.1 Sol lacks the cache write and long-context prices (Issue #297).
-- Still unverified: the live ECB connection of §1.3.3 (`npm run catalog:fx` against ECB, Issue #212).
+- Verified on 2026-10-06 (Issue #212): `npm run catalog:fx` was run against the live ECB endpoint from a network-reachable environment and completed successfully (confirmed months only, no overwrite of existing months, existing catalog kept on failure). The fetched rate was re-derived independently by querying the same ECB series directly and reproducing `toUsdBase()` by hand; it matched exactly (e.g. the JPY/USD monthly average for 2025-01).
+- Still unverified: the 2026-06 to 2026-08 transition promotion values, because the live documentation no longer publishes an expired promotion (§1.3.1; Issue #296 tracks its applicability).
 
 ### 1.4 Scope-Dependent Cost Units
 
