@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "month": "2026-09",
+  "closes_on": "2026-10-07",
+  "calendar": {
+    "close_business_days": 5,
+    "weekend_days": [
+      0,
+      6
+    ],
+    "holidays": []
+  },
+  "closed": {
+    "version": 1,
+    "at": "2026-10-07T04:39:47.118Z",
+    "run_id": "20261007T043947Z-c556",
+    "figures": {
+      "monthly.overview.total_seats": 85,
+      "monthly.overview.active_users": 77,
+      "monthly.overview.idle_seats": 8,
+      "monthly.overview.total_spend_usd": 2975,
+      "monthly.overview.idle_waste_usd": 312,
+      "monthly.overview.active_ratio": 0.9059,
+      "monthly.overview.overall_acceptance_rate": 0.3415,
+      "monthly.overview.total_suggestions": 208629,
+      "monthly.overview.total_acceptances": 71239,
+      "monthly.overview.total_chats": 15239,
+      "monthly.overview.total_pr_summaries": 468,
+      "monthly.overview.total_cli_commands": 1717,
+      "monthly.ai_credits_used": 0,
+      "monthly.agent_sessions": null,
+      "report.overview.total_net_spend_usd": 338.65,
+      "report.overview.total_gross_spend_usd": 340.33,
+      "report.overview.total_discount_usd": 1.68,
+      "report.overview.total_requests": 2636,
+      "report.overview.quantity_by_unit.seats": 10,
+      "report.overview.quantity_by_unit.requests": 2636,
+      "report.overview.total_active_users": 10
+    },
+    "checksum": "95a7563188764291a616aee991a2a3d6aafec02d13511e8a14dd56aeb65fdd79"
+  },
+  "revisions": []
+}

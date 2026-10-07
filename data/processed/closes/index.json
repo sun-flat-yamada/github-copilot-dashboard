@@ -2,6 +2,14 @@
   "schema_version": 1,
   "months": [
     {
+      "month": "2026-09",
+      "closes_on": "2026-10-07",
+      "closed_at": "2026-10-07T04:39:47.118Z",
+      "checksum": "95a7563188764291a616aee991a2a3d6aafec02d13511e8a14dd56aeb65fdd79",
+      "revision_count": 0,
+      "last_revised_at": null
+    },
+    {
       "month": "2026-08",
       "closes_on": "2026-09-07",
       "closed_at": "2026-10-04T02:01:12.621Z",

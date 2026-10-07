@@ -2,6 +2,19 @@
   "schema_version": 1,
   "outputs": [
     {
+      "report_id": "monthly-cost-summary",
+      "period": "2026-09",
+      "data_month": "2026-09",
+      "generated_at": "2026-10-07T04:39:50.119Z",
+      "definition_sha256": "5398388e031f63d409241c8dd9c0fc71813395dffd178ad18447abba12b2e6b8",
+      "outputs": [
+        "markdown",
+        "csv"
+      ],
+      "demo": false,
+      "privacy_tier": "aggregate-only"
+    },
+    {
       "report_id": "weekly-usage-report-digest",
       "period": "2026-W41",
       "data_month": "2026-09",
