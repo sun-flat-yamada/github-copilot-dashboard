@@ -46,6 +46,7 @@ A monthly number must not change silently after the fact (late API data, a re-ag
 - **Close day** = the **N-th business day of the following month** (N = `close_business_days`, default **5**). Business days exclude the weekend days (default Sunday and Saturday) and the configured holidays. The day itself is due. Dates are UTC.
 - **Calendar setting** `COPILOT_BUSINESS_CALENDAR` (GitHub Actions variable, JSON; optional): `{ "close_business_days": 5, "weekend_days": [0, 6], "holidays": ["2026-11-03"] }`. Holidays are added by configuration (no built-in holiday table). An invalid value falls back to the default and is recorded as an issue (`config:COPILOT_BUSINESS_CALENDAR`).
 - **Job**: every pipeline run closes the months whose close day has come and that have no snapshot yet (`MonthCloseService.closeDueMonths`); `npm run month:close` runs the same job on its own. A month is closed only if it has a stored aggregate (`processed/monthly` and/or `processed/reports`).
+- **Evaluation time**: the close is evaluated at the run time, which is also the confirmed time `closed.at`. `PipelineOrchestrator` takes it from an injectable clock (`clock`, default: the real clock) so tests can reproduce the days before and after a close day; real-data runs (`pipeline:run`, `pipeline:reprocess`) always use the real clock. The DEMO (`MOCK_MODE`) evaluates the close at the DEMO base date `2026-09-10T00:00:00Z` instead, so its result does not depend on the run date (SDD-05 §2.1, #305).
 
 ### 3.2 What is frozen
 
