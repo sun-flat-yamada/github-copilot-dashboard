@@ -15,7 +15,7 @@
 
 Defines the **AI Model Benchmark Radar (AI Model Radar & Benchmark)** subsystem of the GitHub Copilot Analytics Dashboard. This subsystem visualizes the technical capabilities and characteristics of available AI models across a 6-axis radar chart, assisting teams in selecting optimal models for diverse engineering tasks.
 
-In full compliance with official GitHub Copilot documentation, it comprehensively covers supported models (OpenAI, Anthropic, Google, Microsoft, xAI, Moonshot AI), detailing standard/1M **context windows** and **pricing per 1M tokens (Input / Output / Prompt Caching / Long Context)**. It also persistently provides reference citations to official documentation ([supported-models](https://docs.github.com/en/copilot/reference/ai-models/supported-models) and [models-and-pricing](https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing)).
+In full compliance with official GitHub Copilot documentation, it comprehensively covers supported models (OpenAI, Anthropic, Google, Microsoft, xAI, Moonshot AI), detailing standard/1M **context windows** and **pricing per 1M tokens (Input / Output / Prompt Caching / Long Context)**. It also persistently provides reference citations to official documentation ([supported-models](https://docs.github.com/en/copilot/reference/ai-models/supported-models) and [models-and-pricing](https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing)). The long-context price label uses the model's `long_context_threshold_k` (200K when unset).
 
 By integrating prominent industry benchmarks (SWE-bench Verified, AIME 2024, LMSYS Chatbot Arena, Artificial Analysis, etc.), the engine normalizes scores on a 0–100 scale, assigning suitability tags, best-practice recommendations, and developer community observations (*with community sentiment disclaimer*).
 
@@ -182,7 +182,7 @@ Comprehensive roster covering all 45 evaluated frontier models (36 Copilot-suppo
 | Model ID | Name | Tier | Status | Context | In / 1M | Out / 1M | Cache Read | Highlights |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `gpt-6-astra` | GPT-6 Astra | Powerful | GA | 272K (1M) | $10.00 | $50.00 | $2.50 | 2026 premier deep-reasoning flagship |
-| `gpt-6-1-sol` | GPT-6.1 Sol (estimated scores) | Powerful | GA | 1.05M | $2.00 | $10.00 | $0.10 | Newest Sol; benchmark scores are estimates (`is_estimated`) pending verified sources |
+| `gpt-6-1-sol` | GPT-6.1 Sol (estimated scores) | Powerful | GA | 1.05M | $2.00 | $10.00 | $0.10 | Newest Sol; benchmark scores are estimates (`is_estimated`) pending verified sources. Prices (including cache write $2.50 and long context > 272K: In $4.00 / Out $15.00) verified on 2026-10-08 against the official pricing table (`github/docs` `data/tables/copilot/models-and-pricing.yml`, commit `45a0f053ac67e8d1f56fc8f7ee38f0b2a58925c3` and `main`) |
 | `gpt-6-sol` | GPT-6 Sol | Powerful | GA | 272K (1M) | $2.00 | $10.00 | $0.20 | New generation Powerful workhorse balancing capability and cost |
 | `gpt-6-luna` | GPT-6 Luna | Lightweight | GA | 272K (1M ※Caution) | $0.10 | $0.50 | $0.01 | Ultra-fast inline completions (※Note poor long-context retention) |
 | `gpt-5-6-sol` | GPT-5.6 Sol | Powerful | GA | 272K (1M) | $4.00 | $20.00 | $1.00 | GPT-5.6 workhorse for complex tasks |
