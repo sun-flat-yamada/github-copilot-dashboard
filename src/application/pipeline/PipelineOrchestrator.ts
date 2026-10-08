@@ -37,7 +37,7 @@ import {
 } from '../../domain/pricing/pricing-catalog.js';
 import { PublicExchangeRatesService, type ExchangeRateCatalog } from '../../domain/services/PublicExchangeRatesService.js';
 import { appendQualityHistory, buildDataQualityReport, summarizeQualityHistory } from './data-quality.js';
-import { DemoHistoryService, demoReportMonths } from './demo-history.js';
+import { DemoHistoryService, demoMonthCloseAt, demoReportMonths } from './demo-history.js';
 import { isSourceUsable, resolveSourceStatuses, statusOrInferred } from './source-status.js';
 
 export interface PipelineOrchestratorDependencies {
@@ -71,6 +71,11 @@ export interface PipelineOrchestratorDependencies {
    * (差が出るときは書き込まず issue にする)。
    */
   revision?: RevisionRequest;
+  /**
+   * この実行の時刻を返す時計 (#305)。省略時は実時計。成果物の時刻と月次締めの判定に使う。
+   * テストで締め日の前後を再現するために注入する。DEMO の月次締めは常に DEMO の基準日で判定する。
+   */
+  clock?: () => Date;
 }
 
 /** 設定 (環境変数 / 設定ファイル) の不備を、画面から気付けるよう issue として表す */
@@ -95,6 +100,7 @@ export class PipelineOrchestrator {
   private anonymize: boolean;
   private runInfo?: PipelineOrchestratorDependencies['run'];
   private revision?: RevisionRequest;
+  private clock: () => Date;
 
   constructor(deps: PipelineOrchestratorDependencies) {
     this.dataSource = deps.dataSource;
@@ -105,6 +111,7 @@ export class PipelineOrchestrator {
     this.anonymize = deps.anonymize ?? process.env.ANONYMIZE_USERS === 'true';
     this.runInfo = deps.run;
     this.revision = deps.revision;
+    this.clock = deps.clock ?? (() => new Date());
   }
 
   async run(): Promise<void> {
@@ -132,7 +139,7 @@ export class PipelineOrchestrator {
 
     console.log(`📋 AttributeResolver: Loaded ${this.resolver.getMappingCount()} mapping(s).`);
 
-    const nowIso = new Date().toISOString();
+    const nowIso = this.clock().toISOString();
     // 前回の成果物 (取得に失敗したソースの Last-known-good を維持するために使う)
     const previousIndex = this.storage.loadIndex();
     // 為替カタログ (保存済み。無ければ換算は出さない)
@@ -163,8 +170,10 @@ export class PipelineOrchestrator {
         )
       );
     }
+    // 実データは実行時刻で締めを判定する。DEMO は基準日で判定し、実行日によらず当月を「暫定」に保つ (#305)
+    const monthCloseNow = this.isMock ? demoMonthCloseAt() : new Date(nowIso);
     const monthClose = new MonthCloseService(this.storage, {
-      now: new Date(nowIso),
+      now: monthCloseNow,
       calendar: calendarLoad.config,
       runId: this.runInfo?.runId,
       revision: this.revision,
@@ -306,6 +315,7 @@ export class PipelineOrchestrator {
           currentMonth: monthKey,
           calendar: calendarLoad.config,
           now: new Date(nowIso),
+          closeNow: monthCloseNow,
         })
       : null;
     demoHistory?.seedMonthlyScopes();
