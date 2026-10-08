@@ -48,6 +48,11 @@ export const COPILOT_MODEL_TOKEN_PRICES: Record<
   'gemini-3-8-flash': { input: 0.75, cachedInput: 0.075, cacheWrite: 0, output: 3.75 },
 };
 
+/**
+ * DEMO データの基準日。DEMO の最新月 (当月) はこの日の月で、月次締めの判定時刻もこの日に固定する (#305)。
+ */
+export const DEMO_BASE_DATE = '2026-09-10';
+
 export class MockDataGenerator {
   private baseDate: Date;
   private random: () => number;
@@ -55,7 +60,7 @@ export class MockDataGenerator {
   /**
    * @param seed 指定すると乱数が決定的になる (DEMO の履歴を再生成しても同じ値になる)。省略時は Math.random。
    */
-  constructor(baseDateStr: string = '2026-09-10', seed?: number) {
+  constructor(baseDateStr: string = DEMO_BASE_DATE, seed?: number) {
     this.baseDate = new Date(baseDateStr);
     if (seed === undefined) {
       this.random = Math.random;
