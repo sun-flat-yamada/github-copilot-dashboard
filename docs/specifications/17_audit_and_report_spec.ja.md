@@ -46,6 +46,7 @@
 - **締め日** = **翌月の第 N 営業日**（N = `close_business_days`、既定は **5**）。営業日は、休業の曜日（既定は日・土）と設定した祝日を除く。当日から締め対象。日付は UTC。
 - **カレンダー設定** `COPILOT_BUSINESS_CALENDAR`（GitHub Actions の変数、JSON、任意）: `{ "close_business_days": 5, "weekend_days": [0, 6], "holidays": ["2026-11-03"] }`。祝日は設定で追加する（祝日表は内蔵しない）。不正な値は既定値で続行し、issue（`config:COPILOT_BUSINESS_CALENDAR`）として記録する。
 - **ジョブ**: パイプラインの実行ごとに、締め日を迎えスナップショットがまだ無い月を確定する（`MonthCloseService.closeDueMonths`）。`npm run month:close` は同じ処理を単独で実行する。保存済みの集計（`processed/monthly` または `processed/reports`）がある月だけを締める。
+- **判定時刻**: 締めは実行時刻で判定し、確定時刻 `closed.at` も実行時刻とする。`PipelineOrchestrator` は実行時刻を注入可能な時計（`clock`、既定は実時計）から取り、テストで締め日の前後を再現できるようにする。実データの実行（`pipeline:run` / `pipeline:reprocess`）は常に実時計を使う。DEMO（`MOCK_MODE`）は DEMO の基準日 `2026-09-10T00:00:00Z` で判定し、結果が実行日に依存しない（SDD-05 §2.1、#305）。
 
 ### 3.2 凍結するもの
 
