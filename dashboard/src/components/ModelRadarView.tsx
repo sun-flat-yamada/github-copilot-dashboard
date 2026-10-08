@@ -1297,7 +1297,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                   {/* Long Context 単価補足 (該当モデルのみ) */}
                   {focusedModel.raw_metrics.long_context_input_cost_per_m !== undefined && (
                     <div className="text-[11px] bg-indigo-950/30 border border-indigo-800/40 p-2 rounded-lg flex items-center justify-between text-indigo-200">
-                      <span>超長文 (Long Context &gt; 200K) 課金:</span>
+                      <span>超長文 (Long Context &gt; {focusedModel.raw_metrics.long_context_threshold_k ?? 200}K) 課金:</span>
                       <span className="font-mono">
                         In: <strong>${focusedModel.raw_metrics.long_context_input_cost_per_m}</strong> / Out: <strong>${focusedModel.raw_metrics.long_context_output_cost_per_m}</strong> (/1M Tok)
                       </span>
