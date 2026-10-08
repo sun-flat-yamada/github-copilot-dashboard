@@ -15,7 +15,7 @@
 
 GitHub Copilot Analytics Dashboard の副機能（サブシステム）として、利用可能な各 AI モデルの技術的特性・強みを 6 軸レーダーチャートで視覚化し、実務における最適モデルの選定や使い分けを支援する「**AIモデル特性レーダー (AI Model Radar & Benchmark)**」を規定する。
 
-GitHub Copilot 公式ドキュメントに準拠し、公式サポートモデル（OpenAI, Anthropic, Google, Microsoft, xAI, Moonshot AI）を完全網羅するとともに、各モデルの **コンテキスト長（通常窓・1M対応）** および **コスト単価（Input / Output / Prompt Caching / Long Context 単価）** を掲載する。さらに公式ドキュメント（[supported-models](https://docs.github.com/ja/copilot/reference/ai-models/supported-models) および [models-and-pricing](https://docs.github.com/ja/copilot/reference/copilot-billing/models-and-pricing)）への引用リンクを参考情報として常時掲載する。
+GitHub Copilot 公式ドキュメントに準拠し、公式サポートモデル（OpenAI, Anthropic, Google, Microsoft, xAI, Moonshot AI）を完全網羅するとともに、各モデルの **コンテキスト長（通常窓・1M対応）** および **コスト単価（Input / Output / Prompt Caching / Long Context 単価）** を掲載する。さらに公式ドキュメント（[supported-models](https://docs.github.com/ja/copilot/reference/ai-models/supported-models) および [models-and-pricing](https://docs.github.com/ja/copilot/reference/copilot-billing/models-and-pricing)）への引用リンクを参考情報として常時掲載する。Long Context 単価の表示しきい値はモデルの `long_context_threshold_k` (未設定時は 200K) を使う。
 
 著名な最新ベンチマーク指標（SWE-bench Verified, AIME 2024, LMSYS Chatbot Arena, Artificial Analysis 等）を取り込み、自動的に 0〜100 の正規化スコアおよび特性タグ・推奨ユースケース・利用指針・リアルなエンジニアの声（※ SNSの噂注釈付き）を判定・提示する。
 
@@ -208,7 +208,7 @@ GitHub Copilot 公式ドキュメント（[Supported models](https://docs.github
 | モデルID | モデル名 | Tier | Status | Context | In単価 (/1M) | Out単価 (/1M) | キャッシュ単価 | 備考 |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `gpt-6-astra` | GPT-6 Astra | Powerful | GA | 272K (1M) | $10.00 | $50.00 | $2.50 | 2026最上位推論・極限思考フラッグシップ |
-| `gpt-6-1-sol` | GPT-6.1 Sol (推測値) | Powerful | GA | 1.05M | $2.00 | $10.00 | $0.10 | 最新 Sol。ベンチマークスコアは裏付けのない推測値 (`is_estimated`) |
+| `gpt-6-1-sol` | GPT-6.1 Sol (推測値) | Powerful | GA | 1.05M | $2.00 | $10.00 | $0.10 | 最新 Sol。ベンチマークスコアは裏付けのない推測値 (`is_estimated`)。単価 (キャッシュ書き込み $2.50、Long Context > 272K: In $4.00 / Out $15.00 を含む) は 2026-10-08 に公式価格表 (`github/docs` `data/tables/copilot/models-and-pricing.yml`、コミット `45a0f053ac67e8d1f56fc8f7ee38f0b2a58925c3` と `main`) と照合済み |
 | `gpt-6-sol` | GPT-6 Sol | Powerful | GA | 272K (1M) | $2.00 | $10.00 | $0.20 | 高性能と手頃な単価を両立する新世代Powerful主力 |
 | `gpt-6-luna` | GPT-6 Luna | Lightweight | GA | 272K (1M ※長文注意) | $0.10 | $0.50 | $0.01 | 超高速・超低コストインライン補完（※長文性能注意） |
 | `gpt-5-6-sol` | GPT-5.6 Sol | Powerful | GA | 272K (1M) | $4.00 | $20.00 | $1.00 | GPT-5.6世代のPowerful主力 |
