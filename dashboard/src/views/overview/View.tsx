@@ -232,11 +232,13 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
             onToggle={() => toggle('report_charts')}
           >
             <MonthlyReportCharts
-            reportData={currentReportData}
-            grouping={currentGrouping}
-            onGroupingChange={handleGroupingChange}
-            selectedGroup={selectedGroup}
-          />
+              reportData={currentReportData}
+              grouping={currentGrouping}
+              onGroupingChange={handleGroupingChange}
+              selectedGroup={selectedGroup}
+              baseDir={dataBaseDir}
+              isDemo={isDemoData}
+            />
           </CollapsibleSection>
 
           <CollapsibleSection

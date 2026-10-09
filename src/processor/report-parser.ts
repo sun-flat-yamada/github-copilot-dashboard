@@ -559,7 +559,7 @@ export class ReportParser {
     const modelMap = new Map<string, { requests: number; spend: number; users: Set<string> }>();
     // SKU は単位ごとに行を分ける (単位の異なる数量を 1 行に合算しない)
     const skuMap = new Map<string, { sku: string; quantity: number; spend: number; unitType: string }>();
-    const dailyMap = new Map<string, { requests: number; spend: number; users: Set<string> }>();
+    const dailyMap = new Map<string, { requests: number; spend: number; users: Set<string>; credits: number }>();
 
     // Cost Center × 日付の利用費用 (gross)。日付の無いレコードは時系列に載せない
     const ccDailyMap = new Map<string, Map<string, number>>();
@@ -716,12 +716,15 @@ export class ReportParser {
       if (dayKey) {
         let dayStat = dailyMap.get(dayKey);
         if (!dayStat) {
-          dayStat = { requests: 0, spend: 0, users: new Set() };
+          dayStat = { requests: 0, spend: 0, users: new Set(), credits: 0 };
           dailyMap.set(dayKey, dayStat);
         }
         dayStat.requests += reqCount;
         dayStat.spend += netSpend;
         dayStat.users.add(login);
+        if (rowCredits !== undefined) {
+          dayStat.credits += rowCredits;
+        }
       }
     }
 
@@ -791,6 +794,7 @@ export class ReportParser {
         requests: stat.requests,
         spend_usd: Number(stat.spend.toFixed(2)),
         active_users: stat.users.size,
+        credits: Number(stat.credits.toFixed(2)),
       }))
       .sort((a, b) => this.compareDateStrings(a.date, b.date));
 

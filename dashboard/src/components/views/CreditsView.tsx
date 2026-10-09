@@ -1,15 +1,27 @@
 import React, { useState, useMemo } from 'react';
 import { CreditsViewModel } from '../../../../src/adapters/presenters/CreditsPresenter';
+import type { MonthlyReportAggregatedData } from '../../../../src/types/copilot';
 import { MetricLabel } from '../common/MetricLabel';
+import { MonthlyCreditsTrendPanel } from '../monthly-report/MonthlyCreditsTrendPanel';
 import { Coins, DollarSign, Layers, PieChart, AlertTriangle, ShieldCheck, Users, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 
 interface CreditsViewProps {
   viewModel: CreditsViewModel;
+  availableMonths?: string[];
+  currentReportData?: MonthlyReportAggregatedData | null;
+  baseDir?: string;
+  isDemo?: boolean;
 }
 
 type CreditsConsumerSortKey = 'login' | 'department' | 'costCenter' | 'credits' | 'costUsd';
 
-export const CreditsView: React.FC<CreditsViewProps> = ({ viewModel }) => {
+export const CreditsView: React.FC<CreditsViewProps> = ({
+  viewModel,
+  availableMonths,
+  currentReportData,
+  baseDir = './data',
+  isDemo = false,
+}) => {
   const [sortKey, setSortKey] = useState<CreditsConsumerSortKey>('credits');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
@@ -40,9 +52,17 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ viewModel }) => {
 
   if (!viewModel.hasData) {
     return (
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center text-slate-500">
-        <Coins className="w-8 h-8 mx-auto text-slate-600 mb-2" />
-        <p className="text-sm">AI Credits データが利用できません。</p>
+      <div className="space-y-6">
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center text-slate-500">
+          <Coins className="w-8 h-8 mx-auto text-slate-600 mb-2" />
+          <p className="text-sm">ライブの AI Credits データが利用できません。確定月次CSVデータを確認します。</p>
+        </div>
+        <MonthlyCreditsTrendPanel
+          availableMonths={availableMonths}
+          currentReportData={currentReportData}
+          baseDir={baseDir}
+          isDemo={isDemo}
+        />
       </div>
     );
   }
@@ -299,7 +319,7 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ viewModel }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {sortedConsumers.map((u) => (
+                {sortedConsumers.map((u: any) => (
                   <tr key={u.login} className="hover:bg-slate-850/50 transition-colors">
                     <td className="py-2.5 px-3 font-semibold text-slate-200 font-mono">{u.login}</td>
                     <td className="py-2.5 px-3 text-slate-400">{u.department || '未設定'}</td>
@@ -317,6 +337,14 @@ export const CreditsView: React.FC<CreditsViewProps> = ({ viewModel }) => {
           </div>
         )}
       </div>
+
+      {/* 4. Monthly Usage Report AI Credits Trend Panel */}
+      <MonthlyCreditsTrendPanel
+        availableMonths={availableMonths}
+        currentReportData={currentReportData}
+        baseDir={baseDir}
+        isDemo={isDemo}
+      />
     </div>
   );
 };
