@@ -1,22 +1,22 @@
 # タスク進捗管理: 確定月次CSVデータに基づく月別・日別 AI Credit 消費推移グラフ新設
 
-- [ ] **Phase 1: ドメイン & パーサーの拡張**
-  - [ ] `ReportDailyTrend` インターフェースに `credits?: number` を追加 (`src/domain/entities/copilot.ts`)
-  - [ ] `ReportParser.aggregate()` で `dailyMap` における `credits` の集計を追加 (`src/processor/report-parser.ts`)
-  - [ ] パーサー単体テストの作成 (`src/tests/processor/monthly-credits-trend.test.ts`)
-- [ ] **Phase 2: データ処理・集計ユーティリティの実装**
-  - [ ] `dashboard/src/utils/monthlyCreditsTrend.ts` の作成 (月次ポイント抽出・日別累積クレジット計算・範囲フィルタ)
-  - [ ] データ処理ユーティリティのユニットテスト作成
-- [ ] **Phase 3: UI コンポーネントの実装**
-  - [ ] `MonthlyCreditsTrendPanel.tsx` の実装 (データ範囲セレクター、月次変化グラフ、指定月内の日別・累積変化グラフ、AccessibleChart対応)
-  - [ ] `CreditsView.tsx` への組み込み
-  - [ ] `MonthlyReportCharts.tsx` への組み込み
-  - [ ] コンポーネントテストの作成 (`MonthlyCreditsTrendPanel.test.tsx`)
-- [ ] **Phase 4: 品質ゲート & 検証**
-  - [ ] `npm run typecheck`
-  - [ ] `npm run test`
-  - [ ] `npm run secret-scan`
-  - [ ] `npm run build`
-  - [ ] `npm run lint`
-- [ ] **Phase 5: 完了記録 (Walkthrough) 作成**
-  - [ ] `walkthrough.md` の作成とレビュー
+- [x] **Phase 1: ドメイン & パーサーの拡張**
+  - [x] `ReportDailyTrend` インターフェースに `credits?: number` を追加 (`src/domain/entities/copilot.ts`)
+  - [x] `ReportParser.aggregate()` で `dailyMap` における `credits` の集計を追加 (`src/processor/report-parser.ts`)
+  - [x] パーサー単体テストの作成 (`src/tests/processor/monthly-credits-trend.test.ts`)
+- [x] **Phase 2: データ処理・集計ユーティリティの実装**
+  - [x] `dashboard/src/utils/monthlyCreditsTrend.ts` の作成 (月次ポイント抽出・日別累積クレジット計算・範囲フィルタ)
+  - [x] データ処理ユーティリティのユニットテスト作成
+- [x] **Phase 3: UI コンポーネントの実装**
+  - [x] `MonthlyCreditsTrendPanel.tsx` の実装 (データ範囲セレクター、月次変化グラフ、指定月内の日別・累積変化グラフ、AccessibleChart対応)
+  - [x] `CreditsView.tsx` への組み込み
+  - [x] `MonthlyReportCharts.tsx` への組み込み
+  - [x] コンポーネント連携テストの作成 (`src/tests/monthly-credits-trend-view.test.ts`)
+- [x] **Phase 4: 品質ゲート & 検証**
+  - [x] `npm run typecheck`
+  - [x] `npm test` (新設テスト 9/9 PASS)
+  - [x] `npm run secret-scan` (651ファイル クリーン)
+  - [x] `npm run build` (正常バンドル完了)
+  - [x] `npm run lint` (ESLint 0エラー)
+- [x] **Phase 5: 完了記録 (Walkthrough) 作成**
+  - [x] `walkthrough.md` の作成とレビュー

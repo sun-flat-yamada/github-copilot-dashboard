@@ -4,10 +4,15 @@ import { CreditsView } from '../../components/views/CreditsView';
 import type { ViewContext } from '../types';
 
 export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
-  const { currentData, currentReportData } = ctx;
+  const { currentData, currentReportData, dataBaseDir, isDemoData } = ctx;
   return (
     <div className="w-full">
-      <CreditsView viewModel={CreditsPresenter.present({ currentData, currentReportData })} />
+      <CreditsView
+        viewModel={CreditsPresenter.present({ currentData, currentReportData })}
+        currentReportData={currentReportData}
+        baseDir={dataBaseDir}
+        isDemo={isDemoData}
+      />
     </div>
   );
 };
