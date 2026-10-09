@@ -567,6 +567,7 @@ export interface ReportDailyTrend {
   spend_usd: number;
   active_users: number;
   model_breakdown?: Record<string, number>;
+  credits?: number;
 }
 
 /** Cost Center ごとの日別利用費用 (gross, USD)。日付のあるレコードのみ。予算の時系列グラフ用 */
