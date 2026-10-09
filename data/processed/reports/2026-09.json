@@ -2,7 +2,7 @@
   "report_month": "2026-09",
   "source_type": "persisted",
   "file_name": "copilot_monthly_usage_2026-09.csv",
-  "parsed_at": "2026-10-09T04:53:18.458Z",
+  "parsed_at": "2026-10-09T22:11:13.780Z",
   "overview": {
     "total_net_spend_usd": 338.65,
     "total_gross_spend_usd": 340.33,
@@ -215,121 +215,141 @@
       "date": "2026-09-01",
       "requests": 129,
       "spend_usd": 253.45,
-      "active_users": 10
+      "active_users": 10,
+      "credits": 0
     },
     {
       "date": "2026-09-02",
       "requests": 88,
       "spend_usd": 2.9,
-      "active_users": 9
+      "active_users": 9,
+      "credits": 0
     },
     {
       "date": "2026-09-03",
       "requests": 134,
       "spend_usd": 5.35,
-      "active_users": 9
+      "active_users": 9,
+      "credits": 0
     },
     {
       "date": "2026-09-04",
       "requests": 74,
       "spend_usd": 2.44,
-      "active_users": 5
+      "active_users": 5,
+      "credits": 0
     },
     {
       "date": "2026-09-07",
       "requests": 125,
       "spend_usd": 4.71,
-      "active_users": 6
+      "active_users": 6,
+      "credits": 0
     },
     {
       "date": "2026-09-08",
       "requests": 152,
       "spend_usd": 5.8,
-      "active_users": 8
+      "active_users": 8,
+      "credits": 0
     },
     {
       "date": "2026-09-09",
       "requests": 152,
       "spend_usd": 4.4,
-      "active_users": 9
+      "active_users": 9,
+      "credits": 0
     },
     {
       "date": "2026-09-10",
       "requests": 141,
       "spend_usd": 4.41,
-      "active_users": 8
+      "active_users": 8,
+      "credits": 0
     },
     {
       "date": "2026-09-11",
       "requests": 89,
       "spend_usd": 3.65,
-      "active_users": 7
+      "active_users": 7,
+      "credits": 0
     },
     {
       "date": "2026-09-14",
       "requests": 99,
       "spend_usd": 3.39,
-      "active_users": 5
+      "active_users": 5,
+      "credits": 0
     },
     {
       "date": "2026-09-15",
       "requests": 198,
       "spend_usd": 6.25,
-      "active_users": 9
+      "active_users": 9,
+      "credits": 0
     },
     {
       "date": "2026-09-16",
       "requests": 208,
       "spend_usd": 7.47,
-      "active_users": 10
+      "active_users": 10,
+      "credits": 0
     },
     {
       "date": "2026-09-17",
       "requests": 80,
       "spend_usd": 2.64,
-      "active_users": 6
+      "active_users": 6,
+      "credits": 0
     },
     {
       "date": "2026-09-18",
       "requests": 142,
       "spend_usd": 5.07,
-      "active_users": 8
+      "active_users": 8,
+      "credits": 0
     },
     {
       "date": "2026-09-21",
       "requests": 99,
       "spend_usd": 3.05,
-      "active_users": 7
+      "active_users": 7,
+      "credits": 0
     },
     {
       "date": "2026-09-22",
       "requests": 178,
       "spend_usd": 6,
-      "active_users": 9
+      "active_users": 9,
+      "credits": 0
     },
     {
       "date": "2026-09-23",
       "requests": 199,
       "spend_usd": 7.5,
-      "active_users": 9
+      "active_users": 9,
+      "credits": 0
     },
     {
       "date": "2026-09-24",
       "requests": 74,
       "spend_usd": 2.29,
-      "active_users": 5
+      "active_users": 5,
+      "credits": 0
     },
     {
       "date": "2026-09-25",
       "requests": 168,
       "spend_usd": 4.44,
-      "active_users": 9
+      "active_users": 9,
+      "credits": 0
     },
     {
       "date": "2026-09-28",
       "requests": 107,
       "spend_usd": 3.45,
-      "active_users": 8
+      "active_users": 8,
+      "credits": 0
     }
   ],
   "cost_center_daily": {
