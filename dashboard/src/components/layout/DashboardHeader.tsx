@@ -72,6 +72,7 @@ interface DashboardHeaderProps {
    * (index.json の宣言 = isMockModeData にフォールバック)。
    */
   activeDataIsDemoSourced?: boolean;
+  dataBaseDir?: string;
   theme?: Theme;
   onToggleTheme?: () => void;
 }
@@ -107,6 +108,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onOpenAboutModal,
   onToggleDemoMode,
   activeDataIsDemoSourced,
+  dataBaseDir = './data',
   theme = 'dark',
   onToggleTheme,
 }) => {
@@ -238,6 +240,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             availableTags={availableTags}
             currentScopeData={currentScopeData}
             currentReportData={currentReportData}
+            dataBaseDir={dataBaseDir}
           />
 
           {/* 生成元 GitHub リポジトリリンク & Star (Forkセーフ・動的解決) */}
