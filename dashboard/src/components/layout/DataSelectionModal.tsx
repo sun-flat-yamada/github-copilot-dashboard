@@ -15,8 +15,10 @@ import { CsvImportReportPanel } from '../common/CsvImportReportPanel';
 import {
   validatePattern,
   queryPopulation,
+  queryFilterOptions,
   MAX_REGEX_PATTERN_LENGTH,
 } from '../../query';
+import { loadReportDataset, loadScopeDataset } from '../../dataset/datasetLoader';
 import {
   Activity,
   FileSpreadsheet,
@@ -61,6 +63,7 @@ interface DataSelectionModalProps {
   // プレビュー用生データ
   currentScopeData: ScopeAggregatedData | null;
   currentReportData: MonthlyReportAggregatedData | null;
+  dataBaseDir?: string;
 }
 
 export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
@@ -86,6 +89,7 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
   availableTags,
   currentScopeData,
   currentReportData,
+  dataBaseDir = './data',
 }) => {
   // 一時編集用ローカルステート
   const [localSource, setLocalSource] = useState<DataSourceType>(activeSource);
@@ -93,6 +97,11 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
   const [localScopeKey, setLocalScopeKey] = useState<string>(selectedScopeKey);
   const [localReportMonth, setLocalReportMonth] = useState<string>(selectedReportMonth);
   const [localCriteria, setLocalCriteria] = useState<FilterCriteria>(filterCriteria);
+
+  // 期間指定・月次レポート変更時のステージング用データキャッシュ
+  const [stagedReportData, setStagedReportData] = useState<MonthlyReportAggregatedData | null>(null);
+  const [stagedScopeData, setStagedScopeData] = useState<ScopeAggregatedData | null>(null);
+  const stagedCacheRef = useRef<Map<string, any>>(new Map());
 
   // アップロード状態
   const [isDragging, setIsDragging] = useState(false);
@@ -122,6 +131,8 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
       setLocalScopeKey(selectedScopeKey);
       setLocalReportMonth(selectedReportMonth);
       setLocalCriteria(filterCriteria);
+      setStagedReportData(null);
+      setStagedScopeData(null);
       setUploadError(null);
       if (selectedScopeKey.startsWith('custom:')) {
         const parts = selectedScopeKey.slice('custom:'.length).split('_');
@@ -133,6 +144,58 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
       }
     }
   }, [isOpen, activeSource, scopeType, selectedScopeKey, selectedReportMonth, filterCriteria, indexMeta]);
+
+  // 月次レポートの月が変更された場合、必要に応じて非同期取得
+  useEffect(() => {
+    if (!isOpen) return;
+    if (localSource === 'monthly_report' && localReportMonth) {
+      if (currentReportData?.report_month === localReportMonth) {
+        setStagedReportData(null);
+        return;
+      }
+      const cacheKey = `report:${dataBaseDir}:${localReportMonth}`;
+      if (stagedCacheRef.current.has(cacheKey)) {
+        setStagedReportData(stagedCacheRef.current.get(cacheKey));
+        return;
+      }
+      let cancelled = false;
+      loadReportDataset(dataBaseDir, localReportMonth).then((res) => {
+        if (!cancelled && res.data) {
+          stagedCacheRef.current.set(cacheKey, res.data);
+          setStagedReportData(res.data);
+        }
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+  }, [isOpen, localSource, localReportMonth, currentReportData?.report_month, dataBaseDir]);
+
+  // live_metrics のスコープが変更された場合、必要に応じて非同期取得
+  useEffect(() => {
+    if (!isOpen) return;
+    if (localSource === 'live_metrics' && localScopeKey) {
+      if (selectedScopeKey === localScopeKey && scopeType === localScopeType) {
+        setStagedScopeData(null);
+        return;
+      }
+      const cacheKey = `scope:${dataBaseDir}:${localScopeType}:${localScopeKey}`;
+      if (stagedCacheRef.current.has(cacheKey)) {
+        setStagedScopeData(stagedCacheRef.current.get(cacheKey));
+        return;
+      }
+      let cancelled = false;
+      loadScopeDataset(dataBaseDir, localScopeType, localScopeKey).then((res) => {
+        if (!cancelled && res.data) {
+          stagedCacheRef.current.set(cacheKey, res.data);
+          setStagedScopeData(res.data);
+        }
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+  }, [isOpen, localSource, localScopeType, localScopeKey, selectedScopeKey, scopeType, dataBaseDir]);
 
   // キーボードショートカット (Esc で閉じる、Enter で適用)
   // 最新の handleApply / onClose は ref 経由で参照する (リスナーの付け替えを isOpen の変化時だけにしつつ、
@@ -217,17 +280,108 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
     reader.readAsText(file, 'utf-8');
   };
 
+  // 現在のローカル選択（STEP1のデータ種別およびスコープ・月）に対応するアクティブデータセット
+  const activeDataset = useMemo(() => {
+    if (localSource === 'live_metrics') {
+      const data =
+        localScopeKey === selectedScopeKey && localScopeType === scopeType
+          ? currentScopeData
+          : (stagedScopeData ?? currentScopeData);
+      return { source: 'live_metrics' as const, data };
+    }
+    if (localSource === 'user_upload') {
+      return { source: 'user_upload' as const, data: uploadedData };
+    }
+    const data =
+      localReportMonth === currentReportData?.report_month
+        ? currentReportData
+        : (stagedReportData ?? currentReportData);
+    return { source: 'monthly_report' as const, data };
+  }, [
+    localSource,
+    localScopeKey,
+    selectedScopeKey,
+    localScopeType,
+    scopeType,
+    currentScopeData,
+    stagedScopeData,
+    uploadedData,
+    localReportMonth,
+    currentReportData,
+    stagedReportData,
+  ]);
+
   // リアルタイム集計プレビュー (現在の localCriteria を適用した場合の該当人数)。
   // ActiveDataSelector と同じ Query 層の関数。未フィルターのデータに対して数える
   const previewStats = useMemo(() => {
-    const population = queryPopulation(
-      localSource === 'live_metrics'
-        ? { source: 'live_metrics', data: currentScopeData }
-        : { source: localSource, data: localSource === 'user_upload' ? uploadedData : currentReportData },
-      localCriteria
-    );
+    const population = queryPopulation(activeDataset, localCriteria);
     return { totalCount: population.total, matchedCount: population.matched };
-  }, [localSource, currentScopeData, currentReportData, uploadedData, localCriteria]);
+  }, [activeDataset, localCriteria]);
+
+  // STEP1で選択中のデータ種別・スコープに応じたフィルター選択肢候補 (リアルタイム導出)
+  const dynamicFilterOptions = useMemo(() => {
+    const options = queryFilterOptions(activeDataset);
+    // データが未取得または空で、かつ現在のグローバルソースと一致している場合は props のフォールバックを使用
+    if (
+      localSource === activeSource &&
+      options.costCenters.length === 0 &&
+      options.organizations.length === 0 &&
+      options.groups.length === 0 &&
+      options.tags.length === 0
+    ) {
+      return {
+        costCenters: availableCostCenters,
+        organizations: availableOrganizations,
+        groups: availableGroups,
+        tags: availableTags,
+      };
+    }
+    return options;
+  }, [
+    activeDataset,
+    localSource,
+    activeSource,
+    availableCostCenters,
+    availableOrganizations,
+    availableGroups,
+    availableTags,
+  ]);
+
+  // 選択肢候補が変化した際、候補外となった条件を調整
+  useEffect(() => {
+    setLocalCriteria((prev) => {
+      const nextTags = prev.tags.filter((t) => dynamicFilterOptions.tags.includes(t));
+      const costCenterValid =
+        prev.costCenter === 'all' ||
+        prev.costCenter === '__unassigned__' ||
+        dynamicFilterOptions.costCenters.includes(prev.costCenter);
+      const orgValid =
+        prev.organization === 'all' ||
+        prev.organization === '__unassigned__' ||
+        dynamicFilterOptions.organizations.includes(prev.organization);
+      const groupValid =
+        prev.group === 'all' ||
+        prev.group === '__unassigned__' ||
+        dynamicFilterOptions.groups.includes(prev.group);
+
+      if (
+        nextTags.length === prev.tags.length &&
+        costCenterValid &&
+        orgValid &&
+        groupValid
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        tags: nextTags,
+        costCenter: costCenterValid ? prev.costCenter : 'all',
+        organization: orgValid ? prev.organization : 'all',
+        group: groupValid ? prev.group : 'all',
+      };
+    });
+  }, [dynamicFilterOptions]);
 
   // タグトグル
   const handleToggleTag = (tag: string) => {
@@ -720,7 +874,7 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
                   >
                     <option value="all">すべて (All)</option>
                     <option value="__unassigned__">未割当のみ (Unassigned)</option>
-                    {availableCostCenters.map((c) => (
+                    {dynamicFilterOptions.costCenters.map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}
                   </select>
@@ -742,7 +896,7 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
                   >
                     <option value="all">すべて (All)</option>
                     <option value="__unassigned__">未割当のみ (Unassigned)</option>
-                    {availableOrganizations.map((o) => (
+                    {dynamicFilterOptions.organizations.map((o) => (
                       <option key={o} value={o}>{o}</option>
                     ))}
                   </select>
@@ -775,7 +929,7 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
                 >
                   <option value="all">すべてのユーザー定義Gr (All)</option>
                   <option value="__unassigned__">未割当のみ (Unassigned)</option>
-                  {availableGroups.map((g) => (
+                  {dynamicFilterOptions.groups.map((g) => (
                     <option key={g} value={g}>{g}</option>
                   ))}
                 </select>
@@ -809,10 +963,10 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
                 </div>
 
                 <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1 bg-slate-900/60 rounded-lg border border-slate-800">
-                  {availableTags.length === 0 ? (
+                  {dynamicFilterOptions.tags.length === 0 ? (
                     <span className="text-[11px] text-slate-500 p-1">利用可能なタグがありません</span>
                   ) : (
-                    availableTags.map((tag) => {
+                    dynamicFilterOptions.tags.map((tag) => {
                       const isSelected = localCriteria.tags.includes(tag);
                       return (
                         <button

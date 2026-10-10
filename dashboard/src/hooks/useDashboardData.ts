@@ -587,7 +587,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
     selectedReportMonth,
     setSelectedReportMonth,
     currentReportData: filteredActiveReportData,
-    rawCurrentReportData: activeReportData,
+    rawCurrentReportData: currentReportData,
     reportLoading,
     reportError,
     uploadedData,

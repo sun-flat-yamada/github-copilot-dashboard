@@ -50,6 +50,7 @@ interface ActiveDataSelectorProps {
   // 該当件数 (Query 層) の対象。フィルター適用前のデータを渡す
   currentScopeData: ScopeAggregatedData | null;
   currentReportData: MonthlyReportAggregatedData | null;
+  dataBaseDir?: string;
 }
 
 export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
@@ -74,6 +75,7 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
   availableTags,
   currentScopeData,
   currentReportData,
+  dataBaseDir = './data',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -404,6 +406,7 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
         availableTags={availableTags}
         currentScopeData={currentScopeData}
         currentReportData={currentReportData}
+        dataBaseDir={dataBaseDir}
       />
     </div>
   );
