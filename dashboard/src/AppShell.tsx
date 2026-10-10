@@ -301,6 +301,7 @@ export const AppShell: React.FC<AppShellProps> = ({ registry: defaultViewRegistr
         isDemoMode={isDemoMode}
         onToggleDemoMode={toggleDemoMode}
         activeDataIsDemoSourced={activeDataIsDemoSourced}
+        dataBaseDir={dataBaseDir}
         theme={theme}
         onToggleTheme={toggleTheme}
       />
