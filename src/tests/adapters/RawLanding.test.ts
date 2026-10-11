@@ -146,7 +146,7 @@ async function quiet<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
-function collectingApp(baseDir: string, fake: ReturnType<typeof createFakeGitHub>) {
+function collectingApp(baseDir: string, fake: ReturnType<typeof createFakeGitHub>, clock?: () => Date) {
   const storage = new ForkSafeStorageWriter({ baseDir, publicDir: '' });
   const store = new RawLandingStore(baseDir);
   const recorder = new RecordingFetcher(
@@ -162,6 +162,7 @@ function collectingApp(baseDir: string, fake: ReturnType<typeof createFakeGitHub
     billingConfig: billingConfigProvider,
     isMock: false,
     anonymize: false,
+    clock,
     run: { runId: recorder.runId, finishLanding: () => recorder.finish(source.getCollectionConfig()) !== null },
   });
   return { orchestrator, recorder, store };
@@ -241,59 +242,75 @@ describe('Raw Landing: record a run, replay it (P1-2)', () => {
     assert.equal(index.run.reprocessed, undefined);
   });
 
-  it('replays the run into identical outputs without any network access', async () => {
-    const fake = createFakeGitHub();
-    const first = collectingApp(tmp, fake);
-    await quiet(() => first.orchestrator.run());
-    const before = readProcessed(tmp);
-    const callsAfterCollect = fake.callCount();
-    assert.ok(Object.keys(before).some((k) => k.startsWith(path.join('processed', 'monthly'))));
+  // 収集と再処理に同じ固定時計を渡す。2026-09 の締め日 (2026-10-07) の前後と実行日のいずれでも同一になること (#305)
+  const runDate = new Date();
+  const clocks: Array<{ label: string; at: Date }> = [
+    { label: 'before the 2026-09 close day (2026-10-06)', at: new Date('2026-10-06T06:00:00.000Z') },
+    { label: 'on the 2026-09 close day (2026-10-07)', at: new Date('2026-10-07T06:00:00.000Z') },
+    { label: `on the current date (${runDate.toISOString().slice(0, 10)})`, at: runDate },
+  ];
+  for (const { label, at } of clocks) {
+    it(`replays the run into identical outputs without any network access, ${label}`, async () => {
+      const clock = () => new Date(at.getTime());
+      const fake = createFakeGitHub();
+      const first = collectingApp(tmp, fake, clock);
+      await quiet(() => first.orchestrator.run());
+      const before = readProcessed(tmp);
+      const callsAfterCollect = fake.callCount();
+      assert.ok(Object.keys(before).some((k) => k.startsWith(path.join('processed', 'monthly'))));
 
-    // 成果物を消して、Raw Landing だけから作り直す
-    fs.rmSync(path.join(tmp, 'processed'), { recursive: true });
-    fs.rmSync(path.join(tmp, 'index.json'));
-    fs.rmSync(path.join(tmp, 'error-log.json'));
+      // 成果物を消して、Raw Landing だけから作り直す
+      fs.rmSync(path.join(tmp, 'processed'), { recursive: true });
+      fs.rmSync(path.join(tmp, 'index.json'));
+      fs.rmSync(path.join(tmp, 'error-log.json'));
 
-    const originalFetch = globalThis.fetch;
-    globalThis.fetch = (() => {
-      throw new Error('reprocess must not use the network');
-    }) as typeof fetch;
-    const savedCwd = process.cwd();
-    try {
-      const baseDirEnvCwd = tmp;
-      process.chdir(baseDirEnvCwd);
-      fs.mkdirSync(path.join(tmp, 'data'), { recursive: true });
-      // createReprocessApp は <cwd>/data を使う。収集した Raw Landing を同じ配置に置く
-      fs.cpSync(path.join(tmp, 'raw'), path.join(tmp, 'data', 'raw'), { recursive: true });
-      const { orchestrator, runId } = createReprocessApp();
-      assert.equal(runId, first.recorder.runId);
-      await quiet(() => orchestrator.run());
-    } finally {
-      process.chdir(savedCwd);
-      globalThis.fetch = originalFetch;
-    }
-    assert.equal(fake.callCount(), callsAfterCollect, 'no request was made while reprocessing');
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = (() => {
+        throw new Error('reprocess must not use the network');
+      }) as typeof fetch;
+      const savedCwd = process.cwd();
+      try {
+        const baseDirEnvCwd = tmp;
+        process.chdir(baseDirEnvCwd);
+        fs.mkdirSync(path.join(tmp, 'data'), { recursive: true });
+        // createReprocessApp は <cwd>/data を使う。収集した Raw Landing を同じ配置に置く
+        fs.cpSync(path.join(tmp, 'raw'), path.join(tmp, 'data', 'raw'), { recursive: true });
+        const { orchestrator, runId } = createReprocessApp({ clock });
+        assert.equal(runId, first.recorder.runId);
+        await quiet(() => orchestrator.run());
+      } finally {
+        process.chdir(savedCwd);
+        globalThis.fetch = originalFetch;
+      }
+      assert.equal(fake.callCount(), callsAfterCollect, 'no request was made while reprocessing');
 
-    const replayedDir = path.join(tmp, 'data');
-    const after = readProcessed(replayedDir);
-    const normalize = (o: Record<string, unknown>) => {
-      const copy = structuredClone(o) as Record<string, any>;
-      // 再処理は index に印を付ける。それ以外は同一であること
-      if (copy['index.json']?.run) delete copy['index.json'].run;
-      for (const k of Object.keys(copy)) if (k.startsWith('catalog')) delete copy[k];
-      // シート監査イベント (P4-3) は追記専用の記録で、再処理 (Raw を書き換えない) の対象外
-      for (const k of Object.keys(copy)) if (k.startsWith('audit')) delete copy[k];
-      return copy;
-    };
-    const stripBefore = normalize(before);
-    const stripAfter = normalize(after);
-    assert.deepEqual(Object.keys(stripAfter).sort(), Object.keys(stripBefore).sort());
-    for (const key of Object.keys(stripBefore)) {
-      assert.deepEqual(stripAfter[key], stripBefore[key], `${key} is regenerated identically`);
-    }
-    const index = JSON.parse(fs.readFileSync(path.join(replayedDir, 'index.json'), 'utf-8'));
-    assert.deepEqual(index.run, { run_id: first.recorder.runId, reprocessed: true });
-  });
+      const replayedDir = path.join(tmp, 'data');
+      const after = readProcessed(replayedDir);
+      const normalize = (o: Record<string, unknown>) => {
+        const copy = structuredClone(o) as Record<string, any>;
+        // 再処理は index に印を付ける。それ以外は同一であること
+        if (copy['index.json']?.run) delete copy['index.json'].run;
+        for (const k of Object.keys(copy)) if (k.startsWith('catalog')) delete copy[k];
+        // シート監査イベント (P4-3) は追記専用の記録で、再処理 (Raw を書き換えない) の対象外
+        for (const k of Object.keys(copy)) if (k.startsWith('audit')) delete copy[k];
+        return copy;
+      };
+      const stripBefore = normalize(before);
+      const stripAfter = normalize(after);
+      assert.deepEqual(Object.keys(stripAfter).sort(), Object.keys(stripBefore).sort());
+      for (const key of Object.keys(stripBefore)) {
+        assert.deepEqual(stripAfter[key], stripBefore[key], `${key} is regenerated identically`);
+      }
+      const index = JSON.parse(fs.readFileSync(path.join(replayedDir, 'index.json'), 'utf-8'));
+      assert.deepEqual(index.run, { run_id: first.recorder.runId, reprocessed: true });
+
+      // 月次締めは注入した時計で判定する (実データの締めの規則は変わらない)
+      const close2026_09 = path.join('processed', 'closes', '2026-09.json');
+      const closeDue = at.toISOString().slice(0, 10) >= '2026-10-07';
+      assert.equal(close2026_09 in stripBefore, closeDue, `2026-09 is closed only on or after its close day (${label})`);
+      if (closeDue) assert.equal((stripAfter[close2026_09] as any).closed.at, at.toISOString());
+    });
+  }
 
   it('reproduces a recorded failure (the seats source failed) instead of inventing data', async () => {
     const fake = createFakeGitHub({ failSeats: true });

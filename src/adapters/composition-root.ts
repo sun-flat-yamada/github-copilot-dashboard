@@ -20,6 +20,8 @@ export interface PipelineAppConfig {
   orgs?: string[];
   mappingConfig?: string;
   anonymize?: boolean;
+  /** 実行時刻の時計 (テスト用。省略時は実時計) */
+  clock?: () => Date;
 }
 
 export function createPipelineApp(config: PipelineAppConfig = {}): PipelineOrchestrator {
@@ -69,6 +71,7 @@ export function createPipelineApp(config: PipelineAppConfig = {}): PipelineOrche
     billingConfig: billingConfigProvider,
     isMock,
     anonymize,
+    clock: config.clock,
     run:
       recorder && liveSource
         ? {
@@ -86,6 +89,8 @@ export interface ReprocessAppConfig {
   anonymize?: boolean;
   /** 確定済みの月の改訂を許可する (`--revise <month> --reason ...`)。無ければ確定月は書き換えない (P4-2) */
   revision?: RevisionRequest;
+  /** 実行時刻の時計 (テスト用。省略時は実時計) */
+  clock?: () => Date;
 }
 
 /**
@@ -122,6 +127,7 @@ export function createReprocessApp(config: ReprocessAppConfig = {}): { orchestra
     anonymize,
     run: { runId, reprocessed: true, finishLanding: () => true },
     revision: config.revision,
+    clock: config.clock,
   });
   return { orchestrator, runId };
 }
