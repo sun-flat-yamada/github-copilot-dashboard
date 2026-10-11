@@ -142,6 +142,7 @@ npm run report:import -- ./path/to/copilot-report.csv 2026-08
   - `model` の例はスラッグ（`claude-sonnet-4`）、REST の例は表示名（`GPT-5`）。モデル名は書かれたとおりに照合するため、ソースによって同じモデルが 2 通りの表記で現れうる。
   - **公開されていない**: CSV の列順と、CSV の `unit_type` の正確な文字列。パーサーは列をヘッダー名で、`unit_type` は部分文字列 `credit` で判定する。
   - 存在するが本リポジトリでは未実装の取得経路: 上記の REST エンドポイント（enterprise のほか org / user でも）と、非同期のエクスポート API（`POST /enterprises/{enterprise}/settings/billing/reports`、`report_type: ai_credit`。完成したエクスポートは 31 日間ダウンロードできる）。Organization のオーナーは UI でユーザー別に絞り込めず、レポートをダウンロードする必要がある。
+- **実ファイルのモデル名ラベル (Issue #302)**: `model` 列には `Auto: <model>` (Copilot の Auto 選択) や、モデル名ではない汎用の機能ラベル (`Code Review model` / `Coding Agent model`) が入りうる。パーサーは値を書かれたとおりに保持する。モデルカタログ (`normalizeModelId`) は `Auto:` 接頭辞を外し、内側の名前を通常の完全一致で照合する (内側が未知なら `unknown:` のまま)。機能ラベルはどのモデルが使われたかを示さないため、モデルへは対応付けず、`unknown:` と区別した `feature:code-review` / `feature:coding-agent` (`isFeatureModelId`) に解決する。ラベルは明示リストで、それ以外の `<x> model` は `unknown:` のままとする。
 - **デモデータ**: `MockDataGenerator.generateAiUsageReportCSV()` は上記の項目と単価に従う（列は公式の項目のみ、`date × model × username` ごとに 1 行、割引はダミーの付与クレジット額）。整合はテストで確認する。
 
 ---

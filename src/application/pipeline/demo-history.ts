@@ -1,6 +1,6 @@
 import { MetricsAggregator } from '../../processor/metrics-aggregator.js';
 import { BillingCalculator } from '../../processor/billing-calculator.js';
-import { MockDataGenerator, MOCK_DATA_UNAVAILABLE_ORGS } from '../../collector/mock-generator.js';
+import { DEMO_BASE_DATE, MockDataGenerator, MOCK_DATA_UNAVAILABLE_ORGS } from '../../collector/mock-generator.js';
 import { appendRevision, createCloseRecord, buildCloseIndex, extractMonthlyFigures, extractReportFigures } from '../../processor/month-close.js';
 import { enrichUserProfiles } from '../../processor/profile-enricher.js';
 import { buildDataQualityReport } from './data-quality.js';
@@ -42,6 +42,14 @@ function monthSeed(month: string): number {
   return Number(month.replace('-', ''));
 }
 
+/**
+ * DEMO の月次締めの判定時刻 (#305)。DEMO の基準日 00:00 UTC に固定する。
+ * 実時計で判定すると、実行日によって DEMO の当月 (基準日の月) が確定され、「暫定」の月が無くなる。
+ */
+export function demoMonthCloseAt(): Date {
+  return new Date(`${DEMO_BASE_DATE}T00:00:00.000Z`);
+}
+
 /** 当月を除く履歴の月 (古い順)。欠損月を含まない */
 export function demoHistoryMonths(currentMonth: string): string[] {
   const out: string[] = [];
@@ -64,6 +72,8 @@ export interface DemoHistoryDeps {
   currentMonth: string;
   calendar: BusinessCalendarConfig;
   now: Date;
+  /** 月次締め (確定・改訂の見本) の時刻。省略時は now。DEMO では demoMonthCloseAt() を渡す */
+  closeNow?: Date;
 }
 
 export class DemoHistoryService {
@@ -114,7 +124,8 @@ export class DemoHistoryService {
    * 確定時点の数値は、請求の訂正前の値 (支出を少なく見積もった版) として作る。確定済み・成果物なしの場合は何もしない。
    */
   seedRevisedClose(): boolean {
-    const { storage, currentMonth, calendar, now } = this.deps;
+    const { storage, currentMonth, calendar } = this.deps;
+    const now = this.deps.closeNow ?? this.deps.now;
     const month = DEMO_REVISED_MONTH;
     if (!storage.saveMonthClose || !storage.loadMonthClose || this.isClosed(month) || month >= currentMonth) return false;
     const scope = storage.loadScopeData('monthly', month);

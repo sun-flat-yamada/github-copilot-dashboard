@@ -51,8 +51,6 @@ Calculates the following financial indicators against each Cost Center budget de
 - KPI summary cards, table headers, and UI tooltips clearly denote this as GitHub Catalog Price (USD).
 - Unified **"EA Contract Rate Sub-Currency Units (EA-USD, EA-JPY, EA-EUR)"** are provided, allowing side-by-side comparison between the catalog list price and user-configured EA contract rate effective prices (e.g. `$39.00 ($33.15 EA)`, `$39.00 (¥4,973)`, `$39.00 (€30.50)`). Options omit bracket descriptions and are unified under a top comment.
 
-> **Verification note (Issue #212, 2026-10-06)**: the baseline catalog price list (Business \$19/month, Enterprise \$39/month, 1 AI credit = \$0.01) was cross-checked against the live GitHub documentation — [Plans for GitHub Copilot](https://docs.github.com/en/copilot/get-started/plans) and [Usage-based billing for organizations and enterprises](https://docs.github.com/en/copilot/concepts/billing-and-usage/organizations-and-enterprises/billing) — and found to match exactly (`src/domain/pricing/pricing-catalog.ts`, `BASELINE_ENTRY`). The time-boxed transition-promotion entry (2026-06 to 2026-08) could not be verified the same way, since the live documentation no longer publishes rates for an already-expired promotional period; it remains a secondary-source value.
-
 #### 1.3.2 Period-Based Parameter Configuration (`periods`)
 To adapt to corporate fiscal years and contract cycles, parameters can be customized for specific date ranges from `startMonth` (YYYY-MM) to `endMonth` (YYYY-MM):
 1. **Copilot Seat Pricing**: Monthly cost and currency unit for Enterprise and Business plans (e.g. `customSeatPricing: { businessMonthly: 2500, enterpriseMonthly: 5000, currency: "JPY" }`).
@@ -70,7 +68,21 @@ To adapt to corporate fiscal years and contract cycles, parameters can be custom
 - A month missing from the catalog uses the **nearest earlier month's rate** (never a later month or a constant). With no earlier month either, there is no rate and the conversion options (EA-JPY / EA-EUR) are not offered. **The code holds no table of exchange rates.**
 - A failed fetch leaves the existing catalog untouched and collection continues with a warning. Demo data has no catalog, so conversion is USD only.
 
-> **Verification note (Issue #212, 2026-10-06)**: `npm run catalog:fx` was run against the live ECB endpoint (`https://data-api.ecb.europa.eu/service/data/EXR/...`) and completed successfully. The fetched rate was independently cross-checked by re-querying the same ECB series directly and manually reproducing the `toUsdBase()` conversion by hand; the result matched the catalog's stored 2025-01 JPY/USD value exactly. The ECB endpoint and the conversion formula are both confirmed reachable and correct from this environment.
+#### 1.3.4 Pricing Catalog Verification against Official Documentation
+The default prices (`src/domain/pricing/pricing-catalog.ts`, version `2026-10-05-v2`) and the per-token price table (`docs/models_pricing.md`) were **verified on 2026-10-05** against GitHub's official documentation. `docs.github.com` is not reachable from the development environment, so its source repository `github/docs` was read at commit `45a0f053ac67e8d1f56fc8f7ee38f0b2a58925c3`.
+
+| Value | Official source (`github/docs`) | Result |
+| :--- | :--- | :--- |
+| Business \$19 / Enterprise \$39 per user per month | `data/variables/copilot.yml` (`cfb_price_per_month`, `ce_price_per_month`); `content/copilot/concepts/billing-and-usage/organizations-and-enterprises/seats-and-billing-cycles.md` | Match |
+| 1 AI credit = \$0.01; usage-based billing from 2026-06-01 | `data/variables/product.yml` (`prodname_ai_credits_value`); `content/copilot/reference/copilot-billing/request-based-billing-legacy/what-changed-with-billing.md` | Match |
+| Included 1,900 (Business) / 3,900 (Enterprise) credits per user per month, pooled per billing entity | `data/variables/copilot.yml` (`ai_credits_per_user_*`); `content/copilot/concepts/billing-and-usage/organizations-and-enterprises/billing.md` | Match |
+| Transition promotion 2026-06..2026-08: 3,000 / 7,000 credits | `data/variables/copilot.yml` (`*_promo`); `.../organizations-and-enterprises/billing.md` at `f169461e985f3820a38233db99648dc0e75fd4dc` (the section was removed as expired by `19a110200a3b`, 2026-09-11) | Values and period (June 1 - September 1, 2026) match. **Scope difference**: officially for *existing* customers only; the catalog applies it to every seat (Issue #296) |
+| Per-token prices of every model in `docs/models_pricing.md` | `data/tables/copilot/models-and-pricing.yml` | All listed prices match. The model list was stale and was synchronised (6 models added, 4 models retired on 2026-10-02 removed, Gemini promo footnote updated) |
+
+- Each catalog entry records `verification` (`verifiedAt`, `sources` with the commit); `PRICING_CATALOG_VERIFICATION` holds the date, repository and commit. A value that cannot be verified is added only with `unverified` in the version and without `verification` (a guess is never presented as verified).
+- Cross-check outside this scope: `scripts/benchmark-data/benchmark-records.json` matches the official input / cached input / output prices, but GPT-6.1 Sol lacks the cache write and long-context prices (Issue #297).
+- Verified on 2026-10-06 (Issue #212): `npm run catalog:fx` was run against the live ECB endpoint from a network-reachable environment and completed successfully (confirmed months only, no overwrite of existing months, existing catalog kept on failure). The fetched rate was re-derived independently by querying the same ECB series directly and reproducing `toUsdBase()` by hand; it matched exactly (e.g. the JPY/USD monthly average for 2025-01).
+- Still unverified: the 2026-06 to 2026-08 transition promotion values, because the live documentation no longer publishes an expired promotion (§1.3.1; Issue #296 tracks its applicability).
 
 ### 1.4 Scope-Dependent Cost Units
 

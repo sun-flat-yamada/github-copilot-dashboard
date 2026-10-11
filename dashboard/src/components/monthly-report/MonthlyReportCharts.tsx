@@ -37,11 +37,16 @@ export const REPORT_CHART_COLORS = [
   '#14b8a6', // Teal
 ];
 
+import { MonthlyCreditsTrendPanel } from './MonthlyCreditsTrendPanel';
+
 interface MonthlyReportChartsProps {
   reportData: MonthlyReportAggregatedData;
   grouping?: GroupingDimension;
   onGroupingChange?: (grouping: GroupingDimension) => void;
   selectedGroup?: string;
+  availableMonths?: string[];
+  baseDir?: string;
+  isDemo?: boolean;
 }
 
 /**
@@ -56,6 +61,9 @@ export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({
   grouping: externalGrouping,
   onGroupingChange,
   selectedGroup = 'all',
+  availableMonths,
+  baseDir,
+  isDemo,
 }) => {
   const [internalGrouping, setInternalGrouping] = useState<GroupingDimension>('department');
   const currentGrouping = externalGrouping || internalGrouping;
@@ -430,6 +438,14 @@ export const MonthlyReportCharts: React.FC<MonthlyReportChartsProps> = ({
             </ResponsiveContainer>
           </div>
         </div>
+
+        {/* 3. 確定月次 AI Credit 消費推移 (月次変化 & 指定月内の変化) */}
+        <MonthlyCreditsTrendPanel
+          availableMonths={availableMonths}
+          currentReportData={reportData}
+          baseDir={baseDir}
+          isDemo={isDemo}
+        />
       </div>
     </div>
   );
