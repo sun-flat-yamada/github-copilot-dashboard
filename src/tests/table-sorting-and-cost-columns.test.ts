@@ -96,7 +96,7 @@ describe('Table Sorting & Separate Cost/Overage Columns Contract Tests', () => {
 
     it('provides multi-column sort headers and quick sort bar', () => {
       assert.match(content, /handleSort\('overall'\)/);
-      assert.match(content, /handleSort\('swe'\)/);
+      assert.match(content, /handleSort\('terminal'\)/);
       assert.match(content, /handleSort\('speed'\)/);
       assert.match(content, /handleSort\('cost'\)/);
       assert.match(content, /handleSort\('usage'\)/);

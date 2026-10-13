@@ -18,8 +18,11 @@ import {
   RADAR_AXIS_DEFINITIONS,
 } from '../src/processor/benchmark-evaluator';
 import { getNextRadarVersion } from '../src/processor/radar-version';
+import { DEPRECATED_BENCHMARK_SOURCES_NOTE } from '../src/processor/benchmark-definitions';
 import {
+  BENCHMARK_SCORE_METRICS,
   BenchmarkDataset,
+  BenchmarkMetricKey,
   BenchmarkRawMetrics,
   ModelBenchmarkProfile,
   ModelExtendedCapabilities,
@@ -39,16 +42,22 @@ interface RawModelEntry {
   is_copilot_native: boolean;
   release_date: string;
   release_status: ModelReleaseStatus;
-  /** true when the scores have no verified source and are estimates (shown as such in the UI). */
+  /**
+   * Legacy flag: true when no score metric has a verified source. Treated as "every benchmark score metric is
+   * estimated" when `estimated_metrics` is absent.
+   */
   is_estimated?: boolean;
+  /** Raw metrics whose value is an estimate (no verified source); shown as 推測値 next to each value. */
+  estimated_metrics?: BenchmarkMetricKey[];
   capabilities?: ModelExtendedCapabilities;
   raw_metrics: BenchmarkRawMetrics;
 }
 
 /**
  * Benchmark records are externalized as JSON data (P3-7 / B-15):
- * scripts/benchmark-data/benchmark-records.json (2026.09 dataset).
- * Sources: GitHub Official Docs, SWE-bench Verified, LMSYS Arena, Artificial Analysis, Official Papers.
+ * scripts/benchmark-data/benchmark-records.json (2026.10 dataset).
+ * Sources: GitHub Official Docs, Terminal-Bench 4.0, Artificial Analysis Intelligence Index v4.3,
+ * Arena (Code Arena | WebDev), Artificial Analysis (speed) and official pricing.
  */
 export const BENCHMARK_RECORDS_PATH = path.resolve(__dirname, 'benchmark-data/benchmark-records.json');
 
@@ -67,6 +76,21 @@ export function computeContentHash(records: RawModelEntry[]): string {
     records,
   });
   return crypto.createHash('sha256').update(canonical).digest('hex').slice(0, 16);
+}
+
+/**
+ * Resolve the per-metric estimate list and the model-level flag of a record.
+ * - `estimated_metrics` wins when present; a legacy `is_estimated: true` means every benchmark score metric.
+ * - The model-level `is_estimated` is true when every benchmark score metric is estimated.
+ */
+export function resolveEstimates(rec: Pick<RawModelEntry, 'is_estimated' | 'estimated_metrics'>): {
+  estimated_metrics?: BenchmarkMetricKey[];
+  is_estimated: boolean;
+} {
+  const list = rec.estimated_metrics ?? (rec.is_estimated ? [...BENCHMARK_SCORE_METRICS] : []);
+  const unique = [...new Set(list)];
+  const is_estimated = BENCHMARK_SCORE_METRICS.every((k) => unique.includes(k));
+  return unique.length > 0 ? { estimated_metrics: unique, is_estimated } : { is_estimated };
 }
 
 export interface ExistingDatasetInfo {
@@ -97,7 +121,12 @@ export function generateBenchmarkDataset(
       undefined,
       normalization
     );
-    return rec.is_estimated ? { ...profile, is_estimated: true } : profile;
+    const { estimated_metrics, is_estimated } = resolveEstimates(rec);
+    return {
+      ...profile,
+      ...(is_estimated ? { is_estimated: true } : {}),
+      ...(estimated_metrics ? { estimated_metrics } : {}),
+    };
   });
 
   const content_hash = computeContentHash(records);
@@ -112,6 +141,7 @@ export function generateBenchmarkDataset(
     normalization_method: NORMALIZATION_METHOD,
     last_updated,
     sources: DEFAULT_BENCHMARK_SOURCES,
+    sources_note: DEPRECATED_BENCHMARK_SOURCES_NOTE,
     axis_definitions: RADAR_AXIS_DEFINITIONS,
     models,
   };

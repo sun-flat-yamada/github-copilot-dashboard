@@ -1,0 +1,286 @@
+{
+  "method": "quantile mapping of legacy percentile rank onto verified distribution",
+  "verified_counts": {
+    "terminal_bench_4": 19,
+    "aa_intelligence_index": 28,
+    "arena_webdev_elo": 32
+  },
+  "estimates": {
+    "gpt-5-5": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.7222,
+        "value": 53.9
+      }
+    },
+    "gpt-5-4": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.4333,
+        "value": 23.2
+      },
+      "aa_intelligence_index": {
+        "legacy_percentile": 0.4111,
+        "value": 39
+      }
+    },
+    "gpt-5-4-mini": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.1222,
+        "value": 13.2
+      }
+    },
+    "gpt-5-4-nano": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.0333,
+        "value": 11.9
+      },
+      "arena_webdev_elo": {
+        "legacy_percentile": 0.0333,
+        "value": 1332
+      }
+    },
+    "gpt-5-3-codex": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.5889,
+        "value": 41.8
+      },
+      "aa_intelligence_index": {
+        "legacy_percentile": 0.53,
+        "value": 42
+      }
+    },
+    "gpt-5-mini": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.0556,
+        "value": 12.4
+      },
+      "arena_webdev_elo": {
+        "legacy_percentile": 0.0556,
+        "value": 1378
+      }
+    },
+    "claude-opus-4-8-fast": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.7444,
+        "value": 55.5
+      },
+      "aa_intelligence_index": {
+        "legacy_percentile": 0.7444,
+        "value": 48
+      },
+      "arena_webdev_elo": {
+        "legacy_percentile": 0.7444,
+        "value": 1640
+      }
+    },
+    "claude-opus-4-7": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.7,
+        "value": 52.1
+      },
+      "aa_intelligence_index": {
+        "legacy_percentile": 0.6706,
+        "value": 46
+      }
+    },
+    "claude-opus-4-6": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.6111,
+        "value": 44.5
+      },
+      "aa_intelligence_index": {
+        "legacy_percentile": 0.5533,
+        "value": 42
+      }
+    },
+    "claude-sonnet-4-6": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.6444,
+        "value": 47.5
+      },
+      "aa_intelligence_index": {
+        "legacy_percentile": 0.5578,
+        "value": 42
+      }
+    },
+    "claude-sonnet-4": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.5,
+        "value": 37.3
+      },
+      "aa_intelligence_index": {
+        "legacy_percentile": 0.3333,
+        "value": 38
+      },
+      "arena_webdev_elo": {
+        "legacy_percentile": 0.4111,
+        "value": 1545
+      }
+    },
+    "claude-haiku-4-5": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.1889,
+        "value": 16.7
+      },
+      "aa_intelligence_index": {
+        "legacy_percentile": 0.1856,
+        "value": 33
+      }
+    },
+    "gemini-3-6-flash": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.3222,
+        "value": 20.1
+      }
+    },
+    "gemini-3-5-flash": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.2111,
+        "value": 17.1
+      }
+    },
+    "mai-code-1-1-flash": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.1444,
+        "value": 14.8
+      },
+      "aa_intelligence_index": {
+        "legacy_percentile": 0.1,
+        "value": 23
+      },
+      "arena_webdev_elo": {
+        "legacy_percentile": 0.0889,
+        "value": 1406
+      }
+    },
+    "kimi-k3": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.6778,
+        "value": 50.3
+      }
+    },
+    "kimi-k2-7-code": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.2333,
+        "value": 17.6
+      }
+    },
+    "claude-3-7-sonnet": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.5222,
+        "value": 37.4
+      },
+      "aa_intelligence_index": {
+        "legacy_percentile": 0.35,
+        "value": 38
+      },
+      "arena_webdev_elo": {
+        "legacy_percentile": 0.7,
+        "value": 1623
+      }
+    },
+    "claude-3-5-sonnet": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.2556,
+        "value": 18.4
+      },
+      "aa_intelligence_index": {
+        "legacy_percentile": 0.2517,
+        "value": 36
+      },
+      "arena_webdev_elo": {
+        "legacy_percentile": 0.3222,
+        "value": 1522
+      }
+    },
+    "gpt-4o": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.0778,
+        "value": 12.4
+      },
+      "aa_intelligence_index": {
+        "legacy_percentile": 0.1878,
+        "value": 33
+      },
+      "arena_webdev_elo": {
+        "legacy_percentile": 0.1778,
+        "value": 1492
+      }
+    },
+    "gpt-4o-mini": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.0111,
+        "value": 11.5
+      },
+      "aa_intelligence_index": {
+        "legacy_percentile": 0.0111,
+        "value": 16
+      },
+      "arena_webdev_elo": {
+        "legacy_percentile": 0.0111,
+        "value": 1262
+      }
+    },
+    "o1": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.4111,
+        "value": 22.4
+      },
+      "aa_intelligence_index": {
+        "legacy_percentile": 0.6394,
+        "value": 45
+      },
+      "arena_webdev_elo": {
+        "legacy_percentile": 0.4667,
+        "value": 1554
+      }
+    },
+    "o3-mini": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.3,
+        "value": 19.6
+      },
+      "aa_intelligence_index": {
+        "legacy_percentile": 0.5333,
+        "value": 42
+      },
+      "arena_webdev_elo": {
+        "legacy_percentile": 0.4111,
+        "value": 1545
+      }
+    },
+    "gemini-2-0-flash": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.1,
+        "value": 12.4
+      },
+      "aa_intelligence_index": {
+        "legacy_percentile": 0.0556,
+        "value": 19
+      },
+      "arena_webdev_elo": {
+        "legacy_percentile": 0.0889,
+        "value": 1406
+      }
+    },
+    "gemini-2-5-pro": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.3667,
+        "value": 21.0
+      }
+    },
+    "deepseek-r1": {
+      "terminal_bench_4": {
+        "legacy_percentile": 0.3444,
+        "value": 20.5
+      },
+      "aa_intelligence_index": {
+        "legacy_percentile": 0.52,
+        "value": 42
+      },
+      "arena_webdev_elo": {
+        "legacy_percentile": 0.2778,
+        "value": 1521
+      }
+    }
+  }
+}

@@ -1,18 +1,23 @@
 /**
  * AI Model Benchmark & Characteristics Types
- * 2026.09 Specification for AI Model Radar & Ingestion Evaluation
+ * 2026.10 Specification for AI Model Radar & Ingestion Evaluation
  */
 
 export type BenchmarkMetricKey =
-  | 'swe_bench_verified'
-  | 'humaneval_plus'
-  | 'aime_2024'
-  | 'gpqa_diamond'
-  | 'arena_coding_elo'
+  | 'terminal_bench_4'
+  | 'aa_intelligence_index'
+  | 'arena_webdev_elo'
   | 'output_speed_tps'
   | 'input_cost_per_m'
   | 'output_cost_per_m'
   | 'context_window_k';
+
+/** Benchmark metrics that come from external leaderboards (as opposed to speed, prices and context). */
+export const BENCHMARK_SCORE_METRICS: readonly BenchmarkMetricKey[] = [
+  'terminal_bench_4',
+  'aa_intelligence_index',
+  'arena_webdev_elo',
+] as const;
 
 export type RadarAxisKey =
   | 'coding_swe'
@@ -32,11 +37,9 @@ export interface RadarAxisMeta {
 }
 
 export interface BenchmarkRawMetrics {
-  swe_bench_verified: number; // SWE-bench Verified (%: 0 - 100)
-  humaneval_plus: number; // HumanEval+ (%: 0 - 100)
-  aime_2024: number; // AIME 2024 (%: 0 - 100)
-  gpqa_diamond: number; // GPQA Diamond (%: 0 - 100)
-  arena_coding_elo: number; // LMSYS Chatbot Arena Coding Elo (e.g. 1300 - 1500)
+  terminal_bench_4: number; // Terminal-Bench 4.0 resolution rate (%: 0 - 100)
+  aa_intelligence_index: number; // Artificial Analysis Intelligence Index v4.3 (index points, e.g. 15 - 60)
+  arena_webdev_elo: number; // Arena Code Arena | WebDev Elo (e.g. 1200 - 1850)
   output_speed_tps: number; // Output generation speed (tokens/sec)
   input_cost_per_m: number; // USD per 1M input tokens
   output_cost_per_m: number; // USD per 1M output tokens
@@ -137,7 +140,9 @@ export interface ModelBenchmarkProfile {
   is_copilot_native: boolean; // GitHub Copilot公式対応モデルかどうか
   release_date: string;
   release_status?: ModelReleaseStatus;
-  is_estimated?: boolean; // true: スコアは公式・実測の裏付けがない推測値 (要検証)
+  is_estimated?: boolean; // true: benchmark score metrics (BENCHMARK_SCORE_METRICS) are all estimates (要検証)
+  /** Raw metrics whose value has no verified source and is an estimate (shown as 推測値 per value). */
+  estimated_metrics?: BenchmarkMetricKey[];
   capabilities?: ModelExtendedCapabilities;
   extended_capabilities?: ModelExtendedCapabilities;
   raw_metrics: BenchmarkRawMetrics;
@@ -164,6 +169,8 @@ export interface BenchmarkDataset {
   normalization_method?: string;
   last_updated: string;
   sources: BenchmarkSourceMeta[];
+  /** Why former sources were dropped (shown under the source list). */
+  sources_note?: string;
   axis_definitions: RadarAxisMeta[];
   models: ModelBenchmarkProfile[];
 }

@@ -10,24 +10,24 @@ export const RADAR_AXIS_DEFINITIONS: RadarAxisMeta[] = [
     key: 'coding_swe',
     label: 'Coding & SWE (実務開発力)',
     shortLabel: 'Coding/SWE',
-    description: 'SWE-bench Verified 及び HumanEval+ に基づく実践的ソフトウェア開発・課題解決力',
-    primaryMetric: 'SWE-bench Verified',
+    description: 'Terminal-Bench 4.0 (エージェント + モデルのタスク解決率) に基づく、ターミナル上の実務タスクを自律的に完遂する開発力',
+    primaryMetric: 'Terminal-Bench 4.0',
     weight: 0.25,
   },
   {
     key: 'reasoning_logic',
     label: 'Reasoning & Logic (論理推論力)',
-    shortLabel: '推論・数学',
-    description: 'AIME 2024 / MATH-500 / GPQA Diamond による高難度アルゴリズムと思考チェーン推論力',
-    primaryMetric: 'AIME 2024',
+    shortLabel: '推論・知能',
+    description: 'Artificial Analysis Intelligence Index v4.3 (複数の推論・知識・コーディング評価を統合した独立系指数) による総合推論力',
+    primaryMetric: 'AA Intelligence Index v4.3',
     weight: 0.25,
   },
   {
     key: 'arena_elo',
     label: 'Community & Elo (総合・指示追従)',
     shortLabel: 'Arena Elo',
-    description: 'LMSYS Chatbot Arena (Coding) での人間のブラインド総合評価と実世界満足度',
-    primaryMetric: 'Chatbot Arena Elo',
+    description: 'Arena (旧 LMArena / LMSYS) Code Arena | WebDev での人間のブラインド対戦評価 (Elo) と実世界満足度',
+    primaryMetric: 'Arena WebDev Elo',
     weight: 0.15,
   },
   {
@@ -50,38 +50,68 @@ export const RADAR_AXIS_DEFINITIONS: RadarAxisMeta[] = [
     key: 'architecture_design',
     label: 'Architecture & Context (設計・長文把握)',
     shortLabel: '設計・長文理解',
-    description: '大規模コンテキスト窓 (128K〜2M) と複数ファイルにまたがる設計・リファクタリング適性',
-    primaryMetric: 'Context Window & Multi-file',
+    description: '大規模コンテキスト窓 (128K〜2M) と Terminal-Bench 4.0 の長手順タスク遂行力に基づく設計・リファクタリング適性',
+    primaryMetric: 'Context Window & Terminal-Bench 4.0',
     weight: 0.15,
   },
 ];
 
+/**
+ * Why the former sources were dropped (2026-10, Issue #321). Shown in the source list and kept in SDD-10.
+ * - SWE-bench Verified: OpenAI stopped reporting it on 2026-02-23 because of contamination and flawed tests
+ *   (https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/); the official leaderboard has no
+ *   entries after 2026-02-26.
+ * - LMSYS Chatbot Arena (Coding): moved to Arena (https://arena.ai); Code Arena | WebDev is the current board.
+ * - AIME 2024 / GPQA Diamond / HumanEval+ (technical reports, arxiv.org): saturated (GPQA Diamond 92.6-96.0% for
+ *   every frontier model) and MathArena marks final-answer competitions as deprecated.
+ */
+export const DEPRECATED_BENCHMARK_SOURCES_NOTE =
+  '2026-10 に旧出典 (SWE-bench Verified / LMSYS Chatbot Arena Coding / AIME 2024・GPQA Diamond・HumanEval+) を採用出典から外しました。' +
+  'SWE-bench Verified は OpenAI が 2026-02-23 に汚染とテスト不備を理由に評価をやめると公表し (https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/)、公式リーダーボードも 2026-02-26 以降の掲載がありません。' +
+  'LMSYS Chatbot Arena は Arena (https://arena.ai) へ移行済みです。AIME 2024・GPQA Diamond・HumanEval+ は最新モデルのスコアが上限付近に密集して差が出ない (飽和) ため外しました。';
+
 export const DEFAULT_BENCHMARK_SOURCES: BenchmarkSourceMeta[] = [
   {
-    id: 'swe-bench',
-    name: 'SWE-bench Verified Leaderboard',
-    description: '実世界GitHubリポジトリのIssueを自律解決するソフトウェアエンジニアリング評価ベンチマーク (Verified)',
-    url: 'https://www.swebench.com/',
-    last_fetched_at: '2026-09-01T00:00:00Z',
+    id: 'terminal-bench-4',
+    name: 'Terminal-Bench 4.0 Leaderboard',
+    description:
+      'ターミナル (シェル) 上の実務タスクをエージェント + モデルが自律的に完遂できるかを測る評価ベンチマーク (タスク解決率 %)。値は 2026-10-12 時点の公式リーダーボードを BenchLM のスナップショット (https://benchlm.ai/benchmarks/terminal-bench-4) で読み取り (公式サイトはクライアント描画のため)',
+    url: 'https://www.tbench.ai/leaderboard/terminal-bench/4.0',
+    last_fetched_at: '2026-10-12T00:00:00Z',
     target_problem:
-      '実世界の代表的Pythonオープンソース（Django, SymPy, scikit-learn, matplotlib等）で実際に過去に起票・マージされた本物のGitHub IssueとPull Request。問題記述のみからコードベース全体を探索し、既存テストを破壊せずに新規テストを通す実用パッチ（diff）を自律生成できるかを厳密判定します。',
+      'コンパイル・依存関係の解決・サーバー構築・データ処理・セキュリティ設定など、ターミナル環境で完結する実務的なタスク群。エージェント (ハーネス) とモデルの組み合わせが、コマンドを実行しながら手順を自分で組み立て、テストで判定される完了状態まで到達できるかを測ります。',
     performance_view:
-      '単一の関数実装ではなく、複数ファイルにまたがる参照関係の把握・エッジケース処理・環境再現が問われるため、「自律型コーディングエージェントとしての実務即戦力度」が最もダイレクトに現れます。部分点なし（全テスト合格のみパス）という極めてシビアな採点のため、スコアが60%〜70%を超えるモデルは現場で人間シニア並みの修正力を発揮します。',
+      '1 回の回答の正しさではなく、長い手順を試行錯誤しながら最後までやり切る「自律エージェントとしての実行力」が現れます。Copilot の Agent モードや CLI で、ファイル編集・コマンド実行・テストを繰り返すタスクへの適性を見る指標として採用しています。本レーダーでは各モデルで掲載されている最上位の reasoning / harness 変種の値を採用します。',
     community_rumor:
-      '※ SNSの噂: 「SWE-bench特化のプロンプトエンジニアリングや検索戦略でスコアを盛っている疑惑」や「解けたと報告されても、人間の曖昧な日本語指示だと意図を汲み違えることがある」「Verifiedになって悪問が排除され、トップモデルの実力差が誤魔化せなくなった」など、期待と警戒が入り混じった声が多数囁かれています。',
+      '※ SNSの噂・公開されている注意点: 「同じモデルでもエージェント (ハーネス) が違うとスコアが大きく変わるので、モデル単体の実力と混同しやすい」「掲載されていないモデルも多く、比較できる範囲が限られる」といった声があります。リーダーボードはエージェント + モデルの組み合わせ単位で掲載される点に注意が必要です。',
   },
   {
-    id: 'lmsys-arena',
-    name: 'LMSYS Chatbot Arena (Coding)',
-    description: '100万件以上の実世界ユーザー対戦によるブラインドコーディング能力レーティング (Elo)',
-    url: 'https://lmarena.ai/',
-    last_fetched_at: '2026-09-01T00:00:00Z',
+    id: 'aa-intelligence-index',
+    name: 'Artificial Analysis Intelligence Index v4.3',
+    description:
+      '独立系第三者機関 Artificial Analysis が複数の推論・知識・コーディング評価を同一条件で実行して統合した総合知能指数 (2026-10-13 確認。モデル別ページ https://artificialanalysis.ai/models/<slug>)',
+    url: 'https://artificialanalysis.ai/leaderboards/models',
+    last_fetched_at: '2026-10-13T00:00:00Z',
     target_problem:
-      '世界中のエンジニアが日々の業務や学習で実際に遭遇した自由形式のプログラミング課題。2つの匿名AIモデルが生成したコードと解説を提示し、人間がどちらの回答が優れているかをブラインドで比較判定するクラウドソーシング対戦方式です。',
+      '数学・科学・知識・指示追従・コーディングなど複数の評価セットを、各社公式 API に対して同じプロンプト条件で独自に実行し、その結果を 1 つの指数にまとめたもの。各社が自社発表する技術レポートの数値ではなく、第三者が同一条件で再計測した値です。',
     performance_view:
-      '静的な正解一致テストでは測れない「人間のプログラマーが読んだときの納得感・コードの綺麗さ・モダンな構文の採用・丁寧な説明・ニュアンスの汲み取り」といった主観的満足度が浮き彫りになります。Eloレーティングによる統計的有意差で順位付けされます。',
+      '単一の難関テスト (AIME や GPQA 等) は最新モデルで上限付近に密集して差が出なくなったため、複数評価の統合指数で「推論・知識の総合力」を比較します。並行処理のデッドロック調査や設計判断など、深い思考を要する場面での相対的な強さの目安になります。',
     community_rumor:
-      '※ SNSの噂: 「思考過程（CoT）が長くて見た目が豪華なモデルに人間がバイアスで投票しやすい」「サクッと1行修正だけ欲しい現場派と、懇切丁寧なチュートリアルを好む初学者で評価が分かれる」「新しいモデルがリリースされるたびにArenaの首位争いでエンジニア界隈のタイムラインが沸く」と言われています。',
+      '※ SNSの噂・公開されている注意点: 「指数の構成 (採用する評価セット) がバージョンごとに変わるため、異なるバージョンの数値は直接比較できない」「Artificial Analysis 自身が推定値 (Estimated) と表示しているモデルがある」と指摘されています。本レーダーでは推定値表示のものと非 reasoning 変種しかないものは確認済みの値として扱っていません。',
+  },
+  {
+    id: 'arena-webdev',
+    name: 'Arena Code Arena | WebDev Leaderboard',
+    description:
+      'Arena (旧 LMArena / LMSYS Chatbot Arena) の Code Arena | WebDev。実際のユーザーが 2 つの匿名モデルの Web アプリ生成結果をブラインド比較した投票による Elo レーティング (2026-10-08 更新)',
+    url: 'https://arena.ai/leaderboard/webdev',
+    last_fetched_at: '2026-10-08T00:00:00Z',
+    target_problem:
+      'ユーザーが自由に出した「こういう Web アプリ・画面を作って」という課題に対し、2 つの匿名モデルが実際に動くコードを生成し、ユーザーがどちらが優れているかをブラインドで投票するクラウドソーシング対戦方式です。',
+    performance_view:
+      '静的な正解一致テストでは測れない「動く成果物の完成度・見た目・指示の汲み取り」といった人間の主観的満足度が現れます。Elo レーティングによる相対順位で、フロントエンド実装やプロトタイピングでの使い勝手の目安になります。',
+    community_rumor:
+      '※ SNSの噂・公開されている注意点: 「見た目が派手な成果物に票が集まりやすい」「投票数が少ないモデルや Preliminary 表示のモデルは順位が大きく動くことがある」と言われています。WebDev の評価は Web フロントエンド中心で、バックエンドやインフラ作業の実力とは一致しない場合があります。',
   },
   {
     id: 'artificial-analysis',
@@ -96,19 +126,6 @@ export const DEFAULT_BENCHMARK_SOURCES: BenchmarkSourceMeta[] = [
     community_rumor:
       '※ SNSの噂: 「公式発表の爆速アピールと実測値のギャップを暴いてくれる唯一の良心」「推論モデル（o1等）の思考待ちはベンチマーク数値以上に現場で体感フリーズに感じる」「Flash系モデルの異常な速さは一度慣れると通常モデルに戻れなくなる」という現場のリアルな実感で支持されています。',
   },
-  {
-    id: 'frontier-papers',
-    name: 'Frontier AI Technical Reports (Anthropic/OpenAI/Google)',
-    description: 'フロンティアAI各社公式テクニカルレポート公表ベンチマーク (AIME 2024, GPQA, HumanEval+)',
-    url: 'https://arxiv.org/',
-    last_fetched_at: '2026-09-01T00:00:00Z',
-    target_problem:
-      '全米数学招待試験 (AIME 2024)、大学院生・博士レベルの超難関科学多肢選択問 (GPQA Diamond)、および関数の正確な入出力一致 (HumanEval+) など、AIの極限の思考力・論理推論・型推論・抽象化能力を極限まで試すアカデミック難関テスト群。',
-    performance_view:
-      '並行処理のデッドロック検出、複雑なビット演算、高度な型パズル、暗号理論など、普通の人間エンジニアでも頭を抱える「超難関バグの根本原因の特定」においてどこまで正確な推論チェーンを組み立てられるかの天井（極限性能）を示します。',
-    community_rumor:
-      '※ SNSの噂: 「テストデータが事前学習コーパスに漏洩（リーク）しているのではないかと常に議論が紛糾する」「AIMEで90%取るモデルでも、CSSの微妙な崩れや正規表現の初歩的ミスをポロッとやるギャップが面白い」「スコアが人間平均を軽々超えていてインフレ気味」と語られています。',
-  },
 ];
 
 /**
@@ -122,7 +139,7 @@ export function getModelBuzz(modelId: string, vendor?: ModelVendor): EngineerBuz
     return {
       headline: 'GPT-6世代のPowerful主力。Astra並みの高知能を高速・高コスパ（$2.00/$10.00）で実現',
       community_sentiments: [
-        'Astra譲りの高い推論力とSWE-bench 78.5%を持ちながら、95 TPSの高速出力でテンポよく開発できる',
+        'Astra譲りの高い推論力を持ちながら、95 TPSの高速出力でテンポよく開発できる',
         '複雑な並行処理や型安全なリファクタリングにおいて、手堅い実装を驚くほど迅速に返す',
         '長文コンテキスト（>272K）でも高い検索性と保持力を維持し、巨大ファイルの改修に耐える',
       ],
@@ -165,7 +182,7 @@ export function getModelBuzz(modelId: string, vendor?: ModelVendor): EngineerBuz
       community_sentiments: [
         '他のどのモデルも解けなかった複雑な非同期レースコンディションを1回の推論で言い当てた',
         '数学オリンピックレベルの難問や独自プロトコル実装を一切のハルシネーションなく完遂する',
-        'SWE-bench 80%超えは伊達じゃない。人間のプリンシパルエンジニアと議論している感覚',
+        'コーディング性能の高さは伊達じゃない。人間のプリンシパルエンジニアと議論している感覚',
       ],
       caution_rumor: 'クレジット消費が圧倒的。日常の些細な質問で乱用すると月末に上長から呼び出されるという噂。',
       source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
@@ -389,7 +406,7 @@ export function getModelBuzz(modelId: string, vendor?: ModelVendor): EngineerBuz
       headline: 'Opus 5の不満を解消した最高峰銘機。指示忠実性を極め、単価も$4.00/$20.00へ値下げ',
       community_sentiments: [
         'Opus 5で問題視された過剰なお節介や意図しない変更が劇的に抑制され、指示に正確に従ってくれる',
-        'SWE-bench 82.8%という業界最高峰スコアと、長文・深層設計での圧倒的な安定感',
+        '業界最高峰のコーディング性能と、長文・深層設計での圧倒的な安定感',
         'Opus 5から単価が下がり（$4.00/$20.00）、キャッシュ読み取りも$0.20と格段に実用性が高まった',
       ],
       caution_rumor: '最高峰モデルのため、日常のシンプルな関数補完ではSonnet 5を使うほうが経済的という噂。',
