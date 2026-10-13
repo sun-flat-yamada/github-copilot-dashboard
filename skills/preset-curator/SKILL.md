@@ -33,11 +33,13 @@ $$\text{Blended Cost} = (\text{Input Cost per 1M} \times 0.4) + (\text{Output Co
 
 ### 2. Standard Quality Gates by Use Case
 
+Raw metric thresholds use the 2026-10 sources (Terminal-Bench 4.0 `terminal_bench_4`, AA Intelligence Index `aa_intelligence_index`, Arena WebDev Elo `arena_webdev_elo`; SDD-10 §3.1.1). Values listed in a model's `estimated_metrics` are estimates (推測値).
+
 | Use Case | Required Quality Gate (All must pass) | Evaluation Focus |
 | :--- | :--- | :--- |
-| **🔍 コードレビュー利用に推奨** (`recommended-code-review`) | • `swe_bench_verified >= 70.0%`<br>• `reasoning_logic >= 95`<br>• `arena_coding_elo >= 1420` | Depth of reasoning to catch subtle bugs, logic flaws, and regressions in PR diffs without hallucinations. |
-| **📂 コードベース分析に推奨** (`recommended-codebase-analysis`) | • `context_window_k >= 1000` (1M+ tokens)<br>• `architecture_design >= 92`<br>• `swe_bench_verified >= 70.0%` | Large context repository ingestion, multi-file dependency graph analysis, and cross-module refactoring. |
-| **🏛️ 設計に推奨** (`recommended-architecture`) | • `reasoning_logic >= 95`<br>• `architecture_design >= 90`<br>• `swe_bench_verified >= 70.0%` | High-level system design, schema modeling, API contract definition, and edge-case architectural trade-offs. |
+| **🔍 コードレビュー利用に推奨** (`recommended-code-review`) | • `terminal_bench_4 >= 20.0%`<br>• `reasoning_logic >= 95`<br>• `arena_webdev_elo >= 1550` | Depth of reasoning to catch subtle bugs, logic flaws, and regressions in PR diffs without hallucinations. |
+| **📂 コードベース分析に推奨** (`recommended-codebase-analysis`) | • `context_window_k >= 1000` (1M+ tokens)<br>• `architecture_design >= 92`<br>• `terminal_bench_4 >= 20.0%` | Large context repository ingestion, multi-file dependency graph analysis, and cross-module refactoring. |
+| **🏛️ 設計に推奨** (`recommended-architecture`) | • `reasoning_logic >= 95`<br>• `architecture_design >= 90`<br>• `terminal_bench_4 >= 20.0%` | High-level system design, schema modeling, API contract definition, and edge-case architectural trade-offs. |
 
 ### 3. Flagship 4 Semiannual Snapshot Policy & Selection Criteria (`flagship-2026`, etc.)
 To maintain historical reproducibility and track generational AI model progression:
@@ -50,10 +52,10 @@ To maintain historical reproducibility and track generational AI model progressi
     - At the end of the second half (下期完了時点), **ADD a new flagship preset** for the completed period (e.g., `flagship-2026-h2`: `🌟 2026下 旗艦4選`, or `flagship-2027-h1`: `🌟 2027上 旗艦4選`) without overwriting previous period snapshots.
 - **Flagship 4 Selection Criteria (per vendor)**:
   For any flagship comparison preset, select exactly 4 models representing the premier frontier models of major AI vendors at that period:
-  - **Anthropic**: Must select the **Powerful** reasoning tier flagship (`claude-opus-5`, SWE 81.0%, In: $5 / Out: $25) rather than Versatile tier (`claude-sonnet-5`), ensuring top-of-the-line deep reasoning representation.
-  - **OpenAI**: Frontier reasoning flagship (`gpt-6-astra`, SWE 82.4%, In: $10 / Out: $50).
-  - **Google**: Frontier 1M-context flagship (`gemini-3-8-flash`, SWE 71.0%, In: $0.75 / Out: $3.75).
-  - **Moonshot AI / Alternative Frontier**: Frontier reasoning flagship (`kimi-k3`, SWE 73.5%, In: $0.80 / Out: $4.00).
+  - **Anthropic**: Must select the **Powerful** reasoning tier flagship (`claude-opus-5`, Terminal-Bench 4.0 53.94%, In: $5 / Out: $25) rather than Versatile tier (`claude-sonnet-5`), ensuring top-of-the-line deep reasoning representation.
+  - **OpenAI**: Frontier reasoning flagship (`gpt-6-astra`, Terminal-Bench 4.0 58.18%, In: $10 / Out: $50).
+  - **Google**: Frontier 1M-context flagship (`gemini-3-8-flash`, Terminal-Bench 4.0 19.09%, In: $0.75 / Out: $3.75).
+  - **Moonshot AI / Alternative Frontier**: Frontier reasoning flagship (`kimi-k3`, Terminal-Bench 4.0 50.3% (推測値), In: $0.80 / Out: $4.00).
 
 ---
 

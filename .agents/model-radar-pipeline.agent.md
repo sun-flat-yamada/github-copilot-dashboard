@@ -26,7 +26,7 @@ flowchart TD
 
 | Phase | Specialized Agent | Bound Skill | Primary Responsibility |
 | :--- | :--- | :--- | :--- |
-| **Phase 1: Ingestion** | `benchmark-ingestion-agent` | `skills/benchmark-ingestion` | Fetch latest SWE-bench, Arena Elo, Artificial Analysis, and Copilot doc specs (pricing/context). |
+| **Phase 1: Ingestion** | `benchmark-ingestion-agent` | `skills/benchmark-ingestion` | Fetch latest Terminal-Bench 4.0, AA Intelligence Index, Arena WebDev Elo, Artificial Analysis (speed), and Copilot doc specs (pricing/context); record unverified values in `estimated_metrics`. |
 | **Phase 2: Buzz** | `sns-buzz-agent` | `skills/sns-buzz-harvester` | Synthesize authentic developer opinions and practical caveats (with required source notes). |
 | **Phase 3: Presets** | `preset-curator-agent` | `skills/preset-curator` | Enforce quality gates & pick 3-tier cost-performance variations for recommended use cases. |
 | **Phase 4: Release** | `radar-version-agent` | `skills/radar-version-manager` | Increment individual page version (`yyyy-mm-dd-0001`), generate dataset, and verify quality gates. |
