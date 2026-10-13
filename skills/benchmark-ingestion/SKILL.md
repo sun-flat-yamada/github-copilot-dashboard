@@ -15,10 +15,11 @@ Use this skill when fetching, parsing, and updating official AI model technical 
    - [Supported models in GitHub Copilot](https://docs.github.com/ja/copilot/reference/ai-models/supported-models)
    - [Models and pricing for Copilot Billing](https://docs.github.com/ja/copilot/reference/copilot-billing/models-and-pricing)
 2. **Prominent Benchmark Sources**:
-   - **SWE-bench Verified**: Self-directed GitHub issue resolving rate (`swe_bench_verified`).
-   - **LMSYS Chatbot Arena (Coding)**: Blind human ELO ratings (`arena_coding_elo`).
+   - **Terminal-Bench 4.0**: agent + model resolution rate on terminal tasks (`terminal_bench_4`, %), https://www.tbench.ai/leaderboard/terminal-bench/4.0 (client-rendered; read via the BenchLM snapshot https://benchlm.ai/benchmarks/terminal-bench-4 when needed).
+   - **Artificial Analysis Intelligence Index v4.3**: independent composite intelligence index (`aa_intelligence_index`), https://artificialanalysis.ai/leaderboards/models (per model `https://artificialanalysis.ai/models/<slug>`). Values AA marks "Estimated", or models with only a non-reasoning variant, are not verified.
+   - **Arena Code Arena | WebDev** (formerly LMArena / LMSYS): blind human Elo ratings (`arena_webdev_elo`), https://arena.ai/leaderboard/webdev.
    - **Artificial Analysis**: Third-party speed (TPS), latency (TTFT), and pricing benchmarks (`output_speed_tps`).
-   - **Frontier Technical Reports**: AIME 2024, GPQA Diamond, HumanEval+ scores.
+   - Use the highest listed reasoning / harness variant per model. Dropped in 2026-10 and not to be re-added: SWE-bench Verified, LMSYS Chatbot Arena Coding, AIME 2024 / GPQA Diamond / HumanEval+ (reasons in SDD-10 §3.1.1).
 
 ---
 
@@ -35,17 +36,17 @@ interface RawModelEntry {
   is_copilot_native: boolean;
   release_date: string; // 'yyyy-mm-dd'
   release_status: ModelReleaseStatus; // 'GA' | 'Preview' | 'LTS' | 'Utility' | 'Retired'
+  // Raw metrics without a verified source (estimates, shown as 推測値 per value). See SDD-10 §3.1.2.
+  estimated_metrics?: BenchmarkMetricKey[]; // e.g. ['terminal_bench_4', 'arena_webdev_elo']
   capabilities?: {
     has_1m_context: boolean;
     has_configurable_reasoning: boolean;
     tier?: 'Powerful' | 'Versatile' | 'Lightweight';
   };
   raw_metrics: {
-    swe_bench_verified: number;
-    humaneval_plus: number;
-    aime_2024: number;
-    gpqa_diamond: number;
-    arena_coding_elo: number;
+    terminal_bench_4: number; // Terminal-Bench 4.0 (%)
+    aa_intelligence_index: number; // AA Intelligence Index v4.3 (points)
+    arena_webdev_elo: number; // Arena WebDev Elo
     output_speed_tps: number;
     input_cost_per_m: number;
     output_cost_per_m: number;
