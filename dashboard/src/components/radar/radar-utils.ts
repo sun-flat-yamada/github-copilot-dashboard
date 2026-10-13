@@ -1,4 +1,9 @@
-import { BenchmarkDataset } from '../../../../src/types/model-benchmark';
+import {
+  BENCHMARK_SCORE_METRICS,
+  BenchmarkDataset,
+  BenchmarkMetricKey,
+  ModelBenchmarkProfile,
+} from '../../../../src/types/model-benchmark';
 import {
   ScopeAggregatedData,
   MonthlyReportAggregatedData,
@@ -88,3 +93,15 @@ export const MODEL_RADAR_COLORS = [
   { stroke: '#10b981', fill: '#10b981', name: 'Emerald (第3モデル)' },
   { stroke: '#f59e0b', fill: '#f59e0b', name: 'Amber (第4モデル)' },
 ];
+
+/**
+ * True when the raw metric of a model is an estimate (推測値). Datasets generated before per-metric estimates
+ * only carry the model-level `is_estimated` flag, which means every benchmark score metric is estimated.
+ */
+export function isEstimatedMetric(
+  model: Pick<ModelBenchmarkProfile, 'is_estimated' | 'estimated_metrics'>,
+  metric: BenchmarkMetricKey
+): boolean {
+  if (model.estimated_metrics) return model.estimated_metrics.includes(metric);
+  return !!model.is_estimated && BENCHMARK_SCORE_METRICS.includes(metric);
+}

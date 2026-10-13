@@ -64,7 +64,9 @@ import {
   ModelUsageStat,
   computeModelUsage,
   getTopUsageModelIds,
+  isEstimatedMetric,
 } from './radar/radar-utils';
+import { EstimatedMarker } from './radar/EstimatedMarker';
 import { PRESETS } from './radar/radar-constants';
 import { RadarDocReferences } from './radar/RadarDocReferences';
 
@@ -96,7 +98,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   const [isDetailCardDropdownOpen, setIsDetailCardDropdownOpen] = useState<boolean>(false);
   // 生データテーブルのソート列 (社内利用シェア 'usage'、コンテキスト長 'context'、モデル名 'model'、レーダー表示 'radar'、Arena Elo 'arena' も対応)
   const [sortKey, setSortKey] = useState<
-    'overall' | 'swe' | 'speed' | 'cost' | 'aime' | 'arena' | 'usage' | 'context' | 'model' | 'radar'
+    'overall' | 'terminal' | 'speed' | 'cost' | 'intelligence' | 'arena' | 'usage' | 'context' | 'model' | 'radar'
   >('overall');
   const [sortAsc, setSortAsc] = useState<boolean>(false);
   // モデル列用3種ループ状態 ('default' > 'asc' > 'desc')
@@ -321,9 +323,9 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       if (sortKey === 'overall') {
         valA = a.evaluation.overall_score;
         valB = b.evaluation.overall_score;
-      } else if (sortKey === 'swe') {
-        valA = a.raw_metrics.swe_bench_verified;
-        valB = b.raw_metrics.swe_bench_verified;
+      } else if (sortKey === 'terminal') {
+        valA = a.raw_metrics.terminal_bench_4;
+        valB = b.raw_metrics.terminal_bench_4;
       } else if (sortKey === 'speed') {
         valA = a.raw_metrics.output_speed_tps;
         valB = b.raw_metrics.output_speed_tps;
@@ -331,12 +333,12 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
         // コストは安い方が上位
         valA = a.radar_scores.cost_efficiency;
         valB = b.radar_scores.cost_efficiency;
-      } else if (sortKey === 'aime') {
-        valA = a.raw_metrics.aime_2024;
-        valB = b.raw_metrics.aime_2024;
+      } else if (sortKey === 'intelligence') {
+        valA = a.raw_metrics.aa_intelligence_index;
+        valB = b.raw_metrics.aa_intelligence_index;
       } else if (sortKey === 'arena') {
-        valA = a.raw_metrics.arena_coding_elo;
-        valB = b.raw_metrics.arena_coding_elo;
+        valA = a.raw_metrics.arena_webdev_elo;
+        valB = b.raw_metrics.arena_webdev_elo;
       } else if (sortKey === 'usage') {
         valA = usageStats[a.id]?.percentage || 0;
         valB = usageStats[b.id]?.percentage || 0;
@@ -359,11 +361,9 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
     const ms = dataset.models;
     return {
       overall:    Math.max(...ms.map((m) => m.evaluation.overall_score)),
-      swe:        Math.max(...ms.map((m) => m.raw_metrics.swe_bench_verified)),
-      humaneval:  Math.max(...ms.map((m) => m.raw_metrics.humaneval_plus)),
-      aime:       Math.max(...ms.map((m) => m.raw_metrics.aime_2024)),
-      gpqa:       Math.max(...ms.map((m) => m.raw_metrics.gpqa_diamond)),
-      arena_elo:  Math.max(...ms.map((m) => m.raw_metrics.arena_coding_elo)),
+      terminal:     Math.max(...ms.map((m) => m.raw_metrics.terminal_bench_4)),
+      intelligence: Math.max(...ms.map((m) => m.raw_metrics.aa_intelligence_index)),
+      arena_elo:    Math.max(...ms.map((m) => m.raw_metrics.arena_webdev_elo)),
       speed_tps:  Math.max(...ms.map((m) => m.raw_metrics.output_speed_tps)),
       // コスト効率: cost_efficiency レーダースコアが高いほど良い
       cost_eff:   Math.max(...ms.map((m) => m.radar_scores.cost_efficiency)),
@@ -427,7 +427,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   };
 
   const handleSort = (
-    key: 'overall' | 'swe' | 'speed' | 'cost' | 'aime' | 'arena' | 'usage' | 'context' | 'model' | 'radar'
+    key: 'overall' | 'terminal' | 'speed' | 'cost' | 'intelligence' | 'arena' | 'usage' | 'context' | 'model' | 'radar'
   ) => {
     if (key === 'model') {
       if (sortKey !== 'model') {
@@ -454,7 +454,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   };
 
   // 6軸カードから生データ比較テーブルへジャンプ & ソート連動
-  const handleJumpToTable = (targetSortKey: 'swe' | 'aime' | 'arena' | 'speed' | 'cost' | 'context') => {
+  const handleJumpToTable = (targetSortKey: 'terminal' | 'intelligence' | 'arena' | 'speed' | 'cost' | 'context') => {
     setSortKey(targetSortKey);
     setSortAsc(false);
     const target = document.getElementById('radar-table');
@@ -481,7 +481,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   const AXIS_LINK_CONFIG: Record<
     string,
     {
-      sortKey: 'swe' | 'aime' | 'arena' | 'speed' | 'cost' | 'context';
+      sortKey: 'terminal' | 'intelligence' | 'arena' | 'speed' | 'cost' | 'context';
       sourceId: string;
       sourceName: string;
       icon: React.ComponentType<{ className?: string }>;
@@ -490,25 +490,25 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
     }
   > = {
     coding_swe: {
-      sortKey: 'swe',
-      sourceId: 'swe-bench',
-      sourceName: 'SWE-bench Verified',
+      sortKey: 'terminal',
+      sourceId: 'terminal-bench-4',
+      sourceName: 'Terminal-Bench 4.0',
       icon: Code2,
       colorClass: 'text-indigo-400',
       borderHoverClass: 'hover:border-indigo-500/80',
     },
     reasoning_logic: {
-      sortKey: 'aime',
-      sourceId: 'frontier-papers',
-      sourceName: 'Frontier Reports',
+      sortKey: 'intelligence',
+      sourceId: 'aa-intelligence-index',
+      sourceName: 'AA Intelligence Index',
       icon: Brain,
       colorClass: 'text-purple-400',
       borderHoverClass: 'hover:border-purple-500/80',
     },
     arena_elo: {
       sortKey: 'arena',
-      sourceId: 'lmsys-arena',
-      sourceName: 'LMSYS Arena',
+      sourceId: 'arena-webdev',
+      sourceName: 'Arena WebDev',
       icon: Trophy,
       colorClass: 'text-amber-400',
       borderHoverClass: 'hover:border-amber-500/80',
@@ -531,8 +531,8 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
     },
     architecture_design: {
       sortKey: 'context',
-      sourceId: 'frontier-papers',
-      sourceName: 'Frontier Reports',
+      sourceId: 'terminal-bench-4',
+      sourceName: 'Terminal-Bench 4.0',
       icon: Maximize2,
       colorClass: 'text-cyan-400',
       borderHoverClass: 'hover:border-cyan-500/80',
@@ -592,7 +592,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-1 max-w-3xl leading-relaxed">
-                SWE-bench Verified、AIME 2024、LMSYS Chatbot Arena、Artificial Analysis 等の著名ベンチマーク実測値をまとめて正規化したものです。各AIモデルの得意分野・推奨ユースケースの情報とセットで整理することで、エンジニアのモデル選択を助ける情報を提供します。
+                Terminal-Bench 4.0、Artificial Analysis Intelligence Index、Arena (Code Arena | WebDev)、Artificial Analysis (速度) 等の著名ベンチマーク実測値をまとめて正規化したものです。確認できなかった値は「推測値」と表示します。各AIモデルの得意分野・推奨ユースケースの情報とセットで整理することで、エンジニアのモデル選択を助ける情報を提供します。
               </p>
             </div>
           </div>
@@ -921,7 +921,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
               {dataset.axis_definitions.map((axis) => {
                 const config = AXIS_LINK_CONFIG[axis.key] || {
                   sortKey: 'overall' as const,
-                  sourceId: 'swe-bench',
+                  sourceId: 'terminal-bench-4',
                   sourceName: 'Benchmark',
                   icon: HelpCircle,
                   colorClass: 'text-slate-400',
@@ -1225,7 +1225,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                       {focusedModel.is_estimated && (
                         <span
                           className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-orange-950/80 text-orange-300 border-orange-700/60"
-                          title="公式・実測のベンチマーク値が未確認のため、同系統モデルを基準にした推測値です (要検証)"
+                          title="ベンチマーク指標 (Terminal-Bench 4.0 / AA Intelligence Index / Arena WebDev Elo) がすべて未確認のため、旧指標での順位から推定した推測値です (要検証)"
                         >
                           推測値
                         </span>
@@ -1292,6 +1292,26 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                         <span className="text-[9px] text-cyan-500/80 mt-0.5">Prompt Caching</span>
                       )}
                     </div>
+                  </div>
+
+                  {/* ベンチマーク指標の生データ (推測値はメトリクス単位で明示) */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs" data-testid="focused-benchmark-metrics">
+                    {(
+                      [
+                        { key: 'terminal_bench_4', label: 'Terminal-Bench 4.0', value: `${focusedModel.raw_metrics.terminal_bench_4}%`, color: 'text-violet-300' },
+                        { key: 'aa_intelligence_index', label: 'AA Intelligence v4.3', value: `${focusedModel.raw_metrics.aa_intelligence_index}`, color: 'text-amber-300' },
+                        { key: 'arena_webdev_elo', label: 'Arena WebDev Elo', value: `${focusedModel.raw_metrics.arena_webdev_elo}`, color: 'text-sky-300' },
+                        { key: 'output_speed_tps', label: '速度 (TPS)', value: `${focusedModel.raw_metrics.output_speed_tps} tps`, color: 'text-white' },
+                      ] as const
+                    ).map((metric) => (
+                      <div key={metric.key} className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80 flex flex-col justify-between">
+                        <span className="text-[11px] text-slate-400 block">{metric.label}</span>
+                        <span className={`text-sm font-mono font-bold mt-1 flex items-center gap-1.5 ${metric.color}`}>
+                          {metric.value}
+                          {isEstimatedMetric(focusedModel, metric.key) && <EstimatedMarker />}
+                        </span>
+                      </div>
+                    ))}
                   </div>
 
                   {/* Long Context 単価補足 (該当モデルのみ) */}
@@ -1567,7 +1587,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                 <h3 className="text-base font-bold text-white">著名ベンチマーク最新実測データ詳細テーブル</h3>
               </div>
               <p className="text-xs text-slate-400 mt-1">
-                SWE-bench Verified、AIME 2024、LMSYS Arena Elo、TPS、入出力コスト、コンテキスト長の実測値一覧
+                Terminal-Bench 4.0、AA Intelligence Index v4.3、Arena WebDev Elo、TPS、入出力コスト、コンテキスト長の実測値一覧 (<EstimatedMarker inline /> は出典で確認できなかった推測値)
               </p>
             </div>
 
@@ -1655,24 +1675,24 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
               総合スコア
             </button>
             <button
-              onClick={() => handleSort('swe')}
+              onClick={() => handleSort('terminal')}
               className={`px-2.5 py-1 rounded-md font-medium border ${
-                sortKey === 'swe'
+                sortKey === 'terminal'
                   ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
                   : 'bg-slate-800/60 border-slate-700 text-slate-400'
               }`}
             >
-              SWE-bench
+              Terminal-Bench 4.0
             </button>
             <button
-              onClick={() => handleSort('aime')}
+              onClick={() => handleSort('intelligence')}
               className={`px-2.5 py-1 rounded-md font-medium border ${
-                sortKey === 'aime'
+                sortKey === 'intelligence'
                   ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
                   : 'bg-slate-800/60 border-slate-700 text-slate-400'
               }`}
             >
-              AIME 2024
+              AA Intelligence
             </button>
             <button
               onClick={() => handleSort('arena')}
@@ -1682,7 +1702,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                   : 'bg-slate-800/60 border-slate-700 text-slate-400'
               }`}
             >
-              Arena Elo
+              Arena WebDev Elo
             </button>
             <button
               onClick={() => handleSort('speed')}
@@ -1765,25 +1785,25 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                     <ArrowUpDown className={`w-3 h-3 ${sortKey === 'usage' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
-                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('swe')}>
+                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('terminal')}>
                   <div className="flex items-center space-x-1">
-                    <span>SWE-bench Verified</span>
-                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'swe' ? 'text-indigo-400' : 'text-slate-500'}`} />
+                    <span>Terminal-Bench 4.0</span>
+                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'terminal' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
-                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('aime')}>
+                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('intelligence')}>
                   <div className="flex items-center space-x-1">
-                    <span>AIME 2024 / GPQA</span>
-                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'aime' ? 'text-indigo-400' : 'text-slate-500'}`} />
+                    <span>AA Intelligence Index</span>
+                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'intelligence' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
                 <th
                   className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors"
                   onClick={() => handleSort('arena')}
-                  title="Arena Coding Elo 順ソート"
+                  title="Arena WebDev Elo 順ソート"
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Arena Coding Elo</span>
+                    <span>Arena WebDev Elo</span>
                     <ArrowUpDown className={`w-3 h-3 ${sortKey === 'arena' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
@@ -1861,8 +1881,8 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                             )}
                             {m.is_estimated && (
                               <span
-                                className="text-[9px] text-orange-300 font-mono"
-                                title="ベンチマーク値は推測値 (要検証)"
+                                className="text-[9px] text-orange-300 font-mono whitespace-nowrap"
+                                title="ベンチマーク指標はすべて推測値 (要検証)"
                               >
                                 推測値
                               </span>
@@ -1919,52 +1939,49 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
 
                     <td className="py-3 px-3 font-mono">
                       <div className="flex flex-col min-w-[80px]">
-                        <span className="font-bold text-slate-200 text-xs">
-                          {m.raw_metrics.swe_bench_verified}%
+                        <span className="font-bold text-slate-200 text-xs flex items-center gap-1">
+                          {m.raw_metrics.terminal_bench_4}%
+                          {isEstimatedMetric(m, 'terminal_bench_4') && <EstimatedMarker />}
                         </span>
                         {maxMetrics && (
                           <div className="mt-1 h-[3px] rounded-full bg-slate-800 overflow-hidden">
                             <div
                               className="h-full rounded-full bg-violet-500"
-                              style={{ width: `${(m.raw_metrics.swe_bench_verified / maxMetrics.swe) * 100}%` }}
+                              style={{ width: `${(m.raw_metrics.terminal_bench_4 / maxMetrics.terminal) * 100}%` }}
                             />
                           </div>
                         )}
-                        <span className="text-[10px] text-slate-500 mt-0.5">
-                          HumanEval+: {m.raw_metrics.humaneval_plus}%
-                        </span>
                       </div>
                     </td>
 
                     <td className="py-3 px-3 font-mono">
                       <div className="flex flex-col min-w-[80px]">
-                        <span className="font-bold text-slate-200 text-xs">
-                          AIME: {m.raw_metrics.aime_2024}%
+                        <span className="font-bold text-slate-200 text-xs flex items-center gap-1">
+                          {m.raw_metrics.aa_intelligence_index}
+                          {isEstimatedMetric(m, 'aa_intelligence_index') && <EstimatedMarker />}
                         </span>
                         {maxMetrics && (
                           <div className="mt-1 h-[3px] rounded-full bg-slate-800 overflow-hidden">
                             <div
                               className="h-full rounded-full bg-amber-500"
-                              style={{ width: `${(m.raw_metrics.aime_2024 / maxMetrics.aime) * 100}%` }}
+                              style={{ width: `${(m.raw_metrics.aa_intelligence_index / maxMetrics.intelligence) * 100}%` }}
                             />
                           </div>
                         )}
-                        <span className="text-[10px] text-slate-500 mt-0.5">
-                          GPQA: {m.raw_metrics.gpqa_diamond}%
-                        </span>
                       </div>
                     </td>
 
                     <td className="py-3 px-3 font-mono">
                       <div className="flex flex-col min-w-[72px]">
-                        <span className="font-bold text-indigo-300 text-xs">
-                          {m.raw_metrics.arena_coding_elo}
+                        <span className="font-bold text-indigo-300 text-xs flex items-center gap-1">
+                          {m.raw_metrics.arena_webdev_elo}
+                          {isEstimatedMetric(m, 'arena_webdev_elo') && <EstimatedMarker />}
                         </span>
                         {maxMetrics && (
                           <div className="mt-1 h-[3px] rounded-full bg-slate-800 overflow-hidden">
                             <div
                               className="h-full rounded-full bg-sky-500"
-                              style={{ width: `${(m.raw_metrics.arena_coding_elo / maxMetrics.arena_elo) * 100}%` }}
+                              style={{ width: `${(m.raw_metrics.arena_webdev_elo / maxMetrics.arena_elo) * 100}%` }}
                             />
                           </div>
                         )}
@@ -1975,10 +1992,15 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                       <div className="flex flex-col min-w-[60px]">
                         <div className="flex items-center space-x-1">
                           <Gauge className="w-3 h-3 text-cyan-400" />
-                          <span className="font-bold text-white text-xs">
+                          <span className="font-bold text-white text-xs whitespace-nowrap">
                             {m.raw_metrics.output_speed_tps} tps
                           </span>
                         </div>
+                        {isEstimatedMetric(m, 'output_speed_tps') && (
+                          <span className="mt-0.5 self-start">
+                            <EstimatedMarker />
+                          </span>
+                        )}
                         {maxMetrics && (
                           <div className="mt-1 h-[3px] rounded-full bg-slate-800 overflow-hidden">
                             <div
@@ -2065,6 +2087,13 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
             各ベンチマークの出題意図と実務開発での評価ポイント
           </span>
         </div>
+
+        {dataset.sources_note && (
+          <div className="mb-4 p-3 rounded-lg border border-slate-700/80 bg-slate-950/60 text-[11px] text-slate-400 leading-relaxed" data-testid="sources-note">
+            <span className="font-bold text-slate-300 mr-1">出典の変更履歴:</span>
+            {dataset.sources_note}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 text-xs">
           {dataset.sources.map((src) => (

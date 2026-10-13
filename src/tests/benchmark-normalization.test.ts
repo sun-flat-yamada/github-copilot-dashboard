@@ -21,11 +21,9 @@ const records = loadBenchmarkRecords();
 
 function raw(over: Partial<BenchmarkRawMetrics> = {}): BenchmarkRawMetrics {
   return {
-    swe_bench_verified: 60,
-    humaneval_plus: 90,
-    aime_2024: 70,
-    gpqa_diamond: 60,
-    arena_coding_elo: 1350,
+    terminal_bench_4: 30,
+    aa_intelligence_index: 35,
+    arena_webdev_elo: 1500,
     output_speed_tps: 80,
     input_cost_per_m: 2,
     output_cost_per_m: 8,
@@ -44,13 +42,13 @@ describe('percentile normalisation (P3-7 / B-15)', () => {
   });
 
   it('keeps top models distinguishable where fixed anchors saturate', () => {
-    const top = [78, 80, 82, 84, 86].map((swe) => raw({ swe_bench_verified: swe, aime_2024: 92 + swe / 100 }));
+    const top = [61, 62, 63, 64, 65].map((tb) => raw({ terminal_bench_4: tb, aa_intelligence_index: 56 + tb / 100 }));
     const ctx = buildNormalizationContext(top);
     const legacy = top.map((r) => computeRadarScores(r).coding_swe);
     assert.strictEqual(new Set(legacy).size, 1, 'legacy anchor formula saturates (all equal)');
     const scores = top.map((r) => computeRadarScores(r, ctx).coding_swe);
     assert.strictEqual(new Set(scores).size, top.length, 'percentile scores differ per model');
-    assert.deepStrictEqual([...scores].sort((a, b) => a - b), scores, 'order follows the raw SWE value');
+    assert.deepStrictEqual([...scores].sort((a, b) => a - b), scores, 'order follows the raw Terminal-Bench value');
   });
 
   it('is independent of axis/model input order and stays inside 20-99', () => {
@@ -132,7 +130,7 @@ describe('content-hash dataset version (P3-7 / B-15)', () => {
     assert.strictEqual(computeContentHash(records), computeContentHash(JSON.parse(JSON.stringify(records))));
     assert.match(computeContentHash(records), /^[0-9a-f]{16}$/);
     const changed = JSON.parse(JSON.stringify(records));
-    changed[0].raw_metrics.swe_bench_verified += 0.1;
+    changed[0].raw_metrics.terminal_bench_4 += 0.1;
     assert.notStrictEqual(computeContentHash(changed), computeContentHash(records));
   });
 
@@ -150,7 +148,7 @@ describe('content-hash dataset version (P3-7 / B-15)', () => {
   it('advances the version only when the content changes', () => {
     const first = generateBenchmarkDataset(undefined, d1, records);
     const changed = JSON.parse(JSON.stringify(records));
-    changed[0].raw_metrics.swe_bench_verified += 0.1;
+    changed[0].raw_metrics.terminal_bench_4 += 0.1;
     const next = generateBenchmarkDataset(
       { version: first.version, content_hash: first.content_hash, last_updated: first.last_updated },
       d2,
