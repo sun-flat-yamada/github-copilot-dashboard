@@ -12,11 +12,12 @@ test('Latest Copilot models (Sonnet 5.5 / GPT-6.1 Sol)', async (t) => {
     assert.strictEqual(resolveCatalogModelId('Claude Sonnet 5'), 'claude-sonnet-5');
   });
 
-  await t.test('are in the dataset and flagged as estimated', () => {
+  await t.test('have verified benchmark values; only the unverified speed stays an estimate', () => {
     for (const id of ['claude-sonnet-5-5', 'gpt-6-1-sol']) {
       const model = dataset.models.find((m) => m.id === id);
       assert.ok(model, `${id} must be in the dataset`);
-      assert.strictEqual(model.is_estimated, true, `${id} scores are estimates and must be flagged`);
+      assert.ok(!model.is_estimated, `${id} benchmark scores are verified (2026-10) and must not be flagged`);
+      assert.deepStrictEqual(model.estimated_metrics, ['output_speed_tps']);
     }
   });
 
