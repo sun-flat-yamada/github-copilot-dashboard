@@ -4,9 +4,9 @@
     "name": "github-copilot-dashboard",
     "is_fork": false
   },
-  "generated_at": "2026-10-14T11:34:40.171Z",
+  "generated_at": "2026-10-14T11:41:03.126Z",
   "run": {
-    "run_id": "20261014T113440Z-c7f3"
+    "run_id": "20261014T114103Z-d735"
   },
   "data_retention_months": 60,
   "available_months": [
@@ -28,28 +28,28 @@
       "source": "metrics",
       "status": "skipped",
       "records": 0,
-      "last_attempt_at": "2026-10-14T11:34:40.178Z",
+      "last_attempt_at": "2026-10-14T11:41:03.133Z",
       "last_success_at": null
     },
     {
       "source": "seats",
       "status": "skipped",
       "records": 0,
-      "last_attempt_at": "2026-10-14T11:34:40.178Z",
+      "last_attempt_at": "2026-10-14T11:41:03.133Z",
       "last_success_at": null
     },
     {
       "source": "cost_centers",
       "status": "skipped",
       "records": 0,
-      "last_attempt_at": "2026-10-14T11:34:40.178Z",
+      "last_attempt_at": "2026-10-14T11:41:03.133Z",
       "last_success_at": null
     },
     {
       "source": "ai_credits",
       "status": "skipped",
       "records": 0,
-      "last_attempt_at": "2026-10-14T11:34:40.178Z",
+      "last_attempt_at": "2026-10-14T11:41:03.133Z",
       "last_success_at": null
     }
   ],
@@ -86,8 +86,8 @@
   },
   "issues": [
     {
-      "id": "issue_1791977680178_p1wh",
-      "timestamp": "2026-10-14T11:34:40.178Z",
+      "id": "issue_1791978063132_42d4",
+      "timestamp": "2026-10-14T11:41:03.132Z",
       "severity": "warning",
       "category": "api_auth",
       "target": "config:copilot-metrics",
@@ -95,8 +95,8 @@
       "details": "Set COPILOT_ENTERPRISE (enterprise-wide) or COPILOT_ORGS (comma-separated org slugs) as a repository/organization Actions variable to enable live copilot metrics collection. Monthly Usage Report (CSV import) and other credential-independent features remain unaffected."
     },
     {
-      "id": "issue_1791977680178_9abi",
-      "timestamp": "2026-10-14T11:34:40.178Z",
+      "id": "issue_1791978063133_pro0",
+      "timestamp": "2026-10-14T11:41:03.133Z",
       "severity": "warning",
       "category": "api_auth",
       "target": "config:copilot-billing-seats",
