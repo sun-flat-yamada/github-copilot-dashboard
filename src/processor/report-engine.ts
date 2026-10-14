@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 import { z } from 'zod';
 import {
   DEFAULT_BREAKDOWN_LIMIT,
