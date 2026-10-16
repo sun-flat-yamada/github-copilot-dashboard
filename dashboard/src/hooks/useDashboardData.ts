@@ -27,6 +27,15 @@ import {
   sliceScopeDataByDateRange,
   type DatasetState,
 } from '../dataset/datasetLoader';
+import {
+  loadPersistedDataSelection,
+  savePersistedDataSelection,
+  loadPersistedUploadedData,
+  savePersistedUploadedData,
+  resolveInitialScopeSelection,
+  resolveInitialReportMonth,
+  type PersistedDataSelection,
+} from '../utils/dataSelectionStorage';
 
 export interface RepoInfo {
   owner: string;
@@ -42,13 +51,31 @@ export const checkIsDemoMode = DemoModeService.checkIsDemoMode;
 export { sliceScopeDataByDateRange };
 
 export function useDashboardData(initialSource: DataSourceType = 'live_metrics') {
-  const [activeSource, setActiveSource] = useState<DataSourceType>(initialSource);
+  // 初回マウント時に localStorage から前回の選択状態とオンデマンドCSV集計データを1回だけ読み込む
+  const persistedSelectionRef = useRef<PersistedDataSelection | null | undefined>(undefined);
+  if (persistedSelectionRef.current === undefined) {
+    persistedSelectionRef.current = loadPersistedDataSelection();
+  }
+  const initialUploadedRef = useRef<MonthlyReportAggregatedData | null | undefined>(undefined);
+  if (initialUploadedRef.current === undefined) {
+    initialUploadedRef.current = loadPersistedUploadedData();
+  }
+
+  const [activeSource, setActiveSource] = useState<DataSourceType>(() => {
+    const persisted = persistedSelectionRef.current;
+    if (!persisted) return initialSource;
+    // 前回が user_upload でも、ブラウザ容量制限等で集計データが保持されていない場合は live_metrics へフォールバック
+    if (persisted.activeSource === 'user_upload' && !initialUploadedRef.current) {
+      return initialSource;
+    }
+    return persisted.activeSource;
+  });
   const [indexMeta, setIndexMeta] = useState<IndexMetadata | null>(null);
   // 取得エフェクト (依存配列に indexMeta を含めない) から最新の index.json の宣言を参照するための ref
   const indexMetaRef = useRef<IndexMetadata | null>(null);
   indexMetaRef.current = indexMeta;
 
-  // DEMOモード状態 (URLパラメータ・環境変数・手動切替)
+  // DEMOモード状態 (URLパラメータ・環境変数・localStorage保存値・手動切替)
   const [isDemoMode, setIsDemoMode] = useState<boolean>(checkIsDemoMode);
 
   // DEMOモード時は ./data/demo、LIVEモード時は ./data を参照
@@ -57,8 +84,10 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
   }, [isDemoMode]);
 
   // 自動定期収集データ スコープ
-  const [scopeType, setScopeType] = useState<AnalysisScopeType>('monthly');
-  // 初期値は空。index.json の default_scopes (実際に存在する期間) から決定する (固定の日付を持たない)
+  const [scopeType, setScopeType] = useState<AnalysisScopeType>(
+    () => persistedSelectionRef.current?.scopeType ?? 'monthly'
+  );
+  // 初期値は空。index.json の default_scopes (実際に存在する期間) または保存済みキーとの照合から決定する (固定の日付を持たない)
   const [selectedKey, setSelectedKey] = useState<string>('');
   const [currentData, setCurrentData] = useState<ScopeAggregatedData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -90,10 +119,14 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
   const [reportDatasetState, setReportDatasetState] = useState<DatasetState | undefined>(undefined);
 
   // User Upload スコープ (On-demand)
-  const [uploadedData, setUploadedData] = useState<MonthlyReportAggregatedData | null>(null);
+  const [uploadedData, setUploadedData] = useState<MonthlyReportAggregatedData | null>(
+    () => initialUploadedRef.current ?? null
+  );
 
   // 統合フィルター条件 (2階層特定モデル: 組織財務・属性タグ・ユーザー正規表現)
-  const [filterCriteria, setFilterCriteria] = useState<FilterCriteria>(DEFAULT_FILTER_CRITERIA);
+  const [filterCriteria, setFilterCriteria] = useState<FilterCriteria>(
+    () => persistedSelectionRef.current?.filterCriteria ?? DEFAULT_FILTER_CRITERIA
+  );
   const selectedTags = filterCriteria.tags;
 
   // 生成元 GitHub リポジトリ情報 (Fork セーフ・動的解決)
@@ -194,19 +227,25 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
       // リポジトリの所有者名や、シート数 0 / データ日数 0 といった状態からデモと推測しない
       // (取得失敗や未設定の実運用データが、黙ってデモ扱いに切り替わっていた)。
 
-      const defaultMonth = meta.default_scopes.latest_month || meta.available_months?.[0];
-      if (defaultMonth) {
-        setSelectedKey(defaultMonth);
-        setScopeType('monthly');
+      const persistedForIndex = forcedDir ? null : persistedSelectionRef.current;
+      persistedSelectionRef.current = null;
+
+      const resolvedScope = resolveInitialScopeSelection(meta, persistedForIndex);
+      if (resolvedScope.hasLiveData) {
+        setSelectedKey(resolvedScope.selectedKey);
+        setScopeType(resolvedScope.scopeType);
         setNoLiveData(false);
       } else {
         setNoLiveData(true);
         setLoading(false);
       }
 
-      const defaultReport = meta.default_scopes.latest_report || meta.available_reports?.[0];
-      if (defaultReport) {
-        setSelectedReportMonth(defaultReport);
+      const resolvedReport = resolveInitialReportMonth(meta, persistedForIndex?.selectedReportMonth);
+      if (resolvedReport) {
+        setSelectedReportMonth(resolvedReport);
+      } else {
+        setSelectedReportMonth('');
+        setActiveSource((prev) => (prev === 'monthly_report' ? 'live_metrics' : prev));
       }
       clearRuntimeIssue('index');
     } catch (e: any) {
@@ -244,6 +283,7 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
   const toggleDemoMode = useCallback((forcedMode?: boolean) => {
     setIsDemoMode((prev) => {
       const next = typeof forcedMode === 'boolean' ? forcedMode : !prev;
+      persistedSelectionRef.current = null;
       scopeDataCacheRef.current.clear();
       reportCacheRef.current.clear();
       currentDataRef.current = null;
@@ -464,16 +504,33 @@ export function useDashboardData(initialSource: DataSourceType = 'live_metrics')
 
   // アップロードファイル読み込みハンドラー
   const handleUploadFileLoaded = useCallback((data: MonthlyReportAggregatedData) => {
+    savePersistedUploadedData(data);
     setUploadedData(data);
     setActiveSource('user_upload');
   }, []);
 
   const handleClearUploadedFile = useCallback(() => {
+    savePersistedUploadedData(null);
     setUploadedData(null);
     if (activeSource === 'user_upload') {
       setActiveSource('live_metrics');
     }
   }, [activeSource]);
+
+  // 4. データ選択状態・フィルター条件・DEMOモード選好の変更を localStorage に自動保存する。
+  // 初回 index.json ロード完了前 (persistedSelectionRef.current が未消費の間) は、
+  // まだ空文字の selectedKey / selectedReportMonth で保存済みの期間キーを上書きしないように保護する。
+  useEffect(() => {
+    const pendingPersisted = persistedSelectionRef.current;
+    savePersistedDataSelection({
+      activeSource,
+      scopeType,
+      selectedKey: selectedKey || pendingPersisted?.selectedKey || '',
+      selectedReportMonth: selectedReportMonth || pendingPersisted?.selectedReportMonth || '',
+      filterCriteria,
+      isDemoMode,
+    });
+  }, [activeSource, scopeType, selectedKey, selectedReportMonth, filterCriteria, isDemoMode]);
 
   // タグ操作ハンドラー (filterCriteria.tags と同期)
   const handleToggleTag = useCallback((tag: string) => {

@@ -73,6 +73,10 @@
   - **UserPattern (個別アカウント・パターン軸)**: **Cyan** (`bg-cyan-950/80 text-cyan-300 border-cyan-800` / アイコン: `User`)
 - **幅不足時の省略表示 (Responsive Ellipsis)**: 画面幅や表示サイズが不足する場合は各バッジに `truncate`（最大幅制限）を適用してヘッダー崩れを防止。
 - **完全内容ツールチップ & ショートカットTips**: ボタンホバー時のチップ（`title` 属性）において、選択中のデータソース、期間、適用中の全フィルター条件、該当人数および全体人数を漏れなく表示。さらにキーボードショートカットのTips（`/` または `Ctrl+K`）を保持して操作性を担保。各バッジ個別にもフル名称チップを付与。
+- **最後のデータ選択状態の永続化と次回表示時の自動復元 (`localStorage`)**:
+  - **保存対象 (`copilot_dashboard_data_selection`)**: ユーザーが選択したデータソース種別 (`activeSource`: `live_metrics` / `monthly_report` / `user_upload`)、自動収集スコープ (`scopeType`: `monthly` / `daily` / `custom`, `selectedKey`)、月次レポート対象月 (`selectedReportMonth`)、統合 AND フィルター条件 (`filterCriteria`: Cost Center・Organization・ユーザー定義Gr・タグ・ユーザーパターン/正規表現フラグ)、および DEMO / LIVE モード選好 (`isDemoMode`) を `localStorage` に自動保存し、次回アクセス・リロード時に復元する。
+  - **オンデマンドCSV集計データの保持と容量超過フォールバック (`copilot_dashboard_uploaded_data`)**: `user_upload` 選択時はクライアント内でパース・集計済みの `MonthlyReportAggregatedData` を `localStorage` に保存する。ブラウザ容量制限 (`QuotaExceededError`) 等により集計データが保持されていない場合は、次回表示時に `live_metrics`（最新月）へ安全にフォールバックする。
+  - **`index.json` 照合と優先順位**: 次回表示時に `index.json` へ存在しない古い期間キーが保存されていた場合は `default_scopes`（最新月 / 最新レポート月）へ自動フォールバックし、不正な正規表現パターンはパターン条件のみを初期化する。また、URL クエリパラメータ（`?demo=true` / `?demo=false` 等）または環境変数 (`VITE_MOCK_MODE`) が明示指定されている場合は、`localStorage` の `isDemoMode` より URL / 環境変数を優先する。
 
 ### 2.2 複数タグの AND フィルター (`DataSelectionModal` 統合)
 - ユーザー定義Grの `tags` 属性（例: `["正社員", "リモート", "AI推進"]`）からユニークなタグ一覧を抽出し、ヘッダーの「分析対象データの絞り込み（`DataSelectionModal`）」において複数タグの選択を可能とする。

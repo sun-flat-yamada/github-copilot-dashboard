@@ -146,5 +146,83 @@ describe('Data status banner (RTL)', () => {
   });
 });
 
+describe('Data selection persistence across reloads (RTL)', () => {
+  it('preserves selected period and filter criteria when the app is unmounted and remounted', async () => {
+    const files = buildFileMap('/data', { is_mock_mode: false });
+    server = installFakeDataServer(files);
+    const registry = await discoverViewRegistry();
+    const user = userEvent.setup({ document });
+
+    const augFintechCost = TEST_USERS_MATRIX.slice(0, 11)
+      .filter((u) => u.cost_center === 'FinTech-Division')
+      .reduce((sum, u) => sum + u.monthly_cost_usd, 0);
+
+    const firstRender = render(<AppShell registry={registry} />);
+    await metric('total_spend');
+
+    // モーダルを開いて Cost Center = FinTech-Division と過去月 (2026-08) を選択して適用
+    await user.click(screen.getByRole('button', { name: '分析対象データ' }));
+    const dialog = await screen.findByRole('dialog');
+    const selects = within(dialog).getAllByRole('combobox') as HTMLSelectElement[];
+    const monthSelect = selects.find((el) => Array.from(el.options).some((o) => o.value === '2026-08'));
+    const costCenterSelect = selects.find((el) =>
+      Array.from(el.options).some((o) => o.value === 'FinTech-Division')
+    );
+    assert.ok(monthSelect, 'month select is in the modal');
+    assert.ok(costCenterSelect, 'cost center select is in the modal');
+
+    await user.selectOptions(monthSelect, '2026-08');
+    await user.selectOptions(costCenterSelect, 'FinTech-Division');
+    await user.click(within(dialog).getByRole('button', { name: /この条件で分析を適用/ }));
+
+    await waitFor(() => {
+      assert.match(
+        screen.getByTestId('metric-total_spend').textContent ?? '',
+        new RegExp(`\\${usd(augFintechCost)}`)
+      );
+    });
+
+    // 次回表示 (アンマウント → 再マウント) をシミュレート
+    firstRender.unmount();
+    cleanup();
+
+    render(<AppShell registry={registry} />);
+    await waitFor(() => {
+      assert.match(
+        screen.getByTestId('metric-total_spend').textContent ?? '',
+        new RegExp(`\\${usd(augFintechCost)}`)
+      );
+    });
+    assert.match(document.body.textContent ?? '', /2026-08/);
+    assert.match(document.body.textContent ?? '', /FinTech-Division/);
+  });
+
+  it('falls back to live_metrics when user_upload was persisted without uploaded data payload', async () => {
+    window.localStorage.setItem(
+      'copilot_dashboard_data_selection',
+      JSON.stringify({
+        version: 1,
+        activeSource: 'user_upload',
+        scopeType: 'monthly',
+        selectedKey: '2026-09',
+        selectedReportMonth: '2026-09',
+        filterCriteria: {
+          costCenter: null,
+          organization: null,
+          group: null,
+          tags: [],
+          userPattern: '',
+          userPatternIsRegex: false,
+        },
+        isDemoMode: false,
+      })
+    );
+
+    await renderApp(buildFileMap('/data', { is_mock_mode: false }));
+    const allCost = TEST_USERS_MATRIX.reduce((s, u) => s + u.monthly_cost_usd, 0);
+    assert.match((await metric('total_spend')).textContent ?? '', new RegExp(`\\${usd(allCost)}`));
+  });
+});
+
 // 参照されない import の警告を避けつつ、データセット生成が壊れていないことを担保する
 void createAutoCollectedTestDataset;
