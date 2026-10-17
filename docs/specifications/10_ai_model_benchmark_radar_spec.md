@@ -165,7 +165,7 @@ The 6-axis comparison is drawn as a **radar chart** (recharts `RadarChart`, 0-10
 | `terminal_bench_4` (%) | Terminal-Bench 4.0, https://www.tbench.ai/leaderboard/terminal-bench/4.0 | 2026-10-12 | Read from the BenchLM snapshot of the official board (https://benchlm.ai/benchmarks/terminal-bench-4) because tbench.ai renders client-side |
 | `aa_intelligence_index` (points) | Artificial Analysis Intelligence Index v4.3, https://artificialanalysis.ai/leaderboards/models (per model `https://artificialanalysis.ai/models/<slug>`) | 2026-10-13 | Values AA marks as "Estimated", or models with only a non-reasoning variant, count as not verified |
 | `arena_webdev_elo` (Elo) | Arena (formerly LMArena / LMSYS) Code Arena \| WebDev, https://arena.ai/leaderboard/webdev | 2026-10-08 | - |
-| `task_cost_usd` ($/task) | Terminal-Bench 4.0 Mean Rollout Cost & Artificial Analysis Task Cost | 2026-10-12 | Measured mean expenditure per attempted task trial (USD), accounting for harness and reasoning tokens. Supports bidirectional sorting with dynamic sort direction indicators (`ArrowUp`/`ArrowDown`) and robust undefined handling |
+| `task_cost_usd` ($/task) | Terminal-Bench 4.0 Mean Rollout Cost & Artificial Analysis Task Cost | 2026-10-12 | Measured mean expenditure per attempted task trial (USD), accounting for harness and reasoning tokens. Composed of verified measurements (20 models) and Tier-equivalent estimates (26 models) marked with `<EstimatedMarker />`. Supports bidirectional sorting with dynamic sort direction indicators (`ArrowUp`/`ArrowDown`) and robust undefined handling |
 | `output_speed_tps`, Token prices, context | Artificial Analysis (speed), official GitHub Copilot pricing | unchanged | - |
 
 - **Variants**: the highest listed reasoning / harness variant of each model is used.
@@ -173,15 +173,15 @@ The 6-axis comparison is drawn as a **radar chart** (recharts `RadarChart`, 0-10
 - **Verification record**: `.devs/changes/2026-10-13_RadarBenchmarkSourcesRefresh/verified-benchmarks-2026-10.json` (`null` = not verifiable); `src/tests/benchmark-sources-2026-10.test.ts` asserts that the records hold exactly these values.
 
 ### 3.1.2 Estimated Values (推測値) and Their Method
-A raw metric without a verified value is an **estimate**. The record lists it in `estimated_metrics` (for example `["terminal_bench_4", "arena_webdev_elo"]`), and the UI shows a 「推測値」 marker next to that value (benchmark table and model detail card). Estimates are produced once by **quantile mapping**:
+A raw metric without a verified value is an **estimate**. The record lists it in `estimated_metrics` (for example `["terminal_bench_4", "task_cost_usd", "arena_webdev_elo"]`), and the UI shows a 「推測値」 marker next to that value (benchmark table and model detail card). Estimates are produced once by **quantile mapping**:
 1. Take the model's percentile rank `(below + 0.5 * equal) / n` among all 45 models on the legacy metric that fed the same axis in the previous (2026-09) records: `swe_bench_verified` for `terminal_bench_4`, the 0.65 / 0.35 blend of the `aime_2024` and `gpqa_diamond` ranks for `aa_intelligence_index`, `arena_coding_elo` for `arena_webdev_elo`.
 2. Map that rank onto the sorted verified values of the new metric by linear interpolation of their quantiles (`p × (k − 1)`).
 3. Round: Terminal-Bench to one decimal, AA Intelligence Index and Arena Elo to integers.
 
-The one-off script runs outside the repository; only the numbers are written to `benchmark-records.json` (the per-model ranks and results are kept in `.devs/changes/2026-10-13_RadarBenchmarkSourcesRefresh/estimated-values-2026-10.json`). As of 2026-10-13: Terminal-Bench 26 / 45, AA Intelligence Index 17 / 45 and Arena WebDev Elo 13 / 45 values are estimates.
+The one-off script runs outside the repository; only the numbers are written to `benchmark-records.json` (the per-model ranks and results are kept in `.devs/changes/2026-10-13_RadarBenchmarkSourcesRefresh/estimated-values-2026-10.json`). Out of 46 models: Terminal-Bench 26 / 46, AA Intelligence Index 17 / 46, Arena WebDev Elo 13 / 46, and Task Cost 26 / 46 values are recorded as estimates in `estimated_metrics`.
 
 - **Model-level flag**: `is_estimated` is derived as "every benchmark score metric (`BENCHMARK_SCORE_METRICS`: `terminal_bench_4`, `aa_intelligence_index`, `arena_webdev_elo`) is estimated"; such models also keep the 「推測値」 badge next to the model name. A record that only has the legacy `is_estimated: true` is treated as all three benchmark metrics estimated.
-- `output_speed_tps` may also be listed (GPT-6.1 Sol and Claude Sonnet 5.5: speed not yet measured).
+- `output_speed_tps` (GPT-6.1 Sol, Claude Sonnet 5.5) and `task_cost_usd` (unverified 26 models) are also recorded in `estimated_metrics` and display individual estimate markers in the UI.
 - Replace an estimate with the verified value and remove it from `estimated_metrics` once a source lists the model.
 
 ### 3.2 Model Catalog: Exact Alias Match (P3-7 / A-13)
