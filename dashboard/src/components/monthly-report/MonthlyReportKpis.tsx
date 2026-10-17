@@ -127,49 +127,110 @@ export function extractCopilotPlanCounts(reportData: MonthlyReportAggregatedData
   };
 }
 
-interface DistributionMiniHistogramProps {
+interface RequestsDistributionChartProps {
   buckets: DistributionBucket[];
   unit: string;
   variant?: 'indigo' | 'amber';
+  min: number | null;
+  median: number | null;
+  max: number | null;
+  minTestId?: string;
+  medianTestId?: string;
+  maxTestId?: string;
 }
 
 /**
- * KPI カード内にコンパクトに配置する度数分布ミニヒストグラム
+ * KPI カード全幅で度数分布と最小・中央・最大値の軸対応を直感的に可視化する分布チャート
  */
-const DistributionMiniHistogram: React.FC<DistributionMiniHistogramProps> = ({
+const RequestsDistributionChart: React.FC<RequestsDistributionChartProps> = ({
   buckets,
   unit,
   variant = 'indigo',
+  min,
+  median,
+  max,
+  minTestId = 'report-requests-min',
+  medianTestId = 'report-requests-median',
+  maxTestId = 'report-requests-max',
 }) => {
   if (buckets.length === 0) return null;
   const maxCount = Math.max(...buckets.map((b) => b.count), 1);
 
   return (
-    <div className="flex flex-col items-end shrink-0" data-testid="report-requests-distribution">
-      <span className="text-[9px] text-slate-500 font-medium tracking-tight block text-right mb-0.5">
-        分布 ({buckets.length}階級)
-      </span>
-      <div className="flex items-end gap-1 h-6 px-1.5 py-0.5 bg-slate-950/70 rounded border border-slate-800/70">
+    <div className="w-full bg-slate-950/60 rounded-lg p-2 border border-slate-800/70" data-testid="report-requests-distribution">
+      {/* グラフヘッダー: 階級と度数の説明 */}
+      <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1 px-0.5">
+        <span className="font-medium text-slate-400">利用量分布 ({buckets.length}階級):</span>
+        <span className="text-[9px] text-slate-500 font-mono">アカウント数 (度数)</span>
+      </div>
+
+      {/* 5本のバー（カード全幅、各バー flex-1、高さ h-10 (40px)） */}
+      <div className="flex items-end gap-1.5 h-10 px-1 pt-1">
         {buckets.map((b, i) => {
           const heightPercent =
-            b.count === 0 ? '8%' : `${Math.max(16, (b.count / maxCount) * 100)}%`;
+            b.count === 0 ? '6%' : `${Math.max(18, (b.count / maxCount) * 100)}%`;
           const barColor =
             b.count === 0
-              ? 'bg-slate-800/80'
+              ? 'bg-slate-800/50'
               : variant === 'amber'
-              ? 'bg-amber-500 hover:bg-amber-400'
-              : 'bg-indigo-500 hover:bg-indigo-400';
+              ? 'bg-amber-500/80 hover:bg-amber-400'
+              : 'bg-indigo-500/80 hover:bg-indigo-400';
 
           return (
             <div
               key={i}
-              className={`w-2 sm:w-2.5 rounded-t transition-colors cursor-help ${barColor}`}
-              style={{ height: heightPercent }}
+              className="flex-1 flex flex-col items-center h-full justify-end group relative cursor-help"
               title={`${b.label} ${unit}: ${b.count}名 (${b.percentage}%)`}
               data-testid={`distribution-bar-${i}`}
-            />
+            >
+              {/* バー上部の人数ラベル（バー上に直接数値を表示） */}
+              <span className={`text-[9px] font-mono font-bold mb-0.5 leading-none transition-colors ${
+                b.count > 0 ? (variant === 'amber' ? 'text-amber-300' : 'text-indigo-200') : 'text-slate-600'
+              }`}>
+                {b.count > 0 ? b.count : ''}
+              </span>
+              <div
+                className={`w-full rounded-t transition-all ${barColor}`}
+                style={{ height: heightPercent }}
+              />
+            </div>
           );
         })}
+      </div>
+
+      {/* X 軸目盛り線 */}
+      <div className="w-full h-px bg-slate-800 my-1" />
+
+      {/* 最小・中央・最大値と直感対応した目盛り数値軸 */}
+      <div className="flex items-baseline justify-between text-[10px] px-0.5 pt-0.5">
+        {/* 左端: 最小値 */}
+        <div className="text-left">
+          <span className="text-[9px] text-slate-500 block leading-tight">最小</span>
+          <span className="font-mono font-bold text-slate-300 text-xs" data-testid={minTestId}>
+            {formatStatValue(min)}
+          </span>
+        </div>
+
+        {/* 中央: 中央値 (インディゴ/アンバーでハイライト) */}
+        <div className="text-center px-2 py-0.5 rounded bg-slate-900 border border-slate-800/90 shadow-xs">
+          <span className={`text-[9px] block leading-tight font-medium ${variant === 'amber' ? 'text-amber-400' : 'text-indigo-400'}`}>
+            中央値
+          </span>
+          <span
+            className={`font-mono font-bold text-xs ${variant === 'amber' ? 'text-amber-300' : 'text-indigo-300'}`}
+            data-testid={medianTestId}
+          >
+            {formatStatValue(median)}
+          </span>
+        </div>
+
+        {/* 右端: 最大値 */}
+        <div className="text-right">
+          <span className="text-[9px] text-slate-500 block leading-tight">最大</span>
+          <span className="font-mono font-bold text-slate-300 text-xs" data-testid={maxTestId}>
+            {formatStatValue(max)}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -306,10 +367,10 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
             </div>
           </div>
 
-          <div className="mt-2 flex items-end justify-between gap-2">
+          <div className="mt-2 flex items-baseline justify-between gap-2">
             {hasRequests && hasCredits ? (
               // 両方存在する場合: リクエストと AIC を行分離して併記
-              <div className="space-y-1 min-w-0">
+              <div className="space-y-0.5 min-w-0">
                 <div className="flex items-baseline space-x-1.5 flex-wrap">
                   <span className="text-xs text-slate-400 font-medium">リクエスト:</span>
                   <div className="flex items-baseline space-x-1">
@@ -347,72 +408,60 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
               </div>
             )}
 
-            {/* 分布ミニグラフ (Mini Distribution Histogram) */}
-            <DistributionMiniHistogram
-              buckets={activeBuckets}
-              unit={activeUnit}
-              variant={activeVariant}
-            />
+            {/* 利用アカウント数 */}
+            <div className="text-right shrink-0">
+              <span className="text-[10px] text-slate-400 block font-medium">利用アカウント:</span>
+              <span
+                className={`font-mono font-bold text-xs ${hasCredits && !hasRequests ? 'text-amber-300' : 'text-slate-200'}`}
+                data-testid="report-requests-active-count"
+              >
+                {(hasCredits && !hasRequests ? credStats : reqStats).activeCount} 名
+              </span>
+            </div>
           </div>
 
-          {/* 利用アカウントにおける最大値・中央値・最小値の統計 */}
-          {hasRequests && hasCredits ? (
-            <div className="mt-2 pt-2 border-t border-slate-800/80 text-[10px] space-y-1.5">
-              <div className="bg-slate-950/60 rounded p-1.5 border border-slate-800/60 space-y-1">
-                <div className="flex items-center justify-between font-medium">
-                  <span className="text-indigo-300">Req ({reqStats.activeCount}名):</span>
-                  <span className="text-slate-300 font-mono">
-                    最小 <b data-testid="report-requests-min">{formatStatValue(reqStats.min)}</b> / 中央 <b className="text-indigo-300" data-testid="report-requests-median">{formatStatValue(reqStats.median)}</b> / 最大 <b data-testid="report-requests-max">{formatStatValue(reqStats.max)}</b>
-                  </span>
-                </div>
-                <div className="flex items-center justify-between font-medium pt-1 border-t border-slate-900">
+          {/* 分布ヒストグラム ＋ 最小・中央・最大目盛り軸の一体型レイアウト */}
+          <div className="mt-2.5 pt-2 border-t border-slate-800/80">
+            {hasRequests && hasCredits ? (
+              <div className="space-y-1.5">
+                {/* リクエストの分布チャート (全幅バー + 最小・中央・最大軸) */}
+                <RequestsDistributionChart
+                  buckets={reqBuckets}
+                  unit="req"
+                  variant="indigo"
+                  min={reqStats.min}
+                  median={reqStats.median}
+                  max={reqStats.max}
+                  minTestId="report-requests-min"
+                  medianTestId="report-requests-median"
+                  maxTestId="report-requests-max"
+                />
+                {/* AIC の統計行 (両方存在時) */}
+                <div className="bg-slate-950/60 rounded p-1.5 border border-slate-800/60 flex items-center justify-between text-[10px] font-medium">
                   <span className="text-amber-400">AIC ({credStats.activeCount}名):</span>
                   <span className="text-slate-300 font-mono">
                     最小 <b data-testid="report-credits-min">{formatStatValue(credStats.min)}</b> / 中央 <b className="text-amber-300" data-testid="report-credits-median">{formatStatValue(credStats.median)}</b> / 最大 <b data-testid="report-credits-max">{formatStatValue(credStats.max)}</b>
                   </span>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="mt-2 pt-2 border-t border-slate-800/80 space-y-1">
-              <div className="bg-slate-950/60 rounded-lg p-1.5 border border-slate-800/60 space-y-1">
-                <div className="flex items-center justify-between text-[10px] text-slate-400 px-0.5">
-                  <span className="font-medium">利用アカウント (実績 &gt; 0):</span>
-                  <span
-                    className={`font-mono font-bold ${hasCredits ? 'text-amber-300' : 'text-slate-200'}`}
-                    data-testid="report-requests-active-count"
-                  >
-                    {(hasCredits ? credStats : reqStats).activeCount} 名
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-1 text-center pt-1 border-t border-slate-900">
-                  <div>
-                    <span className="text-[9px] text-slate-500 block">最小値</span>
-                    <span className="font-mono text-slate-300 text-xs font-bold" data-testid="report-requests-min">
-                      {formatStatValue((hasCredits ? credStats : reqStats).min)}
-                    </span>
-                  </div>
-                  <div className="border-x border-slate-800/80">
-                    <span className={`text-[9px] block font-medium ${hasCredits ? 'text-amber-400' : 'text-indigo-400'}`}>
-                      中央値
-                    </span>
-                    <span
-                      className={`font-mono text-xs font-bold ${hasCredits ? 'text-amber-300' : 'text-indigo-300'}`}
-                      data-testid="report-requests-median"
-                    >
-                      {formatStatValue((hasCredits ? credStats : reqStats).median)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] text-slate-500 block">最大値</span>
-                    <span className="font-mono text-slate-300 text-xs font-bold" data-testid="report-requests-max">
-                      {formatStatValue((hasCredits ? credStats : reqStats).max)}
-                    </span>
-                  </div>
-                </div>
+            ) : activeBuckets.length > 0 ? (
+              <RequestsDistributionChart
+                buckets={activeBuckets}
+                unit={activeUnit}
+                variant={activeVariant}
+                min={(hasCredits ? credStats : reqStats).min}
+                median={(hasCredits ? credStats : reqStats).median}
+                max={(hasCredits ? credStats : reqStats).max}
+                minTestId="report-requests-min"
+                medianTestId="report-requests-median"
+                maxTestId="report-requests-max"
+              />
+            ) : (
+              <div className="bg-slate-950/60 rounded-lg p-2 border border-slate-800/60 text-center text-slate-500 text-xs font-mono">
+                最小 <span data-testid="report-requests-min">—</span> / 中央 <span data-testid="report-requests-median">—</span> / 最大 <span data-testid="report-requests-max">—</span>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           <p className="mt-1.5 text-[10px] text-slate-400 truncate">
             {hasRequests && hasCredits
