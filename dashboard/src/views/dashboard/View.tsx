@@ -89,6 +89,7 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
     currentData,
     previousData,
     currentReportData,
+    rawCurrentReportData,
     reportBudgets,
     deepAnalysisProfiles,
     focusedUserLogin,
@@ -481,7 +482,12 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
       const title = catalogById.get(widgetId)?.title ?? widgetId;
       return (
         <WidgetCardFrame key={widgetId} {...dragAndMoveProps} title={title}>
-          <SingleMonthlyReportKpiCard cardId={widgetId} reportData={currentReportData} budgets={reportBudgets} />
+          <SingleMonthlyReportKpiCard
+            cardId={widgetId}
+            reportData={currentReportData}
+            budgets={reportBudgets}
+            rawReportData={rawCurrentReportData}
+          />
         </WidgetCardFrame>
       );
     }

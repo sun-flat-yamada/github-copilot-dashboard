@@ -56,6 +56,7 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
     currentData,
     previousData,
     currentReportData,
+    rawCurrentReportData,
     reportBudgets,
     deepAnalysisProfiles,
     focusedUserLogin,
@@ -77,7 +78,11 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
         <KpiSummaryCards data={currentData} isDemo={isDemoData} previousData={previousData} />
       )}
       {isReportSource && currentReportData && (
-        <MonthlyReportKpis reportData={currentReportData} budgets={reportBudgets} />
+        <MonthlyReportKpis
+          reportData={currentReportData}
+          budgets={reportBudgets}
+          rawReportData={rawCurrentReportData}
+        />
       )}
 
       {/* 詳細分析セクションヘッダー ＆ 一括開閉コントロール (★要件6, Issue #118) */}

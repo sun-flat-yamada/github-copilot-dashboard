@@ -28,6 +28,8 @@ export interface ViewContext {
   /** 前期 (月次=前月 / 日次=前日) の Live スコープ。同じフィルター適用済み。無ければ null (前期比は「—（理由）」) */
   previousData?: ScopeAggregatedData | null;
   currentReportData: MonthlyReportAggregatedData | null;
+  /** フィルター適用前の月次レポート元データ (母数・全社値の算出用) */
+  rawCurrentReportData?: MonthlyReportAggregatedData | null;
   /** 月次レポート表示用に合成した Cost Center 予算 */
   reportBudgets: CostCenterBudget[];
   deepAnalysisProfiles: UserUsageProfile[];
