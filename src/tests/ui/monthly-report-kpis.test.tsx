@@ -390,7 +390,7 @@ describe('MonthlyReportKpis - Active Users Slash Separated Format Display (#385)
     assert.strictEqual(ratioEl.textContent?.trim(), '/ 16 / 16 名');
   });
 
-  it('displays slash separated format for user example: 16 (100.0%) / 16 / 32 名', () => {
+  it('displays slash separated format with active rate calculated against overall total: 16 (50.0%) / 16 / 32 名', () => {
     const rawReportData = createMockReportData([], { total_active_users: 32 });
     rawReportData.sku_breakdown = [
       { sku_name: 'copilot_enterprise', total_quantity: 10, unit_type: 'seats', total_spend_usd: 390, percentage: 50 },
@@ -414,7 +414,7 @@ describe('MonthlyReportKpis - Active Users Slash Separated Format Display (#385)
     const ratioEl = screen.getByTestId('report-active-users-ratio');
 
     assert.strictEqual(totalEl.textContent?.trim(), '16');
-    assert.strictEqual(percentEl.textContent?.trim(), '(100.0%)');
+    assert.strictEqual(percentEl.textContent?.trim(), '(50.0%)');
     assert.strictEqual(ratioEl.textContent?.trim(), '/ 16 / 32 名');
 
     // 下部のプラン内訳も確認
