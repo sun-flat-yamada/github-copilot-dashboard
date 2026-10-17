@@ -107,7 +107,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
             onDragEnd={onDragEnd}
             className="text-slate-500 hover:text-slate-300 cursor-grab active:cursor-grabbing select-none shrink-0 p-1 rounded"
             title="ここをドラッグしてウィジェットの表示順番を変更"
-            aria-label={`${title}をドラッグして移動`}
+            aria-hidden="true"
           >
             <GripVertical className="w-4 h-4" />
           </div>
