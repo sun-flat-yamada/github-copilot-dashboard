@@ -1,23 +1,23 @@
 # Tasks: Compact Plan Breakdown Numbers Display (#358)
 
-- [/] Phase 1: Issue Scoping & Branch Validation <!-- id: 0 -->
+- [x] Phase 1: Issue Scoping & Branch Validation <!-- id: 0 -->
   - [x] Register GitHub Issue #358 with Acceptance Criteria <!-- id: 1 -->
   - [x] Validate branch name `feat/358-plan-breakdown-compact-counts` <!-- id: 2 -->
-- [/] Phase 2: Implementation Plan & Pre-Execution Gate <!-- id: 3 -->
+- [x] Phase 2: Implementation Plan & Pre-Execution Gate <!-- id: 3 -->
   - [x] Author `implementation_plan.md` artifact <!-- id: 4 -->
   - [x] Author `task.md` artifact <!-- id: 5 -->
-- [ ] Phase 3: Sibling Worktree Provisioning & Plan Commit <!-- id: 6 -->
-  - [ ] Provision sibling worktree `../proud-noether-worktrees/feat-358-plan-breakdown-compact-counts` <!-- id: 7 -->
-  - [ ] Commit `implementation_plan.md` and `task.md` by themselves <!-- id: 8 -->
-  - [ ] Verify plan-first check via `npm run change-dev:plan-check` <!-- id: 9 -->
-- [ ] Phase 4: Implementation, SDD Synchronization & Quality Gate <!-- id: 10 -->
-  - [ ] Update header to `プラン内訳 (アクティブ / ノンアクティブ / 全数):` in `MonthlyReportKpis.tsx` <!-- id: 11 -->
-  - [ ] Update Enterprise / Business rows to `active / nonActive / total` numbers only with bold & colored active number <!-- id: 12 -->
-  - [ ] Synchronize SDD-07 (`07_dashboard_ui_ux_spec.ja.md` and `.md`) <!-- id: 13 -->
-  - [ ] Update and expand UI tests in `src/tests/ui/monthly-report-kpis.test.tsx` <!-- id: 14 -->
-  - [ ] Run 5-stage quality gate (`fork:verify`, `typecheck`, `test`, `secret-scan`, `build`) <!-- id: 15 -->
-- [ ] Phase 5: Walkthrough Artifact Generation & Evidence Sealing <!-- id: 16 -->
-  - [ ] Author `walkthrough.md` artifact with quality gate evidence <!-- id: 17 -->
+- [x] Phase 3: Sibling Worktree Provisioning & Plan Commit <!-- id: 6 -->
+  - [x] Provision sibling worktree `../proud-noether-worktrees/feat-358-plan-breakdown-compact-counts` <!-- id: 7 -->
+  - [x] Commit `implementation_plan.md` and `task.md` by themselves <!-- id: 8 -->
+  - [x] Verify plan-first check via `npm run change-dev:plan-check` <!-- id: 9 -->
+- [x] Phase 4: Implementation, SDD Synchronization & Quality Gate <!-- id: 10 -->
+  - [x] Update header to `プラン内訳 (アクティブ / ノンアクティブ / 全数):` in `MonthlyReportKpis.tsx` <!-- id: 11 -->
+  - [x] Update Enterprise / Business rows to `active / nonActive / total` numbers only with bold & colored active number <!-- id: 12 -->
+  - [x] Synchronize SDD-07 (`07_dashboard_ui_ux_spec.ja.md` and `.md`) <!-- id: 13 -->
+  - [x] Update and expand UI tests in `src/tests/ui/monthly-report-kpis.test.tsx` <!-- id: 14 -->
+  - [x] Run 5-stage quality gate (`fork:verify`, `typecheck`, `test`, `secret-scan`, `build`) <!-- id: 15 -->
+- [/] Phase 5: Walkthrough Artifact Generation & Evidence Sealing <!-- id: 16 -->
+  - [x] Author `walkthrough.md` artifact with quality gate evidence <!-- id: 17 -->
   - [ ] Commit implementation and walkthrough <!-- id: 18 -->
 - [ ] Phase 6: Push & Create Pull Request <!-- id: 19 -->
   - [ ] Push branch `feat/358-plan-breakdown-compact-counts` <!-- id: 20 -->
