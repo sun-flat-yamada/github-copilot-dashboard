@@ -508,7 +508,6 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
       const { enterprise, business } = extractCopilotPlanCounts(reportData);
       const activeUsers = reportData.overview.total_active_users;
       const selectedTotal = enterprise.total + business.total;
-      const activeRate = selectedTotal > 0 ? (activeUsers / selectedTotal) * 100 : 0;
 
       // 全体（未フィルター）の総数
       const rawPlan = rawReportData ? extractCopilotPlanCounts(rawReportData) : null;
@@ -517,6 +516,10 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
         : (rawReportData?.overview.quantity_by_unit?.seats ??
            rawReportData?.overview.total_active_users ??
            selectedTotal);
+
+      // アクティブ人数の割合 (%) は全体総数 (overallTotal) を母数として算出
+      const denominator = overallTotal > 0 ? overallTotal : selectedTotal;
+      const activeRate = denominator > 0 ? (activeUsers / denominator) * 100 : 0;
 
       return (
         <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm flex flex-col justify-between" data-testid="report-kpi-active-users">
