@@ -117,6 +117,7 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
   } = useOverviewWidgets(widgetMode);
 
   const [isAddPanelOpen, setIsAddPanelOpen] = useState<boolean>(false);
+  const [catalogFilter, setCatalogFilter] = useState<'all' | 'kpi' | 'section'>('all');
   const [draggedWidgetId, setDraggedWidgetId] = useState<string | null>(null);
   const [dragOverWidgetId, setDragOverWidgetId] = useState<string | null>(null);
 
@@ -128,6 +129,26 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
   const catalogById = useMemo(
     () => new Map(catalog.map((item) => [item.id, item])),
     [catalog]
+  );
+
+  const kpiCatalogItems = useMemo(
+    () => catalog.filter((item) => item.size === 'kpi'),
+    [catalog]
+  );
+
+  const sectionCatalogItems = useMemo(
+    () => catalog.filter((item) => item.size === 'full'),
+    [catalog]
+  );
+
+  const placedKpiCount = useMemo(
+    () => kpiCatalogItems.filter((item) => activeWidgetIds.includes(item.id)).length,
+    [kpiCatalogItems, activeWidgetIds]
+  );
+
+  const placedSectionCount = useMemo(
+    () => sectionCatalogItems.filter((item) => activeWidgetIds.includes(item.id)).length,
+    [sectionCatalogItems, activeWidgetIds]
   );
 
   const handleDragStart = (widgetId: string) => (e: React.DragEvent<HTMLDivElement>) => {
@@ -672,77 +693,216 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
           data-testid="widget-catalog-panel"
           role="region"
           aria-label="ウィジェット追加カタログ"
-          className="p-4 rounded-2xl bg-slate-900/90 border border-indigo-800/60 shadow-lg space-y-3"
+          className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-indigo-800/60 shadow-lg space-y-5"
         >
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-800/80 pb-3">
             <div>
               <h3 className="text-xs sm:text-sm font-bold text-white">
                 ウィジェットカタログ
               </h3>
-              <p className="text-xs text-slate-400">
-                ダッシュボードに追加する KPI ウィジェット・分析セクションを選択してください（設定はブラウザに自動保存されます）
+              <p className="text-xs text-slate-400 mt-0.5">
+                ダッシュボードに追加する KPI サマリーカード（1/5幅）または詳細分析セクション（全幅）を選択してください（設定はブラウザに自動保存されます）
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsAddPanelOpen(false)}
-              className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded border border-slate-800 hover:border-slate-700 cursor-pointer"
-            >
-              閉じる
-            </button>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* カテゴリフィルタータブ (#344) */}
+              <div
+                className="inline-flex items-center p-1 rounded-xl bg-slate-950/90 border border-slate-800"
+                role="group"
+                aria-label="ウィジェット種別フィルター"
+              >
+                <button
+                  type="button"
+                  onClick={() => setCatalogFilter('all')}
+                  data-testid="widget-catalog-filter-all"
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                    catalogFilter === 'all'
+                      ? 'bg-slate-800 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  すべて ({catalog.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCatalogFilter('kpi')}
+                  data-testid="widget-catalog-filter-kpi"
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                    catalogFilter === 'kpi'
+                      ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/60 shadow-sm'
+                      : 'text-slate-400 hover:text-emerald-300'
+                  }`}
+                >
+                  KPI カード ({kpiCatalogItems.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCatalogFilter('section')}
+                  data-testid="widget-catalog-filter-section"
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                    catalogFilter === 'section'
+                      ? 'bg-indigo-950 text-indigo-300 border border-indigo-800/60 shadow-sm'
+                      : 'text-slate-400 hover:text-indigo-300'
+                  }`}
+                >
+                  分析セクション ({sectionCatalogItems.length})
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsAddPanelOpen(false)}
+                className="text-xs text-slate-400 hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-800 hover:border-slate-700 cursor-pointer"
+              >
+                閉じる
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-            {catalog.map((item) => {
-              const isPlaced = activeWidgetIds.includes(item.id);
-              return (
-                <div
-                  key={item.id}
-                  data-testid={`widget-catalog-item-${item.id}`}
-                  className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-950/70 border border-slate-800/90"
+          {/* グループ 1: KPI サマリーウィジェット (小型カード・1/5幅グリッド配置) */}
+          {(catalogFilter === 'all' || catalogFilter === 'kpi') && (
+            <div
+              data-testid="widget-catalog-group-kpi"
+              className="space-y-2.5 p-3.5 rounded-xl bg-emerald-950/15 border border-emerald-900/40"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-emerald-950 text-emerald-300 border border-emerald-700/70">
+                    KPI サマリーウィジェット
+                  </span>
+                  <span className="text-xs text-slate-300 font-medium">
+                    単一指標カード（5列グリッド・1/5幅配置）
+                  </span>
+                </div>
+                <span
+                  data-testid="widget-catalog-kpi-status"
+                  className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-800/60"
                 >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs sm:text-sm font-semibold text-slate-100 truncate">
-                        {item.title}
-                      </span>
-                      <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${
-                          item.size === 'kpi'
-                            ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/60'
-                            : 'bg-indigo-950/80 text-indigo-300 border border-indigo-800/60'
+                  {placedKpiCount} / {kpiCatalogItems.length} 配置中
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                {kpiCatalogItems.map((item) => {
+                  const isPlaced = activeWidgetIds.includes(item.id);
+                  return (
+                    <div
+                      key={item.id}
+                      data-testid={`widget-catalog-item-${item.id}`}
+                      data-widget-category="kpi"
+                      className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-950/80 border border-emerald-900/50 border-l-4 border-l-emerald-500/80"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-xs sm:text-sm font-semibold text-slate-100 truncate">
+                            {item.title}
+                          </span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold shrink-0 bg-emerald-950/90 text-emerald-300 border border-emerald-800/70">
+                            KPI カード (1/5幅)
+                          </span>
+                          {item.defaultPreset && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 shrink-0">
+                              標準プリセット
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                          {item.subtitle}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={isPlaced}
+                        onClick={() => addWidget(item.id)}
+                        data-testid={`widget-add-item-${item.id}`}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-colors cursor-pointer ${
+                          isPlaced
+                            ? 'bg-slate-800 text-slate-400 opacity-60 pointer-events-none'
+                            : 'bg-emerald-600 hover:bg-emerald-500 text-white'
                         }`}
                       >
-                        {item.size === 'kpi' ? 'KPI' : 'セクション'}
-                      </span>
-                      {item.defaultPreset && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 shrink-0">
-                          標準プリセット
-                        </span>
-                      )}
+                        {isPlaced ? '配置済み' : '＋ 追加'}
+                      </button>
                     </div>
-                    <p className="text-[11px] text-slate-400 truncate mt-0.5">
-                      {item.subtitle}
-                    </p>
-                  </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-                  <button
-                    type="button"
-                    disabled={isPlaced}
-                    onClick={() => addWidget(item.id)}
-                    data-testid={`widget-add-item-${item.id}`}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-colors cursor-pointer ${
-                      isPlaced
-                        ? 'bg-slate-800 text-slate-400 opacity-60 pointer-events-none'
-                        : 'bg-indigo-600 hover:bg-indigo-500 text-white'
-                    }`}
-                  >
-                    {isPlaced ? '配置済み' : '＋ 追加'}
-                  </button>
+          {/* グループ 2: 詳細分析セクションウィジェット (大型パネル・全幅展開) */}
+          {(catalogFilter === 'all' || catalogFilter === 'section') && (
+            <div
+              data-testid="widget-catalog-group-section"
+              className="space-y-2.5 p-3.5 rounded-xl bg-indigo-950/15 border border-indigo-900/40"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-indigo-950 text-indigo-300 border border-indigo-700/70">
+                    詳細分析セクションウィジェット
+                  </span>
+                  <span className="text-xs text-slate-300 font-medium">
+                    グラフ・明細テーブル・診断パネル（全幅アコーディオン配置）
+                  </span>
                 </div>
-              );
-            })}
-          </div>
+                <span
+                  data-testid="widget-catalog-section-status"
+                  className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-indigo-950/80 text-indigo-300 border border-indigo-800/60"
+                >
+                  {placedSectionCount} / {sectionCatalogItems.length} 配置中
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                {sectionCatalogItems.map((item) => {
+                  const isPlaced = activeWidgetIds.includes(item.id);
+                  return (
+                    <div
+                      key={item.id}
+                      data-testid={`widget-catalog-item-${item.id}`}
+                      data-widget-category="section"
+                      className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-950/80 border border-indigo-900/50 border-l-4 border-l-indigo-500/80"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-xs sm:text-sm font-semibold text-slate-100 truncate">
+                            {item.title}
+                          </span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold shrink-0 bg-indigo-950/90 text-indigo-300 border border-indigo-800/70">
+                            分析セクション (全幅)
+                          </span>
+                          {item.defaultPreset && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 shrink-0">
+                              標準プリセット
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                          {item.subtitle}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={isPlaced}
+                        onClick={() => addWidget(item.id)}
+                        data-testid={`widget-add-item-${item.id}`}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-colors cursor-pointer ${
+                          isPlaced
+                            ? 'bg-slate-800 text-slate-400 opacity-60 pointer-events-none'
+                            : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                        }`}
+                      >
+                        {isPlaced ? '配置済み' : '＋ 追加'}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
