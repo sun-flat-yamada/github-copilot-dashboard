@@ -278,7 +278,7 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
   cardId,
   reportData,
   budgets,
-  rawReportData,
+  rawReportData: _rawReportData,
 }) => {
   const { formatMoney } = useCurrency();
   const grossDual = formatMoney(reportData.overview.total_gross_spend_usd);
@@ -507,25 +507,25 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
     case 'report_kpi_active_users': {
       const { enterprise, business } = extractCopilotPlanCounts(reportData);
       const activeUsers = reportData.overview.total_active_users;
-      const selectedTotal = enterprise.total + business.total;
-
-      // 全体（未フィルター）の総数
-      const rawPlan = rawReportData ? extractCopilotPlanCounts(rawReportData) : null;
-      const overallTotal = rawPlan
-        ? rawPlan.enterprise.total + rawPlan.business.total
-        : (rawReportData?.overview.quantity_by_unit?.seats ??
-           rawReportData?.overview.total_active_users ??
-           selectedTotal);
-
-      // アクティブ人数の割合 (%) は全体総数 (overallTotal) を母数として算出
-      const denominator = overallTotal > 0 ? overallTotal : selectedTotal;
-      const activeRate = denominator > 0 ? (activeUsers / denominator) * 100 : 0;
+      const planTotal = enterprise.total + business.total;
+      const totalUsers = planTotal > 0
+        ? planTotal
+        : (reportData.overview.quantity_by_unit?.seats ?? activeUsers);
+      const nonActiveUsers = planTotal > 0
+        ? enterprise.nonActive + business.nonActive
+        : Math.max(0, totalUsers - activeUsers);
+      const activeRate = totalUsers > 0 ? (activeUsers / totalUsers) * 100 : 0;
 
       return (
         <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm flex flex-col justify-between" data-testid="report-kpi-active-users">
           <div>
             <div className="flex items-center justify-between">
-              <MetricLabel metricId="report_active_users" hideWindow />
+              <div className="flex items-baseline space-x-1.5 flex-wrap">
+                <MetricLabel metricId="report_active_users" hideWindow />
+                <span className="text-[10px] text-slate-400 font-normal">
+                  (アクティブ / ノンアクティブ / 全数)
+                </span>
+              </div>
               <div className="p-1.5 rounded-lg bg-blue-950 border border-blue-800/60 text-blue-400">
                 <Users className="w-4 h-4" />
               </div>
@@ -538,7 +538,7 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
                 </span>
               </span>
               <span className="text-xs font-semibold text-slate-400" data-testid="report-active-users-ratio">
-                / {selectedTotal.toLocaleString()} / {overallTotal.toLocaleString()} 名
+                / {nonActiveUsers.toLocaleString()} / {totalUsers.toLocaleString()} 名
               </span>
             </div>
             {/* Copilot プラン内訳 (Enterprise / Business: アクティブ / ノンアクティブ / 全数) */}
