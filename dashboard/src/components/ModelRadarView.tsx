@@ -828,7 +828,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       </div>
 
       {/* 2カラム構成: 左側フレーム (AIモデル選択) & 右側メインエリア (各分析ウィジェット) */}
-      <div className="flex flex-col lg:flex-row items-start gap-6 relative w-full">
+      <div className="flex flex-row items-start gap-6 relative w-full">
         {/* 左側フレーム: AIモデル選択 (表示 / 省幅 / 非表示 切り替え & 画面追従 sticky) */}
         <ModelSelectorSidebar
           dataset={dataset}
@@ -850,8 +850,8 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
           onTierFilterChange={setSelectedTierFilter}
         />
 
-        {/* 右側メインエリア: 各分析ウィジェット */}
-        <div className="flex-1 min-w-0 flex flex-col space-y-6 w-full">
+        {/* 右側メインエリア: 各分析ウィジェット (isolate で内部の sticky/z-index をカプセル化) */}
+        <div className="flex-1 min-w-0 flex flex-col space-y-6 w-full isolate">
 
       {/* 2. レーダーチャート & フォーカスモデル判定カード (縦配置) */}
       <div className="flex flex-col gap-6">
@@ -1781,7 +1781,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       </div>
 
       {/* 3. 著名ベンチマーク生データ詳細比較テーブル */}
-      <div id="radar-table" className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl scroll-mt-20">
+      <div id="radar-table" className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl scroll-mt-20 relative isolate">
         <div className="flex flex-col space-y-3 border-b border-slate-800 pb-4 mb-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -2381,7 +2381,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
 
         {/* 画面下部追従型 水平スクロールコントローラー (Sticky Bottom Bar) */}
         {scrollState.scrollWidth > scrollState.clientWidth && (
-          <div className="sticky bottom-0 z-40 -mx-6 -mb-6 mt-3 px-4 py-2 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 rounded-b-2xl flex items-center justify-between gap-3 text-xs text-slate-300 shadow-[0_-4px_12px_rgba(0,0,0,0.5)]">
+          <div className="sticky bottom-0 z-20 -mx-6 -mb-6 mt-3 px-4 py-2 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 rounded-b-2xl flex items-center justify-between gap-3 text-xs text-slate-300 shadow-[0_-4px_12px_rgba(0,0,0,0.5)]">
             <div className="flex items-center space-x-2 shrink-0">
               <span className="text-[11px] font-semibold text-slate-400">横スクロール</span>
               <span className="text-[10px] text-indigo-400 font-mono font-bold">
