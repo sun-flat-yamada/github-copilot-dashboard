@@ -249,7 +249,6 @@ export const AppShell: React.FC<AppShellProps> = ({ registry: defaultViewRegistr
     currentData,
     previousData,
     currentReportData,
-    rawCurrentReportData,
     reportBudgets,
     deepAnalysisProfiles,
     deepAnalysisSourceInfo,
