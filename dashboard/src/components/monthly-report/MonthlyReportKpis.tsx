@@ -1,8 +1,9 @@
 import React from 'react';
 import { DollarSign, Sparkles, Users, Cpu } from 'lucide-react';
-import { MonthlyReportAggregatedData, ReportUserDetail } from '../../../../src/types/copilot';
+import { CostCenterBudget, MonthlyReportAggregatedData, ReportUserDetail } from '../../../../src/types/copilot';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { MetricLabel } from '../common/MetricLabel';
+import { CostOverviewBudgetSummary } from './CostOverviewBudgetSummary';
 import { extractTotalAiCredits } from '../../utils/monthlyCreditsTrend';
 import {
   computeActiveAccountStats,
@@ -238,6 +239,8 @@ const RequestsDistributionChart: React.FC<RequestsDistributionChartProps> = ({
 
 interface MonthlyReportKpisProps {
   reportData: MonthlyReportAggregatedData;
+  /** Cost Center 予算。渡されたときだけ、費用サマリーに予算推移と上限到達予測のサマリーを表示する */
+  budgets?: CostCenterBudget[];
 }
 
 interface SingleMonthlyReportKpiCardProps extends MonthlyReportKpisProps {
@@ -247,6 +250,7 @@ interface SingleMonthlyReportKpiCardProps extends MonthlyReportKpisProps {
 export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProps> = ({
   cardId,
   reportData,
+  budgets,
 }) => {
   const { formatMoney } = useCurrency();
   const grossDual = formatMoney(reportData.overview.total_gross_spend_usd);
@@ -289,6 +293,7 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
               無料枠控除: -{discountDual.usd} {discountDual.sub && `(-${discountDual.sub})`}
             </div>
           )}
+          <CostOverviewBudgetSummary reportData={reportData} budgets={budgets} />
         </div>
       );
 
@@ -588,11 +593,11 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
   }
 };
 
-export const MonthlyReportKpis: React.FC<MonthlyReportKpisProps> = ({ reportData }) => {
+export const MonthlyReportKpis: React.FC<MonthlyReportKpisProps> = ({ reportData, budgets }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {ALL_REPORT_KPI_CARD_WIDGET_IDS.map((cardId) => (
-        <SingleMonthlyReportKpiCard key={cardId} cardId={cardId} reportData={reportData} />
+        <SingleMonthlyReportKpiCard key={cardId} cardId={cardId} reportData={reportData} budgets={budgets} />
       ))}
     </div>
   );

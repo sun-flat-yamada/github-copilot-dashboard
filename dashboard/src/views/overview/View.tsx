@@ -76,7 +76,7 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
         <KpiSummaryCards data={currentData} isDemo={isDemoData} previousData={previousData} />
       )}
       {isReportSource && currentReportData && (
-        <MonthlyReportKpis reportData={currentReportData} />
+        <MonthlyReportKpis reportData={currentReportData} budgets={reportBudgets} />
       )}
 
       {/* 詳細分析セクションヘッダー ＆ 一括開閉コントロール (★要件6, Issue #118) */}

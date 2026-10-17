@@ -347,3 +347,71 @@ export function forecastReachSpan(timeline: BudgetTimeline): ReachSpan | null {
 function round(v: number): number {
   return Number(v.toFixed(2));
 }
+
+/** 費用サマリー用の Cost Center 予算サマリー */
+export interface BudgetForecastSummary {
+  costCenterName: string;
+  /** 現在利用料 (gross, 無料枠控除前) */
+  currentUsd: number;
+  freeTierUsd: number;
+  /** 上限Budget額 (課金対象実使用額への上限)。未設定は null */
+  spendingLimitUsd: number | null;
+  /** gross 軸での上限ライン (無料枠 + 上限)。未設定は null */
+  limitLineUsd: number | null;
+  /** 上限ラインに対する現在利用料の割合 (%)。上限未設定は null */
+  progressPercent: number | null;
+  forecast: LimitForecast;
+  /** 日別データを持つ Cost Center の数 */
+  totalCostCenters: number;
+}
+
+/**
+ * 各 Cost Center の推移から、上限到達に最も近い Cost Center のサマリーを返す。
+ * 日別データを持つ Cost Center が無いときは null (値を作らない)。
+ */
+export function summarizeBudgetForecast(
+  budgets: readonly {
+    cost_center_name: string;
+    free_tier_budget_usd: number;
+    spending_limit_usd: number;
+  }[],
+  costCenterDaily: Record<string, DailySpend[]> | undefined,
+  period: { start: string; end: string },
+  forecastEnabled = true
+): BudgetForecastSummary | null {
+  let best: (BudgetForecastSummary & { rank: number }) | null = null;
+  let total = 0;
+  for (const b of budgets) {
+    const daily = costCenterDaily?.[b.cost_center_name];
+    if (!daily || daily.length === 0) continue;
+    total++;
+    const t = buildBudgetTimeline({
+      start: period.start,
+      end: period.end,
+      forecastEnabled,
+      daily,
+      freeTierUsd: b.free_tier_budget_usd,
+      spendingLimitUsd: b.spending_limit_usd,
+    });
+    const observed = t.points.filter((p) => p.actual !== undefined);
+    const currentUsd = observed.length > 0 ? (observed[observed.length - 1].actual as number) : 0;
+    const progressPercent = t.limitLineUsd !== null && t.limitLineUsd > 0 ? (currentUsd / t.limitLineUsd) * 100 : null;
+    const rank = progressPercent ?? -1;
+    if (!best || rank > best.rank) {
+      best = {
+        costCenterName: b.cost_center_name,
+        currentUsd,
+        freeTierUsd: t.freeTierUsd,
+        spendingLimitUsd: b.spending_limit_usd > 0 ? b.spending_limit_usd : null,
+        limitLineUsd: t.limitLineUsd,
+        progressPercent,
+        forecast: t.forecast,
+        totalCostCenters: 0,
+        rank,
+      };
+    }
+  }
+  if (!best) return null;
+  const { rank: _rank, ...summary } = best;
+  return { ...summary, totalCostCenters: total };
+}

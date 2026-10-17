@@ -481,7 +481,7 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
       const title = catalogById.get(widgetId)?.title ?? widgetId;
       return (
         <WidgetCardFrame key={widgetId} {...dragAndMoveProps} title={title}>
-          <SingleMonthlyReportKpiCard cardId={widgetId} reportData={currentReportData} />
+          <SingleMonthlyReportKpiCard cardId={widgetId} reportData={currentReportData} budgets={reportBudgets} />
         </WidgetCardFrame>
       );
     }
