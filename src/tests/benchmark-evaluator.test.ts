@@ -247,13 +247,13 @@ describe('AI Model Benchmark Evaluator Tests', () => {
     );
   });
 
-  it('guarantees zero vendor mismatches across all 45 benchmark dataset models', () => {
+  it('guarantees zero vendor mismatches across all 46 benchmark dataset models', () => {
     const datasetPath = path.resolve(process.cwd(), 'dashboard/public/data/model-benchmarks.json');
     if (!fs.existsSync(datasetPath)) {
       runBenchmarkUpdate();
     }
     const dataset = JSON.parse(fs.readFileSync(datasetPath, 'utf8'));
-    assert.strictEqual(dataset.models.length, 45, 'Must have exactly 45 evaluated models');
+    assert.strictEqual(dataset.models.length, 46, 'Must have exactly 46 evaluated models');
 
     dataset.models.forEach((m: any) => {
       const buzz = m.evaluation.buzz;
@@ -395,6 +395,7 @@ describe('AI Model Benchmark Evaluator Tests', () => {
     assert.strictEqual(normalizeModelId('GPT-5.6 Sol'), 'gpt-5-6-sol');
     assert.strictEqual(normalizeModelId('GPT-5.6 Terra'), 'gpt-5-6-terra');
     assert.strictEqual(normalizeModelId('GPT-5.6 Luna'), 'gpt-5-6-luna');
+    assert.strictEqual(normalizeModelId('Gemini 4 Argon'), 'gemini-4-argon');
     assert.strictEqual(normalizeModelId('Gemini 3.8 Flash'), 'gemini-3-8-flash');
     assert.strictEqual(normalizeModelId('Gemini 3.7 Flash'), 'gemini-3-7-flash');
     assert.strictEqual(normalizeModelId('Kimi K3 (Moonshot)'), 'kimi-k3');

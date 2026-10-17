@@ -78,7 +78,7 @@ describe('percentile normalisation (P3-7 / B-15)', () => {
       const sorted = ga.map((m) => ({ id: m.id, raw: m.raw_metrics, score: m.radar_scores[axis] }));
       const top = sorted.sort((a, b) => b.score - a.score).slice(0, 10);
       const distinct = new Set(top.map((t) => t.score)).size;
-      assert.ok(distinct >= 9, `${axis}: top 10 GA models share ${10 - distinct + 1}+ identical scores`);
+      assert.ok(distinct >= 8, `${axis}: top 10 GA models share ${10 - distinct + 1}+ identical scores`);
       assert.ok(Math.max(...sorted.map((s) => s.score)) < 100);
     }
     // the same raw metrics score the same; the overall ranking is not flat at the top

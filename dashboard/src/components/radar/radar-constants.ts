@@ -12,8 +12,8 @@ export const PRESETS: RadarPreset[] = [
   {
     id: 'flagship-2026',
     name: '🌟 2026 旗艦選',
-    description: 'Claude Opus 5.5 / Claude Opus 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3 (2026年 各社最前線フラッグシップ — Powerful Tier 代表スナップショット)',
-    modelIds: ['claude-opus-5-5', 'claude-opus-5', 'gpt-6-astra', 'gemini-3-8-flash', 'kimi-k3'],
+    description: 'Claude Opus 5.5 / Claude Opus 5 / GPT-6 Astra / Gemini 4 Argon / Kimi K3 (2026年 各社最前線フラッグシップ — Powerful Tier 代表スナップショット)',
+    modelIds: ['claude-opus-5-5', 'claude-opus-5', 'gpt-6-astra', 'gemini-4-argon', 'kimi-k3'],
   },
   {
     id: 'practical-high-value',
@@ -42,8 +42,8 @@ export const PRESETS: RadarPreset[] = [
   {
     id: 'tier-powerful',
     name: '⚡ Powerful (最上位推論)',
-    description: 'GPT-6 Astra / Claude Opus 5.5 / Claude Opus 5 / GPT-6 Sol / Kimi K3 (最高峰コーディング・推論群)',
-    modelIds: ['gpt-6-astra', 'claude-opus-5-5', 'claude-opus-5', 'gpt-6-sol', 'kimi-k3'],
+    description: 'GPT-6 Astra / Claude Opus 5.5 / Claude Opus 5 / GPT-6 Sol / Gemini 4 Argon / Kimi K3 (最高峰コーディング・推論群)',
+    modelIds: ['gpt-6-astra', 'claude-opus-5-5', 'claude-opus-5', 'gpt-6-sol', 'gemini-4-argon', 'kimi-k3'],
   },
   {
     id: 'tier-versatile',
@@ -71,8 +71,8 @@ export const PRESETS: RadarPreset[] = [
   },
   {
     id: 'vendor-google',
-    name: '🔵 Google Gemini 3.x',
-    description: 'Gemini 3.8 Flash / Gemini 3.7 Flash / Gemini 3.6 Flash / Gemini 3.5 Flash (Google 最新1Mコンテキスト)',
-    modelIds: ['gemini-3-8-flash', 'gemini-3-7-flash', 'gemini-3-6-flash', 'gemini-3-5-flash'],
+    name: '🔵 Google Gemini',
+    description: 'Gemini 4 Argon / Gemini 3.8 Flash / Gemini 3.7 Flash / Gemini 3.6 Flash / Gemini 3.5 Flash (Google 最新モデル)',
+    modelIds: ['gemini-4-argon', 'gemini-3-8-flash', 'gemini-3-7-flash', 'gemini-3-6-flash', 'gemini-3-5-flash'],
   },
 ];

@@ -593,6 +593,29 @@ export function getModelBuzz(modelId: string, vendor?: ModelVendor): EngineerBuz
   }
 
   // 3. Google Models
+  if (m.includes('gemini-4') || m.includes('argon')) {
+    return {
+      headline: 'Google DeepMindの次世代フロンティア推論旗艦。Terminal-Bench 57.27%・AA指数53の圧倒的自律解決力',
+      community_sentiments: [
+        '長大な推論デコードと1Mコンテキストの融合で、複雑な大規模リファクタリングや自律エージェントタスクを難なく完遂する',
+        'Terminal-Bench 4.0で189/330タスク（57.27%）を解決する実力は本物で、ターミナル環境の試行錯誤が極めて安定している',
+        'OpenAI AstraやClaude Opus 5.5と肩を並べる知能指数（AA Index 53）を誇り、設計議論の壁打ち相手として頼もしい',
+      ],
+      caution_rumor: 'フル推論時のデコード時間が長くなる場合があるため、即時インライン補完よりもAgentモードや綿密な設計・レビュータスク向きという噂。',
+      source_note: '※ SNS上のエンジニアの声・コミュニティの噂・所感',
+      sources: [
+        {
+          title: 'Google DeepMind: Gemini 4 Frontier Models & Capabilities',
+          url: 'https://blog.google/technology/developers/',
+        },
+        {
+          title: 'Terminal-Bench 4.0 Leaderboard (Gemini 4 Argon: 57.27%)',
+          url: 'https://www.tbench.ai/leaderboard/terminal-bench/4.0',
+        },
+      ],
+    };
+  }
+
   if (m.includes('gemini-3') || m.includes('gemini-3-8') || m.includes('gemini-3-7') || m.includes('gemini-3-6') || m.includes('gemini-3-5')) {
     return {
       headline: '1Mコンテキストの超高速モンスター。プロモ価格（$0.75/$3.75）で業界を席巻',

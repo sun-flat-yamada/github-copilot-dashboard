@@ -5,7 +5,7 @@ import { MODEL_CATALOG } from '../processor/model-catalog.js';
 
 describe('model display (#270)', () => {
   it('knows the latest models and keeps a readable name', () => {
-    for (const id of ['gpt-6-astra', 'claude-fable-5-1', 'claude-opus-5-5', 'claude-sonnet-5', 'gpt-5-4-mini', 'gemini-3-8-flash']) {
+    for (const id of ['gpt-6-astra', 'claude-fable-5-1', 'claude-opus-5-5', 'claude-sonnet-5', 'gpt-5-4-mini', 'gemini-4-argon', 'gemini-3-8-flash']) {
       assert.ok(MODEL_DISPLAY[id], id);
       assert.ok(MODEL_CATALOG.some((m) => m.id === id), `${id} is in the model catalog`);
     }
