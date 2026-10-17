@@ -8,8 +8,8 @@ import { extractTotalAiCredits } from '../../utils/monthlyCreditsTrend';
 import {
   computeActiveAccountStats,
   formatStatValue,
-  computeDistributionBuckets,
-  type DistributionBucket,
+  computeBoxPlotStats,
+  type BoxPlotStats,
 } from '../../utils/accountStats';
 
 export type ReportKpiCardWidgetId =
@@ -128,75 +128,101 @@ export function extractCopilotPlanCounts(reportData: MonthlyReportAggregatedData
   };
 }
 
-interface RequestsDistributionChartProps {
-  buckets: DistributionBucket[];
+interface RequestsBoxPlotProps {
+  stats: BoxPlotStats;
   unit: string;
   variant?: 'indigo' | 'amber';
-  min: number | null;
-  median: number | null;
-  max: number | null;
   minTestId?: string;
   medianTestId?: string;
   maxTestId?: string;
 }
 
 /**
- * KPI カード全幅で度数分布と最小・中央・最大値の軸対応を直感的に可視化する分布チャート
+ * KPI カード全幅で最小値・Q1・中央値・Q3・最大値の幾何的位置関係を直感的に可視化する横型ミニ箱ひげ図
  */
-const RequestsDistributionChart: React.FC<RequestsDistributionChartProps> = ({
-  buckets,
+const RequestsBoxPlot: React.FC<RequestsBoxPlotProps> = ({
+  stats,
   unit,
   variant = 'indigo',
-  min,
-  median,
-  max,
   minTestId = 'report-requests-min',
   medianTestId = 'report-requests-median',
   maxTestId = 'report-requests-max',
 }) => {
-  if (buckets.length === 0) return null;
-  const maxCount = Math.max(...buckets.map((b) => b.count), 1);
+  const { min, q1, median, q3, max, activeCount, iqr } = stats;
+  if (activeCount === 0 || min === null || max === null || median === null || q1 === null || q3 === null) {
+    return null;
+  }
+
+  const range = max - min;
+  const q1Pct = range > 0 ? ((q1 - min) / range) * 100 : 0;
+  const q3Pct = range > 0 ? ((q3 - min) / range) * 100 : 100;
+  const medianPct = range > 0 ? ((median - min) / range) * 100 : 50;
+
+  const boxLeft = Math.max(0, Math.min(100, q1Pct));
+  const boxWidth = Math.max(range > 0 ? 0.5 : 0, Math.min(100 - boxLeft, q3Pct - q1Pct));
+
+  const isAmber = variant === 'amber';
+  const boxBg = isAmber ? 'bg-amber-500/25 border-amber-400/70' : 'bg-indigo-500/25 border-indigo-400/70';
+  const medianColor = isAmber ? 'bg-amber-300' : 'bg-indigo-300';
+  const whiskerColor = isAmber ? 'bg-amber-600/70' : 'bg-slate-600';
+  const tickColor = isAmber ? 'bg-amber-500/80' : 'bg-slate-500';
+
+  const tooltipText = `利用量分布 (箱ひげ図) [${activeCount}名]: 最小: ${formatStatValue(min)} ${unit} | 25%(Q1): ${formatStatValue(q1)} ${unit} | 中央値: ${formatStatValue(median)} ${unit} | 75%(Q3): ${formatStatValue(q3)} ${unit} | 最大: ${formatStatValue(max)} ${unit} (四分位範囲 IQR: ${formatStatValue(iqr)} ${unit})`;
 
   return (
-    <div className="w-full bg-slate-950/60 rounded-lg p-2 border border-slate-800/70" data-testid="report-requests-distribution">
-      {/* グラフヘッダー: 階級と度数の説明 */}
+    <div
+      className="w-full bg-slate-950/60 rounded-lg p-2 border border-slate-800/70"
+      data-testid="report-requests-distribution"
+    >
+      {/* グラフヘッダー: 箱ひげ図の説明 */}
       <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1 px-0.5">
-        <span className="font-medium text-slate-400">利用量分布 ({buckets.length}階級):</span>
-        <span className="text-[9px] text-slate-500 font-mono">アカウント数 (度数)</span>
+        <span className="font-medium text-slate-400">利用量分布 (箱ひげ図):</span>
+        <span className="text-[9px] text-slate-500 font-mono">箱 = 中位50% (Q1〜Q3)</span>
       </div>
 
-      {/* 5本のバー（カード全幅、各バー flex-1、隙間を50%以上拡大し離散度数分布イメージを強調、高さ h-10 (40px)） */}
-      <div className="flex items-end gap-3 h-10 px-1 pt-1">
-        {buckets.map((b, i) => {
-          const heightPercent =
-            b.count === 0 ? '4px' : `${Math.max(20, (b.count / maxCount) * 100)}%`;
-          const barColor =
-            b.count === 0
-              ? 'bg-slate-800/40'
-              : variant === 'amber'
-              ? 'bg-amber-500/85 hover:bg-amber-400 shadow-xs'
-              : 'bg-indigo-500/85 hover:bg-indigo-400 shadow-xs';
+      {/* 横型ミニ箱ひげ図グラフィック領域 */}
+      <div
+        className="relative w-full h-7 flex items-center px-1 my-1 cursor-help group"
+        title={tooltipText}
+        data-testid="report-requests-boxplot"
+      >
+        {/* 全体レンジの背景トラック */}
+        <div className="absolute left-1 right-1 h-1 bg-slate-900 rounded-full" />
 
-          return (
+        {range > 0 ? (
+          <>
+            {/* ヒゲ (Whisker Line: 最小値から最大値までの横線) */}
+            <div className={`absolute left-1 right-1 h-0.5 ${whiskerColor}`} data-testid="boxplot-whisker" />
+
+            {/* 左端ヒゲ端点 (Min Cap) */}
+            <div className={`absolute left-1 w-0.5 h-3 -translate-y-1/2 top-1/2 rounded-full ${tickColor}`} data-testid="boxplot-min-cap" />
+
+            {/* 右端ヒゲ端点 (Max Cap) */}
+            <div className={`absolute right-1 w-0.5 h-3 -translate-y-1/2 top-1/2 rounded-full ${tickColor}`} data-testid="boxplot-max-cap" />
+
+            {/* 箱 (Box: Q1 から Q3 までの 50% 密集ゾーン) */}
             <div
-              key={i}
-              className="flex-1 flex flex-col items-center h-full justify-end group relative cursor-help"
-              title={`${b.label} ${unit}: ${b.count}名 (${b.percentage}%)`}
-              data-testid={`distribution-bar-${i}`}
-            >
-              {/* バー上部の人数ラベル（バー上に直接数値を表示） */}
-              <span className={`text-[9px] font-mono font-bold mb-0.5 leading-none transition-colors ${
-                b.count > 0 ? (variant === 'amber' ? 'text-amber-300' : 'text-indigo-200') : 'text-slate-600'
-              }`}>
-                {b.count > 0 ? b.count : ''}
-              </span>
-              <div
-                className={`w-4/5 max-w-[28px] ${b.count === 0 ? 'rounded-full' : 'rounded-t-[3px]'} transition-all ${barColor}`}
-                style={{ height: heightPercent }}
-              />
-            </div>
-          );
-        })}
+              className={`absolute top-1/2 -translate-y-1/2 h-5 rounded-xs border transition-all shadow-xs ${boxBg}`}
+              style={{
+                left: `calc(4px + (100% - 8px) * ${boxLeft / 100})`,
+                width: `calc((100% - 8px) * ${boxWidth / 100})`,
+              }}
+              data-testid="boxplot-box"
+            />
+
+            {/* 中央値ライン (Median Line) */}
+            <div
+              className={`absolute top-1/2 -translate-y-1/2 w-1 h-6 rounded-full -translate-x-1/2 transition-all shadow-sm z-10 ${medianColor}`}
+              style={{
+                left: `calc(4px + (100% - 8px) * ${medianPct / 100})`,
+              }}
+              data-testid="boxplot-median-line"
+            />
+          </>
+        ) : (
+          /* 全員同値 (または1名) の場合: 中央に単一ライン */
+          <div className="absolute left-1/2 top-1/2 -translate-y-1/2 -translate-x-1/2 w-1.5 h-5 rounded-full bg-indigo-400 shadow-sm" />
+        )}
       </div>
 
       {/* X 軸目盛り線 */}
@@ -214,11 +240,11 @@ const RequestsDistributionChart: React.FC<RequestsDistributionChartProps> = ({
 
         {/* 中央: 中央値 (インディゴ/アンバーでハイライト) */}
         <div className="text-center px-2 py-0.5 rounded bg-slate-900 border border-slate-800/90 shadow-xs">
-          <span className={`text-[9px] block leading-tight font-medium ${variant === 'amber' ? 'text-amber-400' : 'text-indigo-400'}`}>
+          <span className={`text-[9px] block leading-tight font-medium ${isAmber ? 'text-amber-400' : 'text-indigo-400'}`}>
             中央値
           </span>
           <span
-            className={`font-mono font-bold text-xs ${variant === 'amber' ? 'text-amber-300' : 'text-indigo-300'}`}
+            className={`font-mono font-bold text-xs ${isAmber ? 'text-amber-300' : 'text-indigo-300'}`}
             data-testid={medianTestId}
           >
             {formatStatValue(median)}
@@ -333,9 +359,9 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
 
       const reqStats = computeActiveAccountStats(reqValues);
       const credStats = computeActiveAccountStats(credValues);
-      const reqBuckets = computeDistributionBuckets(reqValues, 5);
-      const credBuckets = computeDistributionBuckets(credValues, 5);
-      const activeBuckets = hasRequests ? reqBuckets : credBuckets;
+      const reqBoxPlot = computeBoxPlotStats(reqValues);
+      const credBoxPlot = computeBoxPlotStats(credValues);
+      const activeBoxPlot = hasRequests ? reqBoxPlot : credBoxPlot;
       const activeUnit = hasRequests ? 'req' : 'AIC';
       const activeVariant = hasRequests ? 'indigo' : 'amber';
 
@@ -426,18 +452,15 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
             </div>
           </div>
 
-          {/* 分布ヒストグラム ＋ 最小・中央・最大目盛り軸の一体型レイアウト */}
+          {/* 横型ミニ箱ひげ図 ＋ 最小・中央・最大目盛り軸の一体型レイアウト */}
           <div className="mt-2.5 pt-2 border-t border-slate-800/80">
             {hasRequests && hasCredits ? (
               <div className="space-y-1.5">
-                {/* リクエストの分布チャート (全幅バー + 最小・中央・最大軸) */}
-                <RequestsDistributionChart
-                  buckets={reqBuckets}
+                {/* リクエストの横型箱ひげ図 (最小・Q1・中央値・Q3・最大) */}
+                <RequestsBoxPlot
+                  stats={reqBoxPlot}
                   unit="req"
                   variant="indigo"
-                  min={reqStats.min}
-                  median={reqStats.median}
-                  max={reqStats.max}
                   minTestId="report-requests-min"
                   medianTestId="report-requests-median"
                   maxTestId="report-requests-max"
@@ -450,14 +473,11 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
                   </span>
                 </div>
               </div>
-            ) : activeBuckets.length > 0 ? (
-              <RequestsDistributionChart
-                buckets={activeBuckets}
+            ) : activeBoxPlot.activeCount > 0 ? (
+              <RequestsBoxPlot
+                stats={activeBoxPlot}
                 unit={activeUnit}
                 variant={activeVariant}
-                min={(hasCredits ? credStats : reqStats).min}
-                median={(hasCredits ? credStats : reqStats).median}
-                max={(hasCredits ? credStats : reqStats).max}
                 minTestId="report-requests-min"
                 medianTestId="report-requests-median"
                 maxTestId="report-requests-max"

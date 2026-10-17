@@ -373,11 +373,11 @@ The **「監査」** tab (`views/audit/manifest.ts` + `View.tsx`, registered thr
 2. **Active Account Statistics (Min, Median, Max)**:
    - For accounts in the selected data (or filtered dataset) with positive usage (value > 0), computes and displays active account count alongside **Min**, **Median**, and **Max**.
    - Accounts with zero or missing usage are excluded from the min/median calculation population. If active accounts count is 0, displays `—`.
-3. **Requests Distribution Histogram (Standard Size & Discrete Distribution Styling) & Axis-Aligned Layout (Min, Median, Max)**:
-   - Accounts with positive usage (value > 0) are divided into 5 equal classes (bins: Min to Max) and displayed as a full-width, highly readable distribution histogram (`report-requests-distribution`) with height `h-10` (40px) and equally flexed bars.
-   - To prevent misinterpretation as continuous series and clearly communicate a discrete frequency distribution image, the gap between bars is enlarged by over 50% (`gap-3` / 12px), and bars are shaped as discrete standalone pillars with width `w-4/5 max-w-[28px]` and rounded tops (`rounded-t-[3px]`). Zero-count bins are rendered as subtle baseline slits (`rounded-full`).
-   - Frequency counts (number of accounts) are directly rendered on top of each bar, while hovering provides detailed tooltips with numeric range and percentage share (e.g., `1–50 req: 8 users (40%)`).
-   - Directly underneath the histogram, an integrated X-axis tick baseline displays **Min (left-aligned)**, **Median (centered with accent highlight)**, and **Max (right-aligned)**, visually mapping distribution skews and clusters to summary statistics at a glance.
+3. **Horizontal Mini Box Plot (Range Plot) & Axis-Aligned Layout (Min, Median, Max)**:
+   - For accounts in the selected data with positive usage (value > 0), computes Min, Q1 (25th percentile), Median (50th percentile), Q3 (75th percentile), and Max, rendering a compact horizontal mini box plot (`report-requests-distribution` / `report-requests-boxplot`) across full card width.
+   - Completely eliminates misinterpretation as continuous series or time-series sparklines. Renders the full range whisker line with end caps (Min to Max), an interquartile range (IQR) box spanning Q1 to Q3 representing the core 50% user population, and a prominent accent median line.
+   - An accessible hover tooltip details Min, Q1, Median, Q3, Max, and IQR with concrete unit values.
+   - An integrated X-axis baseline directly underneath physically maps summary statistics (left-aligned Min, highlighted center Median, right-aligned Max) to graphic scale endpoints with 100% geometric alignment.
 4. **Distinct Dimensions (Requests vs AIC) in Tooltip**:
    - The metric definition tooltip (`report_requests`) clearly articulates that physical API invocations / prompts (Requests / req) and model-tier token compute consumption units (AI Credits / AIC) are fundamentally distinct dimensions via metric caveats.
 
