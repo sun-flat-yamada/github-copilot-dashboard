@@ -89,14 +89,15 @@ The center of the header prominently displays the currently active dataset, allo
 - **Fluid Responsive Expansion on Window Maximization**: Narrow or fixed maximum widths (`max-w-7xl`, `max-w-[1600px]`, etc.) are eliminated. While maintaining appropriate side margins/padding (`px-4 sm:px-6 lg:px-8`), the content body (`<main>`) as well as header and navigation containers automatically expand to fill available space on large displays and maximized windows (`w-full mx-auto`).
 - **Exception Rule**: Side-by-side elements are permitted only when simultaneous comparative inspection is essential (e.g., budget vs. actuals) AND both elements have identical fixed heights.
 
-### 2.4 Progressive Disclosure via Accordions & Customizable Overview Widgets
-- **Block 0 (Summary Block)**: Always expanded at the top, presenting executive KPI summaries.
-- **Block 1..N (Feature Widget Blocks)**: Collapsed by default, displaying title, icon, and summary chips (e.g., `12 Departments`, `$6,240.00`).
-- **Detailed Analysis Section Header, Widget Controls & Batch Icon Controls**: A clean section divider bar positioned beneath the summary block featuring a "Detailed Analysis Sections" heading with active widget count pill badge (default: `6 Sections` for live / `2 Sections` for report). Compact controls on the right provide a "+ Add Widget" catalog toggle, a "Reset" to default preset button, and batch expand/collapse icon buttons (`[⤓]` / `[⤒]`, `ChevronsDown` / `ChevronsUp`).
-- **Widget Placement, Add, Remove, Reorder, Preset Reset & Visitor Persistence (`useOverviewWidgets`)**:
-  - **Add (`addWidget`)**: Visitors can add unplaced preset or extended catalog widgets (Cost Center Budget Timeline, AI Credits, AI Agent & MCP Activity, Adoption Maturity, Audit & Data Quality) from the Widget Catalog panel.
-  - **Remove (`removeWidget`)**: Each widget card header includes a remove (`×`) button. Removing all widgets displays an empty state with actions to add widgets or restore the default preset.
-  - **Reorder (`moveWidget` / `reorderWidgets`)**: Visitors can reorder widgets using Move Up (`↑`) / Move Down (`↓`) buttons or Drag & Drop. Widget action buttons are placed as siblings to the accordion toggle button to comply with WCAG 2.2 AA (`nested-interactive`).
+### 2.4 Dedicated Initial `Dashboard` Tab (KPI & Section Widgets) Separated from `Cost Breakdown` (`overview`)
+- **Separation of `Dashboard` (`id: 'dashboard'`, `order: 5`) and `Cost Breakdown` (`id: 'overview'`, `order: 10`)**:
+  - The initial landing tab is the dedicated **`Dashboard`** tab (`label: 'Dashboard'`), while **`コスト内訳`** (`overview`) remains a dedicated fixed-layout Cost Breakdown view.
+- **Full KPI & Section Widgetization (`useOverviewWidgets` / `WidgetCardFrame` / `CollapsibleSection`)**:
+  - In Live Metrics mode, the default preset comprises 5 individual KPI card widgets (`kpi_total_spend`, `kpi_active_rate`, `kpi_idle_waste`, `kpi_budget_utilization`, `kpi_acceptance_rate`) and 6 analysis section widgets (11 widgets total).
+  - In Report / Upload mode, the default preset comprises 5 individual report KPI card widgets (`report_kpi_cost`, `report_kpi_requests`, `report_kpi_active_users`, `report_kpi_top_model`, `report_kpi_top_sku`) and 2 analysis section widgets (7 widgets total).
+  - **Add (`addWidget`)**: Visitors can add any unplaced KPI card widget or extended section widget (Cost Center Budget Timeline, AI Credits, AI Agent & MCP Activity, Adoption Maturity, Audit & Data Quality) from the Widget Catalog panel.
+  - **Remove (`removeWidget`)**: Each KPI card widget and section widget includes a remove (`×`) button. Removing all widgets displays an empty state with actions to add widgets or restore the default preset.
+  - **Reorder (`moveWidget` / `reorderWidgets`)**: Visitors can reorder both KPI widgets and section widgets using Move Up (`↑`) / Move Down (`↓`) buttons or Drag & Drop. Widget action buttons are placed as siblings to interactive toggles to comply with WCAG 2.2 AA (`nested-interactive`).
   - **Reset to Default Preset (`resetWidgets`)**: One-click reset restores the default preset widget set and ordering.
   - **Persist Visitor Settings (`localStorage`)**: Active widget IDs and their display order are automatically persisted in `localStorage` (`copilot_dashboard_overview_widgets_v1`) and restored on subsequent visits.
 
