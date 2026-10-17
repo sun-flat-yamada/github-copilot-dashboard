@@ -29,6 +29,8 @@ import {
   Gauge,
   Compass,
   ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
   FileCode2,
   Flame,
   Clock,
@@ -340,8 +342,12 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
         valA = a.radar_scores.cost_efficiency;
         valB = b.radar_scores.cost_efficiency;
       } else if (sortKey === 'task_cost') {
-        valA = a.raw_metrics.task_cost_usd ?? 0;
-        valB = b.raw_metrics.task_cost_usd ?? 0;
+        const costA = a.raw_metrics.task_cost_usd;
+        const costB = b.raw_metrics.task_cost_usd;
+        if (costA === undefined && costB === undefined) return 0;
+        if (costA === undefined) return 1;
+        if (costB === undefined) return -1;
+        return sortAsc ? costA - costB : costB - costA;
       } else if (sortKey === 'intelligence') {
         valA = a.raw_metrics.aa_intelligence_index;
         valB = b.raw_metrics.aa_intelligence_index;
@@ -461,6 +467,19 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       setSortKey(key);
       setSortAsc(key === 'task_cost');
     }
+  };
+
+  const renderSortIcon = (
+    key: 'overall' | 'terminal' | 'speed' | 'cost' | 'task_cost' | 'intelligence' | 'arena' | 'usage' | 'context' | 'model' | 'radar'
+  ) => {
+    if (sortKey !== key) {
+      return <ArrowUpDown className="w-3 h-3 text-slate-500 opacity-60 group-hover:opacity-100 transition-opacity" />;
+    }
+    return sortAsc ? (
+      <ArrowUp className="w-3 h-3 text-indigo-400" />
+    ) : (
+      <ArrowDown className="w-3 h-3 text-indigo-400" />
+    );
   };
 
   // 詳細テーブルの横スクロールおよびモデル列固定幅の状態管理
@@ -1891,83 +1910,123 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
             </span>
             <button
               onClick={() => handleSort('overall')}
-              className={`px-2.5 py-1 rounded-md font-medium border ${
+              className={`px-2.5 py-1 rounded-md font-medium border flex items-center space-x-1 ${
                 sortKey === 'overall'
                   ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
                   : 'bg-slate-800/60 border-slate-700 text-slate-400'
               }`}
             >
-              総合スコア
+              <span>総合スコア</span>
+              {sortKey === 'overall' && (
+                <span className="text-[10px] font-mono ml-0.5 px-1 py-0.2 rounded bg-indigo-900/80 text-indigo-200">
+                  {sortAsc ? '低順 ↑' : '高順 ↓'}
+                </span>
+              )}
             </button>
             <button
               onClick={() => handleSort('terminal')}
-              className={`px-2.5 py-1 rounded-md font-medium border ${
+              className={`px-2.5 py-1 rounded-md font-medium border flex items-center space-x-1 ${
                 sortKey === 'terminal'
                   ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
                   : 'bg-slate-800/60 border-slate-700 text-slate-400'
               }`}
             >
-              Terminal-Bench 4.0
+              <span>Terminal-Bench 4.0</span>
+              {sortKey === 'terminal' && (
+                <span className="text-[10px] font-mono ml-0.5 px-1 py-0.2 rounded bg-indigo-900/80 text-indigo-200">
+                  {sortAsc ? '低順 ↑' : '高順 ↓'}
+                </span>
+              )}
             </button>
             <button
               onClick={() => handleSort('intelligence')}
-              className={`px-2.5 py-1 rounded-md font-medium border ${
+              className={`px-2.5 py-1 rounded-md font-medium border flex items-center space-x-1 ${
                 sortKey === 'intelligence'
                   ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
                   : 'bg-slate-800/60 border-slate-700 text-slate-400'
               }`}
             >
-              AA Intelligence
+              <span>AA Intelligence</span>
+              {sortKey === 'intelligence' && (
+                <span className="text-[10px] font-mono ml-0.5 px-1 py-0.2 rounded bg-indigo-900/80 text-indigo-200">
+                  {sortAsc ? '低順 ↑' : '高順 ↓'}
+                </span>
+              )}
             </button>
             <button
               onClick={() => handleSort('arena')}
-              className={`px-2.5 py-1 rounded-md font-medium border ${
+              className={`px-2.5 py-1 rounded-md font-medium border flex items-center space-x-1 ${
                 sortKey === 'arena'
                   ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
                   : 'bg-slate-800/60 border-slate-700 text-slate-400'
               }`}
             >
-              Arena WebDev Elo
+              <span>Arena WebDev Elo</span>
+              {sortKey === 'arena' && (
+                <span className="text-[10px] font-mono ml-0.5 px-1 py-0.2 rounded bg-indigo-900/80 text-indigo-200">
+                  {sortAsc ? '低順 ↑' : '高順 ↓'}
+                </span>
+              )}
             </button>
             <button
               onClick={() => handleSort('speed')}
-              className={`px-2.5 py-1 rounded-md font-medium border ${
+              className={`px-2.5 py-1 rounded-md font-medium border flex items-center space-x-1 ${
                 sortKey === 'speed'
                   ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
                   : 'bg-slate-800/60 border-slate-700 text-slate-400'
               }`}
             >
-              出力速度
+              <span>出力速度</span>
+              {sortKey === 'speed' && (
+                <span className="text-[10px] font-mono ml-0.5 px-1 py-0.2 rounded bg-indigo-900/80 text-indigo-200">
+                  {sortAsc ? '遅順 ↑' : '速順 ↓'}
+                </span>
+              )}
             </button>
             <button
               onClick={() => handleSort('cost')}
-              className={`px-2.5 py-1 rounded-md font-medium border ${
+              className={`px-2.5 py-1 rounded-md font-medium border flex items-center space-x-1 ${
                 sortKey === 'cost'
                   ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
                   : 'bg-slate-800/60 border-slate-700 text-slate-400'
               }`}
             >
-              Token単価
+              <span>Token単価</span>
+              {sortKey === 'cost' && (
+                <span className="text-[10px] font-mono ml-0.5 px-1 py-0.2 rounded bg-indigo-900/80 text-indigo-200">
+                  {sortAsc ? '高い順' : '安い順'}
+                </span>
+              )}
             </button>
             <button
               onClick={() => handleSort('task_cost')}
-              className={`px-2.5 py-1 rounded-md font-medium border ${
+              className={`px-2.5 py-1 rounded-md font-medium border flex items-center space-x-1 ${
                 sortKey === 'task_cost'
                   ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
                   : 'bg-slate-800/60 border-slate-700 text-slate-400'
               }`}
             >
-              Task単価
+              <span>Task単価</span>
+              {sortKey === 'task_cost' && (
+                <span className="text-[10px] font-mono ml-0.5 px-1 py-0.2 rounded bg-indigo-900/80 text-indigo-200">
+                  {sortAsc ? '安い順' : '高い順'}
+                </span>
+              )}
             </button>
             <button
               onClick={() => handleSort('context')}
-              className={`px-2.5 py-1 rounded-md font-medium border ${
+              className={`px-2.5 py-1 rounded-md font-medium border flex items-center space-x-1 ${
                 sortKey === 'context'
                   ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
                   : 'bg-slate-800/60 border-slate-700 text-slate-400'
               }`}
             >
-              Context 窓
+              <span>Context 窓</span>
+              {sortKey === 'context' && (
+                <span className="text-[10px] font-mono ml-0.5 px-1 py-0.2 rounded bg-indigo-900/80 text-indigo-200">
+                  {sortAsc ? '小順 ↑' : '大順 ↓'}
+                </span>
+              )}
             </button>
             <button
               onClick={() => handleSort('usage')}
@@ -1979,6 +2038,11 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
             >
               <Building2 className="w-3 h-3 text-indigo-400" />
               <span>社内利用シェア</span>
+              {sortKey === 'usage' && (
+                <span className="text-[10px] font-mono ml-0.5 px-1 py-0.2 rounded bg-indigo-900/80 text-indigo-200">
+                  {sortAsc ? '低順 ↑' : '高順 ↓'}
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -2041,74 +2105,114 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                     )}
                   </div>
                 </th>
-                <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[100px]" onClick={() => handleSort('overall')}>
+                <th
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[100px] group"
+                  onClick={() => handleSort('overall')}
+                  title={`総合Grade順ソート (${sortKey === 'overall' ? (sortAsc ? '昇順: 低スコア順' : '降順: 高スコア順') : 'クリックで高スコア順'})`}
+                >
                   <div className="flex items-center space-x-1">
                     <span>総合 Grade</span>
-                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'overall' ? 'text-indigo-400' : 'text-slate-500'}`} />
-                  </div>
-                </th>
-                <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[130px]" onClick={() => handleSort('usage')}>
-                  <div className="flex items-center space-x-1">
-                    <span>社内利用シェア</span>
-                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'usage' ? 'text-indigo-400' : 'text-slate-500'}`} />
-                  </div>
-                </th>
-                <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[140px]" onClick={() => handleSort('terminal')}>
-                  <div className="flex items-center space-x-1">
-                    <span>Terminal-Bench 4.0</span>
-                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'terminal' ? 'text-indigo-400' : 'text-slate-500'}`} />
-                  </div>
-                </th>
-                <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[140px]" onClick={() => handleSort('intelligence')}>
-                  <div className="flex items-center space-x-1">
-                    <span>AA Intelligence Index</span>
-                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'intelligence' ? 'text-indigo-400' : 'text-slate-500'}`} />
+                    {renderSortIcon('overall')}
                   </div>
                 </th>
                 <th
-                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[130px]"
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[130px] group"
+                  onClick={() => handleSort('usage')}
+                  title={`社内利用シェア順ソート (${sortKey === 'usage' ? (sortAsc ? '昇順: 低シェア順' : '降順: 高シェア順') : 'クリックで高シェア順'})`}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>社内利用シェア</span>
+                    {renderSortIcon('usage')}
+                  </div>
+                </th>
+                <th
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[140px] group"
+                  onClick={() => handleSort('terminal')}
+                  title={`Terminal-Bench 4.0 順ソート (${sortKey === 'terminal' ? (sortAsc ? '昇順: 低スコア順' : '降順: 高スコア順') : 'クリックで高スコア順'})`}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>Terminal-Bench 4.0</span>
+                    {renderSortIcon('terminal')}
+                  </div>
+                </th>
+                <th
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[140px] group"
+                  onClick={() => handleSort('intelligence')}
+                  title={`AA Intelligence Index 順ソート (${sortKey === 'intelligence' ? (sortAsc ? '昇順: 低スコア順' : '降順: 高スコア順') : 'クリックで高スコア順'})`}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>AA Intelligence Index</span>
+                    {renderSortIcon('intelligence')}
+                  </div>
+                </th>
+                <th
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[130px] group"
                   onClick={() => handleSort('arena')}
-                  title="Arena WebDev Elo 順ソート"
+                  title={`Arena WebDev Elo 順ソート (${sortKey === 'arena' ? (sortAsc ? '昇順: 低Elo順' : '降順: 高Elo順') : 'クリックで高Elo順'})`}
                 >
                   <div className="flex items-center space-x-1">
                     <span>Arena WebDev Elo</span>
-                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'arena' ? 'text-indigo-400' : 'text-slate-500'}`} />
-                  </div>
-                </th>
-                <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[110px]" onClick={() => handleSort('speed')}>
-                  <div className="flex items-center space-x-1">
-                    <span>速度 (TPS)</span>
-                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'speed' ? 'text-indigo-400' : 'text-slate-500'}`} />
-                  </div>
-                </th>
-                <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[160px]" onClick={() => handleSort('cost')} title="Token単価順ソート (入出力トークン価格)">
-                  <div className="flex items-center space-x-1">
-                    <span>Token単価 ($/1M)</span>
-                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'cost' ? 'text-indigo-400' : 'text-slate-500'}`} />
-                  </div>
-                </th>
-                <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[130px]" onClick={() => handleSort('task_cost')} title="Task単価順ソート (1タスク解決・試行あたりの実測コスト)">
-                  <div className="flex items-center space-x-1">
-                    <span>Task単価 ($/Task)</span>
-                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'task_cost' ? 'text-indigo-400' : 'text-slate-500'}`} />
-                  </div>
-                </th>
-                <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[110px]" onClick={() => handleSort('context')}>
-                  <div className="flex items-center space-x-1">
-                    <span>Context 窓</span>
-                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'context' ? 'text-indigo-400' : 'text-slate-500'}`} />
+                    {renderSortIcon('arena')}
                   </div>
                 </th>
                 <th
-                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[100px]"
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[110px] group"
+                  onClick={() => handleSort('speed')}
+                  title={`出力速度 (TPS) 順ソート (${sortKey === 'speed' ? (sortAsc ? '昇順: 低速順' : '降順: 高速順') : 'クリックで高速順'})`}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>速度 (TPS)</span>
+                    {renderSortIcon('speed')}
+                  </div>
+                </th>
+                <th
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[160px] group"
+                  onClick={() => handleSort('cost')}
+                  title={`Token単価順ソート (入出力トークン価格) (${sortKey === 'cost' ? (sortAsc ? '昇順: 高単価順' : '降順: 低単価/高効率順') : 'クリックで低単価順'})`}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>Token単価 ($/1M)</span>
+                    {renderSortIcon('cost')}
+                    {sortKey === 'cost' && (
+                      <span className="text-[10px] font-mono font-normal px-1 py-0.2 rounded bg-indigo-950/80 text-indigo-300 border border-indigo-700/60">
+                        {sortAsc ? '高い順' : '安い順'}
+                      </span>
+                    )}
+                  </div>
+                </th>
+                <th
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[130px] group"
+                  onClick={() => handleSort('task_cost')}
+                  title={`Task単価順ソート (1タスク解決・試行あたりの実測コスト) (${sortKey === 'task_cost' ? (sortAsc ? '昇順: 安い順' : '降順: 高い順') : 'クリックで安い順'})`}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>Task単価 ($/Task)</span>
+                    {renderSortIcon('task_cost')}
+                    {sortKey === 'task_cost' && (
+                      <span className="text-[10px] font-mono font-normal px-1 py-0.2 rounded bg-indigo-950/80 text-indigo-300 border border-indigo-700/60">
+                        {sortAsc ? '安い順' : '高い順'}
+                      </span>
+                    )}
+                  </div>
+                </th>
+                <th
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[110px] group"
+                  onClick={() => handleSort('context')}
+                  title={`Context窓 順ソート (${sortKey === 'context' ? (sortAsc ? '昇順: 小コンテキスト順' : '降順: 大コンテキスト順') : 'クリックで大コンテキスト順'})`}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>Context 窓</span>
+                    {renderSortIcon('context')}
+                  </div>
+                </th>
+                <th
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[100px] group"
                   onClick={() => handleSort('radar')}
-                  title="レーダー表示中モデルでソート (選択中優先 ⇔ 非選択優先)"
+                  title={`レーダー表示中モデルでソート (${sortKey === 'radar' ? (sortAsc ? '非選択優先' : '選択中優先') : 'クリックで選択中優先'})`}
                 >
                   <div className="flex items-center justify-end space-x-1">
                     <span>レーダー表示</span>
-                    <ArrowUpDown
-                      className={`w-3 h-3 ${sortKey === 'radar' ? 'text-indigo-400' : 'text-slate-500'}`}
-                    />
+                    {renderSortIcon('radar')}
                   </div>
                 </th>
               </tr>
