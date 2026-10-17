@@ -320,12 +320,20 @@ describe('retention service on a temporary data directory (P4-6)', () => {
     assert.equal(service.loadLog().runs[0].status, 'completed');
   });
 
-  it('does not list or follow symbolic links', () => {
+  it('does not list or follow symbolic links', (t) => {
     const outside = path.join(tmp, 'outside');
     fs.mkdirSync(outside);
     fs.writeFileSync(path.join(outside, 'keep.txt'), 'keep');
     fs.rmSync(path.join(data, 'raw/2020/03'), { recursive: true });
-    fs.symlinkSync(outside, path.join(data, 'raw/2020/03'));
+    try {
+      fs.symlinkSync(outside, path.join(data, 'raw/2020/03'));
+    } catch (err: any) {
+      if (err?.code === 'EPERM' || err?.code === 'EACCES') {
+        t.skip('Skipping symlink test: symlink privileges not granted on this OS/user');
+        return;
+      }
+      throw err;
+    }
     const service = new RetentionService(storage, new RawLandingStore(storage.getBaseDir()));
     const plan = service.plan(NOW, 60);
     assert.ok(!plan.items.some((i) => i.category === 'raw_daily'), 'a linked month directory is not listed');
