@@ -6,19 +6,19 @@
 - [x] Phase 2: Implementation Plan formulated & committed <!-- id: 1 -->
   - [x] Formulate `implementation_plan.md` and `task.md`
   - [x] Commit plan alone and run `npm run change-dev:plan-check`
-- [/] Phase 3: Sibling Worktree Provisioning & Implementation <!-- id: 2 -->
+- [x] Phase 3: Sibling Worktree Provisioning & Implementation <!-- id: 2 -->
   - [x] Sibling worktree provisioned (`../proud-noether-worktrees/feat-346-plan-breakdown-active-users`)
-  - [ ] Implement `MonthlyReportKpis.tsx` (abolish `report_kpi_top_sku`, display plan breakdown in `report_kpi_active_users`)
-  - [ ] Update `useOverviewWidgets.ts` (remove `report_kpi_top_sku` from catalog)
-  - [ ] Update `metric-registry.ts` and `report-engine.ts` (remove `report_top_sku`)
-  - [ ] Update specifications (SDD-07, SDD-16, SDD-17)
-  - [ ] Add and update Vitest unit tests in `monthly-report-kpis.test.tsx` and `metric-catalog.test.ts`
-- [ ] Phase 4: Local Quality Gate & Verification <!-- id: 3 -->
-  - [ ] Run 5-stage quality gate (`npm run fork:verify && npm run typecheck && npm test && npm run secret-scan && npm run build`)
-- [ ] Phase 5: Walkthrough Artifact Generation & Evidence Sealing <!-- id: 4 -->
-  - [ ] Create `walkthrough.md`
-- [ ] Phase 6: Rebase onto Base & Create PR <!-- id: 5 -->
-  - [ ] Rebase onto `origin/main`
+  - [x] Implement `MonthlyReportKpis.tsx` (abolish `report_kpi_top_sku`, display plan breakdown in `report_kpi_active_users`)
+  - [x] Update `useOverviewWidgets.ts` (remove `report_kpi_top_sku` from catalog)
+  - [x] Update `metric-registry.ts` and `report-engine.ts` (remove `report_top_sku`)
+  - [x] Update specifications (SDD-07, SDD-16, SDD-17)
+  - [x] Add and update Vitest unit tests in `monthly-report-kpis.test.tsx` and `metric-catalog.test.ts`
+- [x] Phase 4: Local Quality Gate & Verification <!-- id: 3 -->
+  - [x] Run 5-stage quality gate (`npm run fork:verify && npm run typecheck && npm test && npm run secret-scan && npm run build`)
+- [x] Phase 5: Walkthrough Artifact Generation & Evidence Sealing <!-- id: 4 -->
+  - [x] Create `walkthrough.md`
+- [/] Phase 6: Rebase onto Base & Create PR <!-- id: 5 -->
+  - [x] Rebase onto `origin/main`
   - [ ] Push to `origin feat/346-plan-breakdown-active-users`
   - [ ] Create Pull Request
 - [ ] Phase 7: Rebase & Merge and Worktree Cleanup (`change-dev:finish`) <!-- id: 6 -->
