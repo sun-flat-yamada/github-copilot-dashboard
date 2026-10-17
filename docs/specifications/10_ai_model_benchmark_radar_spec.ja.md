@@ -224,7 +224,7 @@ flowchart TD
 | `terminal_bench_4` (%) | Terminal-Bench 4.0、https://www.tbench.ai/leaderboard/terminal-bench/4.0 | 2026-10-12 | tbench.ai はクライアント描画のため、公式リーダーボードの BenchLM スナップショット (https://benchlm.ai/benchmarks/terminal-bench-4) から読み取る |
 | `aa_intelligence_index` (ポイント) | Artificial Analysis Intelligence Index v4.3、https://artificialanalysis.ai/leaderboards/models (モデル別 `https://artificialanalysis.ai/models/<slug>`) | 2026-10-13 | AA が "Estimated" と表示する値、および非 reasoning 変種しかないモデルは確認済みとして扱わない |
 | `arena_webdev_elo` (Elo) | Arena (旧 LMArena / LMSYS) Code Arena \| WebDev、https://arena.ai/leaderboard/webdev | 2026-10-08 | - |
-| `task_cost_usd` ($/task) | Terminal-Bench 4.0 Mean Rollout Cost & Artificial Analysis Task Cost | 2026-10-12 | 実務タスク1試行あたりの実測平均コスト（USD）。エージェントハーネスや思考トークン消費を含む |
+| `task_cost_usd` ($/task) | Terminal-Bench 4.0 Mean Rollout Cost & Artificial Analysis Task Cost | 2026-10-12 | 実務タスク1試行あたりの実測平均コスト（USD）。エージェントハーネスや思考トークン消費を含む。確認済み実測値（20モデル）および同等Tier推測値（26モデル）で構成され、推測値には `<EstimatedMarker />` を付与 |
 | `output_speed_tps`、Token単価、コンテキスト | Artificial Analysis (速度)、GitHub Copilot 公式価格 | 変更なし | - |
 
 - **変種**: 各モデルで掲載されている最上位の reasoning / harness 変種の値を採用する。
@@ -232,15 +232,15 @@ flowchart TD
 - **検証記録**: `.devs/changes/2026-10-13_RadarBenchmarkSourcesRefresh/verified-benchmarks-2026-10.json`（`null` = 確認できず）。`src/tests/benchmark-sources-2026-10.test.ts` がレコードの値がこれと一致することを検証する。
 
 ### 3.1.2 推測値とその算出方法
-確認済みの値がない raw metric は**推測値**とする。レコードの `estimated_metrics`（例: `["terminal_bench_4", "arena_webdev_elo"]`）に列挙し、UI ではその値の横に「推測値」マーカーを表示する（ベンチマーク表とモデル詳細カード）。推測値は一度だけ**分位写像 (quantile mapping)** で算出する:
+確認済みの値がない raw metric は**推測値**とする。レコードの `estimated_metrics`（例: `["terminal_bench_4", "task_cost_usd", "arena_webdev_elo"]`）に列挙し、UI ではその値の横に「推測値」マーカーを表示する（ベンチマーク表とモデル詳細カード）。推測値は一度だけ**分位写像 (quantile mapping)** で算出する:
 1. 同じ軸に以前使っていた旧指標（2026-09 のレコードの値）で、全 45 モデル中のパーセンタイル順位 `(below + 0.5 * equal) / n` を求める。`terminal_bench_4` ← `swe_bench_verified`、`aa_intelligence_index` ← `aime_2024` と `gpqa_diamond` の順位の 0.65 / 0.35 ブレンド、`arena_webdev_elo` ← `arena_coding_elo`。
 2. その順位を、新指標の確認済み値を昇順に並べた分布へ、分位点の線形補間（`p × (k − 1)`）で写す。
 3. 丸め: Terminal-Bench は小数 1 桁、AA Intelligence Index と Arena Elo は整数。
 
-一回限りのスクリプトはリポジトリ外で実行し、数値だけを `benchmark-records.json` に書き込む（モデルごとの順位と結果は `.devs/changes/2026-10-13_RadarBenchmarkSourcesRefresh/estimated-values-2026-10.json` に保存）。2026-10-13 時点で Terminal-Bench 26 / 45、AA Intelligence Index 17 / 45、Arena WebDev Elo 13 / 45 件が推測値。
+一回限りのスクリプトはリポジトリ外で実行し、数値だけを `benchmark-records.json` に書き込む（モデルごとの順位と結果は `.devs/changes/2026-10-13_RadarBenchmarkSourcesRefresh/estimated-values-2026-10.json` に保存）。全 46 モデル中、Terminal-Bench 26 / 46、AA Intelligence Index 17 / 46、Arena WebDev Elo 13 / 46、Task単価 26 / 46 件が推測値として `estimated_metrics` に記録されている。
 
 - **モデル単位のフラグ**: `is_estimated` は「ベンチマーク指標（`BENCHMARK_SCORE_METRICS`: `terminal_bench_4`, `aa_intelligence_index`, `arena_webdev_elo`）がすべて推測値」として導出する。該当モデルはモデル名横の「推測値」バッジも表示する。旧形式の `is_estimated: true` だけを持つレコードは、ベンチマーク 3 指標すべてが推測値として扱う。
-- `output_speed_tps` も列挙できる（GPT-6.1 Sol と Claude Sonnet 5.5: 速度は未計測）。
+- `output_speed_tps`（GPT-6.1 Sol, Claude Sonnet 5.5）や `task_cost_usd`（未掲載26モデル）も `estimated_metrics` に記録され、UI上で個別の推測値マーカーが付与される。
 - 出典にモデルが掲載されたら、推測値を確認済みの値に置き換えて `estimated_metrics` から外す。
 
 ### 3.2 モデルカタログ: 別名の完全一致 (P3-7 / A-13)
