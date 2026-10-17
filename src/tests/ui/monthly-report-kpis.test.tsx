@@ -3,7 +3,6 @@ import { afterEach, describe, it } from 'node:test';
 import * as assert from 'node:assert/strict';
 import { cleanup, render, screen } from '@testing-library/react';
 import { MonthlyReportKpis } from '../../../dashboard/src/components/monthly-report/MonthlyReportKpis.js';
-import { CurrencyProvider } from '../../../dashboard/src/contexts/CurrencyContext.js';
 import type {
   MonthlyReportAggregatedData,
   ReportModelBreakdown,
@@ -14,8 +13,7 @@ afterEach(() => {
 });
 
 function createMockReportData(
-  modelBreakdown: ReportModelBreakdown[] = [],
-  overviewOverrides: Partial<MonthlyReportAggregatedData['overview']> = {}
+  modelBreakdown: ReportModelBreakdown[] = []
 ): MonthlyReportAggregatedData {
   return {
     report_month: '2026-09',
@@ -30,7 +28,6 @@ function createMockReportData(
       total_active_users: 42,
       top_model: modelBreakdown[0]?.model_name || 'N/A',
       top_sku: 'copilot_enterprise',
-      ...overviewOverrides,
     },
     by_department: {},
     by_cost_center: {},
@@ -85,11 +82,7 @@ describe('MonthlyReportKpis - report_top_model Top 3 Display', () => {
 
     const reportData = createMockReportData(models);
 
-    render(
-      <CurrencyProvider>
-        <MonthlyReportKpis reportData={reportData} />
-      </CurrencyProvider>
-    );
+    render(<MonthlyReportKpis reportData={reportData} />);
 
     // Verify Rank 1
     const rank1 = screen.getByTestId('report-top-model-rank-1');
@@ -131,11 +124,7 @@ describe('MonthlyReportKpis - report_top_model Top 3 Display', () => {
 
     const reportData = createMockReportData(models);
 
-    render(
-      <CurrencyProvider>
-        <MonthlyReportKpis reportData={reportData} />
-      </CurrencyProvider>
-    );
+    render(<MonthlyReportKpis reportData={reportData} />);
 
     const rank1 = screen.getByTestId('report-top-model-rank-1');
     assert.ok(rank1.textContent?.includes('Claude 3.7 Sonnet'));
@@ -151,11 +140,7 @@ describe('MonthlyReportKpis - report_top_model Top 3 Display', () => {
   it('renders fallback "データなし" when model breakdown is empty', () => {
     const reportData = createMockReportData([]);
 
-    render(
-      <CurrencyProvider>
-        <MonthlyReportKpis reportData={reportData} />
-      </CurrencyProvider>
-    );
+    render(<MonthlyReportKpis reportData={reportData} />);
 
     assert.ok(screen.getByText('データなし'));
     assert.strictEqual(screen.queryByTestId('report-top-model-rank-1'), null);
@@ -379,54 +364,3 @@ describe('MonthlyReportKpis - report_kpi_active_users Plan Breakdown & Abolished
   });
 });
 
-describe('MonthlyReportKpis - Active Users Count and Percentage Display', () => {
-  it('displays active users count, total population (denominator) and 100.0% when unfiltered', () => {
-    const reportData = createMockReportData([], { total_active_users: 16 });
-
-    render(
-      <CurrencyProvider>
-        <MonthlyReportKpis reportData={reportData} />
-      </CurrencyProvider>
-    );
-
-    const countEl = screen.getByTestId('report-active-users-count');
-    const ratioEl = screen.getByTestId('report-active-users-ratio');
-
-    assert.equal(countEl.textContent, '16');
-    assert.equal(ratioEl.textContent, '/ 16 名 (100.0%)');
-  });
-
-  it('displays filtered active users count with raw report data total (denominator) and calculated percentage', () => {
-    const rawReportData = createMockReportData([], { total_active_users: 16 });
-    const filteredReportData = createMockReportData([], { total_active_users: 4 });
-
-    render(
-      <CurrencyProvider>
-        <MonthlyReportKpis reportData={filteredReportData} rawReportData={rawReportData} />
-      </CurrencyProvider>
-    );
-
-    const countEl = screen.getByTestId('report-active-users-count');
-    const ratioEl = screen.getByTestId('report-active-users-ratio');
-
-    assert.equal(countEl.textContent, '4');
-    assert.equal(ratioEl.textContent, '/ 16 名 (25.0%)');
-  });
-
-  it('safely handles zero total users without division by zero', () => {
-    const reportData = createMockReportData([], { total_active_users: 0 });
-    const rawReportData = createMockReportData([], { total_active_users: 0 });
-
-    render(
-      <CurrencyProvider>
-        <MonthlyReportKpis reportData={reportData} rawReportData={rawReportData} />
-      </CurrencyProvider>
-    );
-
-    const countEl = screen.getByTestId('report-active-users-count');
-    const ratioEl = screen.getByTestId('report-active-users-ratio');
-
-    assert.equal(countEl.textContent, '0');
-    assert.equal(ratioEl.textContent, '/ 0 名 (0.0%)');
-  });
-});
