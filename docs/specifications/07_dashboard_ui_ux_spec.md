@@ -368,4 +368,10 @@ The **「監査」** tab (`views/audit/manifest.ts` + `View.tsx`, registered thr
 2. **Active Account Statistics (Min, Median, Max)**:
    - For accounts in the selected data (or filtered dataset) with positive usage (value > 0), computes and displays active account count alongside **Min**, **Median**, and **Max**.
    - Accounts with zero or missing usage are excluded from the min/median calculation population. If active accounts count is 0, displays `—`.
+3. **Mini Distribution Histogram & Compact Layout**:
+   - Accounts with positive usage (value > 0) are binned into 5 equal classes between Min and Max, rendered as a compact mini histogram (`report-requests-distribution`) positioned side-by-side with the total value (`flex justify-between items-end`).
+   - Each bar displays an accessible hover tooltip with range, count, and percentage share.
+   - Summarizing active accounts count, Min, Median, and Max into a single unified micro-grid optimizes card vertical height to harmonize seamlessly with the other 3 KPI cards.
+4. **Distinct Dimensions (Requests vs AIC) in Tooltip**:
+   - The metric definition tooltip (`report_requests`) clearly articulates that physical API invocations / prompts (Requests / req) and model-tier token compute consumption units (AI Credits / AIC) are fundamentally distinct dimensions via metric caveats.
 
