@@ -1,0 +1,22 @@
+# Task: 月次レポート「総リクエスト数」カードの分布ミニグラフ追加とレイアウト最適化、AIC尺度明記 (#352)
+
+- [ ] 計画策定とブランチ・ワークツリー準備 <!-- id: 0 -->
+    - [x] Issue #352 の作成 <!-- id: 1 -->
+    - [ ] `implementation_plan.md` の作成とレビュー <!-- id: 2 -->
+    - [ ] 計画ファーストコミット (`npm run change-dev:plan-check`) <!-- id: 3 -->
+    - [ ] 独立作業用 sibling worktree の作成 (`feat/352-report-requests-distribution-chart`) <!-- id: 4 -->
+- [ ] ドメイン・ユーティリティ層の実装 <!-- id: 5 -->
+    - [ ] `dashboard/src/utils/accountStats.ts` に度数分布算出 `computeDistributionBuckets` を実装 <!-- id: 6 -->
+    - [ ] `src/tests/account-stats.test.ts` に度数分布集計の単体テストを追加 <!-- id: 7 -->
+    - [ ] `src/domain/metrics/metric-registry.ts` の `report_requests` 定義・caveats を更新（リクエスト数 vs AIC の尺度差異を明記） <!-- id: 8 -->
+- [ ] UI コンポーネント実装 & レイアウト最適化 <!-- id: 9 -->
+    - [ ] 分布ミニヒストグラムコンポーネントを `MonthlyReportKpis.tsx` に追加 <!-- id: 10 -->
+    - [ ] 「総リクエスト数」カードのレイアウトを横並び・余白調整でコンパクトに最適化 <!-- id: 11 -->
+    - [ ] `src/tests/ui/monthly-report-requests-kpi.test.tsx` にミニグラフ表示・ツールチップ・コンパクト配置のUIテストを追加 <!-- id: 12 -->
+- [ ] 仕様書・ドキュメント更新 <!-- id: 13 -->
+    - [ ] `docs/specifications/07_dashboard_ui_ux_spec.ja.md` & `07_dashboard_ui_ux_spec.md` を更新 <!-- id: 14 -->
+    - [ ] `docs/specifications/16_data_contract_and_metric_catalog_spec.ja.md` を更新 <!-- id: 15 -->
+- [ ] 品質ゲート検証 & PR作成・マージ <!-- id: 16 -->
+    - [ ] フル品質ゲート検証 (`fork:verify`, `typecheck`, `test`, `secret-scan`, `build`) <!-- id: 17 -->
+    - [ ] `walkthrough.md` の作成 <!-- id: 18 -->
+    - [ ] PR作成とオートパイロット (`change-dev:finish`) <!-- id: 19 -->
