@@ -72,7 +72,7 @@ export type UserSortMetric =
 /** 表のデータ列の数。ドリルダウン行や空行の colSpan に使う (列を足したら更新する) */
 export const USER_DETAIL_COLUMN_COUNT = 24;
 
-/** 固定表示列 (ユーザー列) の幅に関する定数 (ピクセル単位) */
+/** 固定表示列 (表示名列) の幅に関する定数 (ピクセル単位) */
 export const DEFAULT_USER_COL_WIDTH = 180;
 export const MIN_USER_COL_WIDTH = 100;
 export const MAX_USER_COL_WIDTH = 500;
@@ -523,8 +523,8 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
   const handleExportCsv = () => {
     const headers = [
       '#',
-      'GitHub User',
       '表示名',
+      'GitHub User',
       'ユーザー定義Gr (部署)',
       'タグ',
       'Cost Center',
@@ -573,8 +573,8 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
       };
       return [
         idx + 1,
-        u.login,
         q(u.display_name),
+        u.login,
         q(u.department),
         q(u.tags.join(';')),
         q(u.cost_center),
@@ -858,11 +858,11 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
               <th
                 style={{ width: `${userColWidth}px`, minWidth: `${userColWidth}px`, maxWidth: `${userColWidth}px` }}
                 className="sticky top-0 left-12 z-30 bg-slate-950 border-b border-slate-800 px-2.5 py-2 border-r border-slate-700/80 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.5)] cursor-pointer select-none hover:text-slate-200 transition-colors group relative"
-                onClick={() => handleSort('user')}
+                onClick={() => handleSort('display_name')}
               >
                 <div className="flex items-center space-x-1">
-                  <span>ユーザー</span>
-                  {renderSortIcon('user')}
+                  <span>表示名</span>
+                  {renderSortIcon('display_name')}
                 </div>
                 {/* 固定表示幅ドラッグ変更ハンドル */}
                 <div
@@ -896,11 +896,11 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
               </th>
               <th
                 className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 px-2.5 py-2 min-w-[140px] cursor-pointer select-none hover:text-slate-200 transition-colors group"
-                onClick={() => handleSort('display_name')}
+                onClick={() => handleSort('user')}
               >
                 <div className="flex items-center space-x-1">
-                  <span>表示名</span>
-                  {renderSortIcon('display_name')}
+                  <span>ユーザー</span>
+                  {renderSortIcon('user')}
                 </div>
               </th>
               <th
@@ -1134,6 +1134,17 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                           isSelected ? 'bg-indigo-950' : 'bg-slate-900 group-hover:bg-slate-800/90'
                         }`}
                       >
+                        <div className="flex items-center space-x-1.5">
+                          <span className="font-semibold text-slate-200 truncate">{u.display_name}</span>
+                          {isSelected && (
+                            <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-500 text-white shrink-0">
+                              分析中
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      <td className="px-2.5 py-2 min-w-[140px]">
                         <div className="flex items-center space-x-2">
                           {u.avatar_url ? (
                             <img
@@ -1151,17 +1162,6 @@ export const UserDetailTable: React.FC<UserDetailTableProps> = ({
                             </span>
                           )}
                           <span className="text-slate-200 font-mono text-xs font-medium truncate">@{u.login}</span>
-                        </div>
-                      </td>
-
-                      <td className="px-2.5 py-2 min-w-[140px]">
-                        <div className="flex items-center space-x-1.5">
-                          <span className="font-semibold text-slate-200 truncate">{u.display_name}</span>
-                          {isSelected && (
-                            <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-500 text-white shrink-0">
-                              分析中
-                            </span>
-                          )}
                         </div>
                       </td>
 
