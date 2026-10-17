@@ -444,26 +444,30 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
               </span>
               <span className="text-xs font-semibold text-slate-400">名</span>
             </div>
-            {/* Copilot プラン内訳 (Enterprise / Business: アクティブ / ノンアクティブ) */}
+            {/* Copilot プラン内訳 (Enterprise / Business: アクティブ / ノンアクティブ / 全数) */}
             <div className="mt-2 pt-2 border-t border-slate-800/80 space-y-1.5" data-testid="report-plan-breakdown">
               <span className="text-[10px] text-slate-400 font-medium block">
-                プラン内訳 (アクティブ / ノンアクティブ):
+                プラン内訳 (<span className="text-emerald-400 font-bold">アクティブ</span> / ノンアクティブ / 全数):
               </span>
               <div className="space-y-1 text-[11px]">
                 <div className="flex items-center justify-between" data-testid="report-plan-enterprise">
-                  <span className="text-indigo-300 font-medium">Enterprise ({enterprise.total}名):</span>
-                  <span className="font-mono text-slate-300 text-[10px]">
-                    アクティブ <b className="text-white font-bold" data-testid="report-plan-enterprise-active">{enterprise.active}</b>名
+                  <span className="text-indigo-300 font-medium">Enterprise:</span>
+                  <span className="font-mono text-[11px]">
+                    <b className="font-bold text-emerald-400" data-testid="report-plan-enterprise-active">{enterprise.active}</b>
                     <span className="text-slate-600 mx-1">/</span>
-                    ノンアクティブ <b className="text-slate-400 font-bold" data-testid="report-plan-enterprise-inactive">{enterprise.nonActive}</b>名
+                    <span className="text-slate-400 font-normal" data-testid="report-plan-enterprise-inactive">{enterprise.nonActive}</span>
+                    <span className="text-slate-600 mx-1">/</span>
+                    <span className="text-slate-400 font-normal" data-testid="report-plan-enterprise-total">{enterprise.total}</span>
                   </span>
                 </div>
                 <div className="flex items-center justify-between" data-testid="report-plan-business">
-                  <span className="text-slate-300 font-medium">Business ({business.total}名):</span>
-                  <span className="font-mono text-slate-300 text-[10px]">
-                    アクティブ <b className="text-white font-bold" data-testid="report-plan-business-active">{business.active}</b>名
+                  <span className="text-slate-300 font-medium">Business:</span>
+                  <span className="font-mono text-[11px]">
+                    <b className="font-bold text-emerald-400" data-testid="report-plan-business-active">{business.active}</b>
                     <span className="text-slate-600 mx-1">/</span>
-                    ノンアクティブ <b className="text-slate-400 font-bold" data-testid="report-plan-business-inactive">{business.nonActive}</b>名
+                    <span className="text-slate-400 font-normal" data-testid="report-plan-business-inactive">{business.nonActive}</span>
+                    <span className="text-slate-600 mx-1">/</span>
+                    <span className="text-slate-400 font-normal" data-testid="report-plan-business-total">{business.total}</span>
                   </span>
                 </div>
               </div>

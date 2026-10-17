@@ -277,7 +277,8 @@ The overview cards (`KpiSummaryCards`, appendix A.5.2 of the improvement plan) a
 The 4 KPI cards in the overview block of monthly usage reports (cost summary, total requests, active users, top AI model; the legacy primary SKU card is abolished) follow these specifications:
 
 - **Active Users in Report (`report_kpi_active_users`) Card**:
-  - Displays total unique active accounts alongside the breakdown of Copilot plans (`Enterprise` / `Business`), divided into active and non-active user counts, at the bottom of the card.
+  - Displays total unique active accounts alongside the breakdown of Copilot plans at the bottom of the card. The header reads `プラン内訳 (アクティブ / ノンアクティブ / 全数)`, and rows for `Enterprise` / `Business` display numbers only formatted as `124 / 26 / 150`.
+  - Only the active count is highlighted in bold (`font-bold`) and matches the header active color (`text-emerald-400`) for immediate visual comprehension.
   - Plan breakdown is derived directly from user attributes (`plan_type` and activity signals/status in `user_details`), with proportional fallback to `sku_breakdown` seat quantities and overall active users when user details lack plan attributes.
 - **Most Used AI Model (`report_top_model`) Card**:
   - Displays the top 3 AI models from the selected data's model breakdown (`model_breakdown`), each with its rank (1–3), model name, and request share percentage (%).
