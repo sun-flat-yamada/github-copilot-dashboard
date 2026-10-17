@@ -72,7 +72,7 @@ test('AI Model Radar Benchmark Table Horizontal Scroll and Pinned Column Tests',
 
   await t.test('verifies bottom sticky scroll progress controller', () => {
     assert.ok(content.includes('scrollState.scrollWidth > scrollState.clientWidth'), 'Must render bottom bar conditionally');
-    assert.ok(content.includes('sticky bottom-0 z-40'), 'Bottom bar must be sticky bottom with z-40');
+    assert.ok(content.includes('sticky bottom-0 z-20'), 'Bottom bar must be sticky bottom with z-20');
     assert.ok(content.includes('type="range"'), 'Must render range slider');
     assert.ok(content.includes('Math.round(scrollState.progress)'), 'Must render progress percentage');
   });
