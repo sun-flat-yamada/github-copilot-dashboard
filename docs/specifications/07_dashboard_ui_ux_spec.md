@@ -94,10 +94,10 @@ The center of the header prominently displays the currently active dataset, allo
   - The initial landing tab is the dedicated **`Dashboard`** tab (`label: 'Dashboard'`), while **`コスト内訳`** (`overview`) remains a dedicated fixed-layout Cost Breakdown view.
 - **Full KPI & Section Widgetization (`useOverviewWidgets` / `WidgetCardFrame` / `CollapsibleSection`)**:
   - In Live Metrics mode, the default preset comprises 5 individual KPI card widgets (`kpi_total_spend`, `kpi_active_rate`, `kpi_idle_waste`, `kpi_budget_utilization`, `kpi_acceptance_rate`) and 6 analysis section widgets (11 widgets total).
-  - In Report / Upload mode, the default preset comprises 5 individual report KPI card widgets (`report_kpi_cost`, `report_kpi_requests`, `report_kpi_active_users`, `report_kpi_top_model`, `report_kpi_top_sku`) and 2 analysis section widgets (7 widgets total).
+  - In Report / Upload mode, the default preset comprises 4 individual report KPI card widgets (`report_kpi_cost`, `report_kpi_requests`, `report_kpi_active_users`, `report_kpi_top_model`; `report_kpi_top_sku` is abolished) and 2 analysis section widgets (6 widgets total).
   - **Add (`addWidget`) & Visual Category Separation in Widget Catalog**:
     - Visitors can add any unplaced KPI card widget or extended section widget (Cost Center Budget Timeline, AI Credits, AI Agent & MCP Activity, Adoption Maturity, Audit & Data Quality) from the Widget Catalog panel (`widget-catalog-panel`).
-    - Within the catalog panel, **KPI Summary Widgets** (`size: 'kpi'`, `widget-catalog-group-kpi`, emerald accent border/icon, `KPI カード (1/5幅)` badge, compact metric cards arranged in a 5-column grid) and **Detailed Analysis Section Widgets** (`size: 'full'`, `widget-catalog-group-section`, indigo accent border/icon, `分析セクション (全幅)` badge, full-width accordion sections) are visually separated into two dedicated category groups.
+    - Within the catalog panel, **KPI Summary Widgets** (`size: 'kpi'`, `widget-catalog-group-kpi`, emerald accent border/icon, `KPI カード (1/5幅)` badge, compact metric cards) and **Detailed Analysis Section Widgets** (`size: 'full'`, `widget-catalog-group-section`, indigo accent border/icon, `分析セクション (全幅)` badge, full-width accordion sections) are visually separated into two dedicated category groups.
     - Each category header displays an active placement counter (`X / Y 配置中`), and category filter tabs (`すべて` / `KPI カード` / `分析セクション`) at the top of the panel allow visitors to filter by widget type immediately.
   - **Remove (`removeWidget`)**: Each KPI card widget and section widget includes a remove (`×`) button. Removing all widgets displays an empty state with actions to add widgets or restore the default preset.
   - **Reorder (`moveWidget` / `reorderWidgets`)**: Visitors can reorder both KPI widgets and section widgets using Move Up (`↑`) / Move Down (`↓`) buttons or Drag & Drop. Widget action buttons are placed as siblings to interactive toggles to comply with WCAG 2.2 AA (`nested-interactive`).
@@ -272,8 +272,11 @@ The overview cards (`KpiSummaryCards`, appendix A.5.2 of the improvement plan) a
 
 ### 2.14d Monthly Usage Report KPI Cards (`MonthlyReportKpis`)
 
-The 5 KPI cards in the overview block of monthly usage reports (cost summary, total requests, active users, top AI model, primary SKU) follow these specifications:
+The 4 KPI cards in the overview block of monthly usage reports (cost summary, total requests, active users, top AI model; the legacy primary SKU card is abolished) follow these specifications:
 
+- **Active Users in Report (`report_kpi_active_users`) Card**:
+  - Displays total unique active accounts alongside the breakdown of Copilot plans (`Enterprise` / `Business` counts) at the bottom of the card.
+  - Plan counts are derived from the seat quantities in `sku_breakdown` (or user attributes in `user_details`).
 - **Most Used AI Model (`report_top_model`) Card**:
   - Displays the top 3 AI models from the selected data's model breakdown (`model_breakdown`), each with its rank (1–3), model name, and request share percentage (%).
   - When fewer than 3 models exist (1–2 models), displays only the existing ones; when empty, shows a graceful "データなし" fallback.

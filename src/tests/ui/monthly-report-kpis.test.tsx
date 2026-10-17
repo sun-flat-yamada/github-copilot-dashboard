@@ -146,3 +146,144 @@ describe('MonthlyReportKpis - report_top_model Top 3 Display', () => {
     assert.strictEqual(screen.queryByTestId('report-top-model-rank-1'), null);
   });
 });
+
+describe('MonthlyReportKpis - report_kpi_active_users Plan Breakdown & Abolished report_kpi_top_sku', () => {
+  it('does NOT render the abolished report_kpi_top_sku card, and renders 4 cards in total', () => {
+    const reportData = createMockReportData([]);
+    const { container } = render(<MonthlyReportKpis reportData={reportData} />);
+
+    // report_kpi_top_sku must NOT exist
+    assert.strictEqual(screen.queryByTestId('report-kpi-top-sku'), null);
+
+    // Verify grid has 4 columns class
+    const grid = container.firstChild as HTMLElement;
+    assert.ok(grid.className.includes('lg:grid-cols-4'), 'Grid should use lg:grid-cols-4 for 4 cards');
+    assert.ok(!grid.className.includes('lg:grid-cols-5'), 'Grid should not use lg:grid-cols-5');
+
+    // Expected cards: cost, requests, active users, top model
+    assert.ok(screen.getByTestId('report-kpi-cost'));
+    assert.ok(screen.getByTestId('report-requests-card'));
+    assert.ok(screen.getByTestId('report-kpi-active-users'));
+    assert.ok(screen.getByTestId('report-kpi-top-model'));
+  });
+
+  it('renders Copilot plan breakdown (Enterprise and Business) from sku_breakdown', () => {
+    const reportData: MonthlyReportAggregatedData = {
+      ...createMockReportData([]),
+      overview: {
+        total_net_spend_usd: 556,
+        total_gross_spend_usd: 560,
+        total_discount_usd: 4,
+        total_requests: 4000,
+        total_active_users: 16,
+        top_model: 'Gemini 3.8 Flash',
+        top_sku: 'copilot_business',
+      },
+      sku_breakdown: [
+        {
+          sku_name: 'copilot_business',
+          total_quantity: 11,
+          unit_type: 'seats',
+          total_spend_usd: 209,
+          percentage: 37.6,
+        },
+        {
+          sku_name: 'copilot_enterprise',
+          total_quantity: 5,
+          unit_type: 'seats',
+          total_spend_usd: 195,
+          percentage: 35.1,
+        },
+      ],
+    };
+
+    render(<MonthlyReportKpis reportData={reportData} />);
+
+    // Total active users
+    const totalUsers = screen.getByTestId('report-active-users-total');
+    assert.strictEqual(totalUsers.textContent?.trim(), '16');
+
+    // Plan breakdown section
+    assert.ok(screen.getByTestId('report-plan-breakdown'));
+
+    const entCount = screen.getByTestId('report-plan-enterprise-count');
+    assert.strictEqual(entCount.textContent?.trim(), '5');
+
+    const bizCount = screen.getByTestId('report-plan-business-count');
+    assert.strictEqual(bizCount.textContent?.trim(), '11');
+  });
+
+  it('renders breakdown accurately when user_details includes plan_type', () => {
+    const reportData: MonthlyReportAggregatedData = {
+      ...createMockReportData([]),
+      overview: {
+        total_net_spend_usd: 100,
+        total_gross_spend_usd: 100,
+        total_discount_usd: 0,
+        total_requests: 500,
+        total_active_users: 3,
+        top_model: 'Claude 3.7 Sonnet',
+        top_sku: 'copilot_enterprise',
+      },
+      user_details: [
+        {
+          login: 'user-a',
+          display_name: 'User A',
+          department: 'Eng',
+          cost_center: 'CC1',
+          organization: 'Org1',
+          total_requests: 200,
+          total_spend_usd: 39,
+          primary_model: 'Claude 3.7 Sonnet',
+          plan_type: 'enterprise',
+        } as any,
+        {
+          login: 'user-b',
+          display_name: 'User B',
+          department: 'Eng',
+          cost_center: 'CC1',
+          organization: 'Org1',
+          total_requests: 200,
+          total_spend_usd: 39,
+          primary_model: 'Claude 3.7 Sonnet',
+          plan_type: 'enterprise',
+        } as any,
+        {
+          login: 'user-c',
+          display_name: 'User C',
+          department: 'Design',
+          cost_center: 'CC2',
+          organization: 'Org1',
+          total_requests: 100,
+          total_spend_usd: 19,
+          primary_model: 'GPT-4o',
+          plan_type: 'business',
+        } as any,
+      ],
+      sku_breakdown: [],
+    };
+
+    render(<MonthlyReportKpis reportData={reportData} />);
+
+    const entCount = screen.getByTestId('report-plan-enterprise-count');
+    assert.strictEqual(entCount.textContent?.trim(), '2');
+
+    const bizCount = screen.getByTestId('report-plan-business-count');
+    assert.strictEqual(bizCount.textContent?.trim(), '1');
+  });
+
+  it('renders 0 for both plans gracefully when no plan breakdown is present', () => {
+    const reportData = createMockReportData([]);
+    reportData.sku_breakdown = [];
+    reportData.user_details = [];
+
+    render(<MonthlyReportKpis reportData={reportData} />);
+
+    const entCount = screen.getByTestId('report-plan-enterprise-count');
+    assert.strictEqual(entCount.textContent?.trim(), '0');
+
+    const bizCount = screen.getByTestId('report-plan-business-count');
+    assert.strictEqual(bizCount.textContent?.trim(), '0');
+  });
+});
+

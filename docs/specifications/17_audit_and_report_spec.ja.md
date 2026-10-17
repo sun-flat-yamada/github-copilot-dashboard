@@ -216,7 +216,7 @@ sections:
 | データセット | 入力 | 指標（指標カタログの ID。SDD-16 §2, §6） | `group_by` |
 |:--|:--|:--|:--|
 | `monthly` | `processed/monthly/{month}.json` | `total_spend`、`active_rate`、`idle_waste`、`acceptance_rate`、`agent_sessions`、`agent_messages`、`agent_active_users`、`agent_adoption_rate` | `cost_center`、`organization`、`department`、`team` |
-| `reports` | `processed/reports/{month}.json`（取り込んだ利用レポート） | `report_gross_spend`、`report_net_spend`、`report_requests`、`report_active_users`、`report_top_model`、`report_top_sku` | `cost_center`、`organization`、`department`、`model`、`sku` |
+| `reports` | `processed/reports/{month}.json`（取り込んだ利用レポート） | `report_gross_spend`、`report_net_spend`、`report_requests`、`report_active_users`、`report_top_model` | `cost_center`、`organization`、`department`、`model`、`sku` |
 
 - 内訳の列: シート系のグループは `total_seats`、`active_seats`、`idle_seats`、`total_cost_usd`、`net_cost_usd`、`potential_savings_usd`、`active_ratio`、`acceptance_rate`、`total_chats`、`total_requests`。`model` は `total_requests`、`total_spend_usd`、`active_users`、`percentage`。`sku` は `total_quantity`、`total_spend_usd`、`percentage`。対応表はコード（`src/processor/report-engine.ts` の `METRIC_BINDINGS` / `GROUP_SOURCES`）にあり、指標や列の追加はそこへ 1 項目足すだけ。
 - 定義に組織・部署・Cost Center・個人の名前は書かない（フィルターは列と数値だけ）。利用者単位の行（`users`、`user_profiles`、`user_details`）は読まない。
