@@ -360,6 +360,12 @@ export interface BudgetForecastSummary {
   limitLineUsd: number | null;
   /** 上限ラインに対する現在利用料の割合 (%)。上限未設定は null */
   progressPercent: number | null;
+  /**
+   * 上限ラインに対する、前1日・前1週間の利用料の増加分 (%)。
+   * (最終観測日の累積 − N 日前の累積) ÷ 上限ライン × 100。観測日数が足りない / 上限未設定は null (無効)
+   */
+  dayChangePercent: number | null;
+  weekChangePercent: number | null;
   forecast: LimitForecast;
   /** 日別データを持つ Cost Center の数 */
   totalCostCenters: number;
@@ -397,6 +403,12 @@ export function summarizeBudgetForecast(
     const currentUsd = observed.length > 0 ? (observed[observed.length - 1].actual as number) : 0;
     const progressPercent = t.limitLineUsd !== null && t.limitLineUsd > 0 ? (currentUsd / t.limitLineUsd) * 100 : null;
     const rank = progressPercent ?? -1;
+    const changePercent = (days: number): number | null => {
+      const n = observed.length;
+      if (t.limitLineUsd === null || t.limitLineUsd <= 0 || n < days + 1) return null;
+      const past = observed[n - 1 - days].actual as number;
+      return ((currentUsd - past) / t.limitLineUsd) * 100;
+    };
     if (!best || rank > best.rank) {
       best = {
         costCenterName: b.cost_center_name,
@@ -405,6 +417,8 @@ export function summarizeBudgetForecast(
         spendingLimitUsd: b.spending_limit_usd > 0 ? b.spending_limit_usd : null,
         limitLineUsd: t.limitLineUsd,
         progressPercent,
+        dayChangePercent: changePercent(1),
+        weekChangePercent: changePercent(7),
         forecast: t.forecast,
         totalCostCenters: 0,
         rank,
