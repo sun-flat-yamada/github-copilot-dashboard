@@ -544,7 +544,7 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
             {/* Copilot プラン内訳 (Enterprise / Business: アクティブ / ノンアクティブ / 全数) */}
             <div className="mt-2 pt-2 border-t border-slate-800/80 space-y-1.5" data-testid="report-plan-breakdown">
               <span className="text-[10px] text-slate-400 font-medium block">
-                プラン内訳 (<span className="text-emerald-400 font-bold">アクティブ</span> / ノンアクティブ / 全数):
+                プラン内訳:
               </span>
               <div className="space-y-1 text-[11px]">
                 <div className="flex items-center justify-between" data-testid="report-plan-enterprise">

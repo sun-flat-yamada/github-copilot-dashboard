@@ -209,7 +209,7 @@ describe('MonthlyReportKpis - report_kpi_active_users Plan Breakdown & Abolished
     // Plan breakdown section
     const breakdown = screen.getByTestId('report-plan-breakdown');
     assert.ok(breakdown);
-    assert.ok(breakdown.textContent?.includes('プラン内訳 (アクティブ / ノンアクティブ / 全数):'));
+    assert.ok(breakdown.textContent?.includes('プラン内訳:'));
 
     const entCount = screen.getByTestId('report-plan-enterprise-count');
     assert.strictEqual(entCount.textContent?.trim(), '5');
