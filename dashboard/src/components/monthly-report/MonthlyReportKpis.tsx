@@ -267,7 +267,6 @@ interface MonthlyReportKpisProps {
   reportData: MonthlyReportAggregatedData;
   /** Cost Center 予算。渡されたときだけ、費用サマリーに予算推移と上限到達予測のサマリーを表示する */
   budgets?: CostCenterBudget[];
-  rawReportData?: MonthlyReportAggregatedData | null;
 }
 
 interface SingleMonthlyReportKpiCardProps extends MonthlyReportKpisProps {
@@ -278,7 +277,6 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
   cardId,
   reportData,
   budgets,
-  rawReportData,
 }) => {
   const { formatMoney } = useCurrency();
   const grossDual = formatMoney(reportData.overview.total_gross_spend_usd);
@@ -506,12 +504,6 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
 
     case 'report_kpi_active_users': {
       const { enterprise, business } = extractCopilotPlanCounts(reportData);
-      const activeUsers = reportData.overview.total_active_users;
-      const totalUsers =
-        rawReportData?.overview.total_active_users ??
-        rawReportData?.user_details?.length ??
-        reportData.overview.total_active_users;
-      const activeRate = totalUsers > 0 ? (activeUsers / totalUsers) * 100 : 0;
       return (
         <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm flex flex-col justify-between" data-testid="report-kpi-active-users">
           <div>
@@ -521,19 +513,11 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
                 <Users className="w-4 h-4" />
               </div>
             </div>
-            <div className="mt-2 flex items-baseline space-x-1.5 flex-wrap">
-              <span
-                data-testid="report-active-users-total"
-                className="text-2xl font-black text-white tracking-tight"
-              >
-                <span data-testid="report-active-users-count">{activeUsers.toLocaleString()}</span>
+            <div className="mt-2 flex items-baseline space-x-1.5">
+              <span className="text-2xl font-black text-white tracking-tight" data-testid="report-active-users-total">
+                {reportData.overview.total_active_users}
               </span>
-              <span
-                data-testid="report-active-users-ratio"
-                className="text-xs font-semibold text-slate-400"
-              >
-                / {totalUsers.toLocaleString()} 名 ({activeRate.toFixed(1)}%)
-              </span>
+              <span className="text-xs font-semibold text-slate-400">名</span>
             </div>
             {/* Copilot プラン内訳 (Enterprise / Business: アクティブ / ノンアクティブ / 全数) */}
             <div className="mt-2 pt-2 border-t border-slate-800/80 space-y-1.5" data-testid="report-plan-breakdown">
@@ -630,17 +614,11 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
   }
 };
 
-export const MonthlyReportKpis: React.FC<MonthlyReportKpisProps> = ({ reportData, budgets, rawReportData }) => {
+export const MonthlyReportKpis: React.FC<MonthlyReportKpisProps> = ({ reportData, budgets }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {ALL_REPORT_KPI_CARD_WIDGET_IDS.map((cardId) => (
-        <SingleMonthlyReportKpiCard
-          key={cardId}
-          cardId={cardId}
-          reportData={reportData}
-          budgets={budgets}
-          rawReportData={rawReportData}
-        />
+        <SingleMonthlyReportKpiCard key={cardId} cardId={cardId} reportData={reportData} budgets={budgets} />
       ))}
     </div>
   );
