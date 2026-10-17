@@ -777,6 +777,37 @@
     }
   },
   {
+    "id": "gemini-4-argon",
+    "name": "Gemini 4 Argon",
+    "vendor": "Google",
+    "model_family": "Gemini 4",
+    "color": "#1d4ed8",
+    "is_copilot_native": true,
+    "release_date": "2026-10-15",
+    "release_status": "GA",
+    "estimated_metrics": [
+      "arena_webdev_elo",
+      "output_speed_tps"
+    ],
+    "capabilities": {
+      "has_1m_context": true,
+      "has_configurable_reasoning": true,
+      "tier": "Powerful"
+    },
+    "raw_metrics": {
+      "terminal_bench_4": 57.27,
+      "aa_intelligence_index": 53,
+      "arena_webdev_elo": 1720,
+      "output_speed_tps": 110,
+      "input_cost_per_m": 2,
+      "output_cost_per_m": 10,
+      "cached_input_cost_per_m": 0.1,
+      "cache_write_cost_per_m": 2.5,
+      "context_window_k": 1000,
+      "context_window_display": "1M (Reasoning Decodes: 1M)"
+    }
+  },
+  {
     "id": "gemini-3-8-flash",
     "name": "Gemini 3.8 Flash",
     "vendor": "Google",

@@ -120,14 +120,14 @@ flowchart TD
     5. **High-Value (高コスパ・高速設計壁打ち＆比較)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / AA 41, TB4 19.09)
 
 #### カテゴリ・メーカー別標準プリセット
-- **🌟 2026 旗艦選 (`flagship-2026`)**: 2026年各社最前線フラッグシップスナップショット（Claude Opus 5.5 / Claude Opus 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3）。
+- **🌟 2026 旗艦選 (`flagship-2026`)**: 2026年各社最前線フラッグシップスナップショット（Claude Opus 5.5 / Claude Opus 5 / GPT-6 Astra / Gemini 4 Argon / Kimi K3）。
 - **💡 実用性能で高コスパ (`practical-high-value`)**: 実用コーディング性能と抜群の費用対効果を両立（Claude Sonnet 5 / Gemini 3.8 Flash / GPT-6 Luna / GPT-5.6 Luna / Kimi K2.7 Code） ※高コスパ代表として GPT-6 Luna および GPT-5.6 Luna を維持・追加。
-- **⚡ Powerful (最上位推論) (`tier-powerful`)**: 最高峰コーディング・推論群（GPT-6 Astra / Claude Opus 5.5 / Claude Opus 5 / GPT-6 Sol / Kimi K3） ※GPT-6 Sol を追加し、GPT-5.5 を整理。
+- **⚡ Powerful (最上位推論) (`tier-powerful`)**: 最高峰コーディング・推論群（GPT-6 Astra / Claude Opus 5.5 / Claude Opus 5 / GPT-6 Sol / Gemini 4 Argon / Kimi K3） ※GPT-6 Sol および Gemini 4 Argon を追加、GPT-5.5 を整理。
 - **🛠️ Versatile (実務バランス) (`tier-versatile`)**: 標準実務・俊敏性重視（Claude Sonnet 5 / GPT-5.6 Terra / Gemini 3.8 Flash / Grok 4.6） ※GPT-5.6 Terra を追加し、GPT-5.4 を整理。
 - **🚀 Lightweight (超高速・低コスト) (`tier-lightweight`)**: 日常インライン・超高速補完（GPT-6 Luna / GPT-5.6 Luna / Gemini 3.5 Flash / MAI-Code-1.1-Flash / GPT-5.4 mini） ※超高速・低コスト代表として GPT-6 Luna を追加、GPT-5.6 Luna を維持。
 - **🟠 Anthropic 主力 (`vendor-anthropic`)**: Anthropic 2026最新（Claude Sonnet 5 / Claude Opus 5.5 / Claude Opus 5 / Claude Fable 5.1 / Claude Haiku 4.5） ※Opus 5.5 を追加。
 - **🟢 OpenAI 主力 (`vendor-openai`)**: OpenAI 主力ラインナップ（GPT-6 Astra / GPT-6 Sol / GPT-5.6 Sol） ※GPT-6 Sol および GPT-5.6 Sol を追加し、旧世代（GPT-5.5 / GPT-5.4 / GPT-5 mini）を整理。
-- **🔵 Google Gemini 3.x (`vendor-google`)**: Google 最新1Mコンテキスト（Gemini 3.8 Flash / Gemini 3.7 Flash / Gemini 3.6 Flash / Gemini 3.5 Flash）
+- **🔵 Google Gemini (`vendor-google`)**: Google 最新モデル（Gemini 4 Argon / Gemini 3.8 Flash / Gemini 3.7 Flash / Gemini 3.6 Flash / Gemini 3.5 Flash）
 
 ### 2.6 モデル比較チャート: レーダーチャート
 6 軸の比較は**レーダーチャート**（recharts `RadarChart`、0〜100、選択モデルごとに 1 多角形）で描く。アクティブ（フォーカス中）モデルは最前面の太い実線（穏やかな点滅）、その他の選択モデルは低不透明度の点線。多角形または凡例ボタンのクリックで `focusedModelId` が切り替わり、詳細カードが連動する。P3-7 で導入したドットプロット（`ModelDotPlot`）は取り消した。生値はベンチマーク表とツールチップで引き続き読める。
@@ -265,9 +265,10 @@ GitHub Copilot 公式ドキュメント（[Supported models](https://docs.github
 | `claude-sonnet-4` | Claude Sonnet 4 | Versatile | GA | 200K | $3.00 | $15.00 | $0.30 / $3.75 | 安定コード補完 |
 | `claude-haiku-4-5` | Claude Haiku 4.5 | Lightweight | GA | 200K | $1.00 | $5.00 | $0.10 / $1.25 | 超軽量・高速 |
 
-#### 3. Google (4モデル)
+#### 3. Google (5モデル)
 | モデルID | モデル名 | Tier | Status | Context | In単価 (/1M) | Out単価 (/1M) | 備考 |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `gemini-4-argon` | Gemini 4 Argon | Powerful | GA | 1M Tok | $2.00 | $10.00 | フロンティア推論旗艦・Terminal-Bench 57.27%・AA指数53 |
 | `gemini-3-8-flash` | Gemini 3.8 Flash | Versatile | GA | 1M Tok | $0.75 | $3.75 | 最新Flash (プロモ価格中) / 100万トークン |
 | `gemini-3-7-flash` | Gemini 3.7 Flash | Versatile | GA | 1M Tok | $0.75 | $3.75 | 思考CoT・高速コード生成 |
 | `gemini-3-6-flash` | Gemini 3.6 Flash | Versatile | GA | 1M Tok | $0.75 | $3.75 | 1M長文コンテキスト万能 |

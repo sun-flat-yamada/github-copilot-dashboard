@@ -423,6 +423,16 @@ export function evaluateModel(
       'OpenAIのGPT-5世代モデル。高い自律推論と安定したコード生成能力を誇り、幅広い開発タスクをサポート。';
     copilot_usage_guidance =
       '【推奨シーン】IDEでの複雑な機能実装、Agentモードでの複数ファイル改修に安定して対応します。';
+  } else if (mId.includes('gemini-4') || mId.includes('argon')) {
+    recommended_for.push(
+      '自律エージェント（Agentモード・CLI）でのターミナル環境の試行錯誤・長手順タスク遂行',
+      '100万トークンコンテキストと深い推論（Configurable Reasoning）を活かした大規模設計・リファクタリング',
+      '最高峰の論理推論力を活かした高度なコードレビューと不具合調査'
+    );
+    summary_verdict =
+      'Google DeepMindの次世代フロンティア推論旗艦。Terminal-Bench 4.0で57.27%・AA知能指数53を誇り、自律エージェントと深い推論で最前線を担う。';
+    copilot_usage_guidance =
+      '【推奨シーン】Copilot Agentモードでの自律的な機能開発、巨大リポジトリの設計見直し・アーキテクチャ刷新に最高水準の実力を発揮します。';
   } else if (mId.includes('gemini')) {
     recommended_for.push(
       '100万〜200万トークンを活かしたリポジトリ全体・ドキュメント全体の丸ごと分析',

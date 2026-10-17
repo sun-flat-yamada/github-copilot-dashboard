@@ -39,6 +39,7 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
   { id: 'claude-sonnet-4-6', aliases: ['claude-sonnet-4-6', 'Claude Sonnet 4.6'] },
   { id: 'claude-sonnet-4', aliases: ['claude-sonnet-4', 'Claude Sonnet 4', 'Claude 4 Sonnet'] },
   { id: 'claude-haiku-4-5', aliases: ['claude-haiku-4-5', 'Claude Haiku 4.5', 'Claude 4.5 Haiku'] },
+  { id: 'gemini-4-argon', aliases: ['gemini-4-argon', 'Gemini 4 Argon', 'Gemini 4', 'gemini-4', 'argon'] },
   { id: 'gemini-3-8-flash', aliases: ['gemini-3-8-flash', 'Gemini 3.8 Flash', 'Gemini 3.8'] },
   { id: 'gemini-3-7-flash', aliases: ['gemini-3-7-flash', 'Gemini 3.7 Flash', 'Gemini 3.7'] },
   { id: 'gemini-3-6-flash', aliases: ['gemini-3-6-flash', 'Gemini 3.6 Flash', 'Gemini 3.6'] },

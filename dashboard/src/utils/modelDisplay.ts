@@ -22,6 +22,7 @@ export const MODEL_DISPLAY: Record<string, ModelDisplay> = {
   'gpt-6-astra': { name: 'GPT-6 Astra', color: OPENAI[0] },
   'gpt-6-sol': { name: 'GPT-6 Sol', color: OPENAI[2] },
   'gpt-5-4-mini': { name: 'GPT-5.4 mini', color: OPENAI[1] },
+  'gemini-4-argon': { name: 'Gemini 4 Argon', color: GOOGLE[2] },
   'gemini-3-8-flash': { name: 'Gemini 3.8 Flash', color: GOOGLE[0] },
   'grok-4-7': { name: 'Grok 4.7', color: '#94a3b8' },
   'kimi-k3': { name: 'Kimi K3', color: '#ec4899' },
