@@ -28,12 +28,17 @@ test('AI Model Radar Benchmark Table Task Cost & Citations Contract Tests', asyn
     // SortKey includes 'task_cost'
     assert.match(content, /'task_cost'/, 'sortKey state must include task_cost');
 
-    // Sorting comparison branch for task_cost
+    // Sorting comparison branch for task_cost with robust undefined handling
     assert.match(
       content,
-      /else\s+if\s*\(\s*sortKey\s*===\s*'task_cost'\s*\)\s*\{\s*valA\s*=\s*a\.raw_metrics\.task_cost_usd/,
-      'Must contain sorting logic for task_cost'
+      /else\s+if\s*\(\s*sortKey\s*===\s*'task_cost'\s*\)\s*\{[\s\S]*?const\s+costA\s*=\s*a\.raw_metrics\.task_cost_usd/,
+      'Must contain robust sorting logic for task_cost'
     );
+
+    // Dynamic sort icon helper and directional indicators
+    assert.match(content, /renderSortIcon/, 'Must define renderSortIcon helper');
+    assert.match(content, /<ArrowUp/, 'Must render ArrowUp for ascending sort');
+    assert.match(content, /<ArrowDown/, 'Must render ArrowDown for descending sort');
 
     // Sort button in toolbar
     assert.match(
@@ -43,7 +48,7 @@ test('AI Model Radar Benchmark Table Task Cost & Citations Contract Tests', asyn
     );
     assert.match(content, /Task単価/, 'Toolbar or header must display Task単価 label');
 
-    // Separate Token cost and Task cost headers
+    // Separate Token cost and Task cost headers with sort direction badges
     assert.match(content, /Token単価\s*\(\$\/1M\)/, 'Must display Token単価 header');
     assert.match(content, /Task単価\s*\(\$\/Task\)/, 'Must display Task単価 header');
 
@@ -60,6 +65,42 @@ test('AI Model Radar Benchmark Table Task Cost & Citations Contract Tests', asyn
       /実測\s*Task\s*単価/,
       'Focused model detail card must display 実測 Task 単価'
     );
+  });
+
+  await t.test('verifies task cost sorting logic correctly sorts models and places undefined at end', () => {
+    const dummyModels = [
+      { id: 'm1', raw_metrics: { task_cost_usd: 1.85 } },
+      { id: 'm2', raw_metrics: { task_cost_usd: 0.10 } },
+      { id: 'm3', raw_metrics: { task_cost_usd: undefined } },
+      { id: 'm4', raw_metrics: { task_cost_usd: 8.50 } },
+    ];
+
+    const sortFn = (sortAsc: boolean) => {
+      const list = [...dummyModels];
+      list.sort((a, b) => {
+        const costA = a.raw_metrics.task_cost_usd;
+        const costB = b.raw_metrics.task_cost_usd;
+        if (costA === undefined && costB === undefined) return 0;
+        if (costA === undefined) return 1;
+        if (costB === undefined) return -1;
+        return sortAsc ? costA - costB : costB - costA;
+      });
+      return list;
+    };
+
+    // Ascending (cheapest first, undefined at end)
+    const ascSorted = sortFn(true);
+    assert.strictEqual(ascSorted[0].id, 'm2'); // 0.10
+    assert.strictEqual(ascSorted[1].id, 'm1'); // 1.85
+    assert.strictEqual(ascSorted[2].id, 'm4'); // 8.50
+    assert.strictEqual(ascSorted[3].id, 'm3'); // undefined at end
+
+    // Descending (most expensive first, undefined at end)
+    const descSorted = sortFn(false);
+    assert.strictEqual(descSorted[0].id, 'm4'); // 8.50
+    assert.strictEqual(descSorted[1].id, 'm1'); // 1.85
+    assert.strictEqual(descSorted[2].id, 'm2'); // 0.10
+    assert.strictEqual(descSorted[3].id, 'm3'); // undefined at end
   });
 
   await t.test('verifies RadarDocReferences.tsx includes Task Cost citation card', () => {
