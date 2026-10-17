@@ -6,22 +6,23 @@
 - [x] Phase 2: Implementation Plan formulated <!-- id: 1 -->
   - [x] `implementation_plan.md` 作成
   - [x] `task.md` 作成
-- [/] Phase 3: Sibling Worktree Provisioning & Implementation <!-- id: 2 -->
+  - [x] Plan 単独コミット (`71c0984`)
+- [x] Phase 3: Sibling Worktree Provisioning & Implementation <!-- id: 2 -->
   - [x] Sibling worktree provisioned (`../proud-noether-worktrees/feat-345-add-gemini-4-argon-to-radar`)
-  - [ ] `supported_models.md` の更新 (Tables 1, 3, 4, 5, 6)
-  - [ ] `verified-benchmarks-2026-10.json` の更新
-  - [ ] `benchmark-records.json` の更新
-  - [ ] `src/processor/model-catalog.ts` の更新
-  - [ ] `src/processor/benchmark-definitions.ts` & `benchmark-evaluator.ts` の更新
-  - [ ] `radar-constants.ts`, `ModelSelectorSidebar.tsx`, `modelDisplay.ts` の更新
-  - [ ] SDD-10 (日・英) の更新
-  - [ ] テスト同期 (`radar-presets.test.ts`, `model-display.test.ts`)
-- [ ] Phase 4: Local Quality Gate & Specification Sync <!-- id: 3 -->
-  - [ ] `npm run fork:verify`
-  - [ ] `npm run typecheck`
-  - [ ] `npm test`
-  - [ ] `npm run secret-scan`
-  - [ ] `npm run build`
-- [ ] Phase 5: Walkthrough Artifact Generation & Evidence Sealing <!-- id: 4 -->
+  - [x] `supported_models.md` の更新 (Tables 1, 3, 4, 5, 6)
+  - [x] `verified-benchmarks-2026-10.json` の更新 (Terminal-Bench: 57.27, AA: 53)
+  - [x] `benchmark-records.json` の更新 (ID: gemini-4-argon, Powerful, 1M, $2.00/$10.00)
+  - [x] `src/processor/model-catalog.ts` の更新 (aliases)
+  - [x] `src/processor/benchmark-definitions.ts` & `benchmark-evaluator.ts` の更新 (buzz, recommendations)
+  - [x] `radar-constants.ts`, `ModelSelectorSidebar.tsx`, `modelDisplay.ts` の更新 (presets, short names, colors)
+  - [x] SDD-10 (日・英) の更新
+  - [x] テスト同期 (`radar-presets.test.ts`, `model-display.test.ts`, `benchmark-evaluator.test.ts`, `benchmark-normalization.test.ts`, `radar-selector-sidebar.test.ts`)
+- [x] Phase 4: Local Quality Gate & Specification Sync <!-- id: 3 -->
+  - [x] `npm run fork:verify` (Clean 0 failures)
+  - [x] `npm run typecheck` (Clean 0 errors)
+  - [x] `npm test` (1204 passing, 0 failing)
+  - [x] `npm run secret-scan` (698 files, Clean 0 secrets/PII)
+  - [x] `npm run build` (Bundle within budget: 169.78 kB / 300 kB)
+- [/] Phase 5: Walkthrough Artifact Generation & Evidence Sealing <!-- id: 4 -->
 - [ ] Phase 6: Rebase onto Base & Create PR <!-- id: 5 -->
 - [ ] Phase 7: Rebase & Merge and Worktree Cleanup (Auto-Pilot) <!-- id: 6 -->
