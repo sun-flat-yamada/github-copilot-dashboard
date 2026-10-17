@@ -200,7 +200,7 @@ export const AppShell: React.FC<AppShellProps> = ({ registry: defaultViewRegistr
     Object.entries(currentReportData.by_cost_center).forEach(([ccName, gs], idx) => {
       processedNames.add(ccName);
       const master = masterMap.get(ccName);
-      const actualSpend = gs.total_cost_usd;
+      const actualSpend = gs.total_cost_usd ?? 0;
       const spendingLimit = master ? master.spending_limit_usd : 0;
       const freeTier = master ? master.free_tier_budget_usd : 0;
       // 予算の評価はパイプライン・フィルター再集計と同じ共通ルール (BudgetUtilizationRule) を使う
