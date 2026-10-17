@@ -12,18 +12,32 @@ describe('User Detail Table Enhancements & Compact Style Tests', () => {
   describe('UserDetailTable (unified: Live Metrics / Monthly Usage Report / Upload)', () => {
     const content = readComponent('dashboard/src/components/UserDetailTable.tsx');
 
-    it('separates user handle and display name into distinct sortable columns', () => {
+    it('separates user handle and display name into distinct sortable columns with display name first', () => {
       // Distinct sort metrics
       assert.match(content, /'user'/);
       assert.match(content, /'display_name'/);
 
       // Distinct headers
-      assert.match(content, /<span>ユーザー<\/span>/);
       assert.match(content, /<span>表示名<\/span>/);
+      assert.match(content, /<span>ユーザー<\/span>/);
 
-      // Distinct cells in tbody
-      assert.match(content, /@\{u\.login\}/);
-      assert.match(content, /\{u\.display_name\}/);
+      // Verify display_name column comes before user column in thead
+      const headerDisplayIndex = content.indexOf('<span>表示名</span>');
+      const headerUserIndex = content.indexOf('<span>ユーザー</span>');
+      assert.ok(headerDisplayIndex !== -1 && headerUserIndex !== -1);
+      assert.ok(
+        headerDisplayIndex < headerUserIndex,
+        '表示名 header must be placed before ユーザー header'
+      );
+
+      // Verify display_name cell comes before user handle cell in tbody
+      const bodyDisplayIndex = content.indexOf('{u.display_name}');
+      const bodyUserIndex = content.indexOf('@{u.login}');
+      assert.ok(bodyDisplayIndex !== -1 && bodyUserIndex !== -1);
+      assert.ok(
+        bodyDisplayIndex < bodyUserIndex,
+        'display_name cell must be placed before user handle cell in tbody'
+      );
     });
 
     it('inserts tag column directly before COST CENTER column', () => {
@@ -44,13 +58,15 @@ describe('User Detail Table Enhancements & Compact Style Tests', () => {
         'タグ column must be placed directly before Cost Center'
       );
 
-      // Check CSV headers contain '表示名', 'ユーザー定義Gr (部署)', 'タグ', 'Cost Center' in order
+      // Check CSV headers contain '表示名', 'GitHub User', 'ユーザー定義Gr (部署)', 'タグ', 'Cost Center' in order
       const csvDisplayIndex = content.indexOf("'表示名'");
+      const csvUserIndex = content.indexOf("'GitHub User'");
       const csvDeptIndex = content.indexOf("'ユーザー定義Gr (部署)'");
       const csvTagIndex = content.indexOf("'タグ'");
       const csvCostCenterIndex = content.indexOf("'Cost Center'");
 
-      assert.ok(csvDisplayIndex < csvDeptIndex);
+      assert.ok(csvDisplayIndex < csvUserIndex, '表示名 must be before GitHub User in CSV');
+      assert.ok(csvUserIndex < csvDeptIndex, 'GitHub User must be before ユーザー定義Gr in CSV');
       assert.ok(csvDeptIndex < csvTagIndex);
       assert.ok(csvTagIndex < csvCostCenterIndex);
     });
@@ -65,14 +81,14 @@ describe('User Detail Table Enhancements & Compact Style Tests', () => {
       assert.match(content, /px-2\.5\s+py-2/);
     });
 
-    it('freezes only the first two primary columns (index, user) on horizontal scroll with draggable resizable width', () => {
+    it('freezes only the first two primary columns (index, display_name) on horizontal scroll with draggable resizable width', () => {
       // thead itself must NOT be sticky to prevent nested sticky containing-block conflicts
       assert.doesNotMatch(content, /<thead[^>]*sticky/);
 
       // Header sticky columns: only first 2 columns have sticky top-0 and left offset
       assert.match(content, /sticky\s+top-0\s+left-0\s+z-30/);
       assert.match(content, /sticky\s+top-0\s+left-12\s+z-30/);
-      // Display name column is NOT pinned to the left
+      // User column is NOT pinned to the left
       assert.doesNotMatch(content, /sticky\s+top-0\s+left-\[188px\]/);
       assert.doesNotMatch(content, /left-\[188px\]/);
 
@@ -81,7 +97,7 @@ describe('User Detail Table Enhancements & Compact Style Tests', () => {
       assert.match(content, /sticky\s+left-12\s+z-10/);
       assert.doesNotMatch(content, /sticky\s+left-\[188px\]/);
 
-      // Shadow border separation on user column (end of frozen columns)
+      // Shadow border separation on display_name column (end of frozen columns)
       assert.match(content, /shadow-\[3px_0_6px_-2px_rgba\(0,0,0,0\.5\)\]/);
 
       // Draggable resizer for pinned column width
