@@ -31,7 +31,7 @@ export function buildDemoUserMappings(): UserAttributeMappingV2[] {
       target_adoption_phase: 'multi_agent',
       target_acceptance_rate: 0.38,
       notes: 'リードエンジニア / 正社員',
-      tags: ['正社員', 'リード', '決済'],
+      tags: ['正社員', 'リード', 'テックリード', '決済', 'バックエンド', 'TypeScript', 'ハイブリッド'],
     },
     {
       github_user: 'hanako-suzuki',
@@ -45,7 +45,7 @@ export function buildDemoUserMappings(): UserAttributeMappingV2[] {
       target_adoption_phase: 'multi_agent',
       target_acceptance_rate: 0.42,
       notes: 'AIリサーチャー / 正社員',
-      tags: ['正社員', 'AI推進'],
+      tags: ['正社員', 'AI推進', 'シニア', 'Python', 'AI・機械学習', 'リモート'],
     },
     {
       github_user: 'kenji-sato',
@@ -59,7 +59,7 @@ export function buildDemoUserMappings(): UserAttributeMappingV2[] {
       target_adoption_phase: 'agent_first',
       target_acceptance_rate: 0.32,
       notes: 'インフラSRE / 正社員',
-      tags: ['正社員', 'SRE', 'インフラ'],
+      tags: ['正社員', 'SRE', 'インフラ', 'エキスパート', 'Go', 'Kubernetes', 'ハイブリッド'],
     },
     {
       github_user: 'yuki-takahashi',
@@ -73,7 +73,7 @@ export function buildDemoUserMappings(): UserAttributeMappingV2[] {
       target_adoption_phase: 'code_first',
       target_acceptance_rate: 0.30,
       notes: 'iOS / Android Lead / 正社員',
-      tags: ['正社員', 'モバイル'],
+      tags: ['正社員', 'モバイル', 'テックリード', 'iOS', 'TypeScript', 'オンサイト'],
     },
     {
       github_user: 'mika-ito',
@@ -87,7 +87,7 @@ export function buildDemoUserMappings(): UserAttributeMappingV2[] {
       target_adoption_phase: 'agent_first',
       target_acceptance_rate: 0.28,
       notes: '社内DX担当 / 正社員',
-      tags: ['正社員', '社内DX'],
+      tags: ['正社員', '社内DX', 'マネージャー', 'Python', 'ハイブリッド'],
     },
     {
       github_user: 'alex-partner',
@@ -101,7 +101,7 @@ export function buildDemoUserMappings(): UserAttributeMappingV2[] {
       target_adoption_phase: 'code_first',
       target_acceptance_rate: 0.35,
       notes: '業務委託パートナー / フルリモート',
-      tags: ['業務委託', 'リモート', '決済'],
+      tags: ['業務委託', 'リモート', '決済', 'シニア', 'バックエンド', 'Go'],
     },
     {
       github_user: 'daiki-yamada',
@@ -115,7 +115,7 @@ export function buildDemoUserMappings(): UserAttributeMappingV2[] {
       target_adoption_phase: 'agent_first',
       target_acceptance_rate: 0.33,
       notes: 'Kubernetes Platformer / 正社員',
-      tags: ['正社員', 'SRE', 'Kubernetes'],
+      tags: ['正社員', 'SRE', 'Kubernetes', 'インフラ', 'Go', 'リモート'],
     },
 
     // Monthly Usage Report 専用・重複ユーザー
@@ -125,7 +125,7 @@ export function buildDemoUserMappings(): UserAttributeMappingV2[] {
       department: 'コア決済基盤チーム',
       cost_center_override: 'FinTech-Division',
       notes: '決済APIエンジニア / 正社員',
-      tags: ['正社員', '決済'],
+      tags: ['正社員', '決済', 'バックエンド', 'TypeScript', 'オンサイト'],
     },
     {
       github_user: 'daiki-suzuki',
@@ -133,7 +133,7 @@ export function buildDemoUserMappings(): UserAttributeMappingV2[] {
       department: 'クラウドインフラ統括部',
       cost_center_override: 'IT-Infrastructure',
       notes: 'クラウド基盤設計 / 正社員',
-      tags: ['正社員', 'インフラ'],
+      tags: ['正社員', 'インフラ', 'SRE', 'クラウド', 'Go', 'ハイブリッド'],
     },
     {
       github_user: 'sakura-watanabe',
@@ -141,7 +141,7 @@ export function buildDemoUserMappings(): UserAttributeMappingV2[] {
       department: 'IT運用管理部',
       cost_center_override: 'IT-Infrastructure',
       notes: '社内ITサービスデスク / 正社員',
-      tags: ['正社員', '社内DX'],
+      tags: ['正社員', '社内DX', '社内IT', 'ハイブリッド'],
     },
     {
       github_user: 'ren-takahashi',
@@ -149,7 +149,7 @@ export function buildDemoUserMappings(): UserAttributeMappingV2[] {
       department: 'マーケティングDX推進部',
       cost_center_override: 'Data-AI-Lab',
       notes: 'マーケティングアナリスト / 正社員',
-      tags: ['正社員', 'AI推進'],
+      tags: ['正社員', 'AI推進', '社内DX', 'データサイエンス', 'Python', 'リモート'],
     },
     {
       github_user: 'mei-ito',
@@ -157,7 +157,7 @@ export function buildDemoUserMappings(): UserAttributeMappingV2[] {
       department: 'データAI推進室',
       cost_center_override: 'Data-AI-Lab',
       notes: 'データサイエンティスト / 正社員',
-      tags: ['正社員', 'AI推進'],
+      tags: ['正社員', 'AI推進', 'AI・機械学習', 'Python', 'リモート'],
     },
     {
       github_user: 'kaito-nakamura',
@@ -165,7 +165,7 @@ export function buildDemoUserMappings(): UserAttributeMappingV2[] {
       department: 'APIプラットフォーム部',
       cost_center_override: 'IT-Infrastructure',
       notes: 'バックエンドエンジニア / 正社員',
-      tags: ['正社員', 'API'],
+      tags: ['正社員', 'API', 'バックエンド', 'Go', 'ハイブリッド'],
     },
     {
       github_user: 'aoi-kobayashi',
@@ -173,7 +173,7 @@ export function buildDemoUserMappings(): UserAttributeMappingV2[] {
       department: 'セキュリティ基盤部',
       cost_center_override: 'IT-Infrastructure',
       notes: 'セキュリティエンジニア / 正社員',
-      tags: ['正社員', 'セキュリティ'],
+      tags: ['正社員', 'セキュリティ', 'インフラ', 'Python', 'オンサイト'],
     },
     {
       github_user: 'external-contractor-01',
@@ -181,7 +181,7 @@ export function buildDemoUserMappings(): UserAttributeMappingV2[] {
       department: 'コア決済基盤チーム',
       cost_center_override: 'FinTech-Division',
       notes: '外部ベンダー委託 / リモート',
-      tags: ['業務委託', 'リモート'],
+      tags: ['業務委託', 'リモート', 'バックエンド', 'TypeScript'],
     },
     {
       github_user: 'external-contractor-02',
@@ -189,7 +189,7 @@ export function buildDemoUserMappings(): UserAttributeMappingV2[] {
       department: 'クラウドインフラ統括部',
       cost_center_override: 'FinTech-Division',
       notes: '外部ベンダー委託 / オンサイト',
-      tags: ['業務委託'],
+      tags: ['業務委託', 'オンサイト', 'インフラ', 'Kubernetes'],
     },
   ];
 
@@ -198,52 +198,76 @@ export function buildDemoUserMappings(): UserAttributeMappingV2[] {
     {
       dept: 'コア決済基盤チーム',
       cc: 'FinTech-Division',
-      tags: ['正社員', '決済'],
+      deptTag: '決済',
+      domainTags: ['バックエンド'],
+      primaryTech: 'TypeScript',
+      secondaryTech: 'Go',
       role: '決済バックエンド',
     },
     {
       dept: 'SRE & クラウド基盤部',
       cc: 'Cloud-Platform',
-      tags: ['正社員', 'SRE'],
+      deptTag: 'SRE',
+      domainTags: ['インフラ'],
+      primaryTech: 'Go',
+      secondaryTech: 'Kubernetes',
       role: 'SREエンジニア',
     },
     {
       dept: 'LLM応用プロダクトG',
       cc: 'Research-and-AI',
-      tags: ['正社員', 'AI推進'],
+      deptTag: 'AI推進',
+      domainTags: ['AI・機械学習'],
+      primaryTech: 'Python',
+      secondaryTech: 'TypeScript',
       role: 'AIエンジニア',
     },
     {
       dept: 'モバイルアプリ開発部',
       cc: 'FinTech-Division',
-      tags: ['正社員', 'モバイル'],
+      deptTag: 'モバイル',
+      domainTags: ['モバイル'],
+      primaryTech: 'iOS',
+      secondaryTech: 'TypeScript',
       role: 'クライアント開発',
     },
     {
       dept: '業務システム改革推進室',
       cc: 'Enterprise-IT',
-      tags: ['正社員', '社内DX'],
+      deptTag: '社内DX',
+      domainTags: ['社内IT'],
+      primaryTech: 'Python',
+      secondaryTech: 'SQL',
       role: '社内業務システム',
     },
     {
       dept: 'フロントエンド基盤G',
       cc: 'FinTech-Division',
-      tags: ['正社員', 'リモート'],
+      deptTag: 'フロントエンド',
+      domainTags: ['フロントエンド'],
+      primaryTech: 'TypeScript',
+      secondaryTech: 'React',
       role: 'Webフロントエンド',
     },
     {
       dept: 'データエンジニアリング部',
       cc: 'Research-and-AI',
-      tags: ['正社員', 'データ基盤'],
+      deptTag: 'データ基盤',
+      domainTags: ['データ基盤'],
+      primaryTech: 'Python',
+      secondaryTech: 'SQL',
       role: 'データパイプライン',
     },
   ];
 
+  const workstylePool = ['リモート', 'ハイブリッド', 'オンサイト'];
   const firstNames = ['健太', '拓也', '翔太', '大輔', '直樹', '陽介', '真一', '剛', '修', '亮'];
   const lastNames = ['加藤', '吉田', '山田', '佐々木', '山口', '松本', '井上', '木村', '林', '斎藤', '清水', '山崎', '森', '池田', '橋本'];
 
   for (let i = 8; i <= 85; i++) {
-    const isContractor = i % 5 === 0;
+    const isIntern = i === 83 || i === 84;
+    const isContractEmployee = !isIntern && i % 13 === 0;
+    const isContractor = !isIntern && !isContractEmployee && i % 5 === 0;
     const tpl = deptTemplates[(i - 8) % deptTemplates.length];
     const lastName = lastNames[(i * 3) % lastNames.length];
     const firstName = firstNames[(i * 7) % firstNames.length];
@@ -255,19 +279,58 @@ export function buildDemoUserMappings(): UserAttributeMappingV2[] {
     ];
     const targetPhase = phaseOptions[i % phaseOptions.length];
 
+    // 雇用形態タグ
+    const empTag = isIntern ? 'インターン' : isContractEmployee ? '契約社員' : isContractor ? '業務委託' : '正社員';
+
+    // 勤務形態タグ (全社に均等配分)
+    const workstyleTag = workstylePool[i % workstylePool.length];
+
+    // 多軸タグの組み立て (Set で重複排除)
+    const userTags = new Set<string>([empTag, workstyleTag, tpl.deptTag, ...tpl.domainTags, tpl.primaryTech]);
+
+    // 偶数番号には副技術スタックも付与
+    if (i % 2 === 0) {
+      userTags.add(tpl.secondaryTech);
+    }
+
+    // 役割 / 等級タグ (一部ユーザー)
+    if (i % 11 === 0) {
+      userTags.add('テックリード');
+    } else if (i % 4 === 0) {
+      userTags.add('シニア');
+    } else if (i % 7 === 0) {
+      userTags.add('ジュニア');
+    } else if (i % 17 === 0) {
+      userTags.add('マネージャー');
+    }
+
+    // 全社横断施策タグ (他部署からも参加)
+    if (i % 6 === 0) userTags.add('AI推進');
+    if (i % 8 === 0) userTags.add('社内DX');
+    if (i % 10 === 0) userTags.add('セキュリティ');
+    if (i % 12 === 0) userTags.add('コスト最適化');
+
     mappings.push({
       github_user: `developer-${i}`,
-      display_name: isContractor ? `${lastName} ${firstName} (Partner)` : `${lastName} ${firstName}`,
+      display_name: isContractor
+        ? `${lastName} ${firstName} (Partner)`
+        : isIntern
+        ? `${lastName} ${firstName} (Intern)`
+        : `${lastName} ${firstName}`,
       department: tpl.dept,
       cost_center_override: tpl.cc,
       teams: [tpl.dept.replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'Dev-Team'],
       projects: [`Project-${(i % 5) + 1}`],
       role: tpl.role,
-      ai_credits_limit_monthly: isContractor ? 100 : 250,
+      ai_credits_limit_monthly: isContractor || isIntern ? 100 : 250,
       target_adoption_phase: targetPhase,
       target_acceptance_rate: 0.32,
-      notes: isContractor ? `業務委託パートナー / ${tpl.role}` : `${tpl.role} / 正社員`,
-      tags: isContractor ? ['業務委託', ...tpl.tags.filter((t) => t !== '正社員')] : tpl.tags,
+      notes: isContractor
+        ? `業務委託パートナー / ${tpl.role}`
+        : isIntern
+        ? `学生インターン / ${tpl.role}`
+        : `${tpl.role} / ${empTag}`,
+      tags: Array.from(userTags),
     });
   }
 
