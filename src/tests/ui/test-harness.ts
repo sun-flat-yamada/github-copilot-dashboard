@@ -46,6 +46,12 @@ export function buildFileMap(baseDir: '/data' | '/data/demo', overrides: Partial
   };
   for (const [key, scope] of Object.entries(ds.monthlyScopes)) files[`${baseDir}/monthly/${key}.json`] = scope;
   for (const [key, scope] of Object.entries(ds.dailyScopes)) files[`${baseDir}/daily/${key}.json`] = scope;
+  if (ds.reports) {
+    for (const [key, report] of Object.entries(ds.reports)) {
+      files[`${baseDir}/reports/${key}.json`] = report;
+      files[`${baseDir}/processed/reports/${key}.json`] = report;
+    }
+  }
   return files;
 }
 

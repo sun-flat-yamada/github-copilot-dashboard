@@ -129,7 +129,7 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
       setLocalSource(activeSource);
       setLocalScopeType(scopeType);
       setLocalScopeKey(selectedScopeKey);
-      setLocalReportMonth(selectedReportMonth);
+      setLocalReportMonth(selectedReportMonth || availableReports[0] || '');
       setLocalCriteria(filterCriteria);
       setStagedReportData(null);
       setStagedScopeData(null);
@@ -143,7 +143,7 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
         setCustomEndDate(indexMeta?.default_scopes?.latest_range?.end || '');
       }
     }
-  }, [isOpen, activeSource, scopeType, selectedScopeKey, selectedReportMonth, filterCriteria, indexMeta]);
+  }, [isOpen, activeSource, scopeType, selectedScopeKey, selectedReportMonth, availableReports, filterCriteria, indexMeta]);
 
   // 月次レポートの月が変更された場合、必要に応じて非同期取得
   useEffect(() => {
@@ -688,7 +688,12 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({
 
             {/* カード 2: 登録済み月次利用レポート */}
             <div
-              onClick={() => setLocalSource('monthly_report')}
+              onClick={() => {
+                setLocalSource('monthly_report');
+                if (!localReportMonth && availableReports.length > 0) {
+                  setLocalReportMonth(availableReports[0]);
+                }
+              }}
               className={`p-4 rounded-xl border transition-all cursor-pointer ${
                 localSource === 'monthly_report'
                   ? 'bg-emerald-950/40 border-emerald-500 shadow-md ring-1 ring-emerald-500/50'
