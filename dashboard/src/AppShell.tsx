@@ -31,8 +31,17 @@ const ALL_SECTION_IDS = [
   'users',
   'trend',
   'usage',
+  'budget-timeline',
+  'credits',
+  'agent',
+  'adoption',
+  'audit',
   'report_charts',
   'report_users',
+  'report_budget',
+  'report_budget_timeline',
+  'report_credits',
+  'report_audit',
 ];
 
 interface AppShellProps {
