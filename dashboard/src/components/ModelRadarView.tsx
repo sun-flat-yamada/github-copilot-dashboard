@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   RadarChart,
   PolarGrid,
@@ -72,6 +72,12 @@ import { RadarDocReferences } from './radar/RadarDocReferences';
 
 export { computeModelUsage, getTopUsageModelIds, PRESETS };
 export type { ModelUsageStat };
+
+/** 著名ベンチマーク実測テーブルの固定表示列 (モデル名列) の幅に関する定数 (ピクセル単位) */
+export const DEFAULT_RADAR_MODEL_COL_WIDTH = 220;
+export const MIN_RADAR_MODEL_COL_WIDTH = 120;
+export const MAX_RADAR_MODEL_COL_WIDTH = 500;
+export const RADAR_MODEL_PINNED_WIDTH_STORAGE_KEY = 'copilot-dashboard:radar-model-pinned-width';
 
 interface ModelRadarViewProps {
   initialSelectedModelId?: string;
@@ -451,6 +457,188 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       setSortKey(key);
       setSortAsc(false);
     }
+  };
+
+  // 詳細テーブルの横スクロールおよびモデル列固定幅の状態管理
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollState, setScrollState] = useState({
+    canScrollLeft: false,
+    canScrollRight: false,
+    scrollLeft: 0,
+    scrollWidth: 0,
+    clientWidth: 0,
+    progress: 0,
+  });
+
+  const updateScrollState = useCallback(() => {
+    const el = tableContainerRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    const maxScroll = Math.max(0, scrollWidth - clientWidth);
+    setScrollState({
+      canScrollLeft: scrollLeft > 2,
+      canScrollRight: maxScroll > 2 && scrollLeft < maxScroll - 2,
+      scrollLeft,
+      scrollWidth,
+      clientWidth,
+      progress: maxScroll > 0 ? (scrollLeft / maxScroll) * 100 : 0,
+    });
+  }, []);
+
+  const [modelColWidth, setModelColWidth] = useState<number>(() => {
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem(RADAR_MODEL_PINNED_WIDTH_STORAGE_KEY) : null;
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed >= MIN_RADAR_MODEL_COL_WIDTH && parsed <= MAX_RADAR_MODEL_COL_WIDTH) {
+          return parsed;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return DEFAULT_RADAR_MODEL_COL_WIDTH;
+  });
+
+  const [isResizing, setIsResizing] = useState(false);
+
+  useEffect(() => {
+    const el = tableContainerRef.current;
+    if (!el) return;
+    updateScrollState();
+    el.addEventListener('scroll', updateScrollState, { passive: true });
+    window.addEventListener('resize', updateScrollState);
+    return () => {
+      el.removeEventListener('scroll', updateScrollState);
+      window.removeEventListener('resize', updateScrollState);
+    };
+  }, [updateScrollState, sortedModels.length]);
+
+  useEffect(() => {
+    updateScrollState();
+  }, [updateScrollState, modelColWidth]);
+
+  const handleResizeStart = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const startX = e.clientX;
+      const startWidth = modelColWidth;
+      setIsResizing(true);
+
+      const target = e.currentTarget;
+      try {
+        target.setPointerCapture(e.pointerId);
+      } catch {
+        // fallback
+      }
+
+      const prevUserSelect = document.body.style.userSelect;
+      const prevCursor = document.body.style.cursor;
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
+
+      const onPointerMove = (ev: PointerEvent) => {
+        const deltaX = ev.clientX - startX;
+        const nextWidth = Math.max(
+          MIN_RADAR_MODEL_COL_WIDTH,
+          Math.min(MAX_RADAR_MODEL_COL_WIDTH, Math.round(startWidth + deltaX))
+        );
+        setModelColWidth(nextWidth);
+      };
+
+      const onPointerUp = (ev: PointerEvent) => {
+        try {
+          target.releasePointerCapture(ev.pointerId);
+        } catch {
+          // ignore
+        }
+        setIsResizing(false);
+        document.body.style.userSelect = prevUserSelect;
+        document.body.style.cursor = prevCursor;
+
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+        window.removeEventListener('pointercancel', onPointerUp);
+
+        setModelColWidth((finalWidth) => {
+          try {
+            if (finalWidth === DEFAULT_RADAR_MODEL_COL_WIDTH) {
+              localStorage.removeItem(RADAR_MODEL_PINNED_WIDTH_STORAGE_KEY);
+            } else {
+              localStorage.setItem(RADAR_MODEL_PINNED_WIDTH_STORAGE_KEY, String(finalWidth));
+            }
+          } catch {
+            // ignore
+          }
+          return finalWidth;
+        });
+      };
+
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerUp);
+    },
+    [modelColWidth]
+  );
+
+  const handleResetWidth = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setModelColWidth(DEFAULT_RADAR_MODEL_COL_WIDTH);
+    try {
+      localStorage.removeItem(RADAR_MODEL_PINNED_WIDTH_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const handleResizeKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      let nextWidth: number | null = null;
+      if (e.key === 'ArrowLeft') {
+        nextWidth = Math.max(MIN_RADAR_MODEL_COL_WIDTH, modelColWidth - 10);
+      } else if (e.key === 'ArrowRight') {
+        nextWidth = Math.min(MAX_RADAR_MODEL_COL_WIDTH, modelColWidth + 10);
+      } else if (e.key === 'Home') {
+        nextWidth = MIN_RADAR_MODEL_COL_WIDTH;
+      } else if (e.key === 'End') {
+        nextWidth = MAX_RADAR_MODEL_COL_WIDTH;
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        nextWidth = DEFAULT_RADAR_MODEL_COL_WIDTH;
+      }
+
+      if (nextWidth !== null) {
+        e.preventDefault();
+        setModelColWidth(nextWidth);
+        try {
+          if (nextWidth === DEFAULT_RADAR_MODEL_COL_WIDTH) {
+            localStorage.removeItem(RADAR_MODEL_PINNED_WIDTH_STORAGE_KEY);
+          } else {
+            localStorage.setItem(RADAR_MODEL_PINNED_WIDTH_STORAGE_KEY, String(nextWidth));
+          }
+        } catch {
+          // ignore
+        }
+      }
+    },
+    [modelColWidth]
+  );
+
+  const scrollTable = (direction: 'left' | 'right') => {
+    const el = tableContainerRef.current;
+    if (!el) return;
+    const delta = direction === 'left' ? -280 : 280;
+    el.scrollBy({ left: delta, behavior: 'smooth' });
+  };
+
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const el = tableContainerRef.current;
+    if (!el) return;
+    const pct = parseFloat(e.target.value);
+    const maxScroll = Math.max(0, el.scrollWidth - el.clientWidth);
+    el.scrollLeft = (pct / 100) * maxScroll;
   };
 
   // 6軸カードから生データ比較テーブルへジャンプ & ソート連動
@@ -1591,11 +1779,33 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
               </p>
             </div>
 
-            <div className="flex items-center space-x-2 text-xs">
-              <span className="text-slate-400">表示件数:</span>
-              <span className="font-mono font-bold text-indigo-300 bg-indigo-950/70 border border-indigo-700/60 px-2 py-0.5 rounded">
-                {sortedModels.length} / {dataset.models.length} モデル
-              </span>
+            <div className="flex items-center space-x-3 text-xs">
+              <div className="flex items-center space-x-2">
+                <span className="text-slate-400">表示件数:</span>
+                <span className="font-mono font-bold text-indigo-300 bg-indigo-950/70 border border-indigo-700/60 px-2 py-0.5 rounded">
+                  {sortedModels.length} / {dataset.models.length} モデル
+                </span>
+              </div>
+
+              {/* 左右スクロールナビゲーションボタン */}
+              <div className="flex items-center space-x-1 border border-slate-700 rounded-lg p-0.5 bg-slate-950" title="テーブルを左右にスクロール">
+                <button
+                  onClick={() => scrollTable('left')}
+                  disabled={!scrollState.canScrollLeft}
+                  aria-label="左にスクロール"
+                  className="p-1 rounded hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed text-slate-300 transition"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => scrollTable('right')}
+                  disabled={!scrollState.canScrollRight}
+                  aria-label="右にスクロール"
+                  className="p-1 rounded hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed text-slate-300 transition"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1748,12 +1958,16 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-slate-800 text-slate-400 font-semibold uppercase tracking-wider bg-slate-950/40">
+        <div
+          ref={tableContainerRef}
+          className="overflow-auto max-h-[600px] rounded-lg border border-slate-800 relative scrollbar-thin scrollbar-thumb-slate-700"
+        >
+          <table className="w-full text-left border-collapse text-xs whitespace-nowrap min-w-max">
+            <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider font-semibold shadow-md">
+              <tr className="border-b border-slate-800">
                 <th
-                  className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors"
+                  style={{ width: `${modelColWidth}px`, minWidth: `${modelColWidth}px`, maxWidth: `${modelColWidth}px` }}
+                  className="sticky top-0 left-0 z-30 bg-slate-950 border-b border-slate-800 py-3 px-3.5 border-r border-slate-700/80 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.5)] cursor-pointer select-none hover:text-slate-200 transition-colors group relative"
                   onClick={() => handleSort('model')}
                   title="モデル順ソート (クリックで巡回: デフォルト並び順 → 昇順 → 降順)"
                 >
@@ -1772,33 +1986,62 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                       </span>
                     )}
                   </div>
+                  {/* 固定表示幅ドラッグ変更ハンドル */}
+                  <div
+                    role="separator"
+                    aria-orientation="vertical"
+                    aria-label="固定表示幅の変更ハンドル"
+                    aria-valuenow={modelColWidth}
+                    aria-valuemin={MIN_RADAR_MODEL_COL_WIDTH}
+                    aria-valuemax={MAX_RADAR_MODEL_COL_WIDTH}
+                    tabIndex={0}
+                    title={`ドラッグして固定表示幅を変更 (${modelColWidth}px) / ダブルクリックで既定値に戻す`}
+                    className={`absolute top-0 right-0 bottom-0 w-3 translate-x-1.5 cursor-col-resize z-40 flex items-center justify-center select-none group/resizer ${
+                      isResizing ? 'bg-indigo-500/30' : 'hover:bg-indigo-500/20'
+                    }`}
+                    onPointerDown={handleResizeStart}
+                    onDoubleClick={handleResetWidth}
+                    onKeyDown={handleResizeKeyDown}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div
+                      className={`w-0.5 h-4 rounded-full transition-colors ${
+                        isResizing ? 'bg-indigo-400' : 'bg-slate-600 group-hover/resizer:bg-indigo-400'
+                      }`}
+                    />
+                    {isResizing && (
+                      <div className="absolute -top-7 right-0 px-1.5 py-0.5 bg-indigo-600 text-white text-[10px] font-mono rounded shadow pointer-events-none whitespace-nowrap">
+                        {modelColWidth}px
+                      </div>
+                    )}
+                  </div>
                 </th>
-                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('overall')}>
+                <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[100px]" onClick={() => handleSort('overall')}>
                   <div className="flex items-center space-x-1">
                     <span>総合 Grade</span>
                     <ArrowUpDown className={`w-3 h-3 ${sortKey === 'overall' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
-                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('usage')}>
+                <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[130px]" onClick={() => handleSort('usage')}>
                   <div className="flex items-center space-x-1">
                     <span>社内利用シェア</span>
                     <ArrowUpDown className={`w-3 h-3 ${sortKey === 'usage' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
-                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('terminal')}>
+                <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[140px]" onClick={() => handleSort('terminal')}>
                   <div className="flex items-center space-x-1">
                     <span>Terminal-Bench 4.0</span>
                     <ArrowUpDown className={`w-3 h-3 ${sortKey === 'terminal' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
-                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('intelligence')}>
+                <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[140px]" onClick={() => handleSort('intelligence')}>
                   <div className="flex items-center space-x-1">
                     <span>AA Intelligence Index</span>
                     <ArrowUpDown className={`w-3 h-3 ${sortKey === 'intelligence' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
                 <th
-                  className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors"
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[130px]"
                   onClick={() => handleSort('arena')}
                   title="Arena WebDev Elo 順ソート"
                 >
@@ -1807,26 +2050,26 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                     <ArrowUpDown className={`w-3 h-3 ${sortKey === 'arena' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
-                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('speed')}>
+                <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[110px]" onClick={() => handleSort('speed')}>
                   <div className="flex items-center space-x-1">
                     <span>速度 (TPS)</span>
                     <ArrowUpDown className={`w-3 h-3 ${sortKey === 'speed' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
-                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('cost')}>
+                <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[160px]" onClick={() => handleSort('cost')}>
                   <div className="flex items-center space-x-1">
                     <span>単価 ($/1M Tok)</span>
                     <ArrowUpDown className={`w-3 h-3 ${sortKey === 'cost' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
-                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('context')}>
+                <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[110px]" onClick={() => handleSort('context')}>
                   <div className="flex items-center space-x-1">
                     <span>Context 窓</span>
                     <ArrowUpDown className={`w-3 h-3 ${sortKey === 'context' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
                 <th
-                  className="py-3 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors"
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[100px]"
                   onClick={() => handleSort('radar')}
                   title="レーダー表示中モデルでソート (選択中優先 ⇔ 非選択優先)"
                 >
@@ -1839,37 +2082,42 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-800/60 bg-slate-900/40">
               {sortedModels.map((m) => {
                 const isSelected = selectedModelIds.includes(m.id);
                 const isFocused = focusedModelId === m.id;
                 return (
                   <tr
                     key={m.id}
-                    className={`hover:bg-slate-800/40 transition-colors ${
-                      isFocused ? 'bg-indigo-950/20' : ''
+                    className={`group hover:bg-slate-800/40 transition-colors ${
+                      isFocused ? 'bg-indigo-950/40' : ''
                     }`}
                   >
-                    <td className="py-3 px-3">
+                    <td
+                      style={{ width: `${modelColWidth}px`, minWidth: `${modelColWidth}px`, maxWidth: `${modelColWidth}px` }}
+                      className={`sticky left-0 z-10 py-3 px-3.5 border-r border-slate-700/80 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.5)] transition-colors ${
+                        isFocused ? 'bg-indigo-950' : 'bg-slate-900 group-hover:bg-slate-800/90'
+                      }`}
+                    >
                       <div className="flex items-center space-x-2.5">
                         <span
                           className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                           style={{ backgroundColor: m.color }}
                         />
-                        <div>
+                        <div className="min-w-0 flex-1">
                           <div className="flex items-center space-x-1.5">
-                            <span className="font-bold text-white">{m.name}</span>
+                            <span className="font-bold text-white truncate" title={m.name}>{m.name}</span>
                             {m.is_copilot_native && (
-                              <span className="text-[9px] px-1 py-0.2 rounded bg-indigo-950 text-indigo-300 font-mono">
+                              <span className="text-[9px] px-1 py-0.2 rounded bg-indigo-950 text-indigo-300 font-mono shrink-0">
                                 Copilot
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center space-x-1.5 text-[10px] text-slate-500 mt-0.5">
+                          <div className="flex items-center space-x-1.5 text-[10px] text-slate-500 mt-0.5 truncate">
                             <span>{m.vendor}</span>
                             <span>•</span>
                             {m.extended_capabilities?.tier && (
-                              <span className={`px-1 py-0.2 rounded text-[9px] font-mono ${
+                              <span className={`px-1 py-0.2 rounded text-[9px] font-mono shrink-0 ${
                                 m.extended_capabilities.tier === 'powerful'
                                   ? 'bg-purple-950/80 text-purple-300'
                                   : m.extended_capabilities.tier === 'lightweight'
@@ -1881,14 +2129,14 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                             )}
                             {m.is_estimated && (
                               <span
-                                className="text-[9px] text-orange-300 font-mono whitespace-nowrap"
+                                className="text-[9px] text-orange-300 font-mono whitespace-nowrap shrink-0"
                                 title="ベンチマーク指標はすべて推測値 (要検証)"
                               >
                                 推測値
                               </span>
                             )}
                             {m.extended_capabilities?.release_status && (
-                              <span className="text-[9px] text-slate-400 font-mono">
+                              <span className="text-[9px] text-slate-400 font-mono shrink-0">
                                 {m.extended_capabilities.release_status.toUpperCase()}
                               </span>
                             )}
@@ -2074,6 +2322,51 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
             </tbody>
           </table>
         </div>
+
+        {/* 画面下部追従型 水平スクロールコントローラー (Sticky Bottom Bar) */}
+        {scrollState.scrollWidth > scrollState.clientWidth && (
+          <div className="sticky bottom-0 z-40 -mx-6 -mb-6 mt-3 px-4 py-2 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 rounded-b-2xl flex items-center justify-between gap-3 text-xs text-slate-300 shadow-[0_-4px_12px_rgba(0,0,0,0.5)]">
+            <div className="flex items-center space-x-2 shrink-0">
+              <span className="text-[11px] font-semibold text-slate-400">横スクロール</span>
+              <span className="text-[10px] text-indigo-400 font-mono font-bold">
+                {Math.round(scrollState.progress)}%
+              </span>
+            </div>
+
+            <div className="flex-1 max-w-md mx-2 flex items-center">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={scrollState.progress}
+                onChange={handleSliderChange}
+                aria-label="水平スクロール位置"
+                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:bg-slate-700 transition"
+              />
+            </div>
+
+            <div className="flex items-center space-x-1 shrink-0">
+              <button
+                onClick={() => scrollTable('left')}
+                disabled={!scrollState.canScrollLeft}
+                aria-label="下部バー左スクロール"
+                title="左にスクロール (280px)"
+                className="p-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-slate-200 transition border border-slate-700"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => scrollTable('right')}
+                disabled={!scrollState.canScrollRight}
+                aria-label="下部バー右スクロール"
+                title="右にスクロール (280px)"
+                className="p-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-slate-200 transition border border-slate-700"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 4. ベンチマークデータソース & 判定基準情報 (お題設計・性能の見え方・SNSの噂) */}
