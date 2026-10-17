@@ -106,13 +106,16 @@ describe('MonthlyReportKpis: 総リクエスト / クレジット カードの�
     assert.equal(screen.getByTestId('report-requests-median').textContent, '100');
     assert.equal(screen.getByTestId('report-requests-max').textContent, '300');
 
-    // 分布ミニヒストグラムの検証
+    // 横型ミニ箱ひげ図の検証
     const dist = screen.getByTestId('report-requests-distribution');
     assert.ok(dist);
-    assert.equal(dist.textContent?.includes('分布 (5階級)'), true);
-    const bar0 = screen.getByTestId('distribution-bar-0');
-    assert.ok(bar0);
-    assert.ok(bar0.getAttribute('title')?.includes('req'));
+    assert.equal(dist.textContent?.includes('利用量分布 (箱ひげ図)'), true);
+    const boxplot = screen.getByTestId('report-requests-boxplot');
+    assert.ok(boxplot);
+    assert.ok(boxplot.getAttribute('title')?.includes('req'));
+    assert.ok(screen.getByTestId('boxplot-box'));
+    assert.ok(screen.getByTestId('boxplot-whisker'));
+    assert.ok(screen.getByTestId('boxplot-median-line'));
   });
 
   it('AI クレジットのみのデータ: 「総 AI クレジット (AIC)」タイトル、AICバッジ、AIC単位、最小・中央・最大値を表示する', () => {
@@ -243,12 +246,16 @@ describe('MonthlyReportKpis: 総リクエスト / クレジット カードの�
     assert.equal(screen.getByTestId('report-requests-median').textContent, '3,000');
     assert.equal(screen.getByTestId('report-requests-max').textContent, '4,000');
 
-    // 分布ミニヒストグラム (AIC) の検証
+    // 横型ミニ箱ひげ図 (AIC) の検証
     const dist = screen.getByTestId('report-requests-distribution');
     assert.ok(dist);
-    const bar0 = screen.getByTestId('distribution-bar-0');
-    assert.ok(bar0);
-    assert.ok(bar0.getAttribute('title')?.includes('AIC'));
+    assert.equal(dist.textContent?.includes('利用量分布 (箱ひげ図)'), true);
+    const boxplot = screen.getByTestId('report-requests-boxplot');
+    assert.ok(boxplot);
+    assert.ok(boxplot.getAttribute('title')?.includes('AIC'));
+    assert.ok(screen.getByTestId('boxplot-box'));
+    assert.ok(screen.getByTestId('boxplot-whisker'));
+    assert.ok(screen.getByTestId('boxplot-median-line'));
   });
 
   it('両方 (リクエストと AIC) が混在するデータ: 両方の合計値とそれぞれの最小・中央・最大値を分離して併記する', () => {
@@ -410,7 +417,7 @@ describe('MonthlyReportKpis: 総リクエスト / クレジット カードの�
     assert.ok(title.includes('「リクエスト数 (req)」と「AI クレジット (AIC)」は異なる尺度です'));
   });
 
-  it('分布グラフの各バー上に度数（人数）が表示され、X軸目盛りとして最小・中央・最大値が直感対応して配置されている', () => {
+  it('横型ミニ箱ひげ図においてヒゲ(Whisker)・箱(Q1〜Q3)・中央値ラインが描画され、目盛りとして最小・中央・最大値が直感対応して配置されている', () => {
     const report = createBaseReport({
       overview: {
         total_requests: 1000,
@@ -434,19 +441,23 @@ describe('MonthlyReportKpis: 総リクエスト / クレジット カードの�
 
     const dist = screen.getByTestId('report-requests-distribution');
     assert.ok(dist);
+    assert.equal(dist.textContent?.includes('利用量分布 (箱ひげ図)'), true);
 
-    // バー上に度数（人数）テキストが存在する
-    const bar0 = screen.getByTestId('distribution-bar-0');
-    assert.ok(bar0.textContent?.includes('2')); // 10, 15
+    // 箱ひげ図の各グラフィック要素の検証
+    const boxplot = screen.getByTestId('report-requests-boxplot');
+    assert.ok(boxplot);
+    assert.ok(screen.getByTestId('boxplot-whisker'));
+    assert.ok(screen.getByTestId('boxplot-min-cap'));
+    assert.ok(screen.getByTestId('boxplot-max-cap'));
+    assert.ok(screen.getByTestId('boxplot-box'));
+    assert.ok(screen.getByTestId('boxplot-median-line'));
 
-    // バー間隔が gap-3（50%以上拡大）で離散分布であることが直感的に伝わる
-    const barContainer = dist.querySelector('.h-10');
-    assert.ok(barContainer);
-    assert.ok(barContainer.className.includes('gap-3'), 'バー間隔に gap-3 が適用されている');
-
-    // バー本体が独立したピラー（w-4/5 max-w-[28px]）として描画されている
-    const barElement = bar0.querySelector('.w-4\\/5');
-    assert.ok(barElement, 'バーが独立したピラー幅 w-4/5 を持っている');
+    // ツールチップに四分位数情報が含まれている
+    const title = boxplot.getAttribute('title') || '';
+    assert.ok(title.includes('最小: 10 req'));
+    assert.ok(title.includes('中央値: 50 req'));
+    assert.ok(title.includes('最大: 200 req'));
+    assert.ok(title.includes('四分位範囲 IQR'));
 
     // X軸目盛りとしての最小(10)・中央値(50)・最大(200)の表示
     assert.equal(screen.getByTestId('report-requests-min').textContent, '10');
