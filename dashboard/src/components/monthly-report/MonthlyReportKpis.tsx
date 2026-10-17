@@ -1,6 +1,6 @@
 import React from 'react';
 import { DollarSign, Sparkles, Users, Cpu } from 'lucide-react';
-import { MonthlyReportAggregatedData } from '../../../../src/types/copilot';
+import { MonthlyReportAggregatedData, ReportUserDetail } from '../../../../src/types/copilot';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { MetricLabel } from '../common/MetricLabel';
 import { extractTotalAiCredits } from '../../utils/monthlyCreditsTrend';
@@ -19,49 +19,107 @@ export const ALL_REPORT_KPI_CARD_WIDGET_IDS: readonly ReportKpiCardWidgetId[] = 
   'report_kpi_top_model',
 ] as const;
 
+export interface PlanUserCounts {
+  active: number;
+  nonActive: number;
+  total: number;
+}
+
 export interface CopilotPlanCounts {
-  enterprise: number;
-  business: number;
+  enterprise: PlanUserCounts;
+  business: PlanUserCounts;
 }
 
 /**
- * 月次レポートデータから Copilot プラン (Enterprise / Business) の内訳人数を算出する。
+ * ユーザーが当月アクティブ (稼働) かどうかを判定する。
+ * 1. status が明示されている場合 ('active' | 'low_active' -> true, 'idle' | 'never_used' | 'inactive' -> false)
+ * 2. is_active boolean がある場合はそれを優先
+ * 3. 利用実績 (リクエスト数 > 0, AI クレジット消費 > 0, 費用 > 0, 最終活動日あり) があれば active、それ以外は nonActive
+ */
+export function isReportUserActive(u: ReportUserDetail): boolean {
+  if (typeof (u as any).status === 'string') {
+    const s = ((u as any).status || '').toLowerCase();
+    if (s === 'active' || s === 'low_active') return true;
+    if (s === 'idle' || s === 'never_used' || s === 'inactive' || s === 'non-active' || s === 'non_active') return false;
+  }
+  if (typeof (u as any).is_active === 'boolean') {
+    return (u as any).is_active;
+  }
+  const requests = u.usage_insight?.usage?.requests ?? (typeof u.total_requests === 'number' ? u.total_requests : 0);
+  const credits = u.usage_insight?.usage?.credits ?? (typeof (u as any).credits === 'number' ? (u as any).credits : 0);
+  const spend = u.gross_spend_usd ?? u.total_spend_usd ?? 0;
+  return requests > 0 || credits > 0 || spend > 0 || Boolean(u.last_activity_date);
+}
+
+/**
+ * 月次レポートデータから Copilot プラン (Enterprise / Business) のアクティブ・ノンアクティブ内訳人数を算出する。
  * 1. user_details に plan_type を持つユーザーが存在する場合はそれを優先集計 (フィルター時にも連動)
- * 2. 存在しない場合は sku_breakdown (seats 単位の SKU) から集計
+ * 2. 存在しない場合は sku_breakdown (seats 単位の SKU) および overview.total_active_users から按分集計
  */
 export function extractCopilotPlanCounts(reportData: MonthlyReportAggregatedData): CopilotPlanCounts {
   const usersWithPlan = (reportData.user_details ?? []).filter(
-    (u) => typeof (u as any).plan_type === 'string' && (u as any).plan_type.length > 0
+    (u) => typeof u.plan_type === 'string' && u.plan_type.length > 0
   );
 
   if (usersWithPlan.length > 0) {
-    let enterprise = 0;
-    let business = 0;
+    const enterprise: PlanUserCounts = { active: 0, nonActive: 0, total: 0 };
+    const business: PlanUserCounts = { active: 0, nonActive: 0, total: 0 };
+
     for (const u of usersWithPlan) {
-      const plan = ((u as any).plan_type || '').toLowerCase();
+      const plan = (u.plan_type || '').toLowerCase();
+      const isActive = isReportUserActive(u);
       if (plan.includes('enterprise')) {
-        enterprise += 1;
+        enterprise.total += 1;
+        if (isActive) enterprise.active += 1;
+        else enterprise.nonActive += 1;
       } else if (plan.includes('business')) {
-        business += 1;
+        business.total += 1;
+        if (isActive) business.active += 1;
+        else business.nonActive += 1;
       }
     }
     return { enterprise, business };
   }
 
-  let enterprise = 0;
-  let business = 0;
+  let entTotal = 0;
+  let bizTotal = 0;
   if (Array.isArray(reportData.sku_breakdown) && reportData.sku_breakdown.length > 0) {
     for (const item of reportData.sku_breakdown) {
       const name = (item.sku_name || '').toLowerCase();
       if (name.includes('enterprise')) {
-        enterprise += item.total_quantity;
+        entTotal += item.total_quantity;
       } else if (name.includes('business')) {
-        business += item.total_quantity;
+        bizTotal += item.total_quantity;
       }
     }
   }
 
-  return { enterprise, business };
+  const totalSeats = entTotal + bizTotal;
+  const totalActive = reportData.overview?.total_active_users ?? 0;
+
+  let entActive = 0;
+  let entNonActive = entTotal;
+  let bizActive = 0;
+  let bizNonActive = bizTotal;
+
+  if (totalSeats > 0) {
+    if (totalActive >= totalSeats) {
+      entActive = entTotal;
+      entNonActive = 0;
+      bizActive = bizTotal;
+      bizNonActive = 0;
+    } else {
+      entActive = Math.min(entTotal, Math.round(totalActive * (entTotal / totalSeats)));
+      bizActive = Math.min(bizTotal, Math.max(0, totalActive - entActive));
+      entNonActive = Math.max(0, entTotal - entActive);
+      bizNonActive = Math.max(0, bizTotal - bizActive);
+    }
+  }
+
+  return {
+    enterprise: { active: entActive, nonActive: entNonActive, total: entTotal },
+    business: { active: bizActive, nonActive: bizNonActive, total: bizTotal },
+  };
 }
 
 interface MonthlyReportKpisProps {
@@ -321,18 +379,31 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
               </span>
               <span className="text-xs font-semibold text-slate-400">名</span>
             </div>
-            {/* Copilot プラン内訳 (Enterprise / Business) */}
-            <div className="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs flex-wrap gap-1" data-testid="report-plan-breakdown">
-              <span className="text-[10px] text-slate-400 font-medium">プラン内訳:</span>
-              <div className="flex items-center space-x-2 text-[11px]">
-                <span className="text-indigo-300 font-medium" data-testid="report-plan-enterprise">
-                  Enterprise: <b className="font-bold font-mono text-white" data-testid="report-plan-enterprise-count">{enterprise}</b>名
-                </span>
-                <span className="text-slate-600 font-mono">/</span>
-                <span className="text-slate-300 font-medium" data-testid="report-plan-business">
-                  Business: <b className="font-bold font-mono text-white" data-testid="report-plan-business-count">{business}</b>名
-                </span>
+            {/* Copilot プラン内訳 (Enterprise / Business: アクティブ / ノンアクティブ) */}
+            <div className="mt-2 pt-2 border-t border-slate-800/80 space-y-1.5" data-testid="report-plan-breakdown">
+              <span className="text-[10px] text-slate-400 font-medium block">
+                プラン内訳 (アクティブ / ノンアクティブ):
+              </span>
+              <div className="space-y-1 text-[11px]">
+                <div className="flex items-center justify-between" data-testid="report-plan-enterprise">
+                  <span className="text-indigo-300 font-medium">Enterprise ({enterprise.total}名):</span>
+                  <span className="font-mono text-slate-300 text-[10px]">
+                    アクティブ <b className="text-white font-bold" data-testid="report-plan-enterprise-active">{enterprise.active}</b>名
+                    <span className="text-slate-600 mx-1">/</span>
+                    ノンアクティブ <b className="text-slate-400 font-bold" data-testid="report-plan-enterprise-inactive">{enterprise.nonActive}</b>名
+                  </span>
+                </div>
+                <div className="flex items-center justify-between" data-testid="report-plan-business">
+                  <span className="text-slate-300 font-medium">Business ({business.total}名):</span>
+                  <span className="font-mono text-slate-300 text-[10px]">
+                    アクティブ <b className="text-white font-bold" data-testid="report-plan-business-active">{business.active}</b>名
+                    <span className="text-slate-600 mx-1">/</span>
+                    ノンアクティブ <b className="text-slate-400 font-bold" data-testid="report-plan-business-inactive">{business.nonActive}</b>名
+                  </span>
+                </div>
               </div>
+              <span className="hidden" data-testid="report-plan-enterprise-count">{enterprise.total}</span>
+              <span className="hidden" data-testid="report-plan-business-count">{business.total}</span>
             </div>
           </div>
           <p className="mt-1.5 text-[10px] text-slate-400">利用履歴のあるユニークアカウント</p>
