@@ -719,7 +719,7 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
                 ウィジェットカタログ
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                ダッシュボードに追加する KPI サマリーカード（1/5幅）または詳細分析セクション（全幅）を選択してください（設定はブラウザに自動保存されます）
+                ダッシュボードに追加する KPI サマリーカード（3列×2行グリッド）または詳細分析セクション（全幅）を選択してください（設定はブラウザに自動保存されます）
               </p>
             </div>
 
@@ -778,7 +778,7 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
             </div>
           </div>
 
-          {/* グループ 1: KPI サマリーウィジェット (小型カード・1/5幅グリッド配置) */}
+          {/* グループ 1: KPI サマリーウィジェット (3列×2行グリッド配置) */}
           {(catalogFilter === 'all' || catalogFilter === 'kpi') && (
             <div
               data-testid="widget-catalog-group-kpi"
@@ -790,7 +790,7 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
                     KPI サマリーウィジェット
                   </span>
                   <span className="text-xs text-slate-300 font-medium">
-                    単一指標カード（5列グリッド・1/5幅配置）
+                    単一指標カード（3列×2行グリッド・1/3幅配置）
                   </span>
                 </div>
                 <span
@@ -801,7 +801,10 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              <div
+                data-testid="widget-catalog-kpi-grid"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
+              >
                 {kpiCatalogItems.map((item) => {
                   const isPlaced = activeWidgetIds.includes(item.id);
                   return (
@@ -809,7 +812,7 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
                       key={item.id}
                       data-testid={`widget-catalog-item-${item.id}`}
                       data-widget-category="kpi"
-                      className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-950/80 border border-emerald-900/50 border-l-4 border-l-emerald-500/80"
+                      className="w-full min-w-[min(100%,21rem)] flex items-center justify-between gap-3 p-3.5 rounded-xl bg-slate-950/80 border border-emerald-900/50 border-l-4 border-l-emerald-500/80"
                     >
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -817,7 +820,7 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
                             {item.title}
                           </span>
                           <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold shrink-0 bg-emerald-950/90 text-emerald-300 border border-emerald-800/70">
-                            KPI カード (1/5幅)
+                            KPI カード (1/3幅)
                           </span>
                           {item.defaultPreset && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 shrink-0">
@@ -956,11 +959,11 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
         </div>
       )}
 
-      {/* 個別 Widget グリッド (KPI は 1 カラムセル、セクションは col-span-full で統一順序配置 #334) */}
+      {/* 個別 Widget グリッド (KPI は 3列×2行 (3x2) グリッド・スマホ縦1列幅以上、セクションは col-span-full で統一順序配置 #334, #364) */}
       {activeSource === 'live_metrics' && currentData && activeWidgetIds.length > 0 && (
         <div
           data-testid="overview-widget-list"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 w-full"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 w-full"
         >
           {activeWidgetIds.map((widgetId, idx) =>
             renderLiveWidget(widgetId, idx, activeWidgetIds.length)
@@ -971,7 +974,7 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
       {isReportSource && currentReportData && activeWidgetIds.length > 0 && (
         <div
           data-testid="overview-widget-list"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 w-full"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 w-full"
         >
           {activeWidgetIds.map((widgetId, idx) =>
             renderReportWidget(widgetId, idx, activeWidgetIds.length)
