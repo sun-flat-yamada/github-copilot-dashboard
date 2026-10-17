@@ -3,6 +3,7 @@ import { afterEach, describe, it } from 'node:test';
 import * as assert from 'node:assert/strict';
 import { cleanup, render, screen } from '@testing-library/react';
 import { MonthlyReportKpis } from '../../../dashboard/src/components/monthly-report/MonthlyReportKpis.js';
+import { CurrencyProvider } from '../../../dashboard/src/contexts/CurrencyContext.js';
 import type {
   MonthlyReportAggregatedData,
   ReportModelBreakdown,
@@ -13,7 +14,8 @@ afterEach(() => {
 });
 
 function createMockReportData(
-  modelBreakdown: ReportModelBreakdown[] = []
+  modelBreakdown: ReportModelBreakdown[] = [],
+  overviewOverrides: Partial<MonthlyReportAggregatedData['overview']> = {}
 ): MonthlyReportAggregatedData {
   return {
     report_month: '2026-09',
@@ -28,6 +30,7 @@ function createMockReportData(
       total_active_users: 42,
       top_model: modelBreakdown[0]?.model_name || 'N/A',
       top_sku: 'copilot_enterprise',
+      ...overviewOverrides,
     },
     by_department: {},
     by_cost_center: {},
@@ -361,6 +364,87 @@ describe('MonthlyReportKpis - report_kpi_active_users Plan Breakdown & Abolished
     assert.strictEqual(screen.getByTestId('report-plan-business-active').textContent?.trim(), '0');
     assert.strictEqual(screen.getByTestId('report-plan-business-inactive').textContent?.trim(), '0');
     assert.strictEqual(screen.getByTestId('report-plan-business-total').textContent?.trim(), '0');
+  });
+});
+
+describe('MonthlyReportKpis - Active Users Slash Separated Format Display (#385)', () => {
+  it('displays slash separated format when unfiltered: 16 (100.0%) / 16 / 16 名', () => {
+    const reportData = createMockReportData([], { total_active_users: 16 });
+    reportData.sku_breakdown = [
+      { sku_name: 'copilot_enterprise', total_quantity: 5, unit_type: 'seats', total_spend_usd: 195, percentage: 35 },
+      { sku_name: 'copilot_business', total_quantity: 11, unit_type: 'seats', total_spend_usd: 209, percentage: 38 },
+    ];
+
+    render(
+      <CurrencyProvider>
+        <MonthlyReportKpis reportData={reportData} />
+      </CurrencyProvider>
+    );
+
+    const totalEl = screen.getByTestId('report-active-users-total');
+    const percentEl = screen.getByTestId('report-active-users-percent');
+    const ratioEl = screen.getByTestId('report-active-users-ratio');
+
+    assert.strictEqual(totalEl.textContent?.trim(), '16');
+    assert.strictEqual(percentEl.textContent?.trim(), '(100.0%)');
+    assert.strictEqual(ratioEl.textContent?.trim(), '/ 16 / 16 名');
+  });
+
+  it('displays slash separated format for user example: 16 (100.0%) / 16 / 32 名', () => {
+    const rawReportData = createMockReportData([], { total_active_users: 32 });
+    rawReportData.sku_breakdown = [
+      { sku_name: 'copilot_enterprise', total_quantity: 10, unit_type: 'seats', total_spend_usd: 390, percentage: 50 },
+      { sku_name: 'copilot_business', total_quantity: 22, unit_type: 'seats', total_spend_usd: 418, percentage: 50 },
+    ];
+
+    const filteredReportData = createMockReportData([], { total_active_users: 16 });
+    filteredReportData.sku_breakdown = [
+      { sku_name: 'copilot_enterprise', total_quantity: 5, unit_type: 'seats', total_spend_usd: 195, percentage: 35 },
+      { sku_name: 'copilot_business', total_quantity: 11, unit_type: 'seats', total_spend_usd: 209, percentage: 38 },
+    ];
+
+    render(
+      <CurrencyProvider>
+        <MonthlyReportKpis reportData={filteredReportData} rawReportData={rawReportData} />
+      </CurrencyProvider>
+    );
+
+    const totalEl = screen.getByTestId('report-active-users-total');
+    const percentEl = screen.getByTestId('report-active-users-percent');
+    const ratioEl = screen.getByTestId('report-active-users-ratio');
+
+    assert.strictEqual(totalEl.textContent?.trim(), '16');
+    assert.strictEqual(percentEl.textContent?.trim(), '(100.0%)');
+    assert.strictEqual(ratioEl.textContent?.trim(), '/ 16 / 32 名');
+
+    // 下部のプラン内訳も確認
+    assert.strictEqual(screen.getByTestId('report-plan-enterprise-active').textContent?.trim(), '5');
+    assert.strictEqual(screen.getByTestId('report-plan-enterprise-inactive').textContent?.trim(), '0');
+    assert.strictEqual(screen.getByTestId('report-plan-enterprise-total').textContent?.trim(), '5');
+
+    assert.strictEqual(screen.getByTestId('report-plan-business-active').textContent?.trim(), '11');
+    assert.strictEqual(screen.getByTestId('report-plan-business-inactive').textContent?.trim(), '0');
+    assert.strictEqual(screen.getByTestId('report-plan-business-total').textContent?.trim(), '11');
+  });
+
+  it('safely handles zero total users without division by zero: 0 (0.0%) / 0 / 0 名', () => {
+    const reportData = createMockReportData([], { total_active_users: 0 });
+    reportData.sku_breakdown = [];
+    reportData.user_details = [];
+
+    render(
+      <CurrencyProvider>
+        <MonthlyReportKpis reportData={reportData} />
+      </CurrencyProvider>
+    );
+
+    const totalEl = screen.getByTestId('report-active-users-total');
+    const percentEl = screen.getByTestId('report-active-users-percent');
+    const ratioEl = screen.getByTestId('report-active-users-ratio');
+
+    assert.strictEqual(totalEl.textContent?.trim(), '0');
+    assert.strictEqual(percentEl.textContent?.trim(), '(0.0%)');
+    assert.strictEqual(ratioEl.textContent?.trim(), '/ 0 / 0 名');
   });
 });
 
