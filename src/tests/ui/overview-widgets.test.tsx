@@ -1,7 +1,7 @@
 import './dom-setup.js';
 import { afterEach, describe, it } from 'node:test';
 import * as assert from 'node:assert/strict';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppShell } from '../../../dashboard/src/AppShell.js';
 import {
@@ -177,5 +177,108 @@ describe('Dashboard Tab & Widgets (Separation from Cost Breakdown, KPI Widgets, 
     assert.ok(within(catalogPanel).getByTestId('widget-catalog-group-kpi'));
     assert.ok(within(catalogPanel).getByTestId('widget-catalog-group-section'));
   });
+
+  it('allows text selection inside widgets and moves widgets only when dragged via the dedicated drag handle', async () => {
+    await renderApp();
+
+    const kpiCard = screen.getByTestId('overview-widget-kpi_total_spend');
+    const kpiContent = screen.getByTestId('widget-content-kpi_total_spend');
+    const kpiHandle = screen.getByTestId('widget-drag-handle-kpi_total_spend');
+    const secondKpiCard = screen.getByTestId('overview-widget-kpi_active_rate');
+
+    const advisorCard = screen.getByTestId('overview-widget-advisor');
+    const advisorHandle = screen.getByTestId('widget-drag-handle-advisor');
+    const allocationCard = screen.getByTestId('overview-widget-allocation');
+
+    // 1. Outer widget containers must NOT have draggable="true" so browser text selection works inside widgets
+    assert.notEqual(kpiCard.getAttribute('draggable'), 'true');
+    assert.notEqual(advisorCard.getAttribute('draggable'), 'true');
+    assert.equal(kpiContent.classList.contains('select-text'), true);
+
+    // Dedicated drag handles MUST have draggable="true"
+    assert.equal(kpiHandle.getAttribute('draggable'), 'true');
+    assert.equal(advisorHandle.getAttribute('draggable'), 'true');
+
+    // 2. Dragging text inside widget content (e.g. selecting/dragging text) must NOT move the widget
+    fireEvent.dragStart(kpiContent, {
+      dataTransfer: {
+        effectAllowed: 'none',
+        types: ['text/plain'],
+        setData: () => {},
+        getData: (type: string) => (type === 'text/plain' ? 'kpi_total_spend' : ''),
+      },
+    });
+    fireEvent.dragOver(secondKpiCard, {
+      dataTransfer: {
+        dropEffect: 'none',
+        types: ['text/plain'],
+        getData: (type: string) => (type === 'text/plain' ? 'kpi_total_spend' : ''),
+      },
+    });
+    fireEvent.drop(secondKpiCard, {
+      dataTransfer: {
+        types: ['text/plain'],
+        getData: (type: string) => (type === 'text/plain' ? 'kpi_total_spend' : ''),
+      },
+    });
+    assert.deepEqual(
+      getRenderedWidgetIds().slice(0, 2),
+      ['kpi_total_spend', 'kpi_active_rate'],
+      'dragging text inside widget content must not reorder widgets'
+    );
+
+    // 3. Dragging the dedicated drag handle ('widget-drag-handle-kpi_total_spend') and dropping onto 'kpi_active_rate' moves the widget
+    const dataStore: Record<string, string> = {};
+    const mockDataTransfer = {
+      effectAllowed: 'none',
+      dropEffect: 'none',
+      get types() {
+        return Object.keys(dataStore);
+      },
+      setData: (type: string, val: string) => {
+        dataStore[type] = val;
+      },
+      getData: (type: string) => dataStore[type] ?? '',
+      setDragImage: () => {},
+    };
+
+    fireEvent.dragStart(kpiHandle, { dataTransfer: mockDataTransfer });
+    fireEvent.dragOver(secondKpiCard, { dataTransfer: mockDataTransfer });
+    fireEvent.drop(secondKpiCard, { dataTransfer: mockDataTransfer });
+    fireEvent.dragEnd(kpiHandle, { dataTransfer: mockDataTransfer });
+
+    assert.deepEqual(
+      getRenderedWidgetIds().slice(0, 2),
+      ['kpi_active_rate', 'kpi_total_spend'],
+      'dragging via widget-drag-handle must reorder KPI widgets'
+    );
+
+    // 4. Dragging a section widget via its dedicated drag handle ('widget-drag-handle-advisor') onto 'allocation' moves the section widget
+    const sectionDataStore: Record<string, string> = {};
+    const sectionDataTransfer = {
+      effectAllowed: 'none',
+      dropEffect: 'none',
+      get types() {
+        return Object.keys(sectionDataStore);
+      },
+      setData: (type: string, val: string) => {
+        sectionDataStore[type] = val;
+      },
+      getData: (type: string) => sectionDataStore[type] ?? '',
+      setDragImage: () => {},
+    };
+
+    fireEvent.dragStart(advisorHandle, { dataTransfer: sectionDataTransfer });
+    fireEvent.dragOver(allocationCard, { dataTransfer: sectionDataTransfer });
+    fireEvent.drop(allocationCard, { dataTransfer: sectionDataTransfer });
+    fireEvent.dragEnd(advisorHandle, { dataTransfer: sectionDataTransfer });
+
+    assert.deepEqual(
+      getRenderedWidgetIds().slice(5, 7),
+      ['allocation', 'advisor'],
+      'dragging via widget-drag-handle must reorder section widgets'
+    );
+  });
 });
+
 

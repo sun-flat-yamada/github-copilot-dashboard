@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { ArrowDown, ArrowUp, ChevronDown, GripVertical, X } from 'lucide-react';
 
 interface CollapsibleSectionProps {
@@ -54,14 +54,38 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   onDragEnd,
 }) => {
   const hasWidgetControls = Boolean(onMoveUp || onMoveDown || onRemove);
+  const cardRef = useRef<HTMLDivElement | null>(null);
+
+  const handleHandleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    if (cardRef.current && typeof e.dataTransfer?.setDragImage === 'function') {
+      try {
+        e.dataTransfer.setDragImage(cardRef.current, 24, 20);
+      } catch {
+        // Ignore setDragImage restrictions in synthetic DOM environments
+      }
+    }
+    onDragStart?.(e);
+  };
+
+  const handleHeaderToggleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const selection = typeof window !== 'undefined' ? window.getSelection?.() : null;
+    if (selection && !selection.isCollapsed && selection.toString().trim().length > 0) {
+      if (
+        (selection.anchorNode && e.currentTarget.contains(selection.anchorNode)) ||
+        (selection.focusNode && e.currentTarget.contains(selection.focusNode))
+      ) {
+        return;
+      }
+    }
+    onToggle();
+  };
 
   return (
     <div
+      ref={cardRef}
       id={`section-${id}`}
       data-testid={`overview-widget-${id}`}
       data-widget-id={id}
-      draggable={draggable}
-      onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDragEnter={onDragEnter}
       onDragLeave={onDragLeave}
@@ -77,19 +101,23 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
       <div className="w-full px-4 sm:px-5 py-3.5 flex items-center justify-between gap-2 hover:bg-slate-800/50 transition-colors">
         {draggable && (
           <div
-            className="text-slate-500 hover:text-slate-300 cursor-grab active:cursor-grabbing shrink-0 p-1 rounded"
-            title="ドラッグしてウィジェットの表示順番を変更"
-            aria-hidden="true"
+            data-testid={`widget-drag-handle-${id}`}
+            draggable={true}
+            onDragStart={handleHandleDragStart}
+            onDragEnd={onDragEnd}
+            className="text-slate-500 hover:text-slate-300 cursor-grab active:cursor-grabbing select-none shrink-0 p-1 rounded"
+            title="ここをドラッグしてウィジェットの表示順番を変更"
+            aria-label={`${title}をドラッグして移動`}
           >
             <GripVertical className="w-4 h-4" />
           </div>
         )}
 
-        {/* クリック可能なアコーディオン開閉ボタン */}
+        {/* クリック可能なアコーディオン開閉ボタン (テキスト選択ドラッグ時は開閉しない) */}
         <button
           type="button"
-          onClick={onToggle}
-          className="flex-1 min-w-0 flex items-center justify-between text-left cursor-pointer group"
+          onClick={handleHeaderToggleClick}
+          className="flex-1 min-w-0 flex items-center justify-between text-left cursor-pointer group select-text"
           aria-expanded={isExpanded}
           aria-controls={`content-${id}`}
         >
@@ -99,7 +127,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
                 {icon}
               </div>
             )}
-            <div className="min-w-0">
+            <div className="min-w-0 select-text">
               <h3 className="text-sm sm:text-base font-bold text-white tracking-tight truncate group-hover:text-indigo-200 transition-colors">
                 {title}
               </h3>
@@ -181,11 +209,12 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
         )}
       </div>
 
-      {/* 展開されるコンテンツボディ */}
+      {/* 展開されるコンテンツボディ (テキスト選択可能) */}
       {isExpanded && (
         <div
           id={`content-${id}`}
-          className="px-5 pb-5 pt-2 border-t border-slate-800/70 animate-in fade-in duration-200"
+          data-testid={`widget-content-${id}`}
+          className="px-5 pb-5 pt-2 border-t border-slate-800/70 select-text animate-in fade-in duration-200"
         >
           {children}
         </div>
@@ -193,4 +222,5 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
     </div>
   );
 };
+
 
