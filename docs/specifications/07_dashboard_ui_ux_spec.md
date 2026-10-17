@@ -373,8 +373,9 @@ The **「監査」** tab (`views/audit/manifest.ts` + `View.tsx`, registered thr
 2. **Active Account Statistics (Min, Median, Max)**:
    - For accounts in the selected data (or filtered dataset) with positive usage (value > 0), computes and displays active account count alongside **Min**, **Median**, and **Max**.
    - Accounts with zero or missing usage are excluded from the min/median calculation population. If active accounts count is 0, displays `—`.
-3. **Requests Distribution Histogram (Standard Size) & Axis-Aligned Layout (Min, Median, Max)**:
+3. **Requests Distribution Histogram (Standard Size & Discrete Distribution Styling) & Axis-Aligned Layout (Min, Median, Max)**:
    - Accounts with positive usage (value > 0) are divided into 5 equal classes (bins: Min to Max) and displayed as a full-width, highly readable distribution histogram (`report-requests-distribution`) with height `h-10` (40px) and equally flexed bars.
+   - To prevent misinterpretation as continuous series and clearly communicate a discrete frequency distribution image, the gap between bars is enlarged by over 50% (`gap-3` / 12px), and bars are shaped as discrete standalone pillars with width `w-4/5 max-w-[28px]` and rounded tops (`rounded-t-[3px]`). Zero-count bins are rendered as subtle baseline slits (`rounded-full`).
    - Frequency counts (number of accounts) are directly rendered on top of each bar, while hovering provides detailed tooltips with numeric range and percentage share (e.g., `1–50 req: 8 users (40%)`).
    - Directly underneath the histogram, an integrated X-axis tick baseline displays **Min (left-aligned)**, **Median (centered with accent highlight)**, and **Max (right-aligned)**, visually mapping distribution skews and clusters to summary statistics at a glance.
 4. **Distinct Dimensions (Requests vs AIC) in Tooltip**:
