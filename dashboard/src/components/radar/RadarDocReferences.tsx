@@ -14,7 +14,7 @@ export const RadarDocReferences: React.FC = () => {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
         {/* 引用1: サポートモデル一覧 */}
         <div className="p-4 bg-slate-950/70 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3 hover:border-indigo-500/40 transition-colors">
           <div>
@@ -43,7 +43,7 @@ export const RadarDocReferences: React.FC = () => {
           </div>
         </div>
 
-        {/* 引用2: モデル別課金・単価表 */}
+        {/* 引用2: モデル別課金・単価表 (Token単価) */}
         <div className="p-4 bg-slate-950/70 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3 hover:border-indigo-500/40 transition-colors">
           <div>
             <div className="flex items-center justify-between">
@@ -68,6 +68,34 @@ export const RadarDocReferences: React.FC = () => {
           </div>
           <div className="pt-2 border-t border-slate-800/80 text-[11px] text-indigo-300/80 font-mono truncate">
             URL: https://docs.github.com/ja/copilot/reference/copilot-billing/models-and-pricing
+          </div>
+        </div>
+
+        {/* 引用3: 著名ベンチマーク実測タスクコスト (Task単価) */}
+        <div className="p-4 bg-slate-950/70 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3 hover:border-indigo-500/40 transition-colors">
+          <div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="w-2 h-2 rounded-full bg-teal-400" />
+                <h4 className="font-bold text-white text-sm">著名ベンチマーク実測タスクコスト (Task Cost / Cost per Task)</h4>
+              </div>
+              <a
+                href="https://www.tbench.ai/leaderboard/terminal-bench/4.0"
+                target="_blank"
+                rel="noreferrer"
+                className="p-1.5 rounded-lg bg-slate-800 hover:bg-teal-600 text-teal-400 hover:text-white transition-colors flex items-center space-x-1"
+                title="公式リーダーボードを開く"
+              >
+                <span className="text-[11px] font-semibold">公式実測</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">
+              Terminal-Bench 4.0 および Artificial Analysis 等による、エージェントハーネス（Claude Code、Codex等）や思考トークン消費を含む標準実務タスク1試行あたりの平均実測コスト（$/task）です。カタログ上のToken単価（Rate Card）だけでは測れない、実務タスク完遂における総合経済性を評価します。
+            </p>
+          </div>
+          <div className="pt-2 border-t border-slate-800/80 text-[11px] text-teal-300/80 font-mono truncate">
+            URL: https://www.tbench.ai/leaderboard/terminal-bench/4.0
           </div>
         </div>
       </div>

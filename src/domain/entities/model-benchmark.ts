@@ -10,6 +10,7 @@ export type BenchmarkMetricKey =
   | 'output_speed_tps'
   | 'input_cost_per_m'
   | 'output_cost_per_m'
+  | 'task_cost_usd'
   | 'context_window_k';
 
 /** Benchmark metrics that come from external leaderboards (as opposed to speed, prices and context). */
@@ -43,6 +44,7 @@ export interface BenchmarkRawMetrics {
   output_speed_tps: number; // Output generation speed (tokens/sec)
   input_cost_per_m: number; // USD per 1M input tokens
   output_cost_per_m: number; // USD per 1M output tokens
+  task_cost_usd?: number; // 実務タスクあたりの実測コスト (USD per task, Terminal-Bench 4.0 / Artificial Analysis 等)
   context_window_k: number; // Context Window (in K tokens, e.g. 128, 200, 1000, 2000)
   context_window_display?: string; // 人間可読表記 (例: "272K (Max 1M)", "1M", "128K")
   cached_input_cost_per_m?: number; // キャッシュ入力単価 (USD / 1M tokens)
