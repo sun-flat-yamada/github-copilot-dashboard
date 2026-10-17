@@ -6,12 +6,12 @@
   - [x] Sibling worktree provisioned (`feat-335-swap-user-handle-and-display-name`)
   - [x] Commit implementation_plan.md and task.md alone
   - [x] Run `npm run change-dev:plan-check`
-- [/] Phase 4: Implementation, SDD Sync & Local Quality Gate <!-- id: 3 -->
+- [x] Phase 4: Implementation, SDD Sync & Local Quality Gate <!-- id: 3 -->
   - [x] Swap user and display_name columns in UserDetailTable.tsx
   - [x] Update src/tests/user-detail-table-enhancements.test.ts
   - [x] Update docs/specifications/07_dashboard_ui_ux_spec.*
-  - [/] Run local quality gate (`fork:verify`, `typecheck`, `test`, `secret-scan`, `build`)
-  - [ ] Commit implementation
-- [ ] Phase 5: Walkthrough Artifact Generation & Evidence Sealing <!-- id: 4 -->
+  - [x] Run local quality gate (`fork:verify`, `typecheck`, `test`, `secret-scan`, `build`)
+  - [x] Commit implementation
+- [x] Phase 5: Walkthrough Artifact Generation & Evidence Sealing <!-- id: 4 -->
 - [ ] Phase 6: Rebase onto Base & Create PR <!-- id: 5 -->
 - [ ] Phase 7: Rebase & Merge with change-dev:finish <!-- id: 6 -->
