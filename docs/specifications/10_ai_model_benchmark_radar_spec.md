@@ -165,7 +165,7 @@ The 6-axis comparison is drawn as a **radar chart** (recharts `RadarChart`, 0-10
 | `terminal_bench_4` (%) | Terminal-Bench 4.0, https://www.tbench.ai/leaderboard/terminal-bench/4.0 | 2026-10-12 | Read from the BenchLM snapshot of the official board (https://benchlm.ai/benchmarks/terminal-bench-4) because tbench.ai renders client-side |
 | `aa_intelligence_index` (points) | Artificial Analysis Intelligence Index v4.3, https://artificialanalysis.ai/leaderboards/models (per model `https://artificialanalysis.ai/models/<slug>`) | 2026-10-13 | Values AA marks as "Estimated", or models with only a non-reasoning variant, count as not verified |
 | `arena_webdev_elo` (Elo) | Arena (formerly LMArena / LMSYS) Code Arena \| WebDev, https://arena.ai/leaderboard/webdev | 2026-10-08 | - |
-| `task_cost_usd` ($/task) | Terminal-Bench 4.0 Mean Rollout Cost & Artificial Analysis Task Cost | 2026-10-12 | Measured mean expenditure per attempted task trial (USD), accounting for harness and reasoning tokens |
+| `task_cost_usd` ($/task) | Terminal-Bench 4.0 Mean Rollout Cost & Artificial Analysis Task Cost | 2026-10-12 | Measured mean expenditure per attempted task trial (USD), accounting for harness and reasoning tokens. Supports bidirectional sorting with dynamic sort direction indicators (`ArrowUp`/`ArrowDown`) and robust undefined handling |
 | `output_speed_tps`, Token prices, context | Artificial Analysis (speed), official GitHub Copilot pricing | unchanged | - |
 
 - **Variants**: the highest listed reasoning / harness variant of each model is used.
