@@ -4,6 +4,7 @@ import {
   computeActiveAccountStats,
   formatStatValue,
   computeDistributionBuckets,
+  computeBoxPlotStats,
 } from '../../dashboard/src/utils/accountStats.js';
 
 describe('computeActiveAccountStats', () => {
@@ -124,3 +125,54 @@ describe('computeDistributionBuckets', () => {
     assert.equal(totalCount, 3); // 50, 150, 200 の 3 件
   });
 });
+
+describe('computeBoxPlotStats', () => {
+  it('空配列や正の値が存在しない場合は null を返し activeCount は 0 になる', () => {
+    assert.deepEqual(computeBoxPlotStats([]), {
+      activeCount: 0,
+      min: null,
+      q1: null,
+      median: null,
+      q3: null,
+      max: null,
+      iqr: null,
+    });
+
+    assert.deepEqual(computeBoxPlotStats([0, null, undefined, -10]), {
+      activeCount: 0,
+      min: null,
+      q1: null,
+      median: null,
+      q3: null,
+      max: null,
+      iqr: null,
+    });
+  });
+
+  it('単一値の場合は min = q1 = median = q3 = max かつ iqr = 0 になる', () => {
+    assert.deepEqual(computeBoxPlotStats([100]), {
+      activeCount: 1,
+      min: 100,
+      q1: 100,
+      median: 100,
+      q3: 100,
+      max: 100,
+      iqr: 0,
+    });
+  });
+
+  it('複数の正の値から正確に四分位数 (Q1, Median, Q3) と IQR を計算する', () => {
+    // 5 件: [10, 20, 50, 80, 200]
+    // min = 10, max = 200, median = 50
+    // Q1 = index 1 -> 20, Q3 = index 3 -> 80, IQR = 60
+    const stats = computeBoxPlotStats([80, 10, 200, 20, 50, 0, null]);
+    assert.equal(stats.activeCount, 5);
+    assert.equal(stats.min, 10);
+    assert.equal(stats.q1, 20);
+    assert.equal(stats.median, 50);
+    assert.equal(stats.q3, 80);
+    assert.equal(stats.max, 200);
+    assert.equal(stats.iqr, 60);
+  });
+});
+

@@ -147,3 +147,79 @@ export function computeDistributionBuckets(
 
   return buckets;
 }
+
+/**
+ * 横型箱ひげ図（Box Plot）用統計データ
+ */
+export interface BoxPlotStats {
+  /** 正の利用実績があったアカウント数 */
+  activeCount: number;
+  /** 最小値（利用アカウント 0 件時は null） */
+  min: number | null;
+  /** 第1四分位数 25%点（利用アカウント 0 件時は null） */
+  q1: number | null;
+  /** 中央値 50%点（利用アカウント 0 件時は null） */
+  median: number | null;
+  /** 第3四分位数 75%点（利用アカウント 0 件時は null） */
+  q3: number | null;
+  /** 最大値（利用アカウント 0 件時は null） */
+  max: number | null;
+  /** 四分位範囲 IQR (Q3 - Q1) */
+  iqr: number | null;
+}
+
+/**
+ * 昇順ソート済み配列から指定パーセンタイル（0〜1）の値を線形補間計算する
+ */
+export function calculatePercentile(sorted: number[], p: number): number {
+  if (sorted.length === 0) return 0;
+  if (sorted.length === 1) return sorted[0];
+  const index = (sorted.length - 1) * p;
+  const lower = Math.floor(index);
+  const upper = Math.ceil(index);
+  const weight = index - lower;
+  return Number((sorted[lower] * (1 - weight) + sorted[upper] * weight).toFixed(1));
+}
+
+/**
+ * 正の利用実績（値 > 0）があるアカウントの数値から箱ひげ図用の統計値
+ * （最小値、第1四分位数 Q1、中央値、第3四分位数 Q3、最大値、IQR）を算出する。
+ */
+export function computeBoxPlotStats(
+  values: (number | null | undefined)[]
+): BoxPlotStats {
+  const active = values
+    .filter((v): v is number => typeof v === 'number' && Number.isFinite(v) && v > 0)
+    .sort((a, b) => a - b);
+
+  const count = active.length;
+  if (count === 0) {
+    return {
+      activeCount: 0,
+      min: null,
+      q1: null,
+      median: null,
+      q3: null,
+      max: null,
+      iqr: null,
+    };
+  }
+
+  const min = active[0];
+  const max = active[count - 1];
+  const q1 = calculatePercentile(active, 0.25);
+  const median = calculatePercentile(active, 0.5);
+  const q3 = calculatePercentile(active, 0.75);
+  const iqr = Number((q3 - q1).toFixed(1));
+
+  return {
+    activeCount: count,
+    min,
+    q1,
+    median,
+    q3,
+    max,
+    iqr,
+  };
+}
+
