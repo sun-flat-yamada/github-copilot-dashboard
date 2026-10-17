@@ -56,6 +56,7 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
     currentData,
     previousData,
     currentReportData,
+    reportBudgets,
     deepAnalysisProfiles,
     focusedUserLogin,
     userTableFilterStatus,
