@@ -204,17 +204,21 @@ describe('MonthlyReportKpis - report_kpi_active_users Plan Breakdown & Abolished
     assert.strictEqual(totalUsers.textContent?.trim(), '16');
 
     // Plan breakdown section
-    assert.ok(screen.getByTestId('report-plan-breakdown'));
+    const breakdown = screen.getByTestId('report-plan-breakdown');
+    assert.ok(breakdown);
+    assert.ok(breakdown.textContent?.includes('プラン内訳 (アクティブ / ノンアクティブ / 全数):'));
 
     const entCount = screen.getByTestId('report-plan-enterprise-count');
     assert.strictEqual(entCount.textContent?.trim(), '5');
     assert.strictEqual(screen.getByTestId('report-plan-enterprise-active').textContent?.trim(), '5');
     assert.strictEqual(screen.getByTestId('report-plan-enterprise-inactive').textContent?.trim(), '0');
+    assert.strictEqual(screen.getByTestId('report-plan-enterprise-total').textContent?.trim(), '5');
 
     const bizCount = screen.getByTestId('report-plan-business-count');
     assert.strictEqual(bizCount.textContent?.trim(), '11');
     assert.strictEqual(screen.getByTestId('report-plan-business-active').textContent?.trim(), '11');
     assert.strictEqual(screen.getByTestId('report-plan-business-inactive').textContent?.trim(), '0');
+    assert.strictEqual(screen.getByTestId('report-plan-business-total').textContent?.trim(), '11');
   });
 
   it('renders breakdown accurately when user_details includes plan_type with active and non-active users', () => {
@@ -285,11 +289,13 @@ describe('MonthlyReportKpis - report_kpi_active_users Plan Breakdown & Abolished
     assert.strictEqual(screen.getByTestId('report-plan-enterprise-count').textContent?.trim(), '2');
     assert.strictEqual(screen.getByTestId('report-plan-enterprise-active').textContent?.trim(), '1');
     assert.strictEqual(screen.getByTestId('report-plan-enterprise-inactive').textContent?.trim(), '1');
+    assert.strictEqual(screen.getByTestId('report-plan-enterprise-total').textContent?.trim(), '2');
 
     // Business: 1 active, 1 non-active, total 2
     assert.strictEqual(screen.getByTestId('report-plan-business-count').textContent?.trim(), '2');
     assert.strictEqual(screen.getByTestId('report-plan-business-active').textContent?.trim(), '1');
     assert.strictEqual(screen.getByTestId('report-plan-business-inactive').textContent?.trim(), '1');
+    assert.strictEqual(screen.getByTestId('report-plan-business-total').textContent?.trim(), '2');
   });
 
   it('calculates active and non-active proportionally when falling back to sku_breakdown with idle seats', () => {
@@ -329,10 +335,12 @@ describe('MonthlyReportKpis - report_kpi_active_users Plan Breakdown & Abolished
     assert.strictEqual(screen.getByTestId('report-plan-enterprise-count').textContent?.trim(), '10');
     assert.strictEqual(screen.getByTestId('report-plan-enterprise-active').textContent?.trim(), '5');
     assert.strictEqual(screen.getByTestId('report-plan-enterprise-inactive').textContent?.trim(), '5');
+    assert.strictEqual(screen.getByTestId('report-plan-enterprise-total').textContent?.trim(), '10');
 
     assert.strictEqual(screen.getByTestId('report-plan-business-count').textContent?.trim(), '10');
     assert.strictEqual(screen.getByTestId('report-plan-business-active').textContent?.trim(), '5');
     assert.strictEqual(screen.getByTestId('report-plan-business-inactive').textContent?.trim(), '5');
+    assert.strictEqual(screen.getByTestId('report-plan-business-total').textContent?.trim(), '10');
   });
 
   it('renders 0 for both plans gracefully when no plan breakdown is present', () => {
@@ -346,11 +354,13 @@ describe('MonthlyReportKpis - report_kpi_active_users Plan Breakdown & Abolished
     assert.strictEqual(entCount.textContent?.trim(), '0');
     assert.strictEqual(screen.getByTestId('report-plan-enterprise-active').textContent?.trim(), '0');
     assert.strictEqual(screen.getByTestId('report-plan-enterprise-inactive').textContent?.trim(), '0');
+    assert.strictEqual(screen.getByTestId('report-plan-enterprise-total').textContent?.trim(), '0');
 
     const bizCount = screen.getByTestId('report-plan-business-count');
     assert.strictEqual(bizCount.textContent?.trim(), '0');
     assert.strictEqual(screen.getByTestId('report-plan-business-active').textContent?.trim(), '0');
     assert.strictEqual(screen.getByTestId('report-plan-business-inactive').textContent?.trim(), '0');
+    assert.strictEqual(screen.getByTestId('report-plan-business-total').textContent?.trim(), '0');
   });
 });
 
