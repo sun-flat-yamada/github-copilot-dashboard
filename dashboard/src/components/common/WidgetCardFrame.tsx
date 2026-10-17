@@ -64,7 +64,7 @@ export const WidgetCardFrame: React.FC<WidgetCardControlProps> = ({
       onDragLeave={onDragLeave}
       onDrop={onDrop}
       onDragEnd={onDragEnd}
-      className={`flex flex-col rounded-xl bg-slate-900 border shadow-lg overflow-hidden transition-all duration-200 ${
+      className={`w-full min-w-[min(100%,21rem)] flex flex-col rounded-xl bg-slate-900 border shadow-lg overflow-hidden transition-all duration-200 ${
         isDragOver
           ? 'border-indigo-500 ring-2 ring-indigo-500/30'
           : 'border-slate-800 hover:border-slate-700'

@@ -95,9 +95,10 @@
 - **全 KPI 項目および分析セクションの個別 Widget 化 (`useOverviewWidgets` / `WidgetCardFrame` / `CollapsibleSection`)**:
   - Live Metrics モードでは、5 つの個別 KPI カード（`kpi_total_spend`: `当月 月額費用 (シート費)`、`kpi_active_rate`: `シート稼働率`、`kpi_idle_waste`: `遊休シート推定無駄コスト`、`kpi_budget_utilization`: `予算消化率`、`kpi_acceptance_rate`: `Inline補完受諾率`）と 6 つの標準分析セクション（合計 11 ウィジェット）をデフォルトプリセットとして配置。
   - Report / Upload モードでは、4 つの個別レポート KPI カード（`report_kpi_cost`: `費用サマリー`、`report_kpi_requests`: `総リクエスト数`、`report_kpi_active_users`: `アクティブ人数`、`report_kpi_top_model`: `最多使用モデル`。旧 `report_kpi_top_sku`: `主要課金 SKU` は廃止）と 2 つの標準分析セクション（合計 6 ウィジェット）をデフォルトプリセットとして配置。
-  - **追加 (`addWidget`) & ウィジェットカタログ内のカテゴリ分離・識別**:
+  - **追加 (`addWidget`) & ウィジェットカタログ内のカテゴリ分離・3×2 グリッド配置**:
     - 「ウィジェット追加」カタログパネル (`widget-catalog-panel`) から、任意の KPI ウィジェットおよび分析セクションウィジェット（Cost Center 予算推移と上限到達予測、AI Credits & コスト内訳、AI Agent & MCP 活用動向、AI 採用成熟度、監査・データ品質サマリー等）をワンクリックで追加可能。
-    - カタログパネル内では **KPI サマリーウィジェット** (`size: 'kpi'`, `widget-catalog-group-kpi`, エメラルド系アクセント、`KPI カード (1/5幅)` バッジ、コンパクト指標カード) と **詳細分析セクションウィジェット** (`size: 'full'`, `widget-catalog-group-section`, インディゴ系アクセント、`分析セクション (全幅)` バッジ、全幅アコーディオンパネル) を明確に2つの独立セクションへ分離して表示する。
+    - `Dashboard` 本体 (`overview-widget-list`) およびカタログパネル内 (`widget-catalog-group-kpi`) の **KPI サマリーウィジェット** は **3列×2行 (3x2) のグリッド配置 (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5`)** とする。各 KPI ウィジェットの幅サイズは、スマートフォンの縦表示（1列表示時）で綺麗に収まるサイズ感（`w-full min-w-[min(100%,21rem)]`、約 336px〜400px）を最小基準とし、画面幅に余裕がある場合はグリッドセル (`1fr`) に応じてさらに広く表示する。
+    - カタログパネル内では **KPI サマリーウィジェット** (`size: 'kpi'`, `widget-catalog-group-kpi`, エメラルド系アクセント、`KPI カード (1/3幅)` バッジ、3列×2行グリッド配置の指標カード) と **詳細分析セクションウィジェット** (`size: 'full'`, `widget-catalog-group-section`, インディゴ系アクセント、`分析セクション (全幅)` バッジ、全幅アコーディオンパネル) を明確に2つの独立セクションへ分離して表示する。
     - 各グループヘッダーにはカテゴリ別の配置状況カウンター (`X / Y 配置中`) を表示し、パネル上部のカテゴリ絞り込みタブ（`すべて` / `KPI カード` / `分析セクション`）により目的のウィジェット種別のみを即座にフィルタリングできる。
   - **削除 (`removeWidget`)**: 各 KPI ウィジェットおよびセクションウィジェット右端の削除ボタン（`×`）により個別に削除可能。すべて削除された場合は空状態（Empty State）を表示し、追加またはリセットを案内。
   - **表示順番変更 (`moveWidget` / `reorderWidgets`) とウィジェット内の文字選択の両立**:
