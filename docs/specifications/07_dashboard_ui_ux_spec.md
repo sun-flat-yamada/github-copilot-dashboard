@@ -368,10 +368,10 @@ The **「監査」** tab (`views/audit/manifest.ts` + `View.tsx`, registered thr
 2. **Active Account Statistics (Min, Median, Max)**:
    - For accounts in the selected data (or filtered dataset) with positive usage (value > 0), computes and displays active account count alongside **Min**, **Median**, and **Max**.
    - Accounts with zero or missing usage are excluded from the min/median calculation population. If active accounts count is 0, displays `—`.
-3. **Mini Distribution Histogram & Compact Layout**:
-   - Accounts with positive usage (value > 0) are binned into 5 equal classes between Min and Max, rendered as a compact mini histogram (`report-requests-distribution`) positioned side-by-side with the total value (`flex justify-between items-end`).
-   - Each bar displays an accessible hover tooltip with range, count, and percentage share.
-   - Summarizing active accounts count, Min, Median, and Max into a single unified micro-grid optimizes card vertical height to harmonize seamlessly with the other 3 KPI cards.
+3. **Requests Distribution Histogram (Standard Size) & Axis-Aligned Layout (Min, Median, Max)**:
+   - Accounts with positive usage (value > 0) are divided into 5 equal classes (bins: Min to Max) and displayed as a full-width, highly readable distribution histogram (`report-requests-distribution`) with height `h-10` (40px) and equally flexed bars.
+   - Frequency counts (number of accounts) are directly rendered on top of each bar, while hovering provides detailed tooltips with numeric range and percentage share (e.g., `1–50 req: 8 users (40%)`).
+   - Directly underneath the histogram, an integrated X-axis tick baseline displays **Min (left-aligned)**, **Median (centered with accent highlight)**, and **Max (right-aligned)**, visually mapping distribution skews and clusters to summary statistics at a glance.
 4. **Distinct Dimensions (Requests vs AIC) in Tooltip**:
    - The metric definition tooltip (`report_requests`) clearly articulates that physical API invocations / prompts (Requests / req) and model-tier token compute consumption units (AI Credits / AIC) are fundamentally distinct dimensions via metric caveats.
 

@@ -409,4 +409,39 @@ describe('MonthlyReportKpis: 総リクエスト / クレジット カードの�
     const title = defElem.getAttribute('title') || '';
     assert.ok(title.includes('「リクエスト数 (req)」と「AI クレジット (AIC)」は異なる尺度です'));
   });
+
+  it('分布グラフの各バー上に度数（人数）が表示され、X軸目盛りとして最小・中央・最大値が直感対応して配置されている', () => {
+    const report = createBaseReport({
+      overview: {
+        total_requests: 1000,
+        total_active_users: 5,
+        total_net_spend_usd: 100,
+        total_gross_spend_usd: 100,
+        total_discount_usd: 0,
+        top_model: 'gpt-4o',
+        top_sku: 'copilot',
+      },
+      user_details: [
+        { login: 'u1', display_name: 'U1', department: 'D', cost_center: 'C', organization: 'O', total_requests: 10, total_spend_usd: 10, primary_model: 'm' },
+        { login: 'u2', display_name: 'U2', department: 'D', cost_center: 'C', organization: 'O', total_requests: 15, total_spend_usd: 10, primary_model: 'm' },
+        { login: 'u3', display_name: 'U3', department: 'D', cost_center: 'C', organization: 'O', total_requests: 50, total_spend_usd: 10, primary_model: 'm' },
+        { login: 'u4', display_name: 'U4', department: 'D', cost_center: 'C', organization: 'O', total_requests: 80, total_spend_usd: 10, primary_model: 'm' },
+        { login: 'u5', display_name: 'U5', department: 'D', cost_center: 'C', organization: 'O', total_requests: 200, total_spend_usd: 10, primary_model: 'm' },
+      ],
+    });
+
+    render(<SingleMonthlyReportKpiCard cardId="report_kpi_requests" reportData={report} />);
+
+    const dist = screen.getByTestId('report-requests-distribution');
+    assert.ok(dist);
+
+    // バー上に度数（人数）テキストが存在する
+    const bar0 = screen.getByTestId('distribution-bar-0');
+    assert.ok(bar0.textContent?.includes('2')); // 10, 15
+
+    // X軸目盛りとしての最小(10)・中央値(50)・最大(200)の表示
+    assert.equal(screen.getByTestId('report-requests-min').textContent, '10');
+    assert.equal(screen.getByTestId('report-requests-median').textContent, '50');
+    assert.equal(screen.getByTestId('report-requests-max').textContent, '200');
+  });
 });
