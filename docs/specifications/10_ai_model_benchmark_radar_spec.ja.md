@@ -183,6 +183,10 @@ flowchart TD
     - 設定幅はブラウザの `localStorage`（キー: `copilot-dashboard:radar-model-pinned-width`）に自動永続化。
 - **垂直スクロール & ヘッダー固定**:
   - テーブルコンテナは `max-h-[600px] overflow-auto` とし、全ヘッダーセル（`th`）に `sticky top-0 bg-slate-950` を適用することで、行スクロール時もヘッダーが常時固定表示される。
+- **データ列構成 & 単価の分離 (Token単価とTask単価)**:
+  - **Token単価 ($/1M)**: APIカタログ料金（Input / Output / Cache）に基づく 100 万トークンあたりの入出力単価およびコスト効率インジケーター。
+  - **Task単価 ($/Task)**: Terminal-Bench 4.0 および Artificial Analysis 等による、エージェントハーネスや思考トークン消費を含む標準実務タスク 1 試行あたりの平均実測コスト（USD）。ワンクリックで安い順（昇順）・高い順（降順）の双方向ソートに対応。
+  - **引用リファレンスカードの整備**: 画面下部の公式ドキュメント・仕様リファレンス引用カードに、「GitHub Copilot サポートAIモデル一覧」「モデル別課金・単価表 (Models and Pricing)」に加えて「著名ベンチマーク実測タスクコスト (Task Cost / Cost per Task)」カードを既存同等に配置。
 
 ---
 
@@ -212,7 +216,8 @@ flowchart TD
 | `terminal_bench_4` (%) | Terminal-Bench 4.0、https://www.tbench.ai/leaderboard/terminal-bench/4.0 | 2026-10-12 | tbench.ai はクライアント描画のため、公式リーダーボードの BenchLM スナップショット (https://benchlm.ai/benchmarks/terminal-bench-4) から読み取る |
 | `aa_intelligence_index` (ポイント) | Artificial Analysis Intelligence Index v4.3、https://artificialanalysis.ai/leaderboards/models (モデル別 `https://artificialanalysis.ai/models/<slug>`) | 2026-10-13 | AA が "Estimated" と表示する値、および非 reasoning 変種しかないモデルは確認済みとして扱わない |
 | `arena_webdev_elo` (Elo) | Arena (旧 LMArena / LMSYS) Code Arena \| WebDev、https://arena.ai/leaderboard/webdev | 2026-10-08 | - |
-| `output_speed_tps`、単価、コンテキスト | Artificial Analysis (速度)、GitHub Copilot 公式価格 | 変更なし | - |
+| `task_cost_usd` ($/task) | Terminal-Bench 4.0 Mean Rollout Cost & Artificial Analysis Task Cost | 2026-10-12 | 実務タスク1試行あたりの実測平均コスト（USD）。エージェントハーネスや思考トークン消費を含む |
+| `output_speed_tps`、Token単価、コンテキスト | Artificial Analysis (速度)、GitHub Copilot 公式価格 | 変更なし | - |
 
 - **変種**: 各モデルで掲載されている最上位の reasoning / harness 変種の値を採用する。
 - **外した出典**: SWE-bench Verified（OpenAI が 2026-02-23 に汚染とテスト不備を理由に評価をやめると公表、https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/。公式リーダーボードも 2026-02-26 以降の掲載なし）、LMSYS Chatbot Arena Coding（Arena へ移行）、AIME 2024 / GPQA Diamond / HumanEval+（飽和。GPQA Diamond は最新モデルが 92.6-96.0% に密集、MathArena は最終解答型の競技を deprecated 扱い）。データセットはこの説明を `sources_note` として持ち、出典一覧の上に表示する。

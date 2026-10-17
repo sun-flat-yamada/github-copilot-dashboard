@@ -26,7 +26,8 @@
       "context_window_display": "272K (Long Context: 1M)",
       "long_context_threshold_k": 272,
       "long_context_input_cost_per_m": 20,
-      "long_context_output_cost_per_m": 75
+      "long_context_output_cost_per_m": 75,
+      "task_cost_usd": 6.8
     }
   },
   {
@@ -56,7 +57,8 @@
       "context_window_display": "272K (Long Context: 1M)",
       "long_context_threshold_k": 272,
       "long_context_input_cost_per_m": 4,
-      "long_context_output_cost_per_m": 15
+      "long_context_output_cost_per_m": 15,
+      "task_cost_usd": 1.85
     }
   },
   {
@@ -89,7 +91,8 @@
       "context_window_display": "1.05M",
       "long_context_threshold_k": 272,
       "long_context_input_cost_per_m": 4,
-      "long_context_output_cost_per_m": 15
+      "long_context_output_cost_per_m": 15,
+      "task_cost_usd": 1.95
     }
   },
   {
@@ -119,7 +122,8 @@
       "context_window_display": "272K (Long Context: 1M ※長文性能注意)",
       "long_context_threshold_k": 272,
       "long_context_input_cost_per_m": 0.2,
-      "long_context_output_cost_per_m": 0.75
+      "long_context_output_cost_per_m": 0.75,
+      "task_cost_usd": 0.12
     }
   },
   {
@@ -149,7 +153,8 @@
       "context_window_display": "272K (Long Context: 1M)",
       "long_context_threshold_k": 272,
       "long_context_input_cost_per_m": 8,
-      "long_context_output_cost_per_m": 30
+      "long_context_output_cost_per_m": 30,
+      "task_cost_usd": 2.1
     }
   },
   {
@@ -179,7 +184,8 @@
       "context_window_display": "272K (Long Context: 1M)",
       "long_context_threshold_k": 272,
       "long_context_input_cost_per_m": 4,
-      "long_context_output_cost_per_m": 18
+      "long_context_output_cost_per_m": 18,
+      "task_cost_usd": 0.85
     }
   },
   {
@@ -209,7 +215,8 @@
       "context_window_display": "200K (Long Context: 1M ※長文性能注意)",
       "long_context_threshold_k": 200,
       "long_context_input_cost_per_m": 0.4,
-      "long_context_output_cost_per_m": 1.8
+      "long_context_output_cost_per_m": 1.8,
+      "task_cost_usd": 0.15
     }
   },
   {
@@ -241,7 +248,8 @@
       "context_window_display": "272K (Long Context: 1M)",
       "long_context_threshold_k": 272,
       "long_context_input_cost_per_m": 10,
-      "long_context_output_cost_per_m": 45
+      "long_context_output_cost_per_m": 45,
+      "task_cost_usd": 4.2
     }
   },
   {
@@ -274,7 +282,8 @@
       "context_window_display": "272K (Long Context: 1M)",
       "long_context_threshold_k": 272,
       "long_context_input_cost_per_m": 5,
-      "long_context_output_cost_per_m": 22.5
+      "long_context_output_cost_per_m": 22.5,
+      "task_cost_usd": 1.6
     }
   },
   {
@@ -303,7 +312,8 @@
       "output_cost_per_m": 4.5,
       "cached_input_cost_per_m": 0.075,
       "context_window_k": 128,
-      "context_window_display": "128K"
+      "context_window_display": "128K",
+      "task_cost_usd": 0.35
     }
   },
   {
@@ -333,7 +343,8 @@
       "output_cost_per_m": 1.25,
       "cached_input_cost_per_m": 0.02,
       "context_window_k": 128,
-      "context_window_display": "128K"
+      "context_window_display": "128K",
+      "task_cost_usd": 0.1
     }
   },
   {
@@ -363,7 +374,8 @@
       "output_cost_per_m": 14,
       "cached_input_cost_per_m": 0.175,
       "context_window_k": 1000,
-      "context_window_display": "1M (LTS Support)"
+      "context_window_display": "1M (LTS Support)",
+      "task_cost_usd": 1.8
     }
   },
   {
@@ -393,7 +405,8 @@
       "output_cost_per_m": 2,
       "cached_input_cost_per_m": 0.025,
       "context_window_k": 128,
-      "context_window_display": "128K"
+      "context_window_display": "128K",
+      "task_cost_usd": 0.3
     }
   },
   {
@@ -420,7 +433,8 @@
       "cached_input_cost_per_m": 0.2,
       "cache_write_cost_per_m": 2.5,
       "context_window_k": 1000,
-      "context_window_display": "200K (1M Supported)"
+      "context_window_display": "200K (1M Supported)",
+      "task_cost_usd": 1.25
     }
   },
   {
@@ -450,7 +464,8 @@
       "cached_input_cost_per_m": 0.2,
       "cache_write_cost_per_m": 2.5,
       "context_window_k": 1000,
-      "context_window_display": "200K (1M Supported)"
+      "context_window_display": "200K (1M Supported)",
+      "task_cost_usd": 2.4
     }
   },
   {
@@ -477,7 +492,8 @@
       "cached_input_cost_per_m": 0.2,
       "cache_write_cost_per_m": 5,
       "context_window_k": 1000,
-      "context_window_display": "200K (1M Supported)"
+      "context_window_display": "200K (1M Supported)",
+      "task_cost_usd": 5.8
     }
   },
   {
@@ -504,7 +520,8 @@
       "cached_input_cost_per_m": 0.5,
       "cache_write_cost_per_m": 6.25,
       "context_window_k": 1000,
-      "context_window_display": "200K (1M Supported)"
+      "context_window_display": "200K (1M Supported)",
+      "task_cost_usd": 6.2
     }
   },
   {
@@ -531,7 +548,8 @@
       "cached_input_cost_per_m": 0.25,
       "cache_write_cost_per_m": 12.5,
       "context_window_k": 1000,
-      "context_window_display": "200K (1M Supported, ZDR/EFS)"
+      "context_window_display": "200K (1M Supported, ZDR/EFS)",
+      "task_cost_usd": 4.8
     }
   },
   {
@@ -558,7 +576,8 @@
       "cached_input_cost_per_m": 1,
       "cache_write_cost_per_m": 12.5,
       "context_window_k": 1000,
-      "context_window_display": "200K (1M Supported, ZDR/EFS)"
+      "context_window_display": "200K (1M Supported, ZDR/EFS)",
+      "task_cost_usd": 4.5
     }
   },
   {
@@ -585,7 +604,8 @@
       "cached_input_cost_per_m": 0.5,
       "cache_write_cost_per_m": 6.25,
       "context_window_k": 1000,
-      "context_window_display": "200K (1M Supported)"
+      "context_window_display": "200K (1M Supported)",
+      "task_cost_usd": 6.5
     }
   },
   {
@@ -617,7 +637,8 @@
       "cached_input_cost_per_m": 1,
       "cache_write_cost_per_m": 12.5,
       "context_window_k": 200,
-      "context_window_display": "200K"
+      "context_window_display": "200K",
+      "task_cost_usd": 7.2
     }
   },
   {
@@ -648,7 +669,8 @@
       "cached_input_cost_per_m": 0.5,
       "cache_write_cost_per_m": 6.25,
       "context_window_k": 1000,
-      "context_window_display": "200K (1M Supported)"
+      "context_window_display": "200K (1M Supported)",
+      "task_cost_usd": 6.8
     }
   },
   {
@@ -679,7 +701,8 @@
       "cached_input_cost_per_m": 0.5,
       "cache_write_cost_per_m": 6.25,
       "context_window_k": 1000,
-      "context_window_display": "200K (1M Supported)"
+      "context_window_display": "200K (1M Supported)",
+      "task_cost_usd": 7
     }
   },
   {
@@ -710,7 +733,8 @@
       "cached_input_cost_per_m": 0.3,
       "cache_write_cost_per_m": 3.75,
       "context_window_k": 1000,
-      "context_window_display": "200K (1M Supported)"
+      "context_window_display": "200K (1M Supported)",
+      "task_cost_usd": 1.8
     }
   },
   {
@@ -742,7 +766,8 @@
       "cached_input_cost_per_m": 0.3,
       "cache_write_cost_per_m": 3.75,
       "context_window_k": 200,
-      "context_window_display": "200K"
+      "context_window_display": "200K",
+      "task_cost_usd": 1.9
     }
   },
   {
@@ -773,7 +798,8 @@
       "cached_input_cost_per_m": 0.1,
       "cache_write_cost_per_m": 1.25,
       "context_window_k": 200,
-      "context_window_display": "200K"
+      "context_window_display": "200K",
+      "task_cost_usd": 0.25
     }
   },
   {
@@ -804,7 +830,8 @@
       "cached_input_cost_per_m": 0.1,
       "cache_write_cost_per_m": 2.5,
       "context_window_k": 1000,
-      "context_window_display": "1M (Reasoning Decodes: 1M)"
+      "context_window_display": "1M (Reasoning Decodes: 1M)",
+      "task_cost_usd": 1.65
     }
   },
   {
@@ -830,7 +857,8 @@
       "output_cost_per_m": 3.75,
       "cached_input_cost_per_m": 0.075,
       "context_window_k": 1000,
-      "context_window_display": "1M (Promo: $0.75 / $3.75)"
+      "context_window_display": "1M (Promo: $0.75 / $3.75)",
+      "task_cost_usd": 0.38
     }
   },
   {
@@ -856,7 +884,8 @@
       "output_cost_per_m": 3.75,
       "cached_input_cost_per_m": 0.075,
       "context_window_k": 1000,
-      "context_window_display": "1M (Promo: $0.75 / $3.75)"
+      "context_window_display": "1M (Promo: $0.75 / $3.75)",
+      "task_cost_usd": 0.32
     }
   },
   {
@@ -885,7 +914,8 @@
       "output_cost_per_m": 3.75,
       "cached_input_cost_per_m": 0.075,
       "context_window_k": 1000,
-      "context_window_display": "1M (Promo: $0.75 / $3.75)"
+      "context_window_display": "1M (Promo: $0.75 / $3.75)",
+      "task_cost_usd": 0.28
     }
   },
   {
@@ -914,7 +944,8 @@
       "output_cost_per_m": 9,
       "cached_input_cost_per_m": 0.15,
       "context_window_k": 1000,
-      "context_window_display": "1M"
+      "context_window_display": "1M",
+      "task_cost_usd": 0.45
     }
   },
   {
@@ -945,7 +976,8 @@
       "output_cost_per_m": 1.2,
       "cached_input_cost_per_m": 0.02,
       "context_window_k": 128,
-      "context_window_display": "128K"
+      "context_window_display": "128K",
+      "task_cost_usd": 0.2
     }
   },
   {
@@ -974,7 +1006,8 @@
       "context_window_display": "200K (Long Context: 1M)",
       "long_context_threshold_k": 200,
       "long_context_input_cost_per_m": 4,
-      "long_context_output_cost_per_m": 12
+      "long_context_output_cost_per_m": 12,
+      "task_cost_usd": 1.6
     }
   },
   {
@@ -1003,7 +1036,8 @@
       "context_window_display": "200K (Long Context Available)",
       "long_context_threshold_k": 200,
       "long_context_input_cost_per_m": 4,
-      "long_context_output_cost_per_m": 12
+      "long_context_output_cost_per_m": 12,
+      "task_cost_usd": 1.4
     }
   },
   {
@@ -1032,7 +1066,8 @@
       "context_window_display": "200K (Long Context Available)",
       "long_context_threshold_k": 200,
       "long_context_input_cost_per_m": 4,
-      "long_context_output_cost_per_m": 12
+      "long_context_output_cost_per_m": 12,
+      "task_cost_usd": 1.1
     }
   },
   {
@@ -1061,7 +1096,8 @@
       "output_cost_per_m": 15,
       "cached_input_cost_per_m": 0.3,
       "context_window_k": 1000,
-      "context_window_display": "1M Supported"
+      "context_window_display": "1M Supported",
+      "task_cost_usd": 1.8
     }
   },
   {
@@ -1090,7 +1126,8 @@
       "output_cost_per_m": 4,
       "cached_input_cost_per_m": 0.19,
       "context_window_k": 256,
-      "context_window_display": "256K"
+      "context_window_display": "256K",
+      "task_cost_usd": 0.4
     }
   },
   {
@@ -1121,7 +1158,8 @@
       "output_cost_per_m": 15,
       "cached_input_cost_per_m": 0.3,
       "context_window_k": 200,
-      "context_window_display": "200K"
+      "context_window_display": "200K",
+      "task_cost_usd": 2.1
     }
   },
   {
@@ -1151,7 +1189,8 @@
       "input_cost_per_m": 3,
       "output_cost_per_m": 15,
       "context_window_k": 200,
-      "context_window_display": "200K"
+      "context_window_display": "200K",
+      "task_cost_usd": 2.2
     }
   },
   {
@@ -1181,7 +1220,8 @@
       "input_cost_per_m": 2.5,
       "output_cost_per_m": 10,
       "context_window_k": 128,
-      "context_window_display": "128K"
+      "context_window_display": "128K",
+      "task_cost_usd": 2.5
     }
   },
   {
@@ -1211,7 +1251,8 @@
       "input_cost_per_m": 0.15,
       "output_cost_per_m": 0.6,
       "context_window_k": 128,
-      "context_window_display": "128K"
+      "context_window_display": "128K",
+      "task_cost_usd": 0.35
     }
   },
   {
@@ -1241,7 +1282,8 @@
       "input_cost_per_m": 15,
       "output_cost_per_m": 60,
       "context_window_k": 200,
-      "context_window_display": "200K"
+      "context_window_display": "200K",
+      "task_cost_usd": 8.5
     }
   },
   {
@@ -1271,7 +1313,8 @@
       "input_cost_per_m": 1.1,
       "output_cost_per_m": 4.4,
       "context_window_k": 200,
-      "context_window_display": "200K"
+      "context_window_display": "200K",
+      "task_cost_usd": 0.9
     }
   },
   {
@@ -1301,7 +1344,8 @@
       "input_cost_per_m": 0.1,
       "output_cost_per_m": 0.4,
       "context_window_k": 1048,
-      "context_window_display": "1M"
+      "context_window_display": "1M",
+      "task_cost_usd": 0.22
     }
   },
   {
@@ -1322,14 +1366,15 @@
       "tier": "Powerful"
     },
     "raw_metrics": {
-      "terminal_bench_4": 21.0,
+      "terminal_bench_4": 21,
       "aa_intelligence_index": 16,
       "arena_webdev_elo": 1227,
       "output_speed_tps": 62,
       "input_cost_per_m": 2,
       "output_cost_per_m": 8,
       "context_window_k": 2000,
-      "context_window_display": "2M"
+      "context_window_display": "2M",
+      "task_cost_usd": 2.8
     }
   },
   {
@@ -1359,7 +1404,8 @@
       "input_cost_per_m": 0.55,
       "output_cost_per_m": 2.19,
       "context_window_k": 128,
-      "context_window_display": "128K"
+      "context_window_display": "128K",
+      "task_cost_usd": 0.65
     }
   }
 ]
