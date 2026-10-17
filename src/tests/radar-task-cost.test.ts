@@ -136,4 +136,67 @@ test('AI Model Radar Benchmark Table Task Cost & Citations Contract Tests', asyn
       'Benchmark definitions must mention Task cost / $/task'
     );
   });
+
+  await t.test('verifies task_cost_usd distinction between verified (20) and estimated (26) models', () => {
+    const recordsPath = path.resolve(repoRoot, 'scripts/benchmark-data/benchmark-records.json');
+    const records = JSON.parse(fs.readFileSync(recordsPath, 'utf-8'));
+
+    const verifiedModels = records.filter(
+      (m: any) => !m.estimated_metrics?.includes('task_cost_usd') && !m.is_estimated
+    );
+    const estimatedModels = records.filter(
+      (m: any) => m.estimated_metrics?.includes('task_cost_usd') || m.is_estimated
+    );
+
+    assert.strictEqual(verifiedModels.length, 20, 'Exactly 20 models should have verified task_cost_usd');
+    assert.strictEqual(estimatedModels.length, 26, 'Exactly 26 models should have estimated task_cost_usd');
+
+    // Generated model-benchmarks.json must also reflect these estimates
+    const datasetPath = path.resolve(repoRoot, 'dashboard/public/data/model-benchmarks.json');
+    assert.ok(fs.existsSync(datasetPath), 'model-benchmarks.json must exist');
+    const dataset = JSON.parse(fs.readFileSync(datasetPath, 'utf-8'));
+
+    const datasetEstCount = dataset.models.filter(
+      (m: any) => m.estimated_metrics?.includes('task_cost_usd')
+    ).length;
+    assert.strictEqual(datasetEstCount, 26, 'Dataset models should have 26 estimated task_cost_usd');
+  });
+
+  await t.test('verifies all cited benchmark sources in DEFAULT_BENCHMARK_SOURCES have full explanations and links', () => {
+    const defsPath = path.resolve(repoRoot, 'src/processor/benchmark-definitions.ts');
+    const content = fs.readFileSync(defsPath, 'utf-8');
+
+    // Must define DEFAULT_BENCHMARK_SOURCES with all 4 required sources
+    const expectedSources = [
+      'terminal-bench-4',
+      'aa-intelligence-index',
+      'arena-webdev',
+      'artificial-analysis',
+    ];
+
+    for (const srcId of expectedSources) {
+      assert.match(content, new RegExp(`id:\\s*'${srcId}'`), `Must define benchmark source ${srcId}`);
+    }
+
+    // ModelRadarView.tsx must render #radar-sources and ExternalLink for all sources
+    const viewPath = path.resolve(repoRoot, 'dashboard/src/components/ModelRadarView.tsx');
+    const viewContent = fs.readFileSync(viewPath, 'utf-8');
+
+    assert.match(viewContent, /id="radar-sources"/, 'Must contain #radar-sources section');
+    assert.match(
+      viewContent,
+      /著名ベンチマーク出典の設計背景・現場での見え方・エンジニアの声/,
+      'Must contain section header text'
+    );
+    assert.match(
+      viewContent,
+      /dataset\.sources\.map\(/,
+      'Must iterate over dataset.sources'
+    );
+    assert.match(
+      viewContent,
+      /title="公式サイトを開く"[\s\S]*?<ExternalLink/,
+      'Must render external link icon for each source card'
+    );
+  });
 });

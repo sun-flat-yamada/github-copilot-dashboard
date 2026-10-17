@@ -229,7 +229,8 @@
     "release_date": "2026-06-01",
     "release_status": "GA",
     "estimated_metrics": [
-      "terminal_bench_4"
+      "terminal_bench_4",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": true,
@@ -263,7 +264,8 @@
     "release_status": "GA",
     "estimated_metrics": [
       "terminal_bench_4",
-      "aa_intelligence_index"
+      "aa_intelligence_index",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": true,
@@ -296,7 +298,8 @@
     "release_date": "2026-04-15",
     "release_status": "GA",
     "estimated_metrics": [
-      "terminal_bench_4"
+      "terminal_bench_4",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": false,
@@ -327,7 +330,8 @@
     "release_status": "Utility",
     "estimated_metrics": [
       "terminal_bench_4",
-      "arena_webdev_elo"
+      "arena_webdev_elo",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": false,
@@ -358,7 +362,8 @@
     "release_status": "LTS",
     "estimated_metrics": [
       "terminal_bench_4",
-      "aa_intelligence_index"
+      "aa_intelligence_index",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": true,
@@ -389,7 +394,8 @@
     "release_status": "GA",
     "estimated_metrics": [
       "terminal_bench_4",
-      "arena_webdev_elo"
+      "arena_webdev_elo",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": false,
@@ -620,7 +626,8 @@
     "estimated_metrics": [
       "terminal_bench_4",
       "aa_intelligence_index",
-      "arena_webdev_elo"
+      "arena_webdev_elo",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": false,
@@ -652,7 +659,8 @@
     "release_status": "GA",
     "estimated_metrics": [
       "terminal_bench_4",
-      "aa_intelligence_index"
+      "aa_intelligence_index",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": true,
@@ -684,7 +692,8 @@
     "release_status": "Retired",
     "estimated_metrics": [
       "terminal_bench_4",
-      "aa_intelligence_index"
+      "aa_intelligence_index",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": true,
@@ -716,7 +725,8 @@
     "release_status": "GA",
     "estimated_metrics": [
       "terminal_bench_4",
-      "aa_intelligence_index"
+      "aa_intelligence_index",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": true,
@@ -749,7 +759,8 @@
     "estimated_metrics": [
       "terminal_bench_4",
       "aa_intelligence_index",
-      "arena_webdev_elo"
+      "arena_webdev_elo",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": false,
@@ -781,7 +792,8 @@
     "release_status": "GA",
     "estimated_metrics": [
       "terminal_bench_4",
-      "aa_intelligence_index"
+      "aa_intelligence_index",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": false,
@@ -898,7 +910,8 @@
     "release_date": "2026-06-01",
     "release_status": "GA",
     "estimated_metrics": [
-      "terminal_bench_4"
+      "terminal_bench_4",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": true,
@@ -928,7 +941,8 @@
     "release_date": "2026-04-01",
     "release_status": "GA",
     "estimated_metrics": [
-      "terminal_bench_4"
+      "terminal_bench_4",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": true,
@@ -960,7 +974,8 @@
     "estimated_metrics": [
       "terminal_bench_4",
       "aa_intelligence_index",
-      "arena_webdev_elo"
+      "arena_webdev_elo",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": false,
@@ -1080,7 +1095,8 @@
     "release_date": "2026-07-01",
     "release_status": "GA",
     "estimated_metrics": [
-      "terminal_bench_4"
+      "terminal_bench_4",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": true,
@@ -1110,7 +1126,8 @@
     "release_date": "2026-04-01",
     "release_status": "GA",
     "estimated_metrics": [
-      "terminal_bench_4"
+      "terminal_bench_4",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": false,
@@ -1142,7 +1159,8 @@
     "estimated_metrics": [
       "terminal_bench_4",
       "aa_intelligence_index",
-      "arena_webdev_elo"
+      "arena_webdev_elo",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": false,
@@ -1174,7 +1192,8 @@
     "estimated_metrics": [
       "terminal_bench_4",
       "aa_intelligence_index",
-      "arena_webdev_elo"
+      "arena_webdev_elo",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": false,
@@ -1205,7 +1224,8 @@
     "estimated_metrics": [
       "terminal_bench_4",
       "aa_intelligence_index",
-      "arena_webdev_elo"
+      "arena_webdev_elo",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": false,
@@ -1236,7 +1256,8 @@
     "estimated_metrics": [
       "terminal_bench_4",
       "aa_intelligence_index",
-      "arena_webdev_elo"
+      "arena_webdev_elo",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": false,
@@ -1267,7 +1288,8 @@
     "estimated_metrics": [
       "terminal_bench_4",
       "aa_intelligence_index",
-      "arena_webdev_elo"
+      "arena_webdev_elo",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": false,
@@ -1298,7 +1320,8 @@
     "estimated_metrics": [
       "terminal_bench_4",
       "aa_intelligence_index",
-      "arena_webdev_elo"
+      "arena_webdev_elo",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": false,
@@ -1329,7 +1352,8 @@
     "estimated_metrics": [
       "terminal_bench_4",
       "aa_intelligence_index",
-      "arena_webdev_elo"
+      "arena_webdev_elo",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": true,
@@ -1358,7 +1382,8 @@
     "release_date": "2025-03-01",
     "release_status": "Retired",
     "estimated_metrics": [
-      "terminal_bench_4"
+      "terminal_bench_4",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": true,
@@ -1389,7 +1414,8 @@
     "estimated_metrics": [
       "terminal_bench_4",
       "aa_intelligence_index",
-      "arena_webdev_elo"
+      "arena_webdev_elo",
+      "task_cost_usd"
     ],
     "capabilities": {
       "has_1m_context": false,
