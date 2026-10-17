@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { ArrowDown, ArrowUp, GripVertical, X } from 'lucide-react';
 
 export interface WidgetCardControlProps {
@@ -40,13 +40,25 @@ export const WidgetCardFrame: React.FC<WidgetCardControlProps> = ({
   onDragEnd,
   children,
 }) => {
+  const cardRef = useRef<HTMLDivElement | null>(null);
+
+  const handleHandleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    if (cardRef.current && typeof e.dataTransfer?.setDragImage === 'function') {
+      try {
+        e.dataTransfer.setDragImage(cardRef.current, 24, 16);
+      } catch {
+        // Ignore setDragImage restrictions in synthetic DOM environments
+      }
+    }
+    onDragStart?.(e);
+  };
+
   return (
     <div
+      ref={cardRef}
       id={`section-${id}`}
       data-testid={`overview-widget-${id}`}
       data-widget-id={id}
-      draggable={draggable}
-      onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDragEnter={onDragEnter}
       onDragLeave={onDragLeave}
@@ -60,13 +72,21 @@ export const WidgetCardFrame: React.FC<WidgetCardControlProps> = ({
     >
       {/* Compact Widget Toolbar for KPI Cards */}
       <div className="px-3 py-1.5 border-b border-slate-800/80 bg-slate-950/60 flex items-center justify-between gap-1.5">
-        <div className="flex items-center gap-1 min-w-0">
+        <div
+          data-testid={draggable ? `widget-drag-handle-${id}` : undefined}
+          draggable={draggable ? true : undefined}
+          onDragStart={draggable ? handleHandleDragStart : undefined}
+          onDragEnd={draggable ? onDragEnd : undefined}
+          className={`flex items-center gap-1 min-w-0 ${
+            draggable
+              ? 'text-slate-400 hover:text-slate-200 cursor-grab active:cursor-grabbing select-none rounded px-1 -ml-1 py-0.5 transition-colors'
+              : ''
+          }`}
+          title={draggable ? 'ここをドラッグしてウィジェットの表示順番を変更' : undefined}
+          aria-label={draggable ? `${title}をドラッグして移動` : undefined}
+        >
           {draggable && (
-            <div
-              className="text-slate-500 hover:text-slate-300 cursor-grab active:cursor-grabbing shrink-0 p-0.5 rounded"
-              title="ドラッグしてウィジェットの表示順番を変更"
-              aria-hidden="true"
-            >
+            <div className="text-slate-500 shrink-0" aria-hidden="true">
               <GripVertical className="w-3.5 h-3.5" />
             </div>
           )}
@@ -121,10 +141,14 @@ export const WidgetCardFrame: React.FC<WidgetCardControlProps> = ({
         </div>
       </div>
 
-      {/* KPI Card Content */}
-      <div className="flex-1 flex flex-col [&>div]:flex-1 [&>div]:border-0 [&>div]:rounded-none [&>div]:shadow-none">
+      {/* KPI Card Content (text-selectable; dragging text does not move the widget) */}
+      <div
+        data-testid={`widget-content-${id}`}
+        className="flex-1 flex flex-col select-text [&>div]:flex-1 [&>div]:border-0 [&>div]:rounded-none [&>div]:shadow-none"
+      >
         {children}
       </div>
     </div>
   );
 };
+

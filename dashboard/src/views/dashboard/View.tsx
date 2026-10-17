@@ -151,19 +151,34 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
     [sectionCatalogItems, activeWidgetIds]
   );
 
+  const WIDGET_DRAG_MIME = 'application/x-copilot-widget-id';
+
   const handleDragStart = (widgetId: string) => (e: React.DragEvent<HTMLDivElement>) => {
     setDraggedWidgetId(widgetId);
-    e.dataTransfer.effectAllowed = 'move';
-    try {
-      e.dataTransfer.setData('text/plain', widgetId);
-    } catch {
-      // Ignore dataTransfer restrictions in synthetic environments
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      try {
+        e.dataTransfer.setData(WIDGET_DRAG_MIME, widgetId);
+        e.dataTransfer.setData('text/plain', widgetId);
+      } catch {
+        // Ignore dataTransfer restrictions in synthetic environments
+      }
     }
   };
 
   const handleDragOver = (widgetId: string) => (e: React.DragEvent<HTMLDivElement>) => {
+    const hasWidgetMime = (() => {
+      try {
+        return Array.from(e.dataTransfer?.types ?? []).includes(WIDGET_DRAG_MIME);
+      } catch {
+        return false;
+      }
+    })();
+    if (!draggedWidgetId && !hasWidgetMime) return;
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'move';
+    }
     if (draggedWidgetId && draggedWidgetId !== widgetId) {
       setDragOverWidgetId(widgetId);
     }
@@ -176,14 +191,17 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
   };
 
   const handleDrop = (targetWidgetId: string) => (e: React.DragEvent<HTMLDivElement>) => {
+    const fromId =
+      draggedWidgetId ||
+      (() => {
+        try {
+          return e.dataTransfer?.getData(WIDGET_DRAG_MIME) || '';
+        } catch {
+          return '';
+        }
+      })();
+    if (!fromId) return;
     e.preventDefault();
-    const fromId = draggedWidgetId || (() => {
-      try {
-        return e.dataTransfer.getData('text/plain');
-      } catch {
-        return '';
-      }
-    })();
     if (fromId && fromId !== targetWidgetId) {
       reorderWidgets(fromId, targetWidgetId);
     }
