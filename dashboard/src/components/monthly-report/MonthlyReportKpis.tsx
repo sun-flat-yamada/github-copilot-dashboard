@@ -4,7 +4,12 @@ import { MonthlyReportAggregatedData, ReportUserDetail } from '../../../../src/t
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { MetricLabel } from '../common/MetricLabel';
 import { extractTotalAiCredits } from '../../utils/monthlyCreditsTrend';
-import { computeActiveAccountStats, formatStatValue } from '../../utils/accountStats';
+import {
+  computeActiveAccountStats,
+  formatStatValue,
+  computeDistributionBuckets,
+  type DistributionBucket,
+} from '../../utils/accountStats';
 
 export type ReportKpiCardWidgetId =
   | 'report_kpi_cost'
@@ -122,6 +127,54 @@ export function extractCopilotPlanCounts(reportData: MonthlyReportAggregatedData
   };
 }
 
+interface DistributionMiniHistogramProps {
+  buckets: DistributionBucket[];
+  unit: string;
+  variant?: 'indigo' | 'amber';
+}
+
+/**
+ * KPI カード内にコンパクトに配置する度数分布ミニヒストグラム
+ */
+const DistributionMiniHistogram: React.FC<DistributionMiniHistogramProps> = ({
+  buckets,
+  unit,
+  variant = 'indigo',
+}) => {
+  if (buckets.length === 0) return null;
+  const maxCount = Math.max(...buckets.map((b) => b.count), 1);
+
+  return (
+    <div className="flex flex-col items-end shrink-0" data-testid="report-requests-distribution">
+      <span className="text-[9px] text-slate-500 font-medium tracking-tight block text-right mb-0.5">
+        分布 ({buckets.length}階級)
+      </span>
+      <div className="flex items-end gap-1 h-6 px-1.5 py-0.5 bg-slate-950/70 rounded border border-slate-800/70">
+        {buckets.map((b, i) => {
+          const heightPercent =
+            b.count === 0 ? '8%' : `${Math.max(16, (b.count / maxCount) * 100)}%`;
+          const barColor =
+            b.count === 0
+              ? 'bg-slate-800/80'
+              : variant === 'amber'
+              ? 'bg-amber-500 hover:bg-amber-400'
+              : 'bg-indigo-500 hover:bg-indigo-400';
+
+          return (
+            <div
+              key={i}
+              className={`w-2 sm:w-2.5 rounded-t transition-colors cursor-help ${barColor}`}
+              style={{ height: heightPercent }}
+              title={`${b.label} ${unit}: ${b.count}名 (${b.percentage}%)`}
+              data-testid={`distribution-bar-${i}`}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 interface MonthlyReportKpisProps {
   reportData: MonthlyReportAggregatedData;
 }
@@ -214,6 +267,11 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
 
       const reqStats = computeActiveAccountStats(reqValues);
       const credStats = computeActiveAccountStats(credValues);
+      const reqBuckets = computeDistributionBuckets(reqValues, 5);
+      const credBuckets = computeDistributionBuckets(credValues, 5);
+      const activeBuckets = hasRequests ? reqBuckets : credBuckets;
+      const activeUnit = hasRequests ? 'req' : 'AIC';
+      const activeVariant = hasRequests ? 'indigo' : 'amber';
 
       // 種別ごとのタイトル・バッジ・表示モード
       let cardLabel = '総リクエスト / クレジット';
@@ -248,23 +306,23 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
             </div>
           </div>
 
-          <div className="mt-2">
+          <div className="mt-2 flex items-end justify-between gap-2">
             {hasRequests && hasCredits ? (
               // 両方存在する場合: リクエストと AIC を行分離して併記
-              <div className="space-y-1">
-                <div className="flex items-baseline justify-between">
+              <div className="space-y-1 min-w-0">
+                <div className="flex items-baseline space-x-1.5 flex-wrap">
                   <span className="text-xs text-slate-400 font-medium">リクエスト:</span>
                   <div className="flex items-baseline space-x-1">
-                    <span className="text-lg font-black text-white tracking-tight" data-testid="report-requests-total">
+                    <span className="text-base font-black text-white tracking-tight" data-testid="report-requests-total">
                       {totalRequests.toLocaleString()}
                     </span>
                     <span className="text-[10px] font-semibold text-slate-400">req</span>
                   </div>
                 </div>
-                <div className="flex items-baseline justify-between">
+                <div className="flex items-baseline space-x-1.5 flex-wrap">
                   <span className="text-xs text-amber-400 font-medium">AI クレジット:</span>
                   <div className="flex items-baseline space-x-1">
-                    <span className="text-base font-black text-amber-300 tracking-tight" data-testid="report-credits-total">
+                    <span className="text-sm font-black text-amber-300 tracking-tight" data-testid="report-credits-total">
                       {totalCredits.toLocaleString()}
                     </span>
                     <span className="text-[10px] font-semibold text-amber-400/90">AIC</span>
@@ -288,6 +346,13 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
                 <span className="text-xs font-semibold text-slate-400">req</span>
               </div>
             )}
+
+            {/* 分布ミニグラフ (Mini Distribution Histogram) */}
+            <DistributionMiniHistogram
+              buckets={activeBuckets}
+              unit={activeUnit}
+              variant={activeVariant}
+            />
           </div>
 
           {/* 利用アカウントにおける最大値・中央値・最小値の統計 */}
@@ -309,41 +374,41 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
               </div>
             </div>
           ) : (
-            <div className="mt-2 pt-2 border-t border-slate-800/80 text-[11px] space-y-1.5">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-[10px] uppercase font-semibold text-slate-400">
-                  利用アカウント (実績 &gt; 0):
-                </span>
-                <span
-                  className={`font-mono font-semibold ${hasCredits ? 'text-amber-300' : 'text-slate-200'}`}
-                  data-testid="report-requests-active-count"
-                >
-                  {(hasCredits ? credStats : reqStats).activeCount} 名
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-1 text-center bg-slate-950/60 rounded-lg p-1.5 border border-slate-800/60">
-                <div>
-                  <span className="text-[9px] text-slate-500 block">最小値</span>
-                  <span className="font-mono text-slate-300 text-xs font-bold" data-testid="report-requests-min">
-                    {formatStatValue((hasCredits ? credStats : reqStats).min)}
-                  </span>
-                </div>
-                <div className="border-x border-slate-800/80">
-                  <span className={`text-[9px] block font-medium ${hasCredits ? 'text-amber-400' : 'text-indigo-400'}`}>
-                    中央値
-                  </span>
+            <div className="mt-2 pt-2 border-t border-slate-800/80 space-y-1">
+              <div className="bg-slate-950/60 rounded-lg p-1.5 border border-slate-800/60 space-y-1">
+                <div className="flex items-center justify-between text-[10px] text-slate-400 px-0.5">
+                  <span className="font-medium">利用アカウント (実績 &gt; 0):</span>
                   <span
-                    className={`font-mono text-xs font-bold ${hasCredits ? 'text-amber-300' : 'text-indigo-300'}`}
-                    data-testid="report-requests-median"
+                    className={`font-mono font-bold ${hasCredits ? 'text-amber-300' : 'text-slate-200'}`}
+                    data-testid="report-requests-active-count"
                   >
-                    {formatStatValue((hasCredits ? credStats : reqStats).median)}
+                    {(hasCredits ? credStats : reqStats).activeCount} 名
                   </span>
                 </div>
-                <div>
-                  <span className="text-[9px] text-slate-500 block">最大値</span>
-                  <span className="font-mono text-slate-300 text-xs font-bold" data-testid="report-requests-max">
-                    {formatStatValue((hasCredits ? credStats : reqStats).max)}
-                  </span>
+                <div className="grid grid-cols-3 gap-1 text-center pt-1 border-t border-slate-900">
+                  <div>
+                    <span className="text-[9px] text-slate-500 block">最小値</span>
+                    <span className="font-mono text-slate-300 text-xs font-bold" data-testid="report-requests-min">
+                      {formatStatValue((hasCredits ? credStats : reqStats).min)}
+                    </span>
+                  </div>
+                  <div className="border-x border-slate-800/80">
+                    <span className={`text-[9px] block font-medium ${hasCredits ? 'text-amber-400' : 'text-indigo-400'}`}>
+                      中央値
+                    </span>
+                    <span
+                      className={`font-mono text-xs font-bold ${hasCredits ? 'text-amber-300' : 'text-indigo-300'}`}
+                      data-testid="report-requests-median"
+                    >
+                      {formatStatValue((hasCredits ? credStats : reqStats).median)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-slate-500 block">最大値</span>
+                    <span className="font-mono text-slate-300 text-xs font-bold" data-testid="report-requests-max">
+                      {formatStatValue((hasCredits ? credStats : reqStats).max)}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -351,7 +416,7 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
 
           <p className="mt-1.5 text-[10px] text-slate-400 truncate">
             {hasRequests && hasCredits
-              ? 'リクエスト呼出 & AIC 消費実績'
+              ? 'リクエスト呼出 & AIC 消費実績 (異なる尺度)'
               : hasCredits
               ? 'AI クレジット消費総量 (リクエスト数行なし)'
               : hasRequests

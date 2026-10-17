@@ -3,6 +3,7 @@ import * as assert from 'node:assert/strict';
 import {
   computeActiveAccountStats,
   formatStatValue,
+  computeDistributionBuckets,
 } from '../../dashboard/src/utils/accountStats.js';
 
 describe('computeActiveAccountStats', () => {
@@ -72,5 +73,54 @@ describe('formatStatValue', () => {
     assert.equal(formatStatValue(12345), '12,345');
     assert.equal(formatStatValue(12345, 'req'), '12,345 req');
     assert.equal(formatStatValue(500.5, 'AIC'), '500.5 AIC');
+  });
+});
+
+describe('computeDistributionBuckets', () => {
+  it('空配列または正の実績値なしの場合は空配列を返す', () => {
+    assert.deepEqual(computeDistributionBuckets([]), []);
+    assert.deepEqual(computeDistributionBuckets([0, null, undefined, -10]), []);
+    assert.deepEqual(computeDistributionBuckets([10, 20], 0), []);
+  });
+
+  it('すべての値が等しい場合は単一バケット (100%) を返す', () => {
+    const buckets = computeDistributionBuckets([100, 100, 100]);
+    assert.equal(buckets.length, 1);
+    assert.equal(buckets[0].min, 100);
+    assert.equal(buckets[0].max, 100);
+    assert.equal(buckets[0].count, 3);
+    assert.equal(buckets[0].percentage, 100);
+    assert.equal(buckets[0].label, '100');
+  });
+
+  it('指定されたビン数で度数分布を算出し、全バケットのカウント合計が対象人数と一致する', () => {
+    // 10 件のアカウント: 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 (min=10, max=100)
+    // 5 バケット: step = 18
+    // [10~28), [28~46), [46~64), [64~82), [82~100]
+    const values = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+    const buckets = computeDistributionBuckets(values, 5);
+
+    assert.equal(buckets.length, 5);
+    const totalCount = buckets.reduce((s, b) => s + b.count, 0);
+    assert.equal(totalCount, 10);
+
+    // 各ビンの比率合計が 100% (端数誤差許容)
+    const totalPct = buckets.reduce((s, b) => s + b.percentage, 0);
+    assert.ok(Math.abs(totalPct - 100) < 0.2);
+
+    // ラベルが設定されていること
+    for (const b of buckets) {
+      assert.ok(b.label.length > 0);
+      assert.ok(b.min <= b.max);
+    }
+  });
+
+  it('未利用 (0, null) が混在していても除外して度数分布を算出する', () => {
+    const values = [0, 50, null, 150, undefined, 200, 0];
+    const buckets = computeDistributionBuckets(values, 3);
+
+    assert.equal(buckets.length, 3);
+    const totalCount = buckets.reduce((s, b) => s + b.count, 0);
+    assert.equal(totalCount, 3); // 50, 150, 200 の 3 件
   });
 });

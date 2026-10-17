@@ -105,6 +105,14 @@ describe('MonthlyReportKpis: 総リクエスト / クレジット カードの�
     assert.equal(screen.getByTestId('report-requests-min').textContent, '50');
     assert.equal(screen.getByTestId('report-requests-median').textContent, '100');
     assert.equal(screen.getByTestId('report-requests-max').textContent, '300');
+
+    // 分布ミニヒストグラムの検証
+    const dist = screen.getByTestId('report-requests-distribution');
+    assert.ok(dist);
+    assert.equal(dist.textContent?.includes('分布 (5階級)'), true);
+    const bar0 = screen.getByTestId('distribution-bar-0');
+    assert.ok(bar0);
+    assert.ok(bar0.getAttribute('title')?.includes('req'));
   });
 
   it('AI クレジットのみのデータ: 「総 AI クレジット (AIC)」タイトル、AICバッジ、AIC単位、最小・中央・最大値を表示する', () => {
@@ -234,6 +242,13 @@ describe('MonthlyReportKpis: 総リクエスト / クレジット カードの�
     assert.equal(screen.getByTestId('report-requests-min').textContent, '1,000');
     assert.equal(screen.getByTestId('report-requests-median').textContent, '3,000');
     assert.equal(screen.getByTestId('report-requests-max').textContent, '4,000');
+
+    // 分布ミニヒストグラム (AIC) の検証
+    const dist = screen.getByTestId('report-requests-distribution');
+    assert.ok(dist);
+    const bar0 = screen.getByTestId('distribution-bar-0');
+    assert.ok(bar0);
+    assert.ok(bar0.getAttribute('title')?.includes('AIC'));
   });
 
   it('両方 (リクエストと AIC) が混在するデータ: 両方の合計値とそれぞれの最小・中央・最大値を分離して併記する', () => {
@@ -346,6 +361,9 @@ describe('MonthlyReportKpis: 総リクエスト / クレジット カードの�
     assert.equal(screen.getByTestId('report-requests-min').textContent, '—');
     assert.equal(screen.getByTestId('report-requests-median').textContent, '—');
     assert.equal(screen.getByTestId('report-requests-max').textContent, '—');
+
+    // 実績なしの場合は分布グラフが表示されないこと
+    assert.equal(screen.queryByTestId('report-requests-distribution'), null);
   });
 
   it('MonthlyReportKpis 全体グリッドレンダリングでも正常に表示される', () => {
@@ -380,5 +398,15 @@ describe('MonthlyReportKpis: 総リクエスト / クレジット カードの�
     assert.equal(screen.getByTestId('report-requests-min').textContent, '50');
     assert.equal(screen.getByTestId('report-requests-median').textContent, '50');
     assert.equal(screen.getByTestId('report-requests-max').textContent, '50');
+    assert.ok(screen.getByTestId('report-requests-distribution'));
+  });
+
+  it('Tooltip の定義にリクエスト数とAICが異なる尺度である旨が明記されている', () => {
+    const report = createBaseReport();
+    render(<SingleMonthlyReportKpiCard cardId="report_kpi_requests" reportData={report} />);
+
+    const defElem = screen.getByTestId('metric-definition-report_requests');
+    const title = defElem.getAttribute('title') || '';
+    assert.ok(title.includes('「リクエスト数 (req)」と「AI クレジット (AIC)」は異なる尺度です'));
   });
 });
