@@ -269,7 +269,7 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
           </div>
           <div className="mt-2 space-y-1.5">
             <div>
-              <span className="text-[10px] text-slate-400 block font-medium"><MetricLabel metricId="report_gross_spend" className="text-[10px] text-slate-400 font-medium" label="利用費用 (総額):" /></span>
+              <span className="text-[10px] text-slate-400 block font-medium"><MetricLabel metricId="report_gross_spend" className="text-[10px] text-slate-400 font-medium" label="利用費用 (総額):" hideWindow /></span>
               <div className="flex items-baseline space-x-1.5 flex-wrap">
                 <span className="text-xl font-black text-white tracking-tight">
                   {grossDual.usd}
@@ -341,7 +341,7 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
 
       // 種別ごとのタイトル・バッジ・表示モード
       let cardLabel = '総リクエスト / クレジット';
-      let badgeLabel = '実績なし';
+      let badgeLabel: string | null = '実績なし';
       let badgeStyle = 'bg-slate-800 text-slate-400 border-slate-700';
 
       if (hasRequests && hasCredits) {
@@ -354,8 +354,7 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
         badgeStyle = 'bg-amber-950 text-amber-300 border-amber-800/60';
       } else if (hasRequests) {
         cardLabel = '総リクエスト数';
-        badgeLabel = 'リクエスト';
-        badgeStyle = 'bg-indigo-950 text-indigo-300 border-indigo-800/60';
+        badgeLabel = null; // タイトル「総リクエスト数」と重複して冗長なため非表示
       }
 
       return (
@@ -363,9 +362,11 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
           <div className="flex items-center justify-between gap-1 flex-wrap">
             <MetricLabel metricId="report_requests" label={cardLabel} hideWindow />
             <div className="flex items-center space-x-1.5">
-              <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border ${badgeStyle}`} data-testid="report-requests-badge">
-                {badgeLabel}
-              </span>
+              {badgeLabel && (
+                <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border ${badgeStyle}`} data-testid="report-requests-badge">
+                  {badgeLabel}
+                </span>
+              )}
               <div className="p-1.5 rounded-lg bg-indigo-950 border border-indigo-800/60 text-indigo-400">
                 <Sparkles className="w-4 h-4" />
               </div>
@@ -487,7 +488,7 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
         <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm flex flex-col justify-between" data-testid="report-kpi-active-users">
           <div>
             <div className="flex items-center justify-between">
-              <MetricLabel metricId="report_active_users" />
+              <MetricLabel metricId="report_active_users" hideWindow />
               <div className="p-1.5 rounded-lg bg-blue-950 border border-blue-800/60 text-blue-400">
                 <Users className="w-4 h-4" />
               </div>
@@ -540,7 +541,7 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
         <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm flex flex-col justify-between" data-testid="report-kpi-top-model">
           <div>
             <div className="flex items-center justify-between">
-              <MetricLabel metricId="report_top_model" />
+              <MetricLabel metricId="report_top_model" hideWindow />
               <div className="p-1.5 rounded-lg bg-purple-950 border border-purple-800/60 text-purple-400">
                 <Cpu className="w-4 h-4" />
               </div>

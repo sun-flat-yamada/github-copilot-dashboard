@@ -285,6 +285,9 @@ The 4 KPI cards in the overview block of monthly usage reports (cost summary, to
   - Displays the top 3 AI models from the selected data's model breakdown (`model_breakdown`), each with its rank (1–3), model name, and request share percentage (%).
   - When fewer than 3 models exist (1–2 models), displays only the existing ones; when empty, shows a graceful "データなし" fallback.
   - Enables immediate visual comprehension of the AI model portfolio and adoption distribution within the selected dataset.
+- **Card Header Symmetry and Redundant Label Elimination**:
+  - Because the entire section is scoped to the selected monthly report, the `選択した月次レポートの月` window label is suppressed across all KPI cards (`hideWindow: true`).
+  - In the Total Requests card, since the title explicitly denotes requests, the duplicate `リクエスト` badge in the header is hidden, maintaining a clean and symmetric header layout across all 4 cards (metric title + info icon on the left, icon box on the right).
 
 ### 2.14b View Registry (P2-4 / C-01, D-06)
 
