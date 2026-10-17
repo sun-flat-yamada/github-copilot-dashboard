@@ -1,8 +1,10 @@
-# Task Checklist (#344)
+# Task Checklist: Distinguish KPI Widgets vs Analysis Sections in Widget Catalog (#344)
 
-- [x] Issue #344 の作成およびワークツリー `feat/344-distinguish-kpi-widgets-in-catalog` の作成
-- [x] `implementation_plan.md` の作成・先行コミット
-- [ ] `dashboard/src/views/dashboard/View.tsx` のウィジェットカタログを KPI グループと詳細分析セクショングループに分離・視覚的差別化・フィルター追加
-- [ ] `src/tests/ui/overview-widgets.test.tsx` にカタログ内グループ分離・フィルターの検証テストを追加
-- [ ] `docs/specifications/07_dashboard_ui_ux_spec*.md` の更新
-- [ ] 品質ゲート通過・PR 作成・Rebase Merge
+- [x] Create GitHub Issue (#344)
+- [x] Provision sibling worktree `../proud-noether-worktrees/feat-344-distinguish-kpi-widgets-in-catalog` on branch `feat/344-distinguish-kpi-widgets-in-catalog`
+- [x] Commit `implementation_plan.md` and `task.md` on their own before implementation (`npm run change-dev:plan-check`)
+- [x] Update `dashboard/src/views/dashboard/View.tsx` to group KPI widgets and analysis section widgets into separate visual sections with category badges, color-coded left borders, active counts, and filter tabs
+- [x] Update `src/tests/ui/overview-widgets.test.tsx` to verify catalog grouping, badges, and filter controls
+- [x] Update `docs/specifications/07_dashboard_ui_ux_spec.ja.md` and `docs/specifications/07_dashboard_ui_ux_spec.md`
+- [x] Run quality gate (`fork:verify`, `typecheck`, `test`, `secret-scan`, `build`)
+- [ ] Commit, push, create PR, and run `change-dev:finish`

@@ -129,4 +129,53 @@ describe('Dashboard Tab & Widgets (Separation from Cost Breakdown, KPI Widgets, 
     const storedAfterReset = JSON.parse(window.localStorage.getItem(OVERVIEW_WIDGETS_STORAGE_KEY) ?? '{}');
     assert.deepEqual(storedAfterReset.liveWidgets, DEFAULT_LIVE_WIDGET_IDS);
   });
+
+  it('clearly distinguishes KPI summary widgets from analysis section widgets in the Widget Catalog panel with category grouping and filters', async () => {
+    const { user } = await renderApp();
+
+    // Remove 1 KPI widget ('kpi_acceptance_rate') and 1 section widget ('budget') so we can inspect both active and unplaced states
+    await user.click(screen.getByTestId('widget-remove-kpi_acceptance_rate'));
+    await user.click(screen.getByTestId('widget-remove-budget'));
+
+    // Open the Widget Catalog panel
+    await user.click(screen.getByTestId('widget-add-button'));
+    const catalogPanel = screen.getByTestId('widget-catalog-panel');
+    assert.ok(catalogPanel);
+
+    // Both KPI group and Section group are rendered in 'all' filter mode
+    const kpiGroup = within(catalogPanel).getByTestId('widget-catalog-group-kpi');
+    const sectionGroup = within(catalogPanel).getByTestId('widget-catalog-group-section');
+    assert.ok(kpiGroup);
+    assert.ok(sectionGroup);
+
+    // Placement counters accurately reflect active vs total per category (4/5 KPI, 5/11 Section)
+    assert.equal(within(catalogPanel).getByTestId('widget-catalog-kpi-status').textContent, '4 / 5 配置中');
+    assert.equal(within(catalogPanel).getByTestId('widget-catalog-section-status').textContent, '5 / 11 配置中');
+
+    // KPI items live inside widget-catalog-group-kpi with data-widget-category="kpi"
+    const kpiItems = kpiGroup.querySelectorAll<HTMLElement>('[data-widget-category="kpi"]');
+    assert.equal(kpiItems.length, 5);
+    assert.equal(kpiGroup.querySelectorAll('[data-widget-category="section"]').length, 0);
+
+    // Section items live inside widget-catalog-group-section with data-widget-category="section"
+    const sectionItems = sectionGroup.querySelectorAll<HTMLElement>('[data-widget-category="section"]');
+    assert.equal(sectionItems.length, 11);
+    assert.equal(sectionGroup.querySelectorAll('[data-widget-category="kpi"]').length, 0);
+
+    // Filter to KPI widgets only
+    await user.click(within(catalogPanel).getByTestId('widget-catalog-filter-kpi'));
+    assert.ok(within(catalogPanel).getByTestId('widget-catalog-group-kpi'));
+    assert.equal(within(catalogPanel).queryByTestId('widget-catalog-group-section'), null);
+
+    // Filter to Analysis Section widgets only
+    await user.click(within(catalogPanel).getByTestId('widget-catalog-filter-section'));
+    assert.equal(within(catalogPanel).queryByTestId('widget-catalog-group-kpi'), null);
+    assert.ok(within(catalogPanel).getByTestId('widget-catalog-group-section'));
+
+    // Filter back to All
+    await user.click(within(catalogPanel).getByTestId('widget-catalog-filter-all'));
+    assert.ok(within(catalogPanel).getByTestId('widget-catalog-group-kpi'));
+    assert.ok(within(catalogPanel).getByTestId('widget-catalog-group-section'));
+  });
 });
+
