@@ -83,7 +83,6 @@ export const WidgetCardFrame: React.FC<WidgetCardControlProps> = ({
               : ''
           }`}
           title={draggable ? 'ここをドラッグしてウィジェットの表示順番を変更' : undefined}
-          aria-label={draggable ? `${title}をドラッグして移動` : undefined}
         >
           {draggable && (
             <div className="text-slate-500 shrink-0" aria-hidden="true">
