@@ -1,0 +1,27 @@
+# Task: モデル特性レーダーに Gemini 4 Argon を追加・仕様コード二重同期 (#345)
+
+- [x] Phase 1: Issue Definition & Scoping <!-- id: 0 -->
+  - [x] Issue #345 作成
+  - [x] ブランチ名策定 (`feat/345-add-gemini-4-argon-to-radar`)
+- [x] Phase 2: Implementation Plan formulated <!-- id: 1 -->
+  - [x] `implementation_plan.md` 作成
+  - [x] `task.md` 作成
+- [/] Phase 3: Sibling Worktree Provisioning & Implementation <!-- id: 2 -->
+  - [x] Sibling worktree provisioned (`../proud-noether-worktrees/feat-345-add-gemini-4-argon-to-radar`)
+  - [ ] `supported_models.md` の更新 (Tables 1, 3, 4, 5, 6)
+  - [ ] `verified-benchmarks-2026-10.json` の更新
+  - [ ] `benchmark-records.json` の更新
+  - [ ] `src/processor/model-catalog.ts` の更新
+  - [ ] `src/processor/benchmark-definitions.ts` & `benchmark-evaluator.ts` の更新
+  - [ ] `radar-constants.ts`, `ModelSelectorSidebar.tsx`, `modelDisplay.ts` の更新
+  - [ ] SDD-10 (日・英) の更新
+  - [ ] テスト同期 (`radar-presets.test.ts`, `model-display.test.ts`)
+- [ ] Phase 4: Local Quality Gate & Specification Sync <!-- id: 3 -->
+  - [ ] `npm run fork:verify`
+  - [ ] `npm run typecheck`
+  - [ ] `npm test`
+  - [ ] `npm run secret-scan`
+  - [ ] `npm run build`
+- [ ] Phase 5: Walkthrough Artifact Generation & Evidence Sealing <!-- id: 4 -->
+- [ ] Phase 6: Rebase onto Base & Create PR <!-- id: 5 -->
+- [ ] Phase 7: Rebase & Merge and Worktree Cleanup (Auto-Pilot) <!-- id: 6 -->
