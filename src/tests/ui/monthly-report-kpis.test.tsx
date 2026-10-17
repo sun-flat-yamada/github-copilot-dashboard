@@ -208,12 +208,16 @@ describe('MonthlyReportKpis - report_kpi_active_users Plan Breakdown & Abolished
 
     const entCount = screen.getByTestId('report-plan-enterprise-count');
     assert.strictEqual(entCount.textContent?.trim(), '5');
+    assert.strictEqual(screen.getByTestId('report-plan-enterprise-active').textContent?.trim(), '5');
+    assert.strictEqual(screen.getByTestId('report-plan-enterprise-inactive').textContent?.trim(), '0');
 
     const bizCount = screen.getByTestId('report-plan-business-count');
     assert.strictEqual(bizCount.textContent?.trim(), '11');
+    assert.strictEqual(screen.getByTestId('report-plan-business-active').textContent?.trim(), '11');
+    assert.strictEqual(screen.getByTestId('report-plan-business-inactive').textContent?.trim(), '0');
   });
 
-  it('renders breakdown accurately when user_details includes plan_type', () => {
+  it('renders breakdown accurately when user_details includes plan_type with active and non-active users', () => {
     const reportData: MonthlyReportAggregatedData = {
       ...createMockReportData([]),
       overview: {
@@ -221,7 +225,7 @@ describe('MonthlyReportKpis - report_kpi_active_users Plan Breakdown & Abolished
         total_gross_spend_usd: 100,
         total_discount_usd: 0,
         total_requests: 500,
-        total_active_users: 3,
+        total_active_users: 2,
         top_model: 'Claude 3.7 Sonnet',
         top_sku: 'copilot_enterprise',
       },
@@ -236,18 +240,19 @@ describe('MonthlyReportKpis - report_kpi_active_users Plan Breakdown & Abolished
           total_spend_usd: 39,
           primary_model: 'Claude 3.7 Sonnet',
           plan_type: 'enterprise',
-        } as any,
+        },
         {
           login: 'user-b',
           display_name: 'User B',
           department: 'Eng',
           cost_center: 'CC1',
           organization: 'Org1',
-          total_requests: 200,
-          total_spend_usd: 39,
-          primary_model: 'Claude 3.7 Sonnet',
+          total_requests: 0,
+          total_spend_usd: 0,
+          primary_model: 'None',
           plan_type: 'enterprise',
-        } as any,
+          status: 'idle',
+        },
         {
           login: 'user-c',
           display_name: 'User C',
@@ -258,18 +263,76 @@ describe('MonthlyReportKpis - report_kpi_active_users Plan Breakdown & Abolished
           total_spend_usd: 19,
           primary_model: 'GPT-4o',
           plan_type: 'business',
-        } as any,
+        },
+        {
+          login: 'user-d',
+          display_name: 'User D',
+          department: 'Design',
+          cost_center: 'CC2',
+          organization: 'Org1',
+          total_requests: 0,
+          total_spend_usd: 0,
+          primary_model: 'None',
+          plan_type: 'business',
+        },
       ],
       sku_breakdown: [],
     };
 
     render(<MonthlyReportKpis reportData={reportData} />);
 
-    const entCount = screen.getByTestId('report-plan-enterprise-count');
-    assert.strictEqual(entCount.textContent?.trim(), '2');
+    // Enterprise: 1 active, 1 non-active, total 2
+    assert.strictEqual(screen.getByTestId('report-plan-enterprise-count').textContent?.trim(), '2');
+    assert.strictEqual(screen.getByTestId('report-plan-enterprise-active').textContent?.trim(), '1');
+    assert.strictEqual(screen.getByTestId('report-plan-enterprise-inactive').textContent?.trim(), '1');
 
-    const bizCount = screen.getByTestId('report-plan-business-count');
-    assert.strictEqual(bizCount.textContent?.trim(), '1');
+    // Business: 1 active, 1 non-active, total 2
+    assert.strictEqual(screen.getByTestId('report-plan-business-count').textContent?.trim(), '2');
+    assert.strictEqual(screen.getByTestId('report-plan-business-active').textContent?.trim(), '1');
+    assert.strictEqual(screen.getByTestId('report-plan-business-inactive').textContent?.trim(), '1');
+  });
+
+  it('calculates active and non-active proportionally when falling back to sku_breakdown with idle seats', () => {
+    const reportData: MonthlyReportAggregatedData = {
+      ...createMockReportData([]),
+      overview: {
+        total_net_spend_usd: 300,
+        total_gross_spend_usd: 300,
+        total_discount_usd: 0,
+        total_requests: 2000,
+        total_active_users: 10,
+        top_model: 'Claude 3.7 Sonnet',
+        top_sku: 'copilot_business',
+      },
+      sku_breakdown: [
+        {
+          sku_name: 'copilot_enterprise',
+          total_quantity: 10,
+          unit_type: 'seats',
+          total_spend_usd: 390,
+          percentage: 50,
+        },
+        {
+          sku_name: 'copilot_business',
+          total_quantity: 10,
+          unit_type: 'seats',
+          total_spend_usd: 190,
+          percentage: 50,
+        },
+      ],
+      user_details: [],
+    };
+
+    render(<MonthlyReportKpis reportData={reportData} />);
+
+    // Total seats: 20, active: 10. Enterprise 10 -> active: 5, inactive: 5. Business 10 -> active: 5, inactive: 5.
+    assert.strictEqual(screen.getByTestId('report-plan-enterprise-count').textContent?.trim(), '10');
+    assert.strictEqual(screen.getByTestId('report-plan-enterprise-active').textContent?.trim(), '5');
+    assert.strictEqual(screen.getByTestId('report-plan-enterprise-inactive').textContent?.trim(), '5');
+
+    assert.strictEqual(screen.getByTestId('report-plan-business-count').textContent?.trim(), '10');
+    assert.strictEqual(screen.getByTestId('report-plan-business-active').textContent?.trim(), '5');
+    assert.strictEqual(screen.getByTestId('report-plan-business-inactive').textContent?.trim(), '5');
   });
 
   it('renders 0 for both plans gracefully when no plan breakdown is present', () => {
@@ -281,9 +344,13 @@ describe('MonthlyReportKpis - report_kpi_active_users Plan Breakdown & Abolished
 
     const entCount = screen.getByTestId('report-plan-enterprise-count');
     assert.strictEqual(entCount.textContent?.trim(), '0');
+    assert.strictEqual(screen.getByTestId('report-plan-enterprise-active').textContent?.trim(), '0');
+    assert.strictEqual(screen.getByTestId('report-plan-enterprise-inactive').textContent?.trim(), '0');
 
     const bizCount = screen.getByTestId('report-plan-business-count');
     assert.strictEqual(bizCount.textContent?.trim(), '0');
+    assert.strictEqual(screen.getByTestId('report-plan-business-active').textContent?.trim(), '0');
+    assert.strictEqual(screen.getByTestId('report-plan-business-inactive').textContent?.trim(), '0');
   });
 });
 
