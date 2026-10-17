@@ -367,8 +367,20 @@ describe('MonthlyReportKpis - report_kpi_active_users Plan Breakdown & Abolished
   });
 });
 
-describe('MonthlyReportKpis - Active Users Slash Separated Format Display (#385)', () => {
-  it('displays slash separated format when unfiltered: 16 (100.0%) / 16 / 16 名', () => {
+describe('MonthlyReportKpis - Active Users Unified Slash Separated Format Display (#390)', () => {
+  it('displays format notice in card header', () => {
+    const reportData = createMockReportData([], { total_active_users: 16 });
+
+    render(
+      <CurrencyProvider>
+        <MonthlyReportKpis reportData={reportData} />
+      </CurrencyProvider>
+    );
+
+    assert.ok(screen.getByText('(アクティブ / ノンアクティブ / 全数)'));
+  });
+
+  it('displays slash separated format when all active (0 non-active): 16 (100.0%) / 0 / 16 名', () => {
     const reportData = createMockReportData([], { total_active_users: 16 });
     reportData.sku_breakdown = [
       { sku_name: 'copilot_enterprise', total_quantity: 5, unit_type: 'seats', total_spend_usd: 195, percentage: 35 },
@@ -387,25 +399,20 @@ describe('MonthlyReportKpis - Active Users Slash Separated Format Display (#385)
 
     assert.strictEqual(totalEl.textContent?.trim(), '16');
     assert.strictEqual(percentEl.textContent?.trim(), '(100.0%)');
-    assert.strictEqual(ratioEl.textContent?.trim(), '/ 16 / 16 名');
+    assert.strictEqual(ratioEl.textContent?.trim(), '/ 0 / 16 名');
   });
 
-  it('displays slash separated format with active rate calculated against overall total: 16 (50.0%) / 16 / 32 名', () => {
-    const rawReportData = createMockReportData([], { total_active_users: 32 });
-    rawReportData.sku_breakdown = [
+  it('displays slash separated format when non-active users exist: 16 (50.0%) / 16 / 32 名', () => {
+    const reportData = createMockReportData([], { total_active_users: 16 });
+    // total 32 seats (10 enterprise, 22 business) with 16 active users
+    reportData.sku_breakdown = [
       { sku_name: 'copilot_enterprise', total_quantity: 10, unit_type: 'seats', total_spend_usd: 390, percentage: 50 },
       { sku_name: 'copilot_business', total_quantity: 22, unit_type: 'seats', total_spend_usd: 418, percentage: 50 },
     ];
 
-    const filteredReportData = createMockReportData([], { total_active_users: 16 });
-    filteredReportData.sku_breakdown = [
-      { sku_name: 'copilot_enterprise', total_quantity: 5, unit_type: 'seats', total_spend_usd: 195, percentage: 35 },
-      { sku_name: 'copilot_business', total_quantity: 11, unit_type: 'seats', total_spend_usd: 209, percentage: 38 },
-    ];
-
     render(
       <CurrencyProvider>
-        <MonthlyReportKpis reportData={filteredReportData} rawReportData={rawReportData} />
+        <MonthlyReportKpis reportData={reportData} />
       </CurrencyProvider>
     );
 
@@ -417,14 +424,14 @@ describe('MonthlyReportKpis - Active Users Slash Separated Format Display (#385)
     assert.strictEqual(percentEl.textContent?.trim(), '(50.0%)');
     assert.strictEqual(ratioEl.textContent?.trim(), '/ 16 / 32 名');
 
-    // 下部のプラン内訳も確認
+    // 下部のプラン内訳も確認 (Enterprise: 5 / 5 / 10, Business: 11 / 11 / 22)
     assert.strictEqual(screen.getByTestId('report-plan-enterprise-active').textContent?.trim(), '5');
-    assert.strictEqual(screen.getByTestId('report-plan-enterprise-inactive').textContent?.trim(), '0');
-    assert.strictEqual(screen.getByTestId('report-plan-enterprise-total').textContent?.trim(), '5');
+    assert.strictEqual(screen.getByTestId('report-plan-enterprise-inactive').textContent?.trim(), '5');
+    assert.strictEqual(screen.getByTestId('report-plan-enterprise-total').textContent?.trim(), '10');
 
     assert.strictEqual(screen.getByTestId('report-plan-business-active').textContent?.trim(), '11');
-    assert.strictEqual(screen.getByTestId('report-plan-business-inactive').textContent?.trim(), '0');
-    assert.strictEqual(screen.getByTestId('report-plan-business-total').textContent?.trim(), '11');
+    assert.strictEqual(screen.getByTestId('report-plan-business-inactive').textContent?.trim(), '11');
+    assert.strictEqual(screen.getByTestId('report-plan-business-total').textContent?.trim(), '22');
   });
 
   it('safely handles zero total users without division by zero: 0 (0.0%) / 0 / 0 名', () => {
