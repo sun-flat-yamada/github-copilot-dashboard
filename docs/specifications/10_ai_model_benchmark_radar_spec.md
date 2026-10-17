@@ -165,7 +165,8 @@ The 6-axis comparison is drawn as a **radar chart** (recharts `RadarChart`, 0-10
 | `terminal_bench_4` (%) | Terminal-Bench 4.0, https://www.tbench.ai/leaderboard/terminal-bench/4.0 | 2026-10-12 | Read from the BenchLM snapshot of the official board (https://benchlm.ai/benchmarks/terminal-bench-4) because tbench.ai renders client-side |
 | `aa_intelligence_index` (points) | Artificial Analysis Intelligence Index v4.3, https://artificialanalysis.ai/leaderboards/models (per model `https://artificialanalysis.ai/models/<slug>`) | 2026-10-13 | Values AA marks as "Estimated", or models with only a non-reasoning variant, count as not verified |
 | `arena_webdev_elo` (Elo) | Arena (formerly LMArena / LMSYS) Code Arena \| WebDev, https://arena.ai/leaderboard/webdev | 2026-10-08 | - |
-| `output_speed_tps`, prices, context | Artificial Analysis (speed), official GitHub Copilot pricing | unchanged | - |
+| `task_cost_usd` ($/task) | Terminal-Bench 4.0 Mean Rollout Cost & Artificial Analysis Task Cost | 2026-10-12 | Measured mean expenditure per attempted task trial (USD), accounting for harness and reasoning tokens |
+| `output_speed_tps`, Token prices, context | Artificial Analysis (speed), official GitHub Copilot pricing | unchanged | - |
 
 - **Variants**: the highest listed reasoning / harness variant of each model is used.
 - **Dropped sources**: SWE-bench Verified (OpenAI stopped reporting it on 2026-02-23 because of contamination and flawed tests, https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/; the official board has no entries after 2026-02-26), LMSYS Chatbot Arena Coding (moved to Arena), AIME 2024 / GPQA Diamond / HumanEval+ (saturated; GPQA Diamond is 92.6-96.0% for every frontier model, MathArena marks final-answer competitions as deprecated). The dataset carries this note as `sources_note`, shown under the source list.

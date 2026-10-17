@@ -102,9 +102,9 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   const [focusedModelId, setFocusedModelId] = useState<string>('');
   // 詳細カード上部プルダウンの開閉状態
   const [isDetailCardDropdownOpen, setIsDetailCardDropdownOpen] = useState<boolean>(false);
-  // 生データテーブルのソート列 (社内利用シェア 'usage'、コンテキスト長 'context'、モデル名 'model'、レーダー表示 'radar'、Arena Elo 'arena' も対応)
+  // 生データテーブルのソート列 (社内利用シェア 'usage'、コンテキスト長 'context'、モデル名 'model'、レーダー表示 'radar'、Arena Elo 'arena'、Task単価 'task_cost' も対応)
   const [sortKey, setSortKey] = useState<
-    'overall' | 'terminal' | 'speed' | 'cost' | 'intelligence' | 'arena' | 'usage' | 'context' | 'model' | 'radar'
+    'overall' | 'terminal' | 'speed' | 'cost' | 'task_cost' | 'intelligence' | 'arena' | 'usage' | 'context' | 'model' | 'radar'
   >('overall');
   const [sortAsc, setSortAsc] = useState<boolean>(false);
   // モデル列用3種ループ状態 ('default' > 'asc' > 'desc')
@@ -339,6 +339,9 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
         // コストは安い方が上位
         valA = a.radar_scores.cost_efficiency;
         valB = b.radar_scores.cost_efficiency;
+      } else if (sortKey === 'task_cost') {
+        valA = a.raw_metrics.task_cost_usd ?? 0;
+        valB = b.raw_metrics.task_cost_usd ?? 0;
       } else if (sortKey === 'intelligence') {
         valA = a.raw_metrics.aa_intelligence_index;
         valB = b.raw_metrics.aa_intelligence_index;
@@ -373,6 +376,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       speed_tps:  Math.max(...ms.map((m) => m.raw_metrics.output_speed_tps)),
       // コスト効率: cost_efficiency レーダースコアが高いほど良い
       cost_eff:   Math.max(...ms.map((m) => m.radar_scores.cost_efficiency)),
+      max_task_cost: Math.max(...ms.map((m) => m.raw_metrics.task_cost_usd ?? 0)),
     };
   }, [dataset]);
 
@@ -433,7 +437,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   };
 
   const handleSort = (
-    key: 'overall' | 'terminal' | 'speed' | 'cost' | 'intelligence' | 'arena' | 'usage' | 'context' | 'model' | 'radar'
+    key: 'overall' | 'terminal' | 'speed' | 'cost' | 'task_cost' | 'intelligence' | 'arena' | 'usage' | 'context' | 'model' | 'radar'
   ) => {
     if (key === 'model') {
       if (sortKey !== 'model') {
@@ -455,7 +459,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       setSortAsc(!sortAsc);
     } else {
       setSortKey(key);
-      setSortAsc(false);
+      setSortAsc(key === 'task_cost');
     }
   };
 
@@ -1436,7 +1440,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-xs">
                     {/* コンテキスト長 */}
                     <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80 flex flex-col justify-between">
                       <span className="text-[11px] text-slate-400 block">Context 窓容量</span>
@@ -1479,6 +1483,17 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                       ) : (
                         <span className="text-[9px] text-cyan-500/80 mt-0.5">Prompt Caching</span>
                       )}
+                    </div>
+
+                    {/* 実測 Task 単価 */}
+                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80 flex flex-col justify-between">
+                      <span className="text-[11px] text-slate-400 block">実測 Task 単価</span>
+                      <span className="text-sm font-mono font-bold text-teal-300 mt-1 flex items-center gap-1">
+                        ${focusedModel.raw_metrics.task_cost_usd !== undefined ? focusedModel.raw_metrics.task_cost_usd.toFixed(2) : '-'}
+                        <span className="text-[10px] text-slate-400 font-normal">/task</span>
+                        {isEstimatedMetric(focusedModel, 'task_cost_usd') && <EstimatedMarker />}
+                      </span>
+                      <span className="text-[9px] text-slate-500 mt-0.5">TB4 / AA実務タスク</span>
                     </div>
                   </div>
 
@@ -1775,7 +1790,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                 <h3 className="text-base font-bold text-white">著名ベンチマーク最新実測データ詳細テーブル</h3>
               </div>
               <p className="text-xs text-slate-400 mt-1">
-                Terminal-Bench 4.0、AA Intelligence Index v4.3、Arena WebDev Elo、TPS、入出力コスト、コンテキスト長の実測値一覧 (<EstimatedMarker inline /> は出典で確認できなかった推測値)
+                Terminal-Bench 4.0、AA Intelligence Index v4.3、Arena WebDev Elo、TPS、Token単価、Task単価、コンテキスト長の実測値一覧 (<EstimatedMarker inline /> は出典で確認できなかった推測値)
               </p>
             </div>
 
@@ -1932,7 +1947,17 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                   : 'bg-slate-800/60 border-slate-700 text-slate-400'
               }`}
             >
-              コスト効率
+              Token単価
+            </button>
+            <button
+              onClick={() => handleSort('task_cost')}
+              className={`px-2.5 py-1 rounded-md font-medium border ${
+                sortKey === 'task_cost'
+                  ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
+                  : 'bg-slate-800/60 border-slate-700 text-slate-400'
+              }`}
+            >
+              Task単価
             </button>
             <button
               onClick={() => handleSort('context')}
@@ -2056,10 +2081,16 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                     <ArrowUpDown className={`w-3 h-3 ${sortKey === 'speed' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
-                <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[160px]" onClick={() => handleSort('cost')}>
+                <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[160px]" onClick={() => handleSort('cost')} title="Token単価順ソート (入出力トークン価格)">
                   <div className="flex items-center space-x-1">
-                    <span>単価 ($/1M Tok)</span>
+                    <span>Token単価 ($/1M)</span>
                     <ArrowUpDown className={`w-3 h-3 ${sortKey === 'cost' ? 'text-indigo-400' : 'text-slate-500'}`} />
+                  </div>
+                </th>
+                <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[130px]" onClick={() => handleSort('task_cost')} title="Task単価順ソート (1タスク解決・試行あたりの実測コスト)">
+                  <div className="flex items-center space-x-1">
+                    <span>Task単価 ($/Task)</span>
+                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'task_cost' ? 'text-indigo-400' : 'text-slate-500'}`} />
                   </div>
                 </th>
                 <th className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[110px]" onClick={() => handleSort('context')}>
@@ -2277,6 +2308,31 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                         )}
                         <span className="text-[10px] text-slate-500 mt-0.5">
                           Cache: ${m.raw_metrics.cached_input_cost_per_m ?? (m.raw_metrics.input_cost_per_m * 0.1).toFixed(2)}
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="py-3 px-3 font-mono text-slate-300">
+                      <div className="flex flex-col min-w-[100px]">
+                        <div className="flex items-center space-x-1 text-xs">
+                          <span className="font-bold text-teal-300">
+                            ${m.raw_metrics.task_cost_usd !== undefined ? m.raw_metrics.task_cost_usd.toFixed(2) : '-'}
+                          </span>
+                          <span className="text-[10px] text-slate-500">/task</span>
+                          {isEstimatedMetric(m, 'task_cost_usd') && <EstimatedMarker />}
+                        </div>
+                        {maxMetrics && m.raw_metrics.task_cost_usd !== undefined && (
+                          <div className="mt-1 h-[3px] rounded-full bg-slate-800 overflow-hidden" title="タスクコスト効率 (低いほど安い)">
+                            <div
+                              className="h-full rounded-full bg-teal-400"
+                              style={{
+                                width: `${Math.min(100, Math.max(5, (1 - m.raw_metrics.task_cost_usd / (maxMetrics.max_task_cost || 10)) * 100))}%`,
+                              }}
+                            />
+                          </div>
+                        )}
+                        <span className="text-[10px] text-slate-500 mt-0.5">
+                          実測試行コスト
                         </span>
                       </div>
                     </td>
