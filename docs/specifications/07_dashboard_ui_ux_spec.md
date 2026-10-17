@@ -266,6 +266,15 @@ The overview cards (`KpiSummaryCards`, appendix A.5.2 of the improvement plan) a
 - The forecast block (`ForecastNote`) is rendered with `MetricLabel` + `MetricValue` and the 「推定」 badge, and shows the range, **confidence**, formula and window. When data is insufficient it shows "—（reason）" instead of a value; a closed month shows the actual instead of a forecast.
 - Forecast metrics are catalog entries (SDD-16 §6) and are covered by the same leak-prevention test.
 
+### 2.14d Monthly Usage Report KPI Cards (`MonthlyReportKpis`)
+
+The 5 KPI cards in the overview block of monthly usage reports (cost summary, total requests, active users, top AI model, primary SKU) follow these specifications:
+
+- **Most Used AI Model (`report_top_model`) Card**:
+  - Displays the top 3 AI models from the selected data's model breakdown (`model_breakdown`), each with its rank (1–3), model name, and request share percentage (%).
+  - When fewer than 3 models exist (1–2 models), displays only the existing ones; when empty, shows a graceful "データなし" fallback.
+  - Enables immediate visual comprehension of the AI model portfolio and adoption distribution within the selected dataset.
+
 ### 2.14b View Registry (P2-4 / C-01, D-06)
 
 The View Registry is the **only entry point for rendering a view**. `App.tsx` has no per-view branch: it builds one `ViewContext` and renders `<ViewHost>`; the navigation is built from the same registry.

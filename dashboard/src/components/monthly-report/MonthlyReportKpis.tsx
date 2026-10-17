@@ -85,22 +85,62 @@ export const MonthlyReportKpis: React.FC<MonthlyReportKpisProps> = ({ reportData
       </div>
 
       {/* カード 4: 最多使用モデル */}
-      <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <MetricLabel metricId="report_top_model" />
-          <div className="p-1.5 rounded-lg bg-purple-950 border border-purple-800/60 text-purple-400">
-            <Cpu className="w-4 h-4" />
+      {(() => {
+        const top3Models = (reportData.model_breakdown || []).slice(0, 3);
+        return (
+          <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between">
+                <MetricLabel metricId="report_top_model" />
+                <div className="p-1.5 rounded-lg bg-purple-950 border border-purple-800/60 text-purple-400">
+                  <Cpu className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-2 space-y-1">
+                {top3Models.length === 0 ? (
+                  <div className="text-xs text-slate-400 font-medium py-1">データなし</div>
+                ) : (
+                  top3Models.map((item, idx) => (
+                    <div
+                      key={item.model_name || idx}
+                      className="flex items-center justify-between text-xs"
+                      data-testid={`report-top-model-rank-${idx + 1}`}
+                    >
+                      <div className="flex items-center space-x-1.5 min-w-0 mr-1.5">
+                        <span
+                          className={`text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded shrink-0 ${
+                            idx === 0
+                              ? 'bg-purple-900/80 text-purple-200 border border-purple-700/60 font-black'
+                              : 'bg-slate-800 text-slate-400 border border-slate-700/50'
+                          }`}
+                        >
+                          {idx + 1}
+                        </span>
+                        <span
+                          className={`truncate font-medium ${
+                            idx === 0 ? 'text-white' : 'text-slate-300'
+                          }`}
+                          title={item.model_name}
+                        >
+                          {item.model_name}
+                        </span>
+                      </div>
+                      <span
+                        className={`font-mono font-bold text-xs shrink-0 ${
+                          idx === 0 ? 'text-purple-300' : 'text-slate-400'
+                        }`}
+                      >
+                        {item.percentage}%
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+            <p className="mt-1.5 text-[10px] text-slate-400">上位3モデルのリクエスト占有率</p>
           </div>
-        </div>
-        <div className="mt-2 truncate">
-          <span className="text-lg font-bold text-white tracking-tight">
-            {reportData.overview.top_model}
-          </span>
-        </div>
-        <p className="mt-1 text-[11px] text-slate-400">
-          {reportData.model_breakdown[0]?.percentage || 0}% のリクエストを占有
-        </p>
-      </div>
+        );
+      })()}
 
       {/* カード 5: 主要課金 SKU */}
       <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm">
