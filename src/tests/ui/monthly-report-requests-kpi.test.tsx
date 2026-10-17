@@ -36,7 +36,7 @@ function createBaseReport(overrides: Partial<MonthlyReportAggregatedData> = {}):
 }
 
 describe('MonthlyReportKpis: 総リクエスト / クレジット カードの表示改善', () => {
-  it('リクエストのみのデータ: 「総リクエスト数」タイトル、リクエストバッジ、req単位、最小・中央・最大値を表示する', () => {
+  it('リクエストのみのデータ: 「総リクエスト数」タイトル、req単位、最小・中央・最大値を表示し冗長なリクエストバッジを非表示にする', () => {
     const report = createBaseReport({
       overview: {
         total_net_spend_usd: 50,
@@ -93,9 +93,9 @@ describe('MonthlyReportKpis: 総リクエスト / クレジット カードの�
 
     render(<SingleMonthlyReportKpiCard cardId="report_kpi_requests" reportData={report} />);
 
-    // タイトルとバッジの検証
+    // タイトルとバッジの検証（「総リクエスト数」タイトルと重複する「リクエスト」バッジは非表示）
     assert.equal(screen.getByTestId('metric-label-report_requests').textContent?.includes('総リクエスト数'), true);
-    assert.equal(screen.getByTestId('report-requests-badge').textContent, 'リクエスト');
+    assert.equal(screen.queryByTestId('report-requests-badge'), null);
 
     // 合計値と単位
     assert.equal(screen.getByTestId('report-requests-total').textContent, '450');
@@ -443,5 +443,16 @@ describe('MonthlyReportKpis: 総リクエスト / クレジット カードの�
     assert.equal(screen.getByTestId('report-requests-min').textContent, '10');
     assert.equal(screen.getByTestId('report-requests-median').textContent, '50');
     assert.equal(screen.getByTestId('report-requests-max').textContent, '200');
+  });
+
+  it('月次レポートの全 KPI カードにおいて「選択した月次レポートの月」窓ラベルが表示されない', () => {
+    const report = createBaseReport();
+    render(<MonthlyReportKpis reportData={report} />);
+
+    assert.equal(screen.queryByTestId('metric-window-report_gross_spend'), null);
+    assert.equal(screen.queryByTestId('metric-window-report_net_spend'), null);
+    assert.equal(screen.queryByTestId('metric-window-report_requests'), null);
+    assert.equal(screen.queryByTestId('metric-window-report_active_users'), null);
+    assert.equal(screen.queryByTestId('metric-window-report_top_model'), null);
   });
 });
