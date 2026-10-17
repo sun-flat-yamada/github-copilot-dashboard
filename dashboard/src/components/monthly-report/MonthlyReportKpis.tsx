@@ -165,17 +165,17 @@ const RequestsDistributionChart: React.FC<RequestsDistributionChartProps> = ({
         <span className="text-[9px] text-slate-500 font-mono">アカウント数 (度数)</span>
       </div>
 
-      {/* 5本のバー（カード全幅、各バー flex-1、高さ h-10 (40px)） */}
-      <div className="flex items-end gap-1.5 h-10 px-1 pt-1">
+      {/* 5本のバー（カード全幅、各バー flex-1、隙間を50%以上拡大し離散度数分布イメージを強調、高さ h-10 (40px)） */}
+      <div className="flex items-end gap-3 h-10 px-1 pt-1">
         {buckets.map((b, i) => {
           const heightPercent =
-            b.count === 0 ? '6%' : `${Math.max(18, (b.count / maxCount) * 100)}%`;
+            b.count === 0 ? '4px' : `${Math.max(20, (b.count / maxCount) * 100)}%`;
           const barColor =
             b.count === 0
-              ? 'bg-slate-800/50'
+              ? 'bg-slate-800/40'
               : variant === 'amber'
-              ? 'bg-amber-500/80 hover:bg-amber-400'
-              : 'bg-indigo-500/80 hover:bg-indigo-400';
+              ? 'bg-amber-500/85 hover:bg-amber-400 shadow-xs'
+              : 'bg-indigo-500/85 hover:bg-indigo-400 shadow-xs';
 
           return (
             <div
@@ -191,7 +191,7 @@ const RequestsDistributionChart: React.FC<RequestsDistributionChartProps> = ({
                 {b.count > 0 ? b.count : ''}
               </span>
               <div
-                className={`w-full rounded-t transition-all ${barColor}`}
+                className={`w-4/5 max-w-[28px] ${b.count === 0 ? 'rounded-full' : 'rounded-t-[3px]'} transition-all ${barColor}`}
                 style={{ height: heightPercent }}
               />
             </div>

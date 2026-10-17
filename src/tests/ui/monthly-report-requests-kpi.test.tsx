@@ -439,6 +439,15 @@ describe('MonthlyReportKpis: 総リクエスト / クレジット カードの�
     const bar0 = screen.getByTestId('distribution-bar-0');
     assert.ok(bar0.textContent?.includes('2')); // 10, 15
 
+    // バー間隔が gap-3（50%以上拡大）で離散分布であることが直感的に伝わる
+    const barContainer = dist.querySelector('.h-10');
+    assert.ok(barContainer);
+    assert.ok(barContainer.className.includes('gap-3'), 'バー間隔に gap-3 が適用されている');
+
+    // バー本体が独立したピラー（w-4/5 max-w-[28px]）として描画されている
+    const barElement = bar0.querySelector('.w-4\\/5');
+    assert.ok(barElement, 'バーが独立したピラー幅 w-4/5 を持っている');
+
     // X軸目盛りとしての最小(10)・中央値(50)・最大(200)の表示
     assert.equal(screen.getByTestId('report-requests-min').textContent, '10');
     assert.equal(screen.getByTestId('report-requests-median').textContent, '50');
