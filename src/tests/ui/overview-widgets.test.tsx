@@ -279,6 +279,39 @@ describe('Dashboard Tab & Widgets (Separation from Cost Breakdown, KPI Widgets, 
       'dragging via widget-drag-handle must reorder section widgets'
     );
   });
+
+  it('arranges KPI summary widgets in a 3x2 grid (max 3 columns) with smartphone-portrait baseline width', async () => {
+    const { user } = await renderApp();
+
+    // 1. Main widget list uses 1 col on mobile, 2 cols on tablet (md), and 3 cols (3x2 for 5-6 KPI widgets) on desktop (lg)
+    const widgetList = screen.getByTestId('overview-widget-list');
+    assert.equal(widgetList.classList.contains('grid-cols-1'), true);
+    assert.equal(widgetList.classList.contains('md:grid-cols-2'), true);
+    assert.equal(widgetList.classList.contains('lg:grid-cols-3'), true);
+    assert.equal(widgetList.classList.contains('xl:grid-cols-5'), false);
+    assert.equal(widgetList.classList.contains('sm:grid-cols-2'), false);
+
+    // 2. Each KPI widget frame carries smartphone-portrait 1-column baseline width (min-w-[min(100%,21rem)]) and expands with w-full
+    for (const kpiId of [
+      'kpi_total_spend',
+      'kpi_active_rate',
+      'kpi_idle_waste',
+      'kpi_budget_utilization',
+      'kpi_acceptance_rate',
+    ]) {
+      const kpiFrame = screen.getByTestId(`overview-widget-${kpiId}`);
+      assert.equal(kpiFrame.classList.contains('w-full'), true);
+      assert.equal(kpiFrame.classList.contains('min-w-[min(100%,21rem)]'), true);
+    }
+
+    // 3. Catalog KPI group also uses 3x2 grid and smartphone-portrait baseline width
+    await user.click(screen.getByTestId('widget-add-button'));
+    const catalogKpiGrid = screen.getByTestId('widget-catalog-kpi-grid');
+    assert.equal(catalogKpiGrid.classList.contains('grid-cols-1'), true);
+    assert.equal(catalogKpiGrid.classList.contains('md:grid-cols-2'), true);
+    assert.equal(catalogKpiGrid.classList.contains('lg:grid-cols-3'), true);
+  });
 });
+
 
 
