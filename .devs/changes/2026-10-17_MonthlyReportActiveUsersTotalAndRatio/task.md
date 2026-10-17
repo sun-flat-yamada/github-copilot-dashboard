@@ -1,0 +1,25 @@
+# Task: Monthly Report Active Users Total and Ratio (#336)
+
+- [x] Phase 1: Issue Definition & Scoping <!-- id: 0 -->
+  - [x] GitHub Issue #336 created (`feat(dashboard): show total user count and percentage in monthly report active users card`)
+  - [x] Branch name validated: `feat/336-show-total-and-percentage-in-report`
+- [/] Phase 2: Implementation Plan formulated & committed <!-- id: 1 -->
+  - [x] Implementation plan and task formulated
+  - [ ] Commit plan documents to feature branch
+  - [ ] Verify plan check (`npm run change-dev:plan-check`)
+- [ ] Phase 3: Sibling Worktree Provisioning & Implementation <!-- id: 2 -->
+  - [x] Sibling worktree provisioned (`proud-noether-worktrees/feat-336-show-total-and-percentage-in-report`)
+  - [x] `npm ci` dependencies installed
+  - [ ] Update `ViewContext` with `rawCurrentReportData`
+  - [ ] Update `AppShell.tsx` and `overview/View.tsx` to pass `rawCurrentReportData`
+  - [ ] Update `MonthlyReportKpis.tsx` to display total (denominator) and percentage (%)
+  - [ ] Add unit test `src/tests/ui/monthly-report-kpis.test.tsx`
+- [ ] Phase 4: Local Quality Gate & Verification <!-- id: 3 -->
+  - [ ] `npm run fork:verify`
+  - [ ] `npm run typecheck`
+  - [ ] `npm test`
+  - [ ] `npm run secret-scan`
+  - [ ] `npm run build`
+- [ ] Phase 5: Walkthrough Artifact Generation & Evidence Sealing <!-- id: 4 -->
+- [ ] Phase 6: Rebase onto Base & Create PR <!-- id: 5 -->
+- [ ] Phase 7: Rebase & Merge and Worktree Cleanup (`change-dev:finish`) <!-- id: 6 -->
