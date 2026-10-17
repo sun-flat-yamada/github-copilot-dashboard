@@ -83,6 +83,23 @@ export const CostOverviewBudgetSummary: React.FC<Props> = ({ reportData, budgets
           </div>
         </div>
       )}
+      <div className="grid grid-cols-2 gap-1 text-[10px]" data-testid="budget-summary-change-rates">
+        {([
+          ['前日比', summary.dayChangePercent, 'budget-summary-day-change', '観測日数が2日未満のため無効'],
+          ['前週比', summary.weekChangePercent, 'budget-summary-week-change', '観測日数が8日未満のため無効'],
+        ] as const).map(([label, value, testId, reason]) => (
+          <div key={testId} title={value === null ? reason : '上限ラインに対する利用料の増加分'}>
+            <span className="block text-slate-400">{label} (上限比)</span>
+            {value === null ? (
+              <span className="font-mono text-xs text-slate-600" data-testid={testId} data-disabled="true">無効</span>
+            ) : (
+              <span className="font-mono font-bold text-xs text-sky-300" data-testid={testId}>
+                {value >= 0 ? '+' : ''}{value.toFixed(1)}%
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
       <p className="text-[10px] text-amber-300" role="status" data-testid="budget-summary-forecast">{forecastText}</p>
     </div>
   );
