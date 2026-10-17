@@ -68,7 +68,6 @@ Per-user metrics (the user detail table, the drill-down panel, user trends) are 
 | `report_requests` | Total requests / credits | count | report_month | yes | monthly usage report CSV |
 | `report_active_users` | Active users in report | users | report_month | yes | monthly usage report CSV |
 | `report_top_model` | Most used AI model | name | report_month | yes | monthly usage report CSV |
-| `report_top_sku` | Primary SKU | name | report_month | yes | monthly usage report CSV |
 | `adoption_evaluated_users` | Evaluated users | users | collection_period | yes | agent metrics |
 | `adoption_unclassified_users` | Unclassified users | users | collection_period | yes | users-1-day report |
 | `adoption_active_rate` | Overall adoption rate | ratio | collection_period | yes | agent metrics |

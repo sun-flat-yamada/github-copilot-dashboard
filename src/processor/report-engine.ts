@@ -65,7 +65,6 @@ export const METRIC_BINDINGS: Record<ReportDataset, Partial<Record<MetricId, Bin
     report_requests: (d) => pick(d, 'overview', 'total_requests'),
     report_active_users: (d) => pick(d, 'overview', 'total_active_users'),
     report_top_model: (d) => pick(d, 'overview', 'top_model'),
-    report_top_sku: (d) => pick(d, 'overview', 'top_sku'),
   },
 };
 

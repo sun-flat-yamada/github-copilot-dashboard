@@ -1,5 +1,5 @@
 import React from 'react';
-import { DollarSign, Sparkles, Users, Cpu, Boxes } from 'lucide-react';
+import { DollarSign, Sparkles, Users, Cpu } from 'lucide-react';
 import { MonthlyReportAggregatedData } from '../../../../src/types/copilot';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { MetricLabel } from '../common/MetricLabel';
@@ -10,16 +10,59 @@ export type ReportKpiCardWidgetId =
   | 'report_kpi_cost'
   | 'report_kpi_requests'
   | 'report_kpi_active_users'
-  | 'report_kpi_top_model'
-  | 'report_kpi_top_sku';
+  | 'report_kpi_top_model';
 
 export const ALL_REPORT_KPI_CARD_WIDGET_IDS: readonly ReportKpiCardWidgetId[] = [
   'report_kpi_cost',
   'report_kpi_requests',
   'report_kpi_active_users',
   'report_kpi_top_model',
-  'report_kpi_top_sku',
 ] as const;
+
+export interface CopilotPlanCounts {
+  enterprise: number;
+  business: number;
+}
+
+/**
+ * 月次レポートデータから Copilot プラン (Enterprise / Business) の内訳人数を算出する。
+ * 1. user_details に plan_type を持つユーザーが存在する場合はそれを優先集計 (フィルター時にも連動)
+ * 2. 存在しない場合は sku_breakdown (seats 単位の SKU) から集計
+ */
+export function extractCopilotPlanCounts(reportData: MonthlyReportAggregatedData): CopilotPlanCounts {
+  const usersWithPlan = (reportData.user_details ?? []).filter(
+    (u) => typeof (u as any).plan_type === 'string' && (u as any).plan_type.length > 0
+  );
+
+  if (usersWithPlan.length > 0) {
+    let enterprise = 0;
+    let business = 0;
+    for (const u of usersWithPlan) {
+      const plan = ((u as any).plan_type || '').toLowerCase();
+      if (plan.includes('enterprise')) {
+        enterprise += 1;
+      } else if (plan.includes('business')) {
+        business += 1;
+      }
+    }
+    return { enterprise, business };
+  }
+
+  let enterprise = 0;
+  let business = 0;
+  if (Array.isArray(reportData.sku_breakdown) && reportData.sku_breakdown.length > 0) {
+    for (const item of reportData.sku_breakdown) {
+      const name = (item.sku_name || '').toLowerCase();
+      if (name.includes('enterprise')) {
+        enterprise += item.total_quantity;
+      } else if (name.includes('business')) {
+        business += item.total_quantity;
+      }
+    }
+  }
+
+  return { enterprise, business };
+}
 
 interface MonthlyReportKpisProps {
   reportData: MonthlyReportAggregatedData;
@@ -261,23 +304,41 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
       );
     }
 
-    case 'report_kpi_active_users':
+    case 'report_kpi_active_users': {
+      const { enterprise, business } = extractCopilotPlanCounts(reportData);
       return (
-        <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm" data-testid="report-kpi-active-users">
-          <div className="flex items-center justify-between">
-            <MetricLabel metricId="report_active_users" />
-            <div className="p-1.5 rounded-lg bg-blue-950 border border-blue-800/60 text-blue-400">
-              <Users className="w-4 h-4" />
+        <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm flex flex-col justify-between" data-testid="report-kpi-active-users">
+          <div>
+            <div className="flex items-center justify-between">
+              <MetricLabel metricId="report_active_users" />
+              <div className="p-1.5 rounded-lg bg-blue-950 border border-blue-800/60 text-blue-400">
+                <Users className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-2 flex items-baseline space-x-1.5">
+              <span className="text-2xl font-black text-white tracking-tight" data-testid="report-active-users-total">
+                {reportData.overview.total_active_users}
+              </span>
+              <span className="text-xs font-semibold text-slate-400">名</span>
+            </div>
+            {/* Copilot プラン内訳 (Enterprise / Business) */}
+            <div className="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs flex-wrap gap-1" data-testid="report-plan-breakdown">
+              <span className="text-[10px] text-slate-400 font-medium">プラン内訳:</span>
+              <div className="flex items-center space-x-2 text-[11px]">
+                <span className="text-indigo-300 font-medium" data-testid="report-plan-enterprise">
+                  Enterprise: <b className="font-bold font-mono text-white" data-testid="report-plan-enterprise-count">{enterprise}</b>名
+                </span>
+                <span className="text-slate-600 font-mono">/</span>
+                <span className="text-slate-300 font-medium" data-testid="report-plan-business">
+                  Business: <b className="font-bold font-mono text-white" data-testid="report-plan-business-count">{business}</b>名
+                </span>
+              </div>
             </div>
           </div>
-          <div className="mt-2">
-            <span className="text-2xl font-black text-white tracking-tight">
-              {reportData.overview.total_active_users}
-            </span>
-          </div>
-          <p className="mt-1 text-[11px] text-slate-400">利用履歴のあるユニークアカウント</p>
+          <p className="mt-1.5 text-[10px] text-slate-400">利用履歴のあるユニークアカウント</p>
         </div>
       );
+    }
 
     case 'report_kpi_top_model': {
       const top3Models = (reportData.model_breakdown || []).slice(0, 3);
@@ -335,30 +396,12 @@ export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProp
         </div>
       );
     }
-
-    case 'report_kpi_top_sku':
-      return (
-        <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm" data-testid="report-kpi-top-sku">
-          <div className="flex items-center justify-between">
-            <MetricLabel metricId="report_top_sku" />
-            <div className="p-1.5 rounded-lg bg-amber-950 border border-amber-800/60 text-amber-400">
-              <Boxes className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 truncate">
-            <span className="text-sm font-bold text-white font-mono">
-              {reportData.overview.top_sku}
-            </span>
-          </div>
-          <p className="mt-1 text-[11px] text-slate-400">主要請求カテゴリ</p>
-        </div>
-      );
   }
 };
 
 export const MonthlyReportKpis: React.FC<MonthlyReportKpisProps> = ({ reportData }) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {ALL_REPORT_KPI_CARD_WIDGET_IDS.map((cardId) => (
         <SingleMonthlyReportKpiCard key={cardId} cardId={cardId} reportData={reportData} />
       ))}

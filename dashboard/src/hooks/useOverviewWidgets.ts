@@ -179,14 +179,6 @@ export const REPORT_WIDGET_CATALOG: readonly OverviewWidgetCatalogItem[] = [
     size: 'kpi',
   },
   {
-    id: 'report_kpi_top_sku',
-    title: '主要課金 SKU',
-    subtitle: '主要請求カテゴリ',
-    defaultPreset: true,
-    mode: 'report',
-    size: 'kpi',
-  },
-  {
     id: 'report_charts',
     title: '3軸集計・費用配賦 & AIモデル別・日別推移',
     subtitle: '部署/Cost Center別シェアとモデル別消費額',
