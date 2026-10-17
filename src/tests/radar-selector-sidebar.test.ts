@@ -76,6 +76,10 @@ test('AI Model Radar Selector Sidebar and Abbreviation Tests', async (t) => {
       'o3-mini must map to gpt-o3-mini'
     );
     assert.strictEqual(
+      getModelShortName({ id: 'gemini-4-argon', name: 'Gemini 4 Argon' }),
+      'gemini-4-argon'
+    );
+    assert.strictEqual(
       getModelShortName({ id: 'gemini-3-8-flash', name: 'Gemini 3.8 Flash' }),
       'gemini-3.8-flash'
     );

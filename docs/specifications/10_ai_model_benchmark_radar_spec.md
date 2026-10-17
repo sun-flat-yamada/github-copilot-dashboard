@@ -111,14 +111,14 @@ Provides instant, pre-configured model comparisons across diverse tiers and scen
     5. **High-Value (Fast Brainstorming & Trade-offs)**: `Gemini 3.8 Flash` (In: $0.75, Out: $3.75 / AA 41, TB4 19.09)
 
 #### Category & Vendor Presets
-- **🌟 2026 Flagship Selection (`flagship-2026`)**: 2026 premier frontier flagships snapshot (Claude Opus 5.5 / Claude Opus 5 / GPT-6 Astra / Gemini 3.8 Flash / Kimi K3).
+- **🌟 2026 Flagship Selection (`flagship-2026`)**: 2026 premier frontier flagships snapshot (Claude Opus 5.5 / Claude Opus 5 / GPT-6 Astra / Gemini 4 Argon / Kimi K3).
 - **💡 Practical High-Value (`practical-high-value`)**: Claude Sonnet 5 / Gemini 3.8 Flash / GPT-6 Luna / GPT-5.6 Luna / Kimi K2.7 Code (*Adds GPT-6 Luna and retains GPT-5.6 Luna as high-value champions*).
-- **⚡ Powerful Reasoning (`tier-powerful`)**: GPT-6 Astra / Claude Opus 5.5 / Claude Opus 5 / GPT-6 Sol / Kimi K3 (*Adds GPT-6 Sol; removes GPT-5.5*).
+- **⚡ Powerful Reasoning (`tier-powerful`)**: GPT-6 Astra / Claude Opus 5.5 / Claude Opus 5 / GPT-6 Sol / Gemini 4 Argon / Kimi K3 (*Adds GPT-6 Sol and Gemini 4 Argon; removes GPT-5.5*).
 - **🛠️ Versatile Engineering (`tier-versatile`)**: Claude Sonnet 5 / GPT-5.6 Terra / Gemini 3.8 Flash / Grok 4.6 (*Adds GPT-5.6 Terra; removes GPT-5.4*).
 - **🚀 Lightweight & Fast (`tier-lightweight`)**: GPT-6 Luna / GPT-5.6 Luna / Gemini 3.5 Flash / MAI-Code-1.1-Flash / GPT-5.4 mini (*Adds GPT-6 Luna and retains GPT-5.6 Luna as lightweight champions*).
 - **🟠 Anthropic Suite (`vendor-anthropic`)**: Claude Sonnet 5 / Claude Opus 5.5 / Claude Opus 5 / Claude Fable 5.1 / Claude Haiku 4.5 (*Opus 5.5 added, Opus 5 retained*).
 - **🟢 OpenAI Suite (`vendor-openai`)**: GPT-6 Astra / GPT-6 Sol / GPT-5.6 Sol (*Adds GPT-6 Sol and GPT-5.6 Sol, removes legacy GPT-5.5/5.4/mini*).
-- **🔵 Google Gemini 3.x (`vendor-google`)**: Gemini 3.8 Flash / Gemini 3.7 Flash / Gemini 3.6 Flash / Gemini 3.5 Flash
+- **🔵 Google Gemini (`vendor-google`)**: Gemini 4 Argon / Gemini 3.8 Flash / Gemini 3.7 Flash / Gemini 3.6 Flash / Gemini 3.5 Flash
 
 ### 2.6 Model Comparison Chart: Radar Chart
 The 6-axis comparison is drawn as a **radar chart** (recharts `RadarChart`, 0-100 scale, one polygon per selected model). The active (focused) model is a solid, thick, gently pulsing polygon in the foreground; the other selected models are dashed, low-opacity polygons. Clicking a polygon or a legend button sets `focusedModelId` and updates the detail card in lockstep. The dot plot introduced in P3-7 (`ModelDotPlot`) was reverted; raw values stay available in the benchmark table and the tooltip.
@@ -239,9 +239,10 @@ Comprehensive roster covering all 45 evaluated frontier models (36 Copilot-suppo
 | `claude-sonnet-4` | Claude Sonnet 4 | Versatile | GA | 200K | $3.00 | $15.00 | $0.30 / $3.75 | Reliable code completion |
 | `claude-haiku-4-5` | Claude Haiku 4.5 | Lightweight | GA | 200K | $1.00 | $5.00 | $0.10 / $1.25 | Ultra-lightweight and responsive |
 
-#### 3. Google (4 Models)
+#### 3. Google (5 Models)
 | Model ID | Name | Tier | Status | Context | In / 1M | Out / 1M | Highlights |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `gemini-4-argon` | Gemini 4 Argon | Powerful | GA | 1M Tok | $2.00 | $10.00 | Frontier reasoning flagship, Terminal-Bench 57.27%, AA index 53 |
 | `gemini-3-8-flash` | Gemini 3.8 Flash | Versatile | GA | 1M Tok | $0.75 | $3.75 | Latest Flash (promotional rate) / 1M tokens |
 | `gemini-3-7-flash` | Gemini 3.7 Flash | Versatile | GA | 1M Tok | $0.75 | $3.75 | CoT reasoning & high-velocity coding |
 | `gemini-3-6-flash` | Gemini 3.6 Flash | Versatile | GA | 1M Tok | $0.75 | $3.75 | 1M long-context generalist |

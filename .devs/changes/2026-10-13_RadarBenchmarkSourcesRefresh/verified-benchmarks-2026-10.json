@@ -37,6 +37,7 @@
     "claude-sonnet-4-6": {"arena_webdev_elo": 1522, "terminal_bench_4": null, "aa_intelligence_index": null},
     "claude-sonnet-4":   {"arena_webdev_elo": null, "terminal_bench_4": null, "aa_intelligence_index": null},
     "claude-haiku-4-5":  {"arena_webdev_elo": 1330, "terminal_bench_4": null, "aa_intelligence_index": null},
+    "gemini-4-argon":    {"arena_webdev_elo": null, "terminal_bench_4": 57.27, "aa_intelligence_index": 53},
     "gemini-3-8-flash":  {"arena_webdev_elo": 1583, "terminal_bench_4": 19.09, "aa_intelligence_index": 41},
     "gemini-3-7-flash":  {"arena_webdev_elo": 1592, "terminal_bench_4": 11.21, "aa_intelligence_index": 39},
     "gemini-3-6-flash":  {"arena_webdev_elo": 1538, "terminal_bench_4": null, "aa_intelligence_index": 34},
