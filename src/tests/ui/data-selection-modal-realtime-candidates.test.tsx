@@ -1,7 +1,7 @@
 import './dom-setup.js';
 import { afterEach, describe, it } from 'node:test';
 import * as assert from 'node:assert/strict';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DataSelectionModal } from '../../../dashboard/src/components/layout/DataSelectionModal.js';
 import {
@@ -10,9 +10,14 @@ import {
   type MonthlyReportAggregatedData,
   type ScopeAggregatedData,
 } from '../../../src/types/copilot.js';
+import { createAutoCollectedTestDataset } from '../fixtures/auto-collected-data-fixtures.js';
+import { buildFileMap, installFakeDataServer, type FakeDataServer } from './test-harness.js';
 
+let server: FakeDataServer | undefined;
 afterEach(() => {
   cleanup();
+  server?.restore();
+  server = undefined;
 });
 
 function createMockScopeData(): ScopeAggregatedData {
@@ -328,6 +333,55 @@ describe('DataSelectionModal Real-Time STEP2 Candidates Reflection', () => {
     const mobileTagBtn = within(dialog).getByRole('button', { name: /report-mobile/ });
     await user.click(mobileTagBtn);
     expectPreviewCounts(dialog, 1, 1);
+  });
+
+  it('displays tags accurately when switching to monthly report with createAutoCollectedTestDataset', async () => {
+    const user = userEvent.setup({ document });
+    const ds = createAutoCollectedTestDataset();
+    const files = buildFileMap('/data', { is_mock_mode: true });
+    server = installFakeDataServer(files);
+
+    render(
+      <DataSelectionModal
+        isOpen={true}
+        onClose={() => {}}
+        activeSource="live_metrics"
+        onSelectSource={() => {}}
+        indexMeta={ds.indexMeta}
+        scopeType="monthly"
+        selectedScopeKey="2026-09"
+        onSelectLiveScope={() => {}}
+        availableReports={ds.indexMeta.available_reports ?? []}
+        selectedReportMonth="2026-09"
+        onSelectReportMonth={() => {}}
+        uploadedData={null}
+        onUploadFileLoaded={() => {}}
+        onClearUploadedFile={() => {}}
+        filterCriteria={DEFAULT_FILTER_CRITERIA}
+        onApplyFilterCriteria={() => {}}
+        availableCostCenters={['FinTech-Division']}
+        availableOrganizations={['proud-fintech']}
+        availableGroups={['コア決済基盤チーム']}
+        availableTags={['backend', 'lead', 'typescript']}
+        currentScopeData={ds.monthlyScopes['2026-09']}
+        currentReportData={null}
+        dataBaseDir="/data"
+      />
+    );
+
+    const dialog = screen.getByRole('dialog');
+
+    // 1. STEP1 で月次レポートカードをクリック
+    const reportCard = within(dialog).getByText(DATA_SOURCE_LABELS.monthly_report.shortTitle);
+    await user.click(reportCard);
+
+    // 2. 非同期で reports/2026-09.json が取得され、TEST_USERS_MATRIX のタグが表示されること
+    await waitFor(() => {
+      expectTags(dialog, ['backend', 'lead', 'frontend', 'ai-ml', 'sre']);
+    });
+
+    // プレビュー件数も 13名中13名になること
+    expectPreviewCounts(dialog, 13, 13);
   });
 });
 

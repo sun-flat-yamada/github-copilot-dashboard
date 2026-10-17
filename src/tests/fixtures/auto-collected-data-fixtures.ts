@@ -5,6 +5,8 @@ import {
   IndexMetadata,
   EnterpriseCostCenter,
   CostCenterBudget,
+  MonthlyReportAggregatedData,
+  ReportUserDetail,
 } from '../../types/copilot.js';
 
 /**
@@ -428,6 +430,7 @@ export function createAutoCollectedTestDataset(): {
   indexMeta: IndexMetadata;
   monthlyScopes: Record<string, ScopeAggregatedData>;
   dailyScopes: Record<string, ScopeAggregatedData>;
+  reports: Record<string, MonthlyReportAggregatedData>;
   usersMatrix: TestUserSpec[];
   costCenters: EnterpriseCostCenter[];
   budgets: CostCenterBudget[];
@@ -514,6 +517,9 @@ export function createAutoCollectedTestDataset(): {
     issues: [],
   };
 
+  const report202609 = buildMonthlyReportAggregatedData('2026-09', TEST_USERS_MATRIX);
+  const report202608 = buildMonthlyReportAggregatedData('2026-08', TEST_USERS_MATRIX.slice(0, 11));
+
   return {
     indexMeta,
     monthlyScopes: {
@@ -526,8 +532,172 @@ export function createAutoCollectedTestDataset(): {
       '2026-09-09': daily20260909,
       '2026-09-06': daily20260906,
     },
+    reports: {
+      '2026-09': report202609,
+      '2026-08': report202608,
+    },
     usersMatrix: TEST_USERS_MATRIX,
     costCenters,
     budgets: scope202609.cost_center_budgets || [],
+  };
+}
+
+/**
+ * テストユーザーマトリクスに基づく確定的 MonthlyReportAggregatedData を生成
+ */
+export function buildMonthlyReportAggregatedData(
+  reportMonth: string,
+  specs: TestUserSpec[] = TEST_USERS_MATRIX
+): MonthlyReportAggregatedData {
+  const userDetails: ReportUserDetail[] = specs.map((u) => {
+    const isEnterprise = u.monthly_cost_usd >= 39;
+    const requests = u.total_chats + u.total_suggestions;
+    return {
+      login: u.login,
+      display_name: u.display_name,
+      department: u.department || '未設定',
+      cost_center: u.cost_center || 'Unassigned',
+      organization: u.organization || 'Unassigned',
+      total_requests: requests,
+      total_spend_usd: u.monthly_cost_usd,
+      gross_spend_usd: u.monthly_cost_usd,
+      net_spend_usd: u.monthly_cost_usd,
+      primary_model: 'Claude Sonnet 5',
+      model_requests: {
+        'Claude Sonnet 5': requests,
+      },
+      model_spend_usd: {
+        'Claude Sonnet 5': u.monthly_cost_usd,
+      },
+      model_gross_usd: {
+        'Claude Sonnet 5': u.monthly_cost_usd,
+      },
+      tags: u.tags,
+      plan_type: isEnterprise ? 'enterprise' : 'business',
+      last_activity_date: `${reportMonth}-10`,
+    };
+  });
+
+  const totalSpend = userDetails.reduce((sum, u) => sum + u.total_spend_usd, 0);
+  const totalRequests = userDetails.reduce((sum, u) => sum + u.total_requests, 0);
+
+  const deptMap: Record<string, { total_seats: number; total_spend_usd: number; active_users: number }> = {};
+  const ccMap: Record<string, { total_seats: number; total_spend_usd: number; active_users: number }> = {};
+  const orgMap: Record<string, { total_seats: number; total_spend_usd: number; active_users: number }> = {};
+
+  for (const u of userDetails) {
+    const dept = u.department || '未設定';
+    deptMap[dept] = deptMap[dept] || { total_seats: 0, total_spend_usd: 0, active_users: 0 };
+    deptMap[dept].total_seats += 1;
+    deptMap[dept].total_spend_usd += u.total_spend_usd;
+    deptMap[dept].active_users += u.total_requests > 0 ? 1 : 0;
+
+    const cc = u.cost_center || 'Unassigned';
+    ccMap[cc] = ccMap[cc] || { total_seats: 0, total_spend_usd: 0, active_users: 0 };
+    ccMap[cc].total_seats += 1;
+    ccMap[cc].total_spend_usd += u.total_spend_usd;
+    ccMap[cc].active_users += u.total_requests > 0 ? 1 : 0;
+
+    const org = u.organization || 'Unassigned';
+    orgMap[org] = orgMap[org] || { total_seats: 0, total_spend_usd: 0, active_users: 0 };
+    orgMap[org].total_seats += 1;
+    orgMap[org].total_spend_usd += u.total_spend_usd;
+    orgMap[org].active_users += u.total_requests > 0 ? 1 : 0;
+  }
+
+  return {
+    report_month: reportMonth,
+    source_type: 'persisted',
+    file_name: `copilot_monthly_usage_${reportMonth}.csv`,
+    parsed_at: `${reportMonth}-11T00:00:00Z`,
+    overview: {
+      total_net_spend_usd: totalSpend,
+      total_gross_spend_usd: totalSpend,
+      total_discount_usd: 0,
+      total_requests: totalRequests,
+      total_active_users: userDetails.filter((u) => u.total_requests > 0).length,
+      top_model: 'Claude Sonnet 5',
+      top_sku: 'copilot_enterprise',
+    },
+    by_department: Object.fromEntries(
+      Object.entries(deptMap).map(([k, v]) => [
+        k,
+        {
+          group_name: k,
+          total_seats: v.total_seats,
+          active_seats: v.active_users,
+          idle_seats: Math.max(0, v.total_seats - v.active_users),
+          total_cost_usd: v.total_spend_usd,
+          net_cost_usd: v.total_spend_usd,
+          potential_savings_usd: 0,
+          active_ratio: v.total_seats > 0 ? Number((v.active_users / v.total_seats).toFixed(4)) : 0,
+          acceptance_rate: null,
+          total_suggestions: null,
+          total_acceptances: null,
+          total_chats: null,
+          total_pr_summaries: null,
+        },
+      ])
+    ),
+    by_cost_center: Object.fromEntries(
+      Object.entries(ccMap).map(([k, v]) => [
+        k,
+        {
+          group_name: k,
+          total_seats: v.total_seats,
+          active_seats: v.active_users,
+          idle_seats: Math.max(0, v.total_seats - v.active_users),
+          total_cost_usd: v.total_spend_usd,
+          net_cost_usd: v.total_spend_usd,
+          potential_savings_usd: 0,
+          active_ratio: v.total_seats > 0 ? Number((v.active_users / v.total_seats).toFixed(4)) : 0,
+          acceptance_rate: null,
+          total_suggestions: null,
+          total_acceptances: null,
+          total_chats: null,
+          total_pr_summaries: null,
+        },
+      ])
+    ),
+    by_organization: Object.fromEntries(
+      Object.entries(orgMap).map(([k, v]) => [
+        k,
+        {
+          group_name: k,
+          total_seats: v.total_seats,
+          active_seats: v.active_users,
+          idle_seats: Math.max(0, v.total_seats - v.active_users),
+          total_cost_usd: v.total_spend_usd,
+          net_cost_usd: v.total_spend_usd,
+          potential_savings_usd: 0,
+          active_ratio: v.total_seats > 0 ? Number((v.active_users / v.total_seats).toFixed(4)) : 0,
+          acceptance_rate: null,
+          total_suggestions: null,
+          total_acceptances: null,
+          total_chats: null,
+          total_pr_summaries: null,
+        },
+      ])
+    ),
+    model_breakdown: [
+      {
+        model_name: 'Claude Sonnet 5',
+        total_requests: totalRequests,
+        total_spend_usd: totalSpend,
+        percentage: 100,
+        active_users: userDetails.length,
+      },
+    ],
+    sku_breakdown: [
+      {
+        sku_name: 'copilot_enterprise',
+        total_quantity: userDetails.length,
+        unit_type: 'seats',
+        total_spend_usd: totalSpend,
+        percentage: 100,
+      },
+    ],
+    daily_trends: [],
+    user_details: userDetails,
   };
 }
