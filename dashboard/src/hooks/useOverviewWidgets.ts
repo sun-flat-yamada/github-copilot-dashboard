@@ -3,6 +3,7 @@ import { useState, useCallback, useMemo } from 'react';
 export const OVERVIEW_WIDGETS_STORAGE_KEY = 'copilot_dashboard_overview_widgets_v1';
 
 export type OverviewWidgetMode = 'live' | 'report';
+export type OverviewWidgetSize = 'kpi' | 'full';
 
 export interface OverviewWidgetCatalogItem {
   id: string;
@@ -10,15 +11,57 @@ export interface OverviewWidgetCatalogItem {
   subtitle: string;
   defaultPreset: boolean;
   mode: OverviewWidgetMode;
+  size: OverviewWidgetSize;
 }
 
 export const LIVE_WIDGET_CATALOG: readonly OverviewWidgetCatalogItem[] = [
+  {
+    id: 'kpi_total_spend',
+    title: '当月 月額費用 (シート費)',
+    subtitle: '契約シート数・利用費用・超過請求費用・月末着地予測',
+    defaultPreset: true,
+    mode: 'live',
+    size: 'kpi',
+  },
+  {
+    id: 'kpi_active_rate',
+    title: 'シート稼働率',
+    subtitle: '契約シートに対するアクティブユーザー比率と前期比',
+    defaultPreset: true,
+    mode: 'live',
+    size: 'kpi',
+  },
+  {
+    id: 'kpi_idle_waste',
+    title: '遊休シート推定無駄コスト',
+    subtitle: '遊休基準に基づく削減見込み額と遊休席数',
+    defaultPreset: true,
+    mode: 'live',
+    size: 'kpi',
+  },
+  {
+    id: 'kpi_budget_utilization',
+    title: '予算消化率',
+    subtitle: '支出上限に対する超過請求費用の消化率',
+    defaultPreset: true,
+    mode: 'live',
+    size: 'kpi',
+  },
+  {
+    id: 'kpi_acceptance_rate',
+    title: 'Inline補完受諾率',
+    subtitle: 'IDEコード補完受諾率・チャット数・PR要約数',
+    defaultPreset: true,
+    mode: 'live',
+    size: 'kpi',
+  },
   {
     id: 'advisor',
     title: '遊休シート・コスト削減アドバイザー',
     subtitle: '遊休アカウント検出と削減可能額',
     defaultPreset: true,
     mode: 'live',
+    size: 'full',
   },
   {
     id: 'allocation',
@@ -26,6 +69,7 @@ export const LIVE_WIDGET_CATALOG: readonly OverviewWidgetCatalogItem[] = [
     subtitle: '選択仕訳軸（ユーザー定義Gr / Cost Center / Org）に基づく費用シェアと稼働率',
     defaultPreset: true,
     mode: 'live',
+    size: 'full',
   },
   {
     id: 'yearly-trend',
@@ -33,6 +77,7 @@ export const LIVE_WIDGET_CATALOG: readonly OverviewWidgetCatalogItem[] = [
     subtitle: '保存済みの月次集計から構成。確定 / 暫定 / 欠損を区別し、欠損月は 0 で補完しない',
     defaultPreset: true,
     mode: 'live',
+    size: 'full',
   },
   {
     id: 'budget',
@@ -40,6 +85,7 @@ export const LIVE_WIDGET_CATALOG: readonly OverviewWidgetCatalogItem[] = [
     subtitle: '上限Budget枠・無料枠・請求対象額とアラート',
     defaultPreset: true,
     mode: 'live',
+    size: 'full',
   },
   {
     id: 'usage',
@@ -47,6 +93,7 @@ export const LIVE_WIDGET_CATALOG: readonly OverviewWidgetCatalogItem[] = [
     subtitle: '日次アクティブ推移、Inline補完受諾率、主要プログラミング言語シェア',
     defaultPreset: true,
     mode: 'live',
+    size: 'full',
   },
   {
     id: 'users',
@@ -54,6 +101,7 @@ export const LIVE_WIDGET_CATALOG: readonly OverviewWidgetCatalogItem[] = [
     subtitle: '全アカウントの利用ステータス、推計費用、最終アクティビティ',
     defaultPreset: true,
     mode: 'live',
+    size: 'full',
   },
   {
     id: 'budget-timeline',
@@ -61,6 +109,7 @@ export const LIVE_WIDGET_CATALOG: readonly OverviewWidgetCatalogItem[] = [
     subtitle: 'シート費用の日次積み上がりと月次予算上限ラインの推移対比',
     defaultPreset: false,
     mode: 'live',
+    size: 'full',
   },
   {
     id: 'credits',
@@ -68,6 +117,7 @@ export const LIVE_WIDGET_CATALOG: readonly OverviewWidgetCatalogItem[] = [
     subtitle: '組織プール・モデル別クレジット消費量と超過ステータス',
     defaultPreset: false,
     mode: 'live',
+    size: 'full',
   },
   {
     id: 'agent',
@@ -75,6 +125,7 @@ export const LIVE_WIDGET_CATALOG: readonly OverviewWidgetCatalogItem[] = [
     subtitle: 'VS Code Agent・カスタムAgent・MCPツール呼出・Coding Agent PRの動向',
     defaultPreset: false,
     mode: 'live',
+    size: 'full',
   },
   {
     id: 'adoption',
@@ -82,6 +133,7 @@ export const LIVE_WIDGET_CATALOG: readonly OverviewWidgetCatalogItem[] = [
     subtitle: 'No Cohort / Code First / Agent First / Multi-Agent の成熟度コホート分布',
     defaultPreset: false,
     mode: 'live',
+    size: 'full',
   },
   {
     id: 'audit',
@@ -89,16 +141,58 @@ export const LIVE_WIDGET_CATALOG: readonly OverviewWidgetCatalogItem[] = [
     subtitle: '自動収集の実行履歴・ソース別状態・品質チェック結果',
     defaultPreset: false,
     mode: 'live',
+    size: 'full',
   },
 ] as const;
 
 export const REPORT_WIDGET_CATALOG: readonly OverviewWidgetCatalogItem[] = [
+  {
+    id: 'report_kpi_cost',
+    title: '費用サマリー (Cost Overview)',
+    subtitle: '利用費用 (総額)・超過請求費用・無料枠控除',
+    defaultPreset: true,
+    mode: 'report',
+    size: 'kpi',
+  },
+  {
+    id: 'report_kpi_requests',
+    title: '総リクエスト数',
+    subtitle: 'リクエスト / AIC 呼出総量',
+    defaultPreset: true,
+    mode: 'report',
+    size: 'kpi',
+  },
+  {
+    id: 'report_kpi_active_users',
+    title: 'アクティブ人数',
+    subtitle: '利用履歴のあるユニークアカウント数',
+    defaultPreset: true,
+    mode: 'report',
+    size: 'kpi',
+  },
+  {
+    id: 'report_kpi_top_model',
+    title: '最多使用モデル',
+    subtitle: '最多リクエスト占有AIモデルとシェア',
+    defaultPreset: true,
+    mode: 'report',
+    size: 'kpi',
+  },
+  {
+    id: 'report_kpi_top_sku',
+    title: '主要課金 SKU',
+    subtitle: '主要請求カテゴリ',
+    defaultPreset: true,
+    mode: 'report',
+    size: 'kpi',
+  },
   {
     id: 'report_charts',
     title: '3軸集計・費用配賦 & AIモデル別・日別推移',
     subtitle: '部署/Cost Center別シェアとモデル別消費額',
     defaultPreset: true,
     mode: 'report',
+    size: 'full',
   },
   {
     id: 'report_users',
@@ -106,6 +200,7 @@ export const REPORT_WIDGET_CATALOG: readonly OverviewWidgetCatalogItem[] = [
     subtitle: '月次利用リクエスト数、消費額、主要モデル一覧',
     defaultPreset: true,
     mode: 'report',
+    size: 'full',
   },
   {
     id: 'report_budget',
@@ -113,6 +208,7 @@ export const REPORT_WIDGET_CATALOG: readonly OverviewWidgetCatalogItem[] = [
     subtitle: '月次レポート実績と上限Budget枠・無料枠の突合カード',
     defaultPreset: false,
     mode: 'report',
+    size: 'full',
   },
   {
     id: 'report_budget_timeline',
@@ -120,6 +216,7 @@ export const REPORT_WIDGET_CATALOG: readonly OverviewWidgetCatalogItem[] = [
     subtitle: '日次累積利用額と80%予測区間による上限到達日予測',
     defaultPreset: false,
     mode: 'report',
+    size: 'full',
   },
   {
     id: 'report_credits',
@@ -127,6 +224,7 @@ export const REPORT_WIDGET_CATALOG: readonly OverviewWidgetCatalogItem[] = [
     subtitle: '月次レポートに基づくAIクレジット消費とモデル別内訳',
     defaultPreset: false,
     mode: 'report',
+    size: 'full',
   },
   {
     id: 'report_audit',
@@ -134,6 +232,7 @@ export const REPORT_WIDGET_CATALOG: readonly OverviewWidgetCatalogItem[] = [
     subtitle: '収集実行履歴・データ品質ステータス確認',
     defaultPreset: false,
     mode: 'report',
+    size: 'full',
   },
 ] as const;
 

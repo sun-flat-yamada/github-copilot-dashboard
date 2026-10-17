@@ -108,8 +108,8 @@ export const AppShell: React.FC<AppShellProps> = ({ registry: defaultViewRegistr
     selectedTags,
   });
 
-  // 2. 分析View選択 (要件4: モード切替からView切替への抜本移行)
-  const [activeView, setActiveView] = useState<string>('overview');
+  // 2. 分析View選択 (初期表示は Widget カスタマイズ対応の Dashboard タブ #334)
+  const [activeView, setActiveView] = useState<string>('dashboard');
 
   // 3. 集計軸 & フィルター状態
   const [currentGrouping, setCurrentGrouping] = useState<GroupingDimension>('department');

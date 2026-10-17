@@ -1,27 +1,18 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import {
   AlertTriangle,
   BarChart3,
-  Bot,
   CalendarRange,
   ChevronsDown,
   ChevronsUp,
-  Coins,
   Landmark,
   LayoutGrid,
   PieChart as PieIcon,
-  Plus,
-  RotateCcw,
-  ShieldCheck,
-  TrendingUp,
   Users2,
 } from 'lucide-react';
 import { GroupingDimension } from '../../../../src/types/copilot';
 import { monthlyIdleSavingsUsd } from '../../../../src/domain/rules/ScopeCostRule';
 import { SEAT_IDLE_CRITERIA_TEXT } from '../../../../src/domain/rules/SeatClassificationRule';
-import { AdoptionPresenter } from '../../../../src/adapters/presenters/AdoptionPresenter';
-import { AgentPresenter } from '../../../../src/adapters/presenters/AgentPresenter';
-import { CreditsPresenter } from '../../../../src/adapters/presenters/CreditsPresenter';
 import { CollapsibleSection } from '../../components/common/CollapsibleSection';
 import { KpiSummaryCards } from '../../components/KpiSummaryCards';
 import { IdleSeatAdvisor } from '../../components/IdleSeatAdvisor';
@@ -30,15 +21,8 @@ import { UsageMetricsCharts } from '../../components/UsageMetricsCharts';
 import { UserDetailTable } from '../../components/UserDetailTable';
 import { YearlyTrendSection } from '../../components/YearlyTrendPanel';
 import { CostCenterBudgetCards } from '../../components/CostCenterBudgetCards';
-import { CostCenterBudgetTimeline } from '../../components/CostCenterBudgetTimeline';
 import { MonthlyReportKpis } from '../../components/monthly-report/MonthlyReportKpis';
 import { MonthlyReportCharts } from '../../components/monthly-report/MonthlyReportCharts';
-import { CreditsView } from '../../components/views/CreditsView';
-import { AgentActivityView } from '../../components/views/AgentActivityView';
-import { AdoptionMaturityView } from '../../components/views/AdoptionMaturityView';
-import { AuditDataQualitySection } from '../../components/AuditDataQualityPanel';
-import { liveCostCenterDaily, livePeriod, monthPeriod } from '../../utils/budgetForecast';
-import { useOverviewWidgets } from '../../hooks/useOverviewWidgets';
 
 import type { ViewContext } from '../types';
 
@@ -72,7 +56,6 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
     currentData,
     previousData,
     currentReportData,
-    reportBudgets,
     deepAnalysisProfiles,
     focusedUserLogin,
     userTableFilterStatus,
@@ -86,447 +69,8 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
     onOpenDeepAnalysis: handleOpenDeepAnalysis,
   } = ctx;
 
-  const widgetMode = isReportSource ? 'report' : 'live';
-  const {
-    activeWidgetIds,
-    catalog,
-    availableToAdd,
-    isCustomized,
-    addWidget,
-    removeWidget,
-    moveWidget,
-    reorderWidgets,
-    resetWidgets,
-  } = useOverviewWidgets(widgetMode);
-
-  const [isAddPanelOpen, setIsAddPanelOpen] = useState<boolean>(false);
-  const [draggedWidgetId, setDraggedWidgetId] = useState<string | null>(null);
-  const [dragOverWidgetId, setDragOverWidgetId] = useState<string | null>(null);
-
-  const liveBudgetForecast = useMemo(
-    () => (currentData ? { period: livePeriod(currentData), daily: liveCostCenterDaily(currentData) } : null),
-    [currentData]
-  );
-
-  const handleDragStart = (widgetId: string) => (e: React.DragEvent<HTMLDivElement>) => {
-    setDraggedWidgetId(widgetId);
-    e.dataTransfer.effectAllowed = 'move';
-    try {
-      e.dataTransfer.setData('text/plain', widgetId);
-    } catch {
-      // Ignore dataTransfer restrictions in synthetic environments
-    }
-  };
-
-  const handleDragOver = (widgetId: string) => (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    if (draggedWidgetId && draggedWidgetId !== widgetId) {
-      setDragOverWidgetId(widgetId);
-    }
-  };
-
-  const handleDragLeave = (widgetId: string) => () => {
-    if (dragOverWidgetId === widgetId) {
-      setDragOverWidgetId(null);
-    }
-  };
-
-  const handleDrop = (targetWidgetId: string) => (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const fromId = draggedWidgetId || (() => {
-      try {
-        return e.dataTransfer.getData('text/plain');
-      } catch {
-        return '';
-      }
-    })();
-    if (fromId && fromId !== targetWidgetId) {
-      reorderWidgets(fromId, targetWidgetId);
-    }
-    setDraggedWidgetId(null);
-    setDragOverWidgetId(null);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedWidgetId(null);
-    setDragOverWidgetId(null);
-  };
-
-  const renderLiveWidget = (widgetId: string, index: number, total: number) => {
-    if (!currentData) return null;
-
-    const commonProps = {
-      id: widgetId,
-      isExpanded: isExpanded(widgetId),
-      onToggle: () => toggle(widgetId),
-      canMoveUp: index > 0,
-      canMoveDown: index < total - 1,
-      onMoveUp: () => moveWidget(widgetId, 'up'),
-      onMoveDown: () => moveWidget(widgetId, 'down'),
-      onRemove: () => removeWidget(widgetId),
-      draggable: true,
-      isDragging: draggedWidgetId === widgetId,
-      isDragOver: dragOverWidgetId === widgetId,
-      onDragStart: handleDragStart(widgetId),
-      onDragOver: handleDragOver(widgetId),
-      onDragLeave: handleDragLeave(widgetId),
-      onDrop: handleDrop(widgetId),
-      onDragEnd: handleDragEnd,
-    };
-
-    switch (widgetId) {
-      case 'advisor':
-        return (
-          <CollapsibleSection
-            key={widgetId}
-            {...commonProps}
-            title="遊休シート・コスト削減アドバイザー"
-            subtitle={`遊休アカウント検出と削減可能額 (判定基準: ${SEAT_IDLE_CRITERIA_TEXT})`}
-            icon={<AlertTriangle className="w-4 h-4 text-amber-400" />}
-            summaryChips={
-              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-800 font-bold">
-                削減可能: ${monthlyIdleSavingsUsd(currentData.users).toFixed(2)}/月
-              </span>
-            }
-          >
-            <IdleSeatAdvisor data={currentData} onFilterIdleUsers={handleFilterIdle} />
-          </CollapsibleSection>
-        );
-
-      case 'allocation':
-        return (
-          <CollapsibleSection
-            key={widgetId}
-            {...commonProps}
-            title="グループ別 コスト内訳 & ライセンス稼働状況"
-            subtitle="選択仕訳軸（ユーザー定義Gr / Cost Center / Org）に基づく費用シェアと稼働率"
-            icon={<PieIcon className="w-4 h-4 text-purple-400" />}
-            summaryChips={
-              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-                {countGroups(currentData, currentGrouping)} {GROUPING_UNIT_LABEL[currentGrouping]}
-              </span>
-            }
-          >
-            <CostAllocationCharts
-              data={currentData}
-              grouping={currentGrouping}
-              onGroupingChange={handleGroupingChange}
-            />
-          </CollapsibleSection>
-        );
-
-      case 'yearly-trend':
-        return (
-          <CollapsibleSection
-            key={widgetId}
-            {...commonProps}
-            title="1 年推移 (月次・前年同月比)"
-            subtitle="保存済みの月次集計から構成。確定 / 暫定 / 欠損を区別し、欠損月は 0 で補完しない"
-            icon={<CalendarRange className="w-4 h-4 text-sky-400" />}
-          >
-            <YearlyTrendSection baseDir={dataBaseDir} isDemo={isDemoData} />
-          </CollapsibleSection>
-        );
-
-      case 'budget':
-        return (
-          <CollapsibleSection
-            key={widgetId}
-            {...commonProps}
-            title="Cost Center 予算進捗管理"
-            subtitle="上限Budget枠・無料枠・請求対象額とアラート"
-            icon={<Landmark className="w-4 h-4 text-emerald-400" />}
-            summaryChips={
-              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-                {currentData.cost_center_budgets?.length || 0} Cost Centers
-              </span>
-            }
-          >
-            <CostCenterBudgetCards budgets={currentData.cost_center_budgets} />
-          </CollapsibleSection>
-        );
-
-      case 'usage':
-        return (
-          <CollapsibleSection
-            key={widgetId}
-            {...commonProps}
-            title="日次アクティビティ & 言語別Inline補完受諾率推移"
-            subtitle="日次アクティブ推移、Inline補完受諾率、主要プログラミング言語シェア"
-            icon={<BarChart3 className="w-4 h-4 text-cyan-400" />}
-            summaryChips={
-              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-                Inline補完受諾率{' '}
-                {currentData.overview.overall_acceptance_rate === null
-                  ? '—'
-                  : `${Math.round(currentData.overview.overall_acceptance_rate * 100)}%`}
-              </span>
-            }
-          >
-            <UsageMetricsCharts data={currentData} />
-          </CollapsibleSection>
-        );
-
-      case 'users':
-        return (
-          <CollapsibleSection
-            key={widgetId}
-            {...commonProps}
-            title="ユーザー別利用明細テーブル"
-            subtitle="全アカウントの利用ステータス、推計費用、最終アクティビティ"
-            icon={<Users2 className="w-4 h-4 text-blue-400" />}
-            summaryChips={
-              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-                {currentData.users.length} 名
-              </span>
-            }
-          >
-            <UserDetailTable
-              data={currentData}
-              userProfiles={deepAnalysisProfiles}
-              initialSelectedLogin={focusedUserLogin}
-              filterStatus={userTableFilterStatus}
-              onSelectUserForTrend={handleSelectUserForTrend}
-              onSelectUserForDeepAnalysis={handleOpenDeepAnalysis}
-            />
-          </CollapsibleSection>
-        );
-
-      case 'budget-timeline':
-        return (
-          <CollapsibleSection
-            key={widgetId}
-            {...commonProps}
-            title="Cost Center 予算推移と上限到達予測"
-            subtitle="シート費用の日次積み上がりと月次予算上限ラインの推移対比"
-            icon={<Landmark className="w-4 h-4 text-teal-400" />}
-          >
-            {liveBudgetForecast && (
-              <CostCenterBudgetTimeline
-                budgets={currentData.cost_center_budgets ?? []}
-                costCenterDaily={liveBudgetForecast.daily}
-                start={liveBudgetForecast.period.start}
-                end={liveBudgetForecast.period.end}
-                forecastEnabled={liveBudgetForecast.period.monthly}
-                note="自動収集データのため、利用額は各シートの日割り費用 (月額課金の日次の積み上がり) です。"
-              />
-            )}
-          </CollapsibleSection>
-        );
-
-      case 'credits':
-        return (
-          <CollapsibleSection
-            key={widgetId}
-            {...commonProps}
-            title="AI Credits & コスト内訳"
-            subtitle="組織プール・モデル別クレジット消費量と超過ステータス"
-            icon={<Coins className="w-4 h-4 text-amber-400" />}
-          >
-            <CreditsView
-              viewModel={CreditsPresenter.present({ currentData, currentReportData })}
-              currentReportData={currentReportData}
-              baseDir={dataBaseDir}
-              isDemo={isDemoData}
-            />
-          </CollapsibleSection>
-        );
-
-      case 'agent':
-        return (
-          <CollapsibleSection
-            key={widgetId}
-            {...commonProps}
-            title="AI Agent & MCP 活用動向"
-            subtitle="VS Code Agent・カスタムAgent・MCPツール呼出・Coding Agent PRの動向"
-            icon={<Bot className="w-4 h-4 text-purple-400" />}
-          >
-            <AgentActivityView viewModel={AgentPresenter.present({ currentData })} />
-          </CollapsibleSection>
-        );
-
-      case 'adoption':
-        return (
-          <CollapsibleSection
-            key={widgetId}
-            {...commonProps}
-            title="AI 採用成熟度 (Impact Dashboard)"
-            subtitle="No Cohort / Code First / Agent First / Multi-Agent の成熟度コホート分布"
-            icon={<TrendingUp className="w-4 h-4 text-emerald-400" />}
-          >
-            <AdoptionMaturityView viewModel={AdoptionPresenter.present({ currentData })} />
-          </CollapsibleSection>
-        );
-
-      case 'audit':
-        return (
-          <CollapsibleSection
-            key={widgetId}
-            {...commonProps}
-            title="監査・データ品質サマリー"
-            subtitle="自動収集の実行履歴・ソース別状態・品質チェック結果"
-            icon={<ShieldCheck className="w-4 h-4 text-indigo-400" />}
-          >
-            <AuditDataQualitySection baseDir={dataBaseDir} isDemo={isDemoData} />
-          </CollapsibleSection>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  const renderReportWidget = (widgetId: string, index: number, total: number) => {
-    if (!currentReportData) return null;
-
-    const commonProps = {
-      id: widgetId,
-      isExpanded: isExpanded(widgetId),
-      onToggle: () => toggle(widgetId),
-      canMoveUp: index > 0,
-      canMoveDown: index < total - 1,
-      onMoveUp: () => moveWidget(widgetId, 'up'),
-      onMoveDown: () => moveWidget(widgetId, 'down'),
-      onRemove: () => removeWidget(widgetId),
-      draggable: true,
-      isDragging: draggedWidgetId === widgetId,
-      isDragOver: dragOverWidgetId === widgetId,
-      onDragStart: handleDragStart(widgetId),
-      onDragOver: handleDragOver(widgetId),
-      onDragLeave: handleDragLeave(widgetId),
-      onDrop: handleDrop(widgetId),
-      onDragEnd: handleDragEnd,
-    };
-
-    switch (widgetId) {
-      case 'report_charts':
-        return (
-          <CollapsibleSection
-            key={widgetId}
-            {...commonProps}
-            title="3軸集計・費用配賦 & AIモデル別・日別推移"
-            subtitle="部署/Cost Center別シェアとモデル別消費額"
-            icon={<PieIcon className="w-4 h-4 text-teal-400" />}
-            summaryChips={
-              <span className="text-xs px-2 py-0.5 rounded-full bg-teal-950 text-teal-300 border border-teal-800 font-mono">
-                {currentReportData.model_breakdown.length} モデル
-              </span>
-            }
-          >
-            <MonthlyReportCharts
-              reportData={currentReportData}
-              grouping={currentGrouping}
-              onGroupingChange={handleGroupingChange}
-              selectedGroup={selectedGroup}
-              baseDir={dataBaseDir}
-              isDemo={isDemoData}
-            />
-          </CollapsibleSection>
-        );
-
-      case 'report_users':
-        return (
-          <CollapsibleSection
-            key={widgetId}
-            {...commonProps}
-            title="ユーザー別月次明細テーブル"
-            subtitle="月次利用リクエスト数、消費額、主要モデル一覧"
-            icon={<Users2 className="w-4 h-4 text-blue-400" />}
-            summaryChips={
-              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-                {currentReportData.user_details.length} 名
-              </span>
-            }
-          >
-            <UserDetailTable
-              reportData={currentReportData}
-              userProfiles={deepAnalysisProfiles}
-              initialSelectedLogin={focusedUserLogin}
-              grouping={currentGrouping}
-              selectedGroup={selectedGroup}
-              onGroupChange={setSelectedGroup}
-              onSelectUserForDeepAnalysis={handleOpenDeepAnalysis}
-              onSelectUserForTrend={handleSelectUserForTrend}
-            />
-          </CollapsibleSection>
-        );
-
-      case 'report_budget':
-        return (
-          <CollapsibleSection
-            key={widgetId}
-            {...commonProps}
-            title="Cost Center 予算進捗管理"
-            subtitle="月次レポート実績と上限Budget枠・無料枠の突合カード"
-            icon={<Landmark className="w-4 h-4 text-emerald-400" />}
-            summaryChips={
-              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-                {reportBudgets.length} Cost Centers
-              </span>
-            }
-          >
-            <CostCenterBudgetCards budgets={reportBudgets} />
-          </CollapsibleSection>
-        );
-
-      case 'report_budget_timeline':
-        return (
-          <CollapsibleSection
-            key={widgetId}
-            {...commonProps}
-            title="Cost Center 予算推移と上限到達予測"
-            subtitle="日次累積利用額と80%予測区間による上限到達日予測"
-            icon={<Landmark className="w-4 h-4 text-teal-400" />}
-          >
-            <CostCenterBudgetTimeline
-              budgets={reportBudgets}
-              costCenterDaily={currentReportData.cost_center_daily}
-              start={monthPeriod(currentReportData.report_month).start}
-              end={monthPeriod(currentReportData.report_month).end}
-              forecastEnabled
-            />
-          </CollapsibleSection>
-        );
-
-      case 'report_credits':
-        return (
-          <CollapsibleSection
-            key={widgetId}
-            {...commonProps}
-            title="AI Credits & コスト内訳"
-            subtitle="月次レポートに基づくAIクレジット消費とモデル別内訳"
-            icon={<Coins className="w-4 h-4 text-amber-400" />}
-          >
-            <CreditsView
-              viewModel={CreditsPresenter.present({ currentData, currentReportData })}
-              currentReportData={currentReportData}
-              baseDir={dataBaseDir}
-              isDemo={isDemoData}
-            />
-          </CollapsibleSection>
-        );
-
-      case 'report_audit':
-        return (
-          <CollapsibleSection
-            key={widgetId}
-            {...commonProps}
-            title="監査・データ品質サマリー"
-            subtitle="収集実行履歴・データ品質ステータス確認"
-            icon={<ShieldCheck className="w-4 h-4 text-indigo-400" />}
-          >
-            <AuditDataQualitySection baseDir={dataBaseDir} isDemo={isDemoData} />
-          </CollapsibleSection>
-        );
-
-      default:
-        return null;
-    }
-  };
-
   return (
-    <div className="flex flex-col space-y-6 w-full">
+    <div className="flex flex-col space-y-6 w-full" data-testid="overview-cost-view">
       {/* サマリーブロック (常時展開 ★要件6) */}
       {activeSource === 'live_metrics' && currentData && (
         <KpiSummaryCards data={currentData} isDemo={isDemoData} previousData={previousData} />
@@ -535,68 +79,24 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
         <MonthlyReportKpis reportData={currentReportData} />
       )}
 
-      {/* 詳細分析セクションヘッダー ＆ Widget追加/リセット/一括開閉コントロール (★要件6, Issue #118, #331) */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 pb-1 border-b border-slate-800/80">
+      {/* 詳細分析セクションヘッダー ＆ 一括開閉コントロール (★要件6, Issue #118) */}
+      <div className="flex items-center justify-between pt-2 pb-1 border-b border-slate-800/80">
         <div className="flex items-center space-x-2.5">
           <div className="p-1.5 rounded-lg bg-indigo-950/60 border border-indigo-800/50 text-indigo-400">
             <LayoutGrid className="w-4 h-4" />
           </div>
-          <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+          <div className="flex items-center space-x-2">
             <h3 className="text-sm font-bold text-slate-200 tracking-tight">
               詳細分析セクション
             </h3>
-            <span
-              data-testid="overview-widget-count"
-              className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800/90 text-slate-400 font-mono border border-slate-700/50"
-            >
-              {activeWidgetIds.length} セクション
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800/90 text-slate-400 font-mono border border-slate-700/50">
+              {isReportSource ? '2 セクション' : '6 セクション'}
             </span>
-            {isCustomized && (
-              <span
-                data-testid="overview-widget-customized-badge"
-                className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-950/80 text-indigo-300 border border-indigo-800/70 font-semibold"
-              >
-                カスタム配置
-              </span>
-            )}
           </div>
         </div>
 
-        {/* Widget 追加・プリセットリセット・一括開閉ボタン群 */}
+        {/* 右上に配置した控えめなアイコン一括操作ボタン */}
         <div className="flex items-center space-x-1.5">
-          <button
-            type="button"
-            onClick={() => setIsAddPanelOpen((prev) => !prev)}
-            aria-expanded={isAddPanelOpen}
-            data-testid="widget-add-button"
-            className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-indigo-200 hover:text-white bg-indigo-950/70 hover:bg-indigo-900/80 border border-indigo-800/70 transition-all cursor-pointer shadow-sm flex items-center space-x-1"
-            title="ウィジェットを追加"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>ウィジェット追加</span>
-            {availableToAdd.length > 0 && (
-              <span className="ml-1 px-1.5 py-0.2 rounded-full bg-indigo-800/80 text-[10px] font-mono">
-                {availableToAdd.length}
-              </span>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              resetWidgets();
-              setIsAddPanelOpen(false);
-            }}
-            disabled={!isCustomized}
-            data-testid="widget-reset-button"
-            className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/80 disabled:opacity-40 disabled:pointer-events-none transition-all cursor-pointer shadow-sm flex items-center space-x-1"
-            title="デフォルトプリセットへリセット"
-            aria-label="デフォルトプリセットへリセット"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">リセット</span>
-          </button>
-
           <button
             type="button"
             onClick={() => expandAll()}
@@ -619,124 +119,166 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
         </div>
       </div>
 
-      {/* Widget カタログ追加パネル */}
-      {isAddPanelOpen && (
-        <div
-          data-testid="widget-catalog-panel"
-          role="region"
-          aria-label="ウィジェット追加カタログ"
-          className="p-4 rounded-2xl bg-slate-900/90 border border-indigo-800/60 shadow-lg space-y-3"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-xs sm:text-sm font-bold text-white">
-                ウィジェットカタログ
-              </h4>
-              <p className="text-xs text-slate-400">
-                ダッシュボードに追加するウィジェットを選択してください（設定はブラウザに自動保存されます）
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsAddPanelOpen(false)}
-              className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded border border-slate-800 hover:border-slate-700 cursor-pointer"
-            >
-              閉じる
-            </button>
-          </div>
+      {/* 個別要素ブロック (初期折りたたみ ★要件6, 1カラム垂直スタック ★要件5) */}
+      {activeSource === 'live_metrics' && currentData && (
+        <>
+          <CollapsibleSection
+            id="advisor"
+            title="遊休シート・コスト削減アドバイザー"
+            subtitle={`遊休アカウント検出と削減可能額 (判定基準: ${SEAT_IDLE_CRITERIA_TEXT})`}
+            icon={<AlertTriangle className="w-4 h-4 text-amber-400" />}
+            summaryChips={
+              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-800 font-bold">
+                削減可能: ${monthlyIdleSavingsUsd(currentData.users).toFixed(2)}/月
+              </span>
+            }
+            isExpanded={isExpanded('advisor')}
+            onToggle={() => toggle('advisor')}
+          >
+            <IdleSeatAdvisor data={currentData} onFilterIdleUsers={handleFilterIdle} />
+          </CollapsibleSection>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-            {catalog.map((item) => {
-              const isPlaced = activeWidgetIds.includes(item.id);
-              return (
-                <div
-                  key={item.id}
-                  data-testid={`widget-catalog-item-${item.id}`}
-                  className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-950/70 border border-slate-800/90"
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs sm:text-sm font-semibold text-slate-100 truncate">
-                        {item.title}
-                      </span>
-                      {item.defaultPreset && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 shrink-0">
-                          標準プリセット
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-slate-400 truncate mt-0.5">
-                      {item.subtitle}
-                    </p>
-                  </div>
+          <CollapsibleSection
+            id="allocation"
+            title="グループ別 コスト内訳 & ライセンス稼働状況"
+            subtitle="選択仕訳軸（ユーザー定義Gr / Cost Center / Org）に基づく費用シェアと稼働率"
+            icon={<PieIcon className="w-4 h-4 text-purple-400" />}
+            summaryChips={
+              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
+                {countGroups(currentData, currentGrouping)} {GROUPING_UNIT_LABEL[currentGrouping]}
+              </span>
+            }
+            isExpanded={isExpanded('allocation')}
+            onToggle={() => toggle('allocation')}
+          >
+            <CostAllocationCharts
+              data={currentData}
+              grouping={currentGrouping}
+              onGroupingChange={handleGroupingChange}
+            />
+          </CollapsibleSection>
 
-                  <button
-                    type="button"
-                    disabled={isPlaced}
-                    onClick={() => addWidget(item.id)}
-                    data-testid={`widget-add-item-${item.id}`}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-colors cursor-pointer ${
-                      isPlaced
-                        ? 'bg-slate-800 text-slate-400 opacity-60 pointer-events-none'
-                        : 'bg-indigo-600 hover:bg-indigo-500 text-white'
-                    }`}
-                  >
-                    {isPlaced ? '配置済み' : '＋ 追加'}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+          <CollapsibleSection
+            id="yearly-trend"
+            title="1 年推移 (月次・前年同月比)"
+            subtitle="保存済みの月次集計から構成。確定 / 暫定 / 欠損を区別し、欠損月は 0 で補完しない"
+            icon={<CalendarRange className="w-4 h-4 text-sky-400" />}
+            isExpanded={isExpanded('yearly-trend')}
+            onToggle={() => toggle('yearly-trend')}
+          >
+            <YearlyTrendSection baseDir={dataBaseDir} isDemo={isDemoData} />
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            id="budget"
+            title="Cost Center 予算進捗管理"
+            subtitle="上限Budget枠・無料枠・請求対象額とアラート"
+            icon={<Landmark className="w-4 h-4 text-emerald-400" />}
+            summaryChips={
+              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
+                {currentData.cost_center_budgets?.length || 0} Cost Centers
+              </span>
+            }
+            isExpanded={isExpanded('budget')}
+            onToggle={() => toggle('budget')}
+          >
+            <CostCenterBudgetCards budgets={currentData.cost_center_budgets} />
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            id="usage"
+            title="日次アクティビティ & 言語別Inline補完受諾率推移"
+            subtitle="日次アクティブ推移、Inline補完受諾率、主要プログラミング言語シェア"
+            icon={<BarChart3 className="w-4 h-4 text-cyan-400" />}
+            summaryChips={
+              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
+                Inline補完受諾率{' '}
+                {currentData.overview.overall_acceptance_rate === null
+                  ? '—'
+                  : `${Math.round(currentData.overview.overall_acceptance_rate * 100)}%`}
+              </span>
+            }
+            isExpanded={isExpanded('usage')}
+            onToggle={() => toggle('usage')}
+          >
+            <UsageMetricsCharts data={currentData} />
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            id="users"
+            title="ユーザー別利用明細テーブル"
+            subtitle="全アカウントの利用ステータス、推計費用、最終アクティビティ"
+            icon={<Users2 className="w-4 h-4 text-blue-400" />}
+            summaryChips={
+              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
+                {currentData.users.length} 名
+              </span>
+            }
+            isExpanded={isExpanded('users')}
+            onToggle={() => toggle('users')}
+          >
+            <UserDetailTable
+              data={currentData}
+              userProfiles={deepAnalysisProfiles}
+              initialSelectedLogin={focusedUserLogin}
+              filterStatus={userTableFilterStatus}
+              onSelectUserForTrend={handleSelectUserForTrend}
+              onSelectUserForDeepAnalysis={handleOpenDeepAnalysis}
+            />
+          </CollapsibleSection>
+        </>
       )}
 
-      {/* Widget 空状態 (すべての Widget が削除された場合) */}
-      {activeWidgetIds.length === 0 && (
-        <div
-          data-testid="overview-widget-empty"
-          className="p-8 rounded-2xl border border-dashed border-slate-800 bg-slate-900/40 text-center space-y-3"
-        >
-          <p className="text-sm font-semibold text-slate-300">
-            表示中のウィジェットがありません
-          </p>
-          <p className="text-xs text-slate-400">
-            「ウィジェット追加」から必要なセクションを追加するか、「リセット」でデフォルトプリセットへ戻せます。
-          </p>
-          <div className="flex items-center justify-center gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => setIsAddPanelOpen(true)}
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer"
-            >
-              ウィジェットを追加
-            </button>
-            <button
-              type="button"
-              onClick={resetWidgets}
-              data-testid="widget-empty-reset-button"
-              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 cursor-pointer"
-            >
-              デフォルトプリセットに戻す
-            </button>
-          </div>
-        </div>
-      )}
+      {isReportSource && currentReportData && (
+        <>
+          <CollapsibleSection
+            id="report_charts"
+            title="3軸集計・費用配賦 & AIモデル別・日別推移"
+            subtitle="部署/Cost Center別シェアとモデル別消費額"
+            icon={<PieIcon className="w-4 h-4 text-teal-400" />}
+            summaryChips={
+              <span className="text-xs px-2 py-0.5 rounded-full bg-teal-950 text-teal-300 border border-teal-800 font-mono">
+                {currentReportData.model_breakdown.length} モデル
+              </span>
+            }
+            isExpanded={isExpanded('report_charts')}
+            onToggle={() => toggle('report_charts')}
+          >
+            <MonthlyReportCharts
+              reportData={currentReportData}
+              grouping={currentGrouping}
+              onGroupingChange={handleGroupingChange}
+              selectedGroup={selectedGroup}
+              baseDir={dataBaseDir}
+              isDemo={isDemoData}
+            />
+          </CollapsibleSection>
 
-      {/* 個別 Widget ブロック一覧 (初期折りたたみ ★要件6, 1カラム垂直スタック ★要件5, Widget順序可変 #331) */}
-      {activeSource === 'live_metrics' && currentData && activeWidgetIds.length > 0 && (
-        <div data-testid="overview-widget-list" className="flex flex-col space-y-6 w-full">
-          {activeWidgetIds.map((widgetId, idx) =>
-            renderLiveWidget(widgetId, idx, activeWidgetIds.length)
-          )}
-        </div>
-      )}
-
-      {isReportSource && currentReportData && activeWidgetIds.length > 0 && (
-        <div data-testid="overview-widget-list" className="flex flex-col space-y-6 w-full">
-          {activeWidgetIds.map((widgetId, idx) =>
-            renderReportWidget(widgetId, idx, activeWidgetIds.length)
-          )}
-        </div>
+          <CollapsibleSection
+            id="report_users"
+            title="ユーザー別月次明細テーブル"
+            subtitle="月次利用リクエスト数、消費額、主要モデル一覧"
+            icon={<Users2 className="w-4 h-4 text-blue-400" />}
+            summaryChips={
+              <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
+                {currentReportData.user_details.length} 名
+              </span>
+            }
+            isExpanded={isExpanded('report_users')}
+            onToggle={() => toggle('report_users')}
+          >
+            <UserDetailTable
+              reportData={currentReportData}
+              userProfiles={deepAnalysisProfiles}
+              initialSelectedLogin={focusedUserLogin}
+              grouping={currentGrouping}
+              selectedGroup={selectedGroup}
+              onGroupChange={setSelectedGroup}
+              onSelectUserForDeepAnalysis={handleOpenDeepAnalysis}
+              onSelectUserForTrend={handleSelectUserForTrend}
+            />
+          </CollapsibleSection>
+        </>
       )}
     </div>
   );
