@@ -68,7 +68,6 @@
 | `report_requests` | 総リクエスト / クレジット | count | report_month | ○ | monthly usage report CSV |
 | `report_active_users` | レポート内アクティブ人数 | users | report_month | ○ | monthly usage report CSV |
 | `report_top_model` | 最多利用 AI モデル | name | report_month | ○ | monthly usage report CSV |
-| `report_top_sku` | 主契約 / SKU | name | report_month | ○ | monthly usage report CSV |
 | `adoption_evaluated_users` | 評価対象ユーザー総数 | users | collection_period | ○ | agent metrics |
 | `adoption_unclassified_users` | 判定不能ユーザー数 | users | collection_period | ○ | users-1-day report |
 | `adoption_active_rate` | 全体活用定着率 | ratio | collection_period | ○ | agent metrics |

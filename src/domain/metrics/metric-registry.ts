@@ -182,17 +182,6 @@ export const METRIC_REGISTRY = {
     sources: ['monthly usage report CSV'],
     defaultQuality: 'measured',
   },
-  report_top_sku: {
-    id: 'report_top_sku',
-    label: { ja: '主契約 / SKU', en: 'Primary SKU' },
-    definition: { ja: '選択した月次レポートの月で金額が最も大きい請求カテゴリ (SKU)。', en: 'The billing category (SKU) with the largest amount in the selected report month.' },
-    formula: 'argmax(amount by sku)',
-    unit: 'name',
-    window: 'report_month',
-    filterable: true,
-    sources: ['monthly usage report CSV'],
-    defaultQuality: 'measured',
-  },
   adoption_evaluated_users: {
     id: 'adoption_evaluated_users',
     label: { ja: '評価対象ユーザー総数', en: 'Evaluated users' },

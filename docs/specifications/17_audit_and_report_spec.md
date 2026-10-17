@@ -216,7 +216,7 @@ Two shipped samples: `reports/monthly-cost-summary.yaml` (monthly close, dataset
 | Dataset | Source | Metrics (ids of the metric catalog, SDD-16 §2, §6) | `group_by` |
 |:--|:--|:--|:--|
 | `monthly` | `processed/monthly/{month}.json` | `total_spend`, `active_rate`, `idle_waste`, `acceptance_rate`, `agent_sessions`, `agent_messages`, `agent_active_users`, `agent_adoption_rate` | `cost_center`, `organization`, `department`, `team` |
-| `reports` | `processed/reports/{month}.json` (imported usage report) | `report_gross_spend`, `report_net_spend`, `report_requests`, `report_active_users`, `report_top_model`, `report_top_sku` | `cost_center`, `organization`, `department`, `model`, `sku` |
+| `reports` | `processed/reports/{month}.json` (imported usage report) | `report_gross_spend`, `report_net_spend`, `report_requests`, `report_active_users`, `report_top_model` | `cost_center`, `organization`, `department`, `model`, `sku` |
 
 - Breakdown columns: for the seat-based groups `total_seats`, `active_seats`, `idle_seats`, `total_cost_usd`, `net_cost_usd`, `potential_savings_usd`, `active_ratio`, `acceptance_rate`, `total_chats`, `total_requests`; for `model` `total_requests`, `total_spend_usd`, `active_users`, `percentage`; for `sku` `total_quantity`, `total_spend_usd`, `percentage`. The tables live in code (`METRIC_BINDINGS`, `GROUP_SOURCES` in `src/processor/report-engine.ts`); a new metric or column is one entry there.
 - A definition never names an organization, department, cost center or person (filters are on columns and numbers only). Per-user rows (`users`, `user_profiles`, `user_details`) are never read.
