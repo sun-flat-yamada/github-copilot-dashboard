@@ -13,6 +13,7 @@ import {
   UNKNOWN_MODEL_PREFIX,
   isUnknownModelId,
   resolveCatalogModelId,
+  resolveFeatureModelId,
 } from './model-catalog.js';
 import {
   RADAR_AXIS_DEFINITIONS,
@@ -38,10 +39,8 @@ const SCORE_MIN = 20;
 const SCORE_MAX = 99;
 
 type ComponentKey =
-  | 'swe'
-  | 'humaneval'
-  | 'aime'
-  | 'gpqa'
+  | 'terminal'
+  | 'intelligence'
   | 'elo'
   | 'speed'
   | 'cost_inverse'
@@ -56,11 +55,9 @@ function blendedCost(raw: BenchmarkRawMetrics): number {
 
 function componentValues(raw: BenchmarkRawMetrics): Record<ComponentKey, number> {
   return {
-    swe: raw.swe_bench_verified,
-    humaneval: raw.humaneval_plus,
-    aime: raw.aime_2024,
-    gpqa: raw.gpqa_diamond,
-    elo: raw.arena_coding_elo,
+    terminal: raw.terminal_bench_4,
+    intelligence: raw.aa_intelligence_index,
+    elo: raw.arena_webdev_elo,
     speed: raw.output_speed_tps,
     // cheaper is better: negate so that a higher value is always better
     cost_inverse: -blendedCost(raw),
@@ -73,7 +70,7 @@ function componentValues(raw: BenchmarkRawMetrics): Record<ComponentKey, number>
  * Fixed anchors saturate when the field moves ahead of them; ranks within the dataset do not.
  */
 export function buildNormalizationContext(rawList: BenchmarkRawMetrics[]): NormalizationContext {
-  const keys: ComponentKey[] = ['swe', 'humaneval', 'aime', 'gpqa', 'elo', 'speed', 'cost_inverse', 'context'];
+  const keys: ComponentKey[] = ['terminal', 'intelligence', 'elo', 'speed', 'cost_inverse', 'context'];
   const ctx = {} as NormalizationContext;
   for (const key of keys) {
     ctx[key] = rawList.map((r) => componentValues(r)[key]).sort((a, b) => a - b);
@@ -106,12 +103,12 @@ function computePercentileRadarScores(raw: BenchmarkRawMetrics, ctx: Normalizati
   const v = componentValues(raw);
   const r = (k: ComponentKey) => percentileRank(ctx[k], v[k]);
   return {
-    coding_swe: toScore(0.85 * r('swe') + 0.15 * r('humaneval')),
-    reasoning_logic: toScore(0.65 * r('aime') + 0.35 * r('gpqa')),
+    coding_swe: toScore(r('terminal')),
+    reasoning_logic: toScore(r('intelligence')),
     arena_elo: toScore(r('elo')),
     speed_latency: toScore(r('speed')),
     cost_efficiency: toScore(r('cost_inverse')),
-    architecture_design: toScore(0.45 * r('context') + 0.55 * r('swe')),
+    architecture_design: toScore(0.45 * r('context') + 0.55 * r('terminal')),
   };
 }
 
@@ -123,21 +120,23 @@ function computePercentileRadarScores(raw: BenchmarkRawMetrics, ctx: Normalizati
  */
 export function computeRadarScores(raw: BenchmarkRawMetrics, context?: NormalizationContext): RadarScores {
   if (context) return computePercentileRadarScores(raw, context);
-  // 1. Coding & SWE: SWE-bench Verified (0-75% scale mapped to 0-95) + HumanEval+ (0-100)
-  // SWE-bench Verified 70% is state-of-the-art in 2026
-  const sweScore = (raw.swe_bench_verified / 75) * 85;
-  const humanEvalScore = (raw.humaneval_plus / 100) * 15;
-  const codingSwe = clamp(Math.round(sweScore + humanEvalScore), 20, 99);
+  // 1. Coding & SWE: Terminal-Bench 4.0 resolution rate (0% -> 20, 60% -> 99; 2026-10 leaders are ~55-65%)
+  const TERMINAL_CEIL = 60;
+  const codingSwe = clamp(Math.round(20 + (raw.terminal_bench_4 / TERMINAL_CEIL) * 79), 20, 99);
 
-  // 2. Reasoning & Logic: AIME 2024 (0-90% mapped) + GPQA Diamond (0-80% mapped)
-  const aimeScore = (raw.aime_2024 / 90) * 65;
-  const gpqaScore = (raw.gpqa_diamond / 80) * 35;
-  const reasoningLogic = clamp(Math.round(aimeScore + gpqaScore), 20, 99);
+  // 2. Reasoning & Logic: Artificial Analysis Intelligence Index v4.3 (15 -> 20, 55 -> 99; 2026-10 range ~15-58)
+  const INTELLIGENCE_BASE = 15;
+  const INTELLIGENCE_CEIL = 55;
+  const reasoningLogic = clamp(
+    Math.round(20 + ((raw.aa_intelligence_index - INTELLIGENCE_BASE) / (INTELLIGENCE_CEIL - INTELLIGENCE_BASE)) * 79),
+    20,
+    99
+  );
 
-  // 3. Community & Elo: LMSYS Arena Coding Elo (range 1200 - 1460 normalized to 20 - 99)
-  const eloBase = 1220;
-  const eloCeil = 1460;
-  const eloNorm = ((raw.arena_coding_elo - eloBase) / (eloCeil - eloBase)) * 79 + 20;
+  // 3. Community & Elo: Arena Code Arena | WebDev Elo (1250 -> 20, 1800 -> 99; 2026-10 range ~1230-1810)
+  const eloBase = 1250;
+  const eloCeil = 1800;
+  const eloNorm = ((raw.arena_webdev_elo - eloBase) / (eloCeil - eloBase)) * 79 + 20;
   const arenaElo = clamp(Math.round(eloNorm), 20, 99);
 
   // 4. Speed & Latency: tokens/sec (20 tps = 30, 80 tps = 75, 180+ tps = 98)
@@ -173,7 +172,7 @@ export function computeRadarScores(raw: BenchmarkRawMetrics, context?: Normaliza
   }
   const costEfficiency = clamp(Math.round(costNorm), 20, 99);
 
-  // 6. Architecture & Refactoring: Context window capacity + SWE multi-file capability
+  // 6. Architecture & Refactoring: Context window capacity + agentic terminal task capability (Terminal-Bench 4.0)
   // 128k = base 70, 200k = base 78, 1000k (1M) = 92, 2000k (2M) = 98
   let contextPoints = 65;
   if (raw.context_window_k >= 2000) contextPoints = 96;
@@ -181,7 +180,7 @@ export function computeRadarScores(raw: BenchmarkRawMetrics, context?: Normaliza
   else if (raw.context_window_k >= 200) contextPoints = 80;
   else if (raw.context_window_k >= 128) contextPoints = 73;
 
-  const archScore = contextPoints * 0.45 + (raw.swe_bench_verified / 75) * 55;
+  const archScore = contextPoints * 0.45 + Math.min(1, raw.terminal_bench_4 / TERMINAL_CEIL) * 55;
   const architectureDesign = clamp(Math.round(archScore), 25, 99);
 
   return {
@@ -279,8 +278,8 @@ export function evaluateModel(
   let copilot_usage_guidance = '';
 
   // Strengths derived from axes >= 80
-  if (radar.coding_swe >= 85) strengths.push('業界最高峰のSWE-benchスコア（高難度OSSバグ自律解決）');
-  if (radar.reasoning_logic >= 85) strengths.push('卓越した数学・競技プログラミング推論能力');
+  if (radar.coding_swe >= 85) strengths.push('Terminal-Bench 4.0 上位の自律エージェント実行力（ターミナル上の実務タスク完遂）');
+  if (radar.reasoning_logic >= 85) strengths.push('Artificial Analysis Intelligence Index 上位の総合推論能力');
   if (radar.architecture_design >= 85) strengths.push('複数ファイル横断のリファクタリングとアーキテクチャ設計');
   if (radar.arena_elo >= 85) strengths.push('現役プログラマーによるブラインド評価（Arena）で圧倒的支持');
   if (radar.speed_latency >= 80) strengths.push('極めて高速なトークン出力による軽快な開発テンポ');
@@ -326,7 +325,7 @@ export function evaluateModel(
       '【推奨シーン】インライン補完や即時サジェスト、バックグラウンド処理。※【注意: 長文コンテキスト性能】OpenAI公式（https://openai.com/ja-JP/index/gpt-5-6/）の長文コンテキスト比較データが示す通り、Lunaモデルは1M対応を謳うものの長文での精度・探索維持率がSol/Terraに比べて極端に低いため、長大なコードベース解析ではなくインライン補完や定型処理に限定して活用するのがベストです。';
   } else if (mId === 'claude-opus-5-5') {
     recommended_for.push(
-      '最高峰のソフトウェアエンジニアリング（SWE-bench 82.8%）',
+      '最高峰のソフトウェアエンジニアリング・自律エージェントタスク',
       '大規模リポジトリの深層アーキテクチャ設計・高難度リファクタリング',
       '指示への実直な追従と過剰な最適化を抑えた精密なコード生成'
     );
@@ -341,7 +340,7 @@ export function evaluateModel(
       '人間のシニアエンジニアでも難解な極限バグの根本原因究明'
     );
     summary_verdict =
-      'OpenAIの次世代最高峰フロンティアモデル。極限の推論チェーンとSWE-bench新記録を誇り、最重要タスクで比類なき威力を発揮。';
+      'OpenAIの次世代最高峰フロンティアモデル。極限の推論チェーンと最上位クラスのコーディング性能を誇り、最重要タスクで比類なき威力を発揮。';
     copilot_usage_guidance =
       '【推奨シーン】難関プロジェクトのアーキテクチャ設計、極めて複雑なデッドロックやメモリ破壊の究明。コストが高いため、通常の日常補完ではなく高難度勝負どころで投入するのがベストです。';
   } else if (mId.includes('claude-sonnet-5') || mId.includes('claude-5-sonnet')) {
@@ -351,7 +350,7 @@ export function evaluateModel(
       'テスト駆動開発（TDD）での精密テストコード・実装一括生成'
     );
     summary_verdict =
-      '驚異的なSWE-benchスコアと$2.00/$10.00という圧倒的低価格を両立した次世代の絶対的主力モデル。1Mトークン窓と構成可能推論に完全対応。';
+      '高いコーディング性能と$2.00/$10.00という圧倒的低価格を両立した次世代の絶対的主力モデル。1Mトークン窓と構成可能推論に完全対応。';
     copilot_usage_guidance =
       '【推奨シーン】日常のIDE ChatからAgentモードでの大規模改修まで、全社デフォルトとして最も費用対効果が高い推奨フラッグシップです。';
   } else if (mId.includes('claude-opus-4-6') || mId.includes('opus-4-6')) {
@@ -424,6 +423,16 @@ export function evaluateModel(
       'OpenAIのGPT-5世代モデル。高い自律推論と安定したコード生成能力を誇り、幅広い開発タスクをサポート。';
     copilot_usage_guidance =
       '【推奨シーン】IDEでの複雑な機能実装、Agentモードでの複数ファイル改修に安定して対応します。';
+  } else if (mId.includes('gemini-4') || mId.includes('argon')) {
+    recommended_for.push(
+      '自律エージェント（Agentモード・CLI）でのターミナル環境の試行錯誤・長手順タスク遂行',
+      '100万トークンコンテキストと深い推論（Configurable Reasoning）を活かした大規模設計・リファクタリング',
+      '最高峰の論理推論力を活かした高度なコードレビューと不具合調査'
+    );
+    summary_verdict =
+      'Google DeepMindの次世代フロンティア推論旗艦。Terminal-Bench 4.0で57.27%・AA知能指数53を誇り、自律エージェントと深い推論で最前線を担う。';
+    copilot_usage_guidance =
+      '【推奨シーン】Copilot Agentモードでの自律的な機能開発、巨大リポジトリの設計見直し・アーキテクチャ刷新に最高水準の実力を発揮します。';
   } else if (mId.includes('gemini')) {
     recommended_for.push(
       '100万〜200万トークンを活かしたリポジトリ全体・ドキュメント全体の丸ごと分析',
@@ -481,7 +490,7 @@ export function evaluateModel(
       'GitHub Pull Requestの精密コードレビュー'
     );
     summary_verdict =
-      'コーディング精度・SWE-benchにおいて業界屈指の実績を誇る定番開発アシスタント。安定感抜群の実績機。';
+      'コーディング精度において業界屈指の実績を誇る定番開発アシスタント。安定感抜群の実績機。';
     copilot_usage_guidance =
       '【推奨シーン】IDE Chatでの複雑な機能実装、Agentモードでの複数ファイル改修。';
   } else if (mId.includes('o1') || mId.includes('o3-mini')) {
@@ -600,6 +609,8 @@ export function createModelProfile(
 export function normalizeModelId(rawName: string): string {
   const resolved = resolveCatalogModelId(rawName);
   if (resolved) return resolved;
+  const feature = resolveFeatureModelId(rawName);
+  if (feature) return feature;
   return `${UNKNOWN_MODEL_PREFIX}${rawName.toLowerCase().trim()}`;
 }
 

@@ -1,122 +1,653 @@
 import React from 'react';
-import { DollarSign, Sparkles, Users, Cpu, Boxes } from 'lucide-react';
-import { MonthlyReportAggregatedData } from '../../../../src/types/copilot';
+import { DollarSign, Sparkles, Users, Cpu } from 'lucide-react';
+import { CostCenterBudget, MonthlyReportAggregatedData, ReportUserDetail } from '../../../../src/types/copilot';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { MetricLabel } from '../common/MetricLabel';
+import { CostOverviewBudgetSummary } from './CostOverviewBudgetSummary';
+import { extractTotalAiCredits } from '../../utils/monthlyCreditsTrend';
+import {
+  computeActiveAccountStats,
+  formatStatValue,
+  computeBoxPlotStats,
+  type BoxPlotStats,
+} from '../../utils/accountStats';
+
+export type ReportKpiCardWidgetId =
+  | 'report_kpi_cost'
+  | 'report_kpi_requests'
+  | 'report_kpi_active_users'
+  | 'report_kpi_top_model';
+
+export const ALL_REPORT_KPI_CARD_WIDGET_IDS: readonly ReportKpiCardWidgetId[] = [
+  'report_kpi_cost',
+  'report_kpi_requests',
+  'report_kpi_active_users',
+  'report_kpi_top_model',
+] as const;
+
+export interface PlanUserCounts {
+  active: number;
+  nonActive: number;
+  total: number;
+}
+
+export interface CopilotPlanCounts {
+  enterprise: PlanUserCounts;
+  business: PlanUserCounts;
+}
+
+/**
+ * ユーザーが当月アクティブ (稼働) かどうかを判定する。
+ * 1. status が明示されている場合 ('active' | 'low_active' -> true, 'idle' | 'never_used' | 'inactive' -> false)
+ * 2. is_active boolean がある場合はそれを優先
+ * 3. 利用実績 (リクエスト数 > 0, AI クレジット消費 > 0, 費用 > 0, 最終活動日あり) があれば active、それ以外は nonActive
+ */
+export function isReportUserActive(u: ReportUserDetail): boolean {
+  if (typeof (u as any).status === 'string') {
+    const s = ((u as any).status || '').toLowerCase();
+    if (s === 'active' || s === 'low_active') return true;
+    if (s === 'idle' || s === 'never_used' || s === 'inactive' || s === 'non-active' || s === 'non_active') return false;
+  }
+  if (typeof (u as any).is_active === 'boolean') {
+    return (u as any).is_active;
+  }
+  const requests = u.usage_insight?.usage?.requests ?? (typeof u.total_requests === 'number' ? u.total_requests : 0);
+  const credits = u.usage_insight?.usage?.credits ?? (typeof (u as any).credits === 'number' ? (u as any).credits : 0);
+  const spend = u.gross_spend_usd ?? u.total_spend_usd ?? 0;
+  return requests > 0 || credits > 0 || spend > 0 || Boolean(u.last_activity_date);
+}
+
+/**
+ * 月次レポートデータから Copilot プラン (Enterprise / Business) のアクティブ・ノンアクティブ内訳人数を算出する。
+ * 1. user_details に plan_type を持つユーザーが存在する場合はそれを優先集計 (フィルター時にも連動)
+ * 2. 存在しない場合は sku_breakdown (seats 単位の SKU) および overview.total_active_users から按分集計
+ */
+export function extractCopilotPlanCounts(reportData: MonthlyReportAggregatedData): CopilotPlanCounts {
+  const usersWithPlan = (reportData.user_details ?? []).filter(
+    (u) => typeof u.plan_type === 'string' && u.plan_type.length > 0
+  );
+
+  if (usersWithPlan.length > 0) {
+    const enterprise: PlanUserCounts = { active: 0, nonActive: 0, total: 0 };
+    const business: PlanUserCounts = { active: 0, nonActive: 0, total: 0 };
+
+    for (const u of usersWithPlan) {
+      const plan = (u.plan_type || '').toLowerCase();
+      const isActive = isReportUserActive(u);
+      if (plan.includes('enterprise')) {
+        enterprise.total += 1;
+        if (isActive) enterprise.active += 1;
+        else enterprise.nonActive += 1;
+      } else if (plan.includes('business')) {
+        business.total += 1;
+        if (isActive) business.active += 1;
+        else business.nonActive += 1;
+      }
+    }
+    return { enterprise, business };
+  }
+
+  let entTotal = 0;
+  let bizTotal = 0;
+  if (Array.isArray(reportData.sku_breakdown) && reportData.sku_breakdown.length > 0) {
+    for (const item of reportData.sku_breakdown) {
+      const name = (item.sku_name || '').toLowerCase();
+      if (name.includes('enterprise')) {
+        entTotal += item.total_quantity;
+      } else if (name.includes('business')) {
+        bizTotal += item.total_quantity;
+      }
+    }
+  }
+
+  const totalSeats = entTotal + bizTotal;
+  const totalActive = reportData.overview?.total_active_users ?? 0;
+
+  let entActive = 0;
+  let entNonActive = entTotal;
+  let bizActive = 0;
+  let bizNonActive = bizTotal;
+
+  if (totalSeats > 0) {
+    if (totalActive >= totalSeats) {
+      entActive = entTotal;
+      entNonActive = 0;
+      bizActive = bizTotal;
+      bizNonActive = 0;
+    } else {
+      entActive = Math.min(entTotal, Math.round(totalActive * (entTotal / totalSeats)));
+      bizActive = Math.min(bizTotal, Math.max(0, totalActive - entActive));
+      entNonActive = Math.max(0, entTotal - entActive);
+      bizNonActive = Math.max(0, bizTotal - bizActive);
+    }
+  }
+
+  return {
+    enterprise: { active: entActive, nonActive: entNonActive, total: entTotal },
+    business: { active: bizActive, nonActive: bizNonActive, total: bizTotal },
+  };
+}
+
+interface RequestsBoxPlotProps {
+  stats: BoxPlotStats;
+  unit: string;
+  variant?: 'indigo' | 'amber';
+  minTestId?: string;
+  medianTestId?: string;
+  maxTestId?: string;
+}
+
+/**
+ * KPI カード全幅で最小値・Q1・中央値・Q3・最大値の幾何的位置関係を直感的に可視化する横型ミニ箱ひげ図
+ */
+const RequestsBoxPlot: React.FC<RequestsBoxPlotProps> = ({
+  stats,
+  unit,
+  variant = 'indigo',
+  minTestId = 'report-requests-min',
+  medianTestId = 'report-requests-median',
+  maxTestId = 'report-requests-max',
+}) => {
+  const { min, q1, median, q3, max, activeCount, iqr } = stats;
+  if (activeCount === 0 || min === null || max === null || median === null || q1 === null || q3 === null) {
+    return null;
+  }
+
+  const range = max - min;
+  const q1Pct = range > 0 ? ((q1 - min) / range) * 100 : 0;
+  const q3Pct = range > 0 ? ((q3 - min) / range) * 100 : 100;
+  const medianPct = range > 0 ? ((median - min) / range) * 100 : 50;
+
+  const boxLeft = Math.max(0, Math.min(100, q1Pct));
+  const boxWidth = Math.max(range > 0 ? 0.5 : 0, Math.min(100 - boxLeft, q3Pct - q1Pct));
+
+  const isAmber = variant === 'amber';
+  const boxBg = isAmber ? 'bg-amber-500/25 border-amber-400/70' : 'bg-indigo-500/25 border-indigo-400/70';
+  const medianColor = isAmber ? 'bg-amber-300' : 'bg-indigo-300';
+  const whiskerColor = isAmber ? 'bg-amber-600/70' : 'bg-slate-600';
+  const tickColor = isAmber ? 'bg-amber-500/80' : 'bg-slate-500';
+
+  const tooltipText = `利用量分布 (箱ひげ図) [${activeCount}名]: 最小: ${formatStatValue(min)} ${unit} | 25%(Q1): ${formatStatValue(q1)} ${unit} | 中央値: ${formatStatValue(median)} ${unit} | 75%(Q3): ${formatStatValue(q3)} ${unit} | 最大: ${formatStatValue(max)} ${unit} (四分位範囲 IQR: ${formatStatValue(iqr)} ${unit})`;
+
+  return (
+    <div
+      className="w-full bg-slate-950/60 rounded-lg p-2 border border-slate-800/70"
+      data-testid="report-requests-distribution"
+    >
+      {/* グラフヘッダー: 箱ひげ図の説明 */}
+      <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1 px-0.5">
+        <span className="font-medium text-slate-400">利用量分布 (箱ひげ図):</span>
+        <span className="text-[9px] text-slate-500 font-mono">箱 = 中位50% (Q1〜Q3)</span>
+      </div>
+
+      {/* 横型ミニ箱ひげ図グラフィック領域 */}
+      <div
+        className="relative w-full h-7 flex items-center px-1 my-1 cursor-help group"
+        title={tooltipText}
+        data-testid="report-requests-boxplot"
+      >
+        {/* 全体レンジの背景トラック */}
+        <div className="absolute left-1 right-1 h-1 bg-slate-900 rounded-full" />
+
+        {range > 0 ? (
+          <>
+            {/* ヒゲ (Whisker Line: 最小値から最大値までの横線) */}
+            <div className={`absolute left-1 right-1 h-0.5 ${whiskerColor}`} data-testid="boxplot-whisker" />
+
+            {/* 左端ヒゲ端点 (Min Cap) */}
+            <div className={`absolute left-1 w-0.5 h-3 -translate-y-1/2 top-1/2 rounded-full ${tickColor}`} data-testid="boxplot-min-cap" />
+
+            {/* 右端ヒゲ端点 (Max Cap) */}
+            <div className={`absolute right-1 w-0.5 h-3 -translate-y-1/2 top-1/2 rounded-full ${tickColor}`} data-testid="boxplot-max-cap" />
+
+            {/* 箱 (Box: Q1 から Q3 までの 50% 密集ゾーン) */}
+            <div
+              className={`absolute top-1/2 -translate-y-1/2 h-5 rounded-xs border transition-all shadow-xs ${boxBg}`}
+              style={{
+                left: `calc(4px + (100% - 8px) * ${boxLeft / 100})`,
+                width: `calc((100% - 8px) * ${boxWidth / 100})`,
+              }}
+              data-testid="boxplot-box"
+            />
+
+            {/* 中央値ライン (Median Line) */}
+            <div
+              className={`absolute top-1/2 -translate-y-1/2 w-1 h-6 rounded-full -translate-x-1/2 transition-all shadow-sm z-10 ${medianColor}`}
+              style={{
+                left: `calc(4px + (100% - 8px) * ${medianPct / 100})`,
+              }}
+              data-testid="boxplot-median-line"
+            />
+          </>
+        ) : (
+          /* 全員同値 (または1名) の場合: 中央に単一ライン */
+          <div className="absolute left-1/2 top-1/2 -translate-y-1/2 -translate-x-1/2 w-1.5 h-5 rounded-full bg-indigo-400 shadow-sm" />
+        )}
+      </div>
+
+      {/* X 軸目盛り線 */}
+      <div className="w-full h-px bg-slate-800 my-1" />
+
+      {/* 最小・中央・最大値と直感対応した目盛り数値軸 */}
+      <div className="flex items-baseline justify-between text-[10px] px-0.5 pt-0.5">
+        {/* 左端: 最小値 */}
+        <div className="text-left">
+          <span className="text-[9px] text-slate-500 block leading-tight">最小</span>
+          <span className="font-mono font-bold text-slate-300 text-xs" data-testid={minTestId}>
+            {formatStatValue(min)}
+          </span>
+        </div>
+
+        {/* 中央: 中央値 (インディゴ/アンバーでハイライト) */}
+        <div className="text-center px-2 py-0.5 rounded bg-slate-900 border border-slate-800/90 shadow-xs">
+          <span className={`text-[9px] block leading-tight font-medium ${isAmber ? 'text-amber-400' : 'text-indigo-400'}`}>
+            中央値
+          </span>
+          <span
+            className={`font-mono font-bold text-xs ${isAmber ? 'text-amber-300' : 'text-indigo-300'}`}
+            data-testid={medianTestId}
+          >
+            {formatStatValue(median)}
+          </span>
+        </div>
+
+        {/* 右端: 最大値 */}
+        <div className="text-right">
+          <span className="text-[9px] text-slate-500 block leading-tight">最大</span>
+          <span className="font-mono font-bold text-slate-300 text-xs" data-testid={maxTestId}>
+            {formatStatValue(max)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface MonthlyReportKpisProps {
   reportData: MonthlyReportAggregatedData;
+  /** Cost Center 予算。渡されたときだけ、費用サマリーに予算推移と上限到達予測のサマリーを表示する */
+  budgets?: CostCenterBudget[];
+  rawReportData?: MonthlyReportAggregatedData | null;
 }
 
-export const MonthlyReportKpis: React.FC<MonthlyReportKpisProps> = ({ reportData }) => {
+interface SingleMonthlyReportKpiCardProps extends MonthlyReportKpisProps {
+  cardId: ReportKpiCardWidgetId;
+}
+
+export const SingleMonthlyReportKpiCard: React.FC<SingleMonthlyReportKpiCardProps> = ({
+  cardId,
+  reportData,
+  budgets,
+  rawReportData: _rawReportData,
+}) => {
   const { formatMoney } = useCurrency();
   const grossDual = formatMoney(reportData.overview.total_gross_spend_usd);
   const netDual = formatMoney(reportData.overview.total_net_spend_usd);
   const discountDual = formatMoney(reportData.overview.total_discount_usd);
 
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-      {/* カード 1: 利用費用 & 超過請求費用 */}
-      <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm relative overflow-hidden">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-400">費用サマリー (Cost Overview)</span>
-          <div className="p-1.5 rounded-lg bg-emerald-950 border border-emerald-800/60 text-emerald-400">
-            <DollarSign className="w-4 h-4" />
+  switch (cardId) {
+    case 'report_kpi_cost':
+      return (
+        <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm relative overflow-hidden" data-testid="report-kpi-cost">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-400">費用サマリー (Cost Overview)</span>
+            <div className="p-1.5 rounded-lg bg-emerald-950 border border-emerald-800/60 text-emerald-400">
+              <DollarSign className="w-4 h-4" />
+            </div>
           </div>
-        </div>
-        <div className="mt-2 space-y-1.5">
-          <div>
-            <span className="text-[10px] text-slate-400 block font-medium"><MetricLabel metricId="report_gross_spend" className="text-[10px] text-slate-400 font-medium" label="利用費用 (総額):" /></span>
-            <div className="flex items-baseline space-x-1.5 flex-wrap">
-              <span className="text-xl font-black text-white tracking-tight">
-                {grossDual.usd}
-              </span>
-              {grossDual.sub && (
-                <span className="text-xs font-semibold text-slate-400">
-                  ({grossDual.sub})
+          <div className="mt-2 space-y-1.5">
+            <div>
+              <span className="text-[10px] text-slate-400 block font-medium"><MetricLabel metricId="report_gross_spend" className="text-[10px] text-slate-400 font-medium" label="利用費用 (総額):" hideWindow /></span>
+              <div className="flex items-baseline space-x-1.5 flex-wrap">
+                <span className="text-xl font-black text-white tracking-tight">
+                  {grossDual.usd}
                 </span>
+                {grossDual.sub && (
+                  <span className="text-xs font-semibold text-slate-400">
+                    ({grossDual.sub})
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="pt-1.5 border-t border-slate-800/80 flex items-center justify-between flex-wrap gap-1">
+              <MetricLabel metricId="report_net_spend" className="text-[11px] text-amber-400 font-medium" label="超過請求費用:" hideWindow />
+              <span className="font-mono font-bold text-amber-300 text-sm">
+                {netDual.usd} {netDual.sub && <span className="text-[11px] text-amber-400/80 font-normal">({netDual.sub})</span>}
+              </span>
+            </div>
+          </div>
+          {reportData.overview.total_discount_usd > 0 && (
+            <div className="mt-1 text-[10px] text-emerald-400/90 text-right">
+              無料枠控除: -{discountDual.usd} {discountDual.sub && `(-${discountDual.sub})`}
+            </div>
+          )}
+          <CostOverviewBudgetSummary reportData={reportData} budgets={budgets} />
+        </div>
+      );
+
+    case 'report_kpi_requests': {
+      // ユーザー別利用実績の抽出 (正の利用実績 > 0 を集計)
+      const userDetails = reportData.user_details ?? [];
+      const reqValues = userDetails
+        .map((u) => {
+          const insightReq = u.usage_insight?.usage?.requests;
+          if (typeof insightReq === 'number') return insightReq;
+          return typeof u.total_requests === 'number' ? u.total_requests : 0;
+        })
+        .filter((v) => v > 0);
+
+      const credValues = userDetails
+        .map((u) => {
+          const insightCred = u.usage_insight?.usage?.credits;
+          if (typeof insightCred === 'number') return insightCred;
+          const directCred = (u as unknown as { credits?: number }).credits;
+          if (typeof directCred === 'number') return directCred;
+          return 0;
+        })
+        .filter((v) => v > 0);
+
+      const totalRequests = reportData.overview.total_requests ?? 0;
+      const creditsExtraction = extractTotalAiCredits(reportData);
+      const userCreditsSum = credValues.reduce((s, c) => s + c, 0);
+      const totalCredits =
+        credValues.length > 0
+          ? userCreditsSum
+          : !creditsExtraction.isEstimatedFromSpend
+          ? creditsExtraction.totalCredits
+          : 0;
+
+      const hasRequests = totalRequests > 0 || reqValues.length > 0;
+      const hasCredits = totalCredits > 0 || credValues.length > 0;
+
+      const reqStats = computeActiveAccountStats(reqValues);
+      const credStats = computeActiveAccountStats(credValues);
+      const reqBoxPlot = computeBoxPlotStats(reqValues);
+      const credBoxPlot = computeBoxPlotStats(credValues);
+      const activeBoxPlot = hasRequests ? reqBoxPlot : credBoxPlot;
+      const activeUnit = hasRequests ? 'req' : 'AIC';
+      const activeVariant = hasRequests ? 'indigo' : 'amber';
+
+      // 種別ごとのタイトル・バッジ・表示モード
+      let cardLabel = '総リクエスト / クレジット';
+      let badgeLabel: string | null = '実績なし';
+      let badgeStyle = 'bg-slate-800 text-slate-400 border-slate-700';
+
+      if (hasRequests && hasCredits) {
+        cardLabel = '総リクエスト & AI クレジット';
+        badgeLabel = 'リクエスト & AIC';
+        badgeStyle = 'bg-purple-950 text-purple-300 border-purple-800/60';
+      } else if (hasCredits) {
+        cardLabel = '総 AI クレジット (AIC)';
+        badgeLabel = 'AIC (クレジット)';
+        badgeStyle = 'bg-amber-950 text-amber-300 border-amber-800/60';
+      } else if (hasRequests) {
+        cardLabel = '総リクエスト数';
+        badgeLabel = null; // タイトル「総リクエスト数」と重複して冗長なため非表示
+      }
+
+      return (
+        <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm relative overflow-hidden" data-testid="report-requests-card">
+          <div className="flex items-center justify-between gap-1 flex-wrap">
+            <MetricLabel metricId="report_requests" label={cardLabel} hideWindow />
+            <div className="flex items-center space-x-1.5">
+              {badgeLabel && (
+                <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border ${badgeStyle}`} data-testid="report-requests-badge">
+                  {badgeLabel}
+                </span>
+              )}
+              <div className="p-1.5 rounded-lg bg-indigo-950 border border-indigo-800/60 text-indigo-400">
+                <Sparkles className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-2 flex items-baseline justify-between gap-2">
+            {hasRequests && hasCredits ? (
+              // 両方存在する場合: リクエストと AIC を行分離して併記
+              <div className="space-y-0.5 min-w-0">
+                <div className="flex items-baseline space-x-1.5 flex-wrap">
+                  <span className="text-xs text-slate-400 font-medium">リクエスト:</span>
+                  <div className="flex items-baseline space-x-1">
+                    <span className="text-base font-black text-white tracking-tight" data-testid="report-requests-total">
+                      {totalRequests.toLocaleString()}
+                    </span>
+                    <span className="text-[10px] font-semibold text-slate-400">req</span>
+                  </div>
+                </div>
+                <div className="flex items-baseline space-x-1.5 flex-wrap">
+                  <span className="text-xs text-amber-400 font-medium">AI クレジット:</span>
+                  <div className="flex items-baseline space-x-1">
+                    <span className="text-sm font-black text-amber-300 tracking-tight" data-testid="report-credits-total">
+                      {totalCredits.toLocaleString()}
+                    </span>
+                    <span className="text-[10px] font-semibold text-amber-400/90">AIC</span>
+                  </div>
+                </div>
+              </div>
+            ) : hasCredits ? (
+              // AI クレジットのみの場合
+              <div className="flex items-baseline space-x-1.5">
+                <span className="text-2xl font-black text-amber-300 tracking-tight" data-testid="report-requests-total">
+                  {totalCredits.toLocaleString()}
+                </span>
+                <span className="text-xs font-semibold text-amber-400/90">AIC</span>
+              </div>
+            ) : (
+              // リクエストのみ (または実績なし) の場合
+              <div className="flex items-baseline space-x-1.5">
+                <span className="text-2xl font-black text-white tracking-tight" data-testid="report-requests-total">
+                  {totalRequests.toLocaleString()}
+                </span>
+                <span className="text-xs font-semibold text-slate-400">req</span>
+              </div>
+            )}
+
+            {/* 利用アカウント数 */}
+            <div className="text-right shrink-0">
+              <span className="text-[10px] text-slate-400 block font-medium">利用アカウント:</span>
+              <span
+                className={`font-mono font-bold text-xs ${hasCredits && !hasRequests ? 'text-amber-300' : 'text-slate-200'}`}
+                data-testid="report-requests-active-count"
+              >
+                {(hasCredits && !hasRequests ? credStats : reqStats).activeCount} 名
+              </span>
+            </div>
+          </div>
+
+          {/* 横型ミニ箱ひげ図 ＋ 最小・中央・最大目盛り軸の一体型レイアウト */}
+          <div className="mt-2.5 pt-2 border-t border-slate-800/80">
+            {hasRequests && hasCredits ? (
+              <div className="space-y-1.5">
+                {/* リクエストの横型箱ひげ図 (最小・Q1・中央値・Q3・最大) */}
+                <RequestsBoxPlot
+                  stats={reqBoxPlot}
+                  unit="req"
+                  variant="indigo"
+                  minTestId="report-requests-min"
+                  medianTestId="report-requests-median"
+                  maxTestId="report-requests-max"
+                />
+                {/* AIC の統計行 (両方存在時) */}
+                <div className="bg-slate-950/60 rounded p-1.5 border border-slate-800/60 flex items-center justify-between text-[10px] font-medium">
+                  <span className="text-amber-400">AIC ({credStats.activeCount}名):</span>
+                  <span className="text-slate-300 font-mono">
+                    最小 <b data-testid="report-credits-min">{formatStatValue(credStats.min)}</b> / 中央 <b className="text-amber-300" data-testid="report-credits-median">{formatStatValue(credStats.median)}</b> / 最大 <b data-testid="report-credits-max">{formatStatValue(credStats.max)}</b>
+                  </span>
+                </div>
+              </div>
+            ) : activeBoxPlot.activeCount > 0 ? (
+              <RequestsBoxPlot
+                stats={activeBoxPlot}
+                unit={activeUnit}
+                variant={activeVariant}
+                minTestId="report-requests-min"
+                medianTestId="report-requests-median"
+                maxTestId="report-requests-max"
+              />
+            ) : (
+              <div className="bg-slate-950/60 rounded-lg p-2 border border-slate-800/60 text-center text-slate-500 text-xs font-mono">
+                最小 <span data-testid="report-requests-min">—</span> / 中央 <span data-testid="report-requests-median">—</span> / 最大 <span data-testid="report-requests-max">—</span>
+              </div>
+            )}
+          </div>
+
+          <p className="mt-1.5 text-[10px] text-slate-400 truncate">
+            {hasRequests && hasCredits
+              ? 'リクエスト呼出 & AIC 消費実績 (異なる尺度)'
+              : hasCredits
+              ? 'AI クレジット消費総量 (リクエスト数行なし)'
+              : hasRequests
+              ? 'リクエスト呼出総量 (AIC行なし)'
+              : '利用実績データなし'}
+          </p>
+        </div>
+      );
+    }
+
+    case 'report_kpi_active_users': {
+      const { enterprise, business } = extractCopilotPlanCounts(reportData);
+      const activeUsers = reportData.overview.total_active_users;
+      const planTotal = enterprise.total + business.total;
+      const totalUsers = planTotal > 0
+        ? planTotal
+        : (reportData.overview.quantity_by_unit?.seats ?? activeUsers);
+      const nonActiveUsers = planTotal > 0
+        ? enterprise.nonActive + business.nonActive
+        : Math.max(0, totalUsers - activeUsers);
+      const activeRate = totalUsers > 0 ? (activeUsers / totalUsers) * 100 : 0;
+
+      return (
+        <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm flex flex-col justify-between" data-testid="report-kpi-active-users">
+          <div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-baseline space-x-1.5 flex-wrap">
+                <MetricLabel metricId="report_active_users" hideWindow />
+                <span className="text-[10px] text-slate-400 font-normal">
+                  (アクティブ / ノンアクティブ / 全数)
+                </span>
+              </div>
+              <div className="p-1.5 rounded-lg bg-blue-950 border border-blue-800/60 text-blue-400">
+                <Users className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-2 flex items-baseline space-x-1.5 flex-wrap">
+              <span className="text-2xl font-black text-white tracking-tight">
+                <span data-testid="report-active-users-total">{activeUsers.toLocaleString()}</span>
+                <span className="text-sm font-semibold text-slate-400 ml-1" data-testid="report-active-users-percent">
+                  ({activeRate.toFixed(1)}%)
+                </span>
+              </span>
+              <span className="text-xs font-semibold text-slate-400" data-testid="report-active-users-ratio">
+                / {nonActiveUsers.toLocaleString()} / {totalUsers.toLocaleString()} 名
+              </span>
+            </div>
+            {/* Copilot プラン内訳 (Enterprise / Business: アクティブ / ノンアクティブ / 全数) */}
+            <div className="mt-2 pt-2 border-t border-slate-800/80 space-y-1.5" data-testid="report-plan-breakdown">
+              <span className="text-[10px] text-slate-400 font-medium block">
+                プラン内訳:
+              </span>
+              <div className="space-y-1 text-[11px]">
+                <div className="flex items-center justify-between" data-testid="report-plan-enterprise">
+                  <span className="text-indigo-300 font-medium">Enterprise:</span>
+                  <span className="font-mono text-[11px]">
+                    <b className="font-bold text-emerald-400" data-testid="report-plan-enterprise-active">{enterprise.active}</b>
+                    <span className="text-slate-600 mx-1">/</span>
+                    <span className="text-slate-400 font-normal" data-testid="report-plan-enterprise-inactive">{enterprise.nonActive}</span>
+                    <span className="text-slate-600 mx-1">/</span>
+                    <span className="text-slate-400 font-normal" data-testid="report-plan-enterprise-total">{enterprise.total}</span>
+                  </span>
+                </div>
+                <div className="flex items-center justify-between" data-testid="report-plan-business">
+                  <span className="text-slate-300 font-medium">Business:</span>
+                  <span className="font-mono text-[11px]">
+                    <b className="font-bold text-emerald-400" data-testid="report-plan-business-active">{business.active}</b>
+                    <span className="text-slate-600 mx-1">/</span>
+                    <span className="text-slate-400 font-normal" data-testid="report-plan-business-inactive">{business.nonActive}</span>
+                    <span className="text-slate-600 mx-1">/</span>
+                    <span className="text-slate-400 font-normal" data-testid="report-plan-business-total">{business.total}</span>
+                  </span>
+                </div>
+              </div>
+              <span className="hidden" data-testid="report-plan-enterprise-count">{enterprise.total}</span>
+              <span className="hidden" data-testid="report-plan-business-count">{business.total}</span>
+            </div>
+          </div>
+          <p className="mt-1.5 text-[10px] text-slate-400">利用履歴のあるユニークアカウント</p>
+        </div>
+      );
+    }
+
+    case 'report_kpi_top_model': {
+      const top3Models = (reportData.model_breakdown || []).slice(0, 3);
+      return (
+        <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm flex flex-col justify-between" data-testid="report-kpi-top-model">
+          <div>
+            <div className="flex items-center justify-between">
+              <MetricLabel metricId="report_top_model" hideWindow />
+              <div className="p-1.5 rounded-lg bg-purple-950 border border-purple-800/60 text-purple-400">
+                <Cpu className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-2 space-y-1">
+              {top3Models.length === 0 ? (
+                <div className="text-xs text-slate-400 font-medium py-1">データなし</div>
+              ) : (
+                top3Models.map((item, idx) => (
+                  <div
+                    key={item.model_name || idx}
+                    className="flex items-center justify-between text-xs"
+                    data-testid={`report-top-model-rank-${idx + 1}`}
+                  >
+                    <div className="flex items-center space-x-1.5 min-w-0 mr-1.5">
+                      <span
+                        className={`text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded shrink-0 ${
+                          idx === 0
+                            ? 'bg-purple-900/80 text-purple-200 border border-purple-700/60 font-black'
+                            : 'bg-slate-800 text-slate-400 border border-slate-700/50'
+                        }`}
+                      >
+                        {idx + 1}
+                      </span>
+                      <span
+                        className={`truncate font-medium ${
+                          idx === 0 ? 'text-white' : 'text-slate-300'
+                        }`}
+                        title={item.model_name}
+                      >
+                        {item.model_name}
+                      </span>
+                    </div>
+                    <span
+                      className={`font-mono font-bold text-xs shrink-0 ${
+                        idx === 0 ? 'text-purple-300' : 'text-slate-400'
+                      }`}
+                    >
+                      {item.percentage}%
+                    </span>
+                  </div>
+                ))
               )}
             </div>
           </div>
-          <div className="pt-1.5 border-t border-slate-800/80 flex items-center justify-between flex-wrap gap-1">
-            <MetricLabel metricId="report_net_spend" className="text-[11px] text-amber-400 font-medium" label="超過請求費用:" hideWindow />
-            <span className="font-mono font-bold text-amber-300 text-sm">
-              {netDual.usd} {netDual.sub && <span className="text-[11px] text-amber-400/80 font-normal">({netDual.sub})</span>}
-            </span>
-          </div>
+          <p className="mt-1.5 text-[10px] text-slate-400">上位3モデルのリクエスト占有率</p>
         </div>
-        {reportData.overview.total_discount_usd > 0 && (
-          <div className="mt-1 text-[10px] text-emerald-400/90 text-right">
-            無料枠控除: -{discountDual.usd} {discountDual.sub && `(-${discountDual.sub})`}
-          </div>
-        )}
-      </div>
+      );
+    }
+  }
+};
 
-      {/* カード 2: 総リクエスト数 */}
-      <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <MetricLabel metricId="report_requests" />
-          <div className="p-1.5 rounded-lg bg-indigo-950 border border-indigo-800/60 text-indigo-400">
-            <Sparkles className="w-4 h-4" />
-          </div>
-        </div>
-        <div className="mt-2">
-          <span className="text-2xl font-black text-white tracking-tight">
-            {reportData.overview.total_requests.toLocaleString()}
-          </span>
-        </div>
-        <p className="mt-1 text-[11px] text-slate-400">リクエスト / AIC 呼出総量</p>
-      </div>
-
-      {/* カード 3: アクティブ人数 */}
-      <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <MetricLabel metricId="report_active_users" />
-          <div className="p-1.5 rounded-lg bg-blue-950 border border-blue-800/60 text-blue-400">
-            <Users className="w-4 h-4" />
-          </div>
-        </div>
-        <div className="mt-2">
-          <span className="text-2xl font-black text-white tracking-tight">
-            {reportData.overview.total_active_users}
-          </span>
-        </div>
-        <p className="mt-1 text-[11px] text-slate-400">利用履歴のあるユニークアカウント</p>
-      </div>
-
-      {/* カード 4: 最多使用モデル */}
-      <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <MetricLabel metricId="report_top_model" />
-          <div className="p-1.5 rounded-lg bg-purple-950 border border-purple-800/60 text-purple-400">
-            <Cpu className="w-4 h-4" />
-          </div>
-        </div>
-        <div className="mt-2 truncate">
-          <span className="text-lg font-bold text-white tracking-tight">
-            {reportData.overview.top_model}
-          </span>
-        </div>
-        <p className="mt-1 text-[11px] text-slate-400">
-          {reportData.model_breakdown[0]?.percentage || 0}% のリクエストを占有
-        </p>
-      </div>
-
-      {/* カード 5: 主要課金 SKU */}
-      <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <MetricLabel metricId="report_top_sku" />
-          <div className="p-1.5 rounded-lg bg-amber-950 border border-amber-800/60 text-amber-400">
-            <Boxes className="w-4 h-4" />
-          </div>
-        </div>
-        <div className="mt-2 truncate">
-          <span className="text-sm font-bold text-white font-mono">
-            {reportData.overview.top_sku}
-          </span>
-        </div>
-        <p className="mt-1 text-[11px] text-slate-400">主要請求カテゴリ</p>
-      </div>
+export const MonthlyReportKpis: React.FC<MonthlyReportKpisProps> = ({ reportData, budgets, rawReportData }) => {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {ALL_REPORT_KPI_CARD_WIDGET_IDS.map((cardId) => (
+        <SingleMonthlyReportKpiCard
+          key={cardId}
+          cardId={cardId}
+          reportData={reportData}
+          budgets={budgets}
+          rawReportData={rawReportData}
+        />
+      ))}
     </div>
   );
 };

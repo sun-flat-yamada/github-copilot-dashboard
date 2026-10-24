@@ -2,11 +2,11 @@ import React from 'react';
 import {
   AlertTriangle,
   BarChart3,
+  CalendarRange,
   ChevronsDown,
   ChevronsUp,
-  LayoutGrid,
   Landmark,
-  CalendarRange,
+  LayoutGrid,
   PieChart as PieIcon,
   Users2,
 } from 'lucide-react';
@@ -47,26 +47,45 @@ function countGroups(
   return Object.keys(groups || {}).length;
 }
 
-
 export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
   const {
-    activeSource, dataBaseDir, isReportSource, isDemoData, currentData, previousData, currentReportData,
-    deepAnalysisProfiles, focusedUserLogin, userTableFilterStatus, currentGrouping, selectedGroup,
-    setSelectedGroup, accordion: { isExpanded, toggle, expandAll, collapseAll },
-    onGroupingChange: handleGroupingChange, onFilterIdle: handleFilterIdle,
-    onSelectUserForTrend: handleSelectUserForTrend, onOpenDeepAnalysis: handleOpenDeepAnalysis,
+    activeSource,
+    dataBaseDir,
+    isReportSource,
+    isDemoData,
+    currentData,
+    previousData,
+    currentReportData,
+    rawCurrentReportData,
+    reportBudgets,
+    deepAnalysisProfiles,
+    focusedUserLogin,
+    userTableFilterStatus,
+    currentGrouping,
+    selectedGroup,
+    setSelectedGroup,
+    accordion: { isExpanded, toggle, expandAll, collapseAll },
+    onGroupingChange: handleGroupingChange,
+    onFilterIdle: handleFilterIdle,
+    onSelectUserForTrend: handleSelectUserForTrend,
+    onOpenDeepAnalysis: handleOpenDeepAnalysis,
   } = ctx;
+
   return (
-    <div className="flex flex-col space-y-6 w-full">
+    <div className="flex flex-col space-y-6 w-full" data-testid="overview-cost-view">
       {/* サマリーブロック (常時展開 ★要件6) */}
       {activeSource === 'live_metrics' && currentData && (
         <KpiSummaryCards data={currentData} isDemo={isDemoData} previousData={previousData} />
       )}
       {isReportSource && currentReportData && (
-        <MonthlyReportKpis reportData={currentReportData} />
+        <MonthlyReportKpis
+          reportData={currentReportData}
+          budgets={reportBudgets}
+          rawReportData={rawCurrentReportData}
+        />
       )}
 
-      {/* 詳細分析セクションヘッダー ＆ 一括開閉アイコンコントロール (★要件6, Issue #118) */}
+      {/* 詳細分析セクションヘッダー ＆ 一括開閉コントロール (★要件6, Issue #118) */}
       <div className="flex items-center justify-between pt-2 pb-1 border-b border-slate-800/80">
         <div className="flex items-center space-x-2.5">
           <div className="p-1.5 rounded-lg bg-indigo-950/60 border border-indigo-800/50 text-indigo-400">
@@ -77,12 +96,12 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
               詳細分析セクション
             </h3>
             <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800/90 text-slate-400 font-mono border border-slate-700/50">
-              {activeSource === 'live_metrics' ? '6 セクション' : '2 セクション'}
+              {isReportSource ? '2 セクション' : '6 セクション'}
             </span>
           </div>
         </div>
 
-        {/* スマートなアイコン化開閉ボタン群 (ツールチップ付き) */}
+        {/* 右上に配置した控えめなアイコン一括操作ボタン */}
         <div className="flex items-center space-x-1.5">
           <button
             type="button"
@@ -232,11 +251,13 @@ export const View: React.FC<{ ctx: ViewContext }> = ({ ctx }) => {
             onToggle={() => toggle('report_charts')}
           >
             <MonthlyReportCharts
-            reportData={currentReportData}
-            grouping={currentGrouping}
-            onGroupingChange={handleGroupingChange}
-            selectedGroup={selectedGroup}
-          />
+              reportData={currentReportData}
+              grouping={currentGrouping}
+              onGroupingChange={handleGroupingChange}
+              selectedGroup={selectedGroup}
+              baseDir={dataBaseDir}
+              isDemo={isDemoData}
+            />
           </CollapsibleSection>
 
           <CollapsibleSection

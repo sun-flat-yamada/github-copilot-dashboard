@@ -35,7 +35,7 @@ export const RADAR_SECTIONS: RadarCategorySection[] = [
     number: '02',
     title: '6軸多次元特性マップ',
     shortTitle: '6軸レーダーマップ',
-    description: '総合・SWE・AIME・コンテキスト・速度・コストの6軸チャート',
+    description: '総合・Coding・推論・Arena・コンテキスト・速度・コストの6軸チャート',
     icon: Compass,
   },
   {
@@ -51,7 +51,7 @@ export const RADAR_SECTIONS: RadarCategorySection[] = [
     number: '04',
     title: '著名ベンチマーク実測比較テーブル',
     shortTitle: '実測比較テーブル',
-    description: 'SWE-bench, AIME, Arena Elo, 速度, コストの実測値一覧',
+    description: 'Terminal-Bench 4.0, AA Intelligence, Arena WebDev Elo, 速度, コストの実測値一覧',
     icon: FileCode2,
   },
   {

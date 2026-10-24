@@ -31,8 +31,17 @@ const ALL_SECTION_IDS = [
   'users',
   'trend',
   'usage',
+  'budget-timeline',
+  'credits',
+  'agent',
+  'adoption',
+  'audit',
   'report_charts',
   'report_users',
+  'report_budget',
+  'report_budget_timeline',
+  'report_credits',
+  'report_audit',
 ];
 
 interface AppShellProps {
@@ -99,8 +108,8 @@ export const AppShell: React.FC<AppShellProps> = ({ registry: defaultViewRegistr
     selectedTags,
   });
 
-  // 2. 分析View選択 (要件4: モード切替からView切替への抜本移行)
-  const [activeView, setActiveView] = useState<string>('overview');
+  // 2. 分析View選択 (初期表示は Widget カスタマイズ対応の Dashboard タブ #334)
+  const [activeView, setActiveView] = useState<string>('dashboard');
 
   // 3. 集計軸 & フィルター状態
   const [currentGrouping, setCurrentGrouping] = useState<GroupingDimension>('department');
@@ -191,7 +200,7 @@ export const AppShell: React.FC<AppShellProps> = ({ registry: defaultViewRegistr
     Object.entries(currentReportData.by_cost_center).forEach(([ccName, gs], idx) => {
       processedNames.add(ccName);
       const master = masterMap.get(ccName);
-      const actualSpend = gs.total_cost_usd;
+      const actualSpend = gs.total_cost_usd ?? 0;
       const spendingLimit = master ? master.spending_limit_usd : 0;
       const freeTier = master ? master.free_tier_budget_usd : 0;
       // 予算の評価はパイプライン・フィルター再集計と同じ共通ルール (BudgetUtilizationRule) を使う
@@ -240,6 +249,7 @@ export const AppShell: React.FC<AppShellProps> = ({ registry: defaultViewRegistr
     currentData,
     previousData,
     currentReportData,
+    rawCurrentReportData,
     reportBudgets,
     deepAnalysisProfiles,
     deepAnalysisSourceInfo,
@@ -301,6 +311,7 @@ export const AppShell: React.FC<AppShellProps> = ({ registry: defaultViewRegistr
         isDemoMode={isDemoMode}
         onToggleDemoMode={toggleDemoMode}
         activeDataIsDemoSourced={activeDataIsDemoSourced}
+        dataBaseDir={dataBaseDir}
         theme={theme}
         onToggleTheme={toggleTheme}
       />

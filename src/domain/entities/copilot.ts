@@ -567,6 +567,7 @@ export interface ReportDailyTrend {
   spend_usd: number;
   active_users: number;
   model_breakdown?: Record<string, number>;
+  credits?: number;
 }
 
 /** Cost Center ごとの日別利用費用 (gross, USD)。日付のあるレコードのみ。予算の時系列グラフ用 */
@@ -595,6 +596,10 @@ export interface ReportUserDetail {
   last_activity_date?: string;
   surface?: string;
   tags?: string[];
+  /** Copilot 契約プラン種別 (Enterprise / Business) */
+  plan_type?: CopilotPlanType;
+  /** シート稼働状態 (active / low_active / idle / never_used など) */
+  status?: UserSeatStatus;
   /** 使用量・トークン・単価・長大化の兆候 (SDD-06 §5)。算出に必要なデータが無いユーザーでは省略 */
   usage_insight?: UsageInsight;
 }

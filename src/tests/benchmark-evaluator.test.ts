@@ -23,11 +23,9 @@ describe('AI Model Benchmark Evaluator Tests', () => {
 
   it('correctly computes normalized radar scores within 0-100 range', () => {
     const rawClaude: BenchmarkRawMetrics = {
-      swe_bench_verified: 70.3,
-      humaneval_plus: 92.0,
-      aime_2024: 84.0,
-      gpqa_diamond: 65.0,
-      arena_coding_elo: 1420,
+      terminal_bench_4: 52,
+      aa_intelligence_index: 48,
+      arena_webdev_elo: 1700,
       output_speed_tps: 65,
       input_cost_per_m: 3.0,
       output_cost_per_m: 15.0,
@@ -41,18 +39,16 @@ describe('AI Model Benchmark Evaluator Tests', () => {
       assert.ok(val >= 0 && val <= 100, `Radar score ${key} should be in [0, 100], got ${val}`);
     }
 
-    // High SWE-bench and AIME should result in high coding & reasoning scores
+    // High Terminal-Bench and AA Intelligence Index should result in high coding & reasoning scores
     assert.ok(radar.coding_swe >= 85, 'Claude should have high coding_swe score');
     assert.ok(radar.reasoning_logic >= 80, 'Claude should have high reasoning_logic score');
   });
 
   it('correctly evaluates reasoning-specialist model (OpenAI o1)', () => {
     const rawO1: BenchmarkRawMetrics = {
-      swe_bench_verified: 68.0,
-      humaneval_plus: 91.5,
-      aime_2024: 88.5,
-      gpqa_diamond: 75.2,
-      arena_coding_elo: 1410,
+      terminal_bench_4: 55,
+      aa_intelligence_index: 54,
+      arena_webdev_elo: 1700,
       output_speed_tps: 32,
       input_cost_per_m: 15.0,
       output_cost_per_m: 60.0,
@@ -70,11 +66,9 @@ describe('AI Model Benchmark Evaluator Tests', () => {
 
   it('correctly evaluates speed & cost-effective model (Gemini 2.0 Flash)', () => {
     const rawFlash: BenchmarkRawMetrics = {
-      swe_bench_verified: 52.0,
-      humaneval_plus: 88.0,
-      aime_2024: 65.0,
-      gpqa_diamond: 55.0,
-      arena_coding_elo: 1335,
+      terminal_bench_4: 15,
+      aa_intelligence_index: 25,
+      arena_webdev_elo: 1450,
       output_speed_tps: 185,
       input_cost_per_m: 0.1,
       output_cost_per_m: 0.4,
@@ -93,11 +87,9 @@ describe('AI Model Benchmark Evaluator Tests', () => {
 
   it('handles extreme edge values gracefully without throwing', () => {
     const rawZero: BenchmarkRawMetrics = {
-      swe_bench_verified: 0,
-      humaneval_plus: 0,
-      aime_2024: 0,
-      gpqa_diamond: 0,
-      arena_coding_elo: 1000,
+      terminal_bench_4: 0,
+      aa_intelligence_index: 0,
+      arena_webdev_elo: 1000,
       output_speed_tps: 5,
       input_cost_per_m: 100,
       output_cost_per_m: 300,
@@ -137,11 +129,9 @@ describe('AI Model Benchmark Evaluator Tests', () => {
 
   it('generates real engineer buzz with SNS rumor annotation for evaluated models', () => {
     const raw: BenchmarkRawMetrics = {
-      swe_bench_verified: 70.3,
-      humaneval_plus: 92.4,
-      aime_2024: 84.8,
-      gpqa_diamond: 67.2,
-      arena_coding_elo: 1435,
+      terminal_bench_4: 37,
+      aa_intelligence_index: 38,
+      arena_webdev_elo: 1620,
       output_speed_tps: 68,
       input_cost_per_m: 3.0,
       output_cost_per_m: 15.0,
@@ -164,11 +154,9 @@ describe('AI Model Benchmark Evaluator Tests', () => {
 
   it('guarantees Claude Opus 5 buzz has standard source_note and lists Business+IT source URL without individual memo', () => {
     const rawOpus: BenchmarkRawMetrics = {
-      swe_bench_verified: 81.0,
-      humaneval_plus: 95.8,
-      aime_2024: 93.8,
-      gpqa_diamond: 84.5,
-      arena_coding_elo: 1470,
+      terminal_bench_4: 54,
+      aa_intelligence_index: 51,
+      arena_webdev_elo: 1691,
       output_speed_tps: 62,
       input_cost_per_m: 5.0,
       output_cost_per_m: 25.0,
@@ -199,11 +187,9 @@ describe('AI Model Benchmark Evaluator Tests', () => {
 
   it('guarantees Claude Opus 4.8 has Anthropic-specific buzz and sources without OpenAI mismatch', () => {
     const rawOpus48: BenchmarkRawMetrics = {
-      swe_bench_verified: 78.5,
-      humaneval_plus: 94.2,
-      aime_2024: 91.5,
-      gpqa_diamond: 82.0,
-      arena_coding_elo: 1460,
+      terminal_bench_4: 24,
+      aa_intelligence_index: 42,
+      arena_webdev_elo: 1556,
       output_speed_tps: 60,
       input_cost_per_m: 5.0,
       output_cost_per_m: 25.0,
@@ -231,11 +217,9 @@ describe('AI Model Benchmark Evaluator Tests', () => {
 
   it('guarantees Claude Opus 4.6 has Retired/Enterprise evaluation and accurate buzz', () => {
     const rawOpus46: BenchmarkRawMetrics = {
-      swe_bench_verified: 72.5,
-      humaneval_plus: 92.5,
-      aime_2024: 86.5,
-      gpqa_diamond: 76.0,
-      arena_coding_elo: 1420,
+      terminal_bench_4: 44,
+      aa_intelligence_index: 42,
+      arena_webdev_elo: 1547,
       output_speed_tps: 68,
       input_cost_per_m: 5.0,
       output_cost_per_m: 25.0,
@@ -263,13 +247,13 @@ describe('AI Model Benchmark Evaluator Tests', () => {
     );
   });
 
-  it('guarantees zero vendor mismatches across all 45 benchmark dataset models', () => {
+  it('guarantees zero vendor mismatches across all 46 benchmark dataset models', () => {
     const datasetPath = path.resolve(process.cwd(), 'dashboard/public/data/model-benchmarks.json');
     if (!fs.existsSync(datasetPath)) {
       runBenchmarkUpdate();
     }
     const dataset = JSON.parse(fs.readFileSync(datasetPath, 'utf8'));
-    assert.strictEqual(dataset.models.length, 45, 'Must have exactly 45 evaluated models');
+    assert.strictEqual(dataset.models.length, 46, 'Must have exactly 46 evaluated models');
 
     dataset.models.forEach((m: any) => {
       const buzz = m.evaluation.buzz;
@@ -411,6 +395,7 @@ describe('AI Model Benchmark Evaluator Tests', () => {
     assert.strictEqual(normalizeModelId('GPT-5.6 Sol'), 'gpt-5-6-sol');
     assert.strictEqual(normalizeModelId('GPT-5.6 Terra'), 'gpt-5-6-terra');
     assert.strictEqual(normalizeModelId('GPT-5.6 Luna'), 'gpt-5-6-luna');
+    assert.strictEqual(normalizeModelId('Gemini 4 Argon'), 'gemini-4-argon');
     assert.strictEqual(normalizeModelId('Gemini 3.8 Flash'), 'gemini-3-8-flash');
     assert.strictEqual(normalizeModelId('Gemini 3.7 Flash'), 'gemini-3-7-flash');
     assert.strictEqual(normalizeModelId('Kimi K3 (Moonshot)'), 'kimi-k3');
@@ -421,11 +406,9 @@ describe('AI Model Benchmark Evaluator Tests', () => {
 
   it('correctly evaluates newly added models (GPT-6 Sol, GPT-6 Luna, Claude Opus 5.5, Grok 4.7) and enforces Luna long-context warning', () => {
     const rawGpt6Luna: BenchmarkRawMetrics = {
-      swe_bench_verified: 66.0,
-      humaneval_plus: 90.0,
-      aime_2024: 76.0,
-      gpqa_diamond: 66.0,
-      arena_coding_elo: 1395,
+      terminal_bench_4: 16,
+      aa_intelligence_index: 38,
+      arena_webdev_elo: 1581,
       output_speed_tps: 175,
       input_cost_per_m: 0.1,
       output_cost_per_m: 0.5,
@@ -465,11 +448,9 @@ describe('AI Model Benchmark Evaluator Tests', () => {
 
     // Check GPT-6 Sol
     const rawGpt6Sol: BenchmarkRawMetrics = {
-      swe_bench_verified: 79.5,
-      humaneval_plus: 94.5,
-      aime_2024: 90.0,
-      gpqa_diamond: 79.5,
-      arena_coding_elo: 1475,
+      terminal_bench_4: 60,
+      aa_intelligence_index: 55,
+      arena_webdev_elo: 1800,
       output_speed_tps: 82,
       input_cost_per_m: 2.0,
       output_cost_per_m: 10.0,
@@ -485,11 +466,9 @@ describe('AI Model Benchmark Evaluator Tests', () => {
 
     // Check Claude Opus 5.5
     const rawOpus55: BenchmarkRawMetrics = {
-      swe_bench_verified: 81.8,
-      humaneval_plus: 95.8,
-      aime_2024: 92.5,
-      gpqa_diamond: 83.2,
-      arena_coding_elo: 1500,
+      terminal_bench_4: 64.85,
+      aa_intelligence_index: 58,
+      arena_webdev_elo: 1813,
       output_speed_tps: 62,
       input_cost_per_m: 4.0,
       output_cost_per_m: 20.0,
@@ -503,11 +482,9 @@ describe('AI Model Benchmark Evaluator Tests', () => {
 
     // Check Grok 4.7
     const rawGrok47: BenchmarkRawMetrics = {
-      swe_bench_verified: 72.8,
-      humaneval_plus: 92.0,
-      aime_2024: 86.5,
-      gpqa_diamond: 72.5,
-      arena_coding_elo: 1445,
+      terminal_bench_4: 58,
+      aa_intelligence_index: 52,
+      arena_webdev_elo: 1750,
       output_speed_tps: 92,
       input_cost_per_m: 2.0,
       output_cost_per_m: 6.0,
@@ -523,11 +500,9 @@ describe('AI Model Benchmark Evaluator Tests', () => {
 
   it('evaluates 2026 flagship models (GPT-6 Astra, Claude Sonnet 5) with extended pricing & context specs', () => {
     const rawGpt6: BenchmarkRawMetrics = {
-      swe_bench_verified: 82.5,
-      humaneval_plus: 96.0,
-      aime_2024: 93.5,
-      gpqa_diamond: 84.0,
-      arena_coding_elo: 1510,
+      terminal_bench_4: 65,
+      aa_intelligence_index: 58,
+      arena_webdev_elo: 1810,
       output_speed_tps: 85,
       input_cost_per_m: 10.0,
       output_cost_per_m: 50.0,

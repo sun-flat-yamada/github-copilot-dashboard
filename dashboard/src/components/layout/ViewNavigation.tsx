@@ -2,6 +2,7 @@ import React from 'react';
 import { DataSourceType } from '../../../../src/types/copilot';
 import type { ViewNavigationItem } from '../../views/navigation';
 import {
+  LayoutDashboard,
   PieChart as PieIcon,
   Trophy,
   Users2,
@@ -22,6 +23,7 @@ interface ViewNavigationProps {
 }
 
 const ICON_MAP: Record<string, React.ReactNode> = {
+  LayoutDashboard: <LayoutDashboard className="w-3.5 h-3.5 text-indigo-400" />,
   PieChart: <PieIcon className="w-3.5 h-3.5" />,
   Trophy: <Trophy className="w-3.5 h-3.5" />,
   Users2: <Users2 className="w-3.5 h-3.5" />,

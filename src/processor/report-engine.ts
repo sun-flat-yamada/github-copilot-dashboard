@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 import { z } from 'zod';
 import {
   DEFAULT_BREAKDOWN_LIMIT,
@@ -65,7 +65,6 @@ export const METRIC_BINDINGS: Record<ReportDataset, Partial<Record<MetricId, Bin
     report_requests: (d) => pick(d, 'overview', 'total_requests'),
     report_active_users: (d) => pick(d, 'overview', 'total_active_users'),
     report_top_model: (d) => pick(d, 'overview', 'top_model'),
-    report_top_sku: (d) => pick(d, 'overview', 'top_sku'),
   },
 };
 

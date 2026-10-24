@@ -1,0 +1,21 @@
+# タスク追跡チェックリスト / Task Tracking Checklist (#355)
+
+- [x] 計画立案とアーティファクト作成 <!-- id: 0 -->
+  - [x] 実装計画書（`implementation_plan.md`）の作成 <!-- id: 1 -->
+  - [x] タスク追跡チェックリスト（`task.md`）の初期化 <!-- id: 2 -->
+  - [x] リポジトリ内 `.devs/changes/` への計画コミット <!-- id: 3 -->
+- [x] ドメイン型定義とベンチマーク実測データの更新 <!-- id: 4 -->
+  - [x] `src/domain/entities/model-benchmark.ts` に `task_cost_usd` を追加 <!-- id: 5 -->
+  - [x] `scripts/benchmark-data/benchmark-records.json` の全46モデルに `task_cost_usd` を設定 <!-- id: 6 -->
+  - [x] `scripts/update-benchmarks.ts` を実行し `model-benchmarks.json` を更新 <!-- id: 7 -->
+- [x] UIコンポーネント更新 <!-- id: 8 -->
+  - [x] `dashboard/src/components/ModelRadarView.tsx` に Task単価列・ソート・インジケーターを追加 <!-- id: 9 -->
+  - [x] テーブル説明文およびモデル詳細カードに Task単価を反映 <!-- id: 10 -->
+  - [x] 公式ドキュメント・ベンチマーク実測タスクコスト引用カードを追加 <!-- id: 11 -->
+- [x] 仕様書同期 <!-- id: 12 -->
+  - [x] `docs/specifications/10_ai_model_benchmark_radar_spec.ja.md` および `10_ai_model_benchmark_radar_spec.md` を更新 <!-- id: 13 -->
+- [x] テスト作成と品質ゲート検証 <!-- id: 14 -->
+  - [x] `src/tests/radar-task-cost.test.ts` を新規作成 <!-- id: 15 -->
+  - [x] `npm run fork:verify && npm run typecheck && npm test && npm run secret-scan && npm run build` を実行 <!-- id: 16 -->
+- [x] 完了報告と証跡作成 <!-- id: 17 -->
+  - [x] `walkthrough.md` の作成 <!-- id: 18 -->

@@ -48,6 +48,11 @@ export const COPILOT_MODEL_TOKEN_PRICES: Record<
   'gemini-3-8-flash': { input: 0.75, cachedInput: 0.075, cacheWrite: 0, output: 3.75 },
 };
 
+/**
+ * DEMO データの基準日。DEMO の最新月 (当月) はこの日の月で、月次締めの判定時刻もこの日に固定する (#305)。
+ */
+export const DEMO_BASE_DATE = '2026-09-10';
+
 export class MockDataGenerator {
   private baseDate: Date;
   private random: () => number;
@@ -55,7 +60,7 @@ export class MockDataGenerator {
   /**
    * @param seed 指定すると乱数が決定的になる (DEMO の履歴を再生成しても同じ値になる)。省略時は Math.random。
    */
-  constructor(baseDateStr: string = '2026-09-10', seed?: number) {
+  constructor(baseDateStr: string = DEMO_BASE_DATE, seed?: number) {
     this.baseDate = new Date(baseDateStr);
     if (seed === undefined) {
       this.random = Math.random;
@@ -141,6 +146,7 @@ export class MockDataGenerator {
         department: 'コア決済基盤チーム',
         cost_center_override: 'FinTech-Division',
         notes: 'リードエンジニア / 正社員',
+        tags: ['正社員', 'リード', 'テックリード', '決済', 'バックエンド', 'TypeScript', 'ハイブリッド'],
       },
       {
         github_user: 'hanako-suzuki',
@@ -148,6 +154,7 @@ export class MockDataGenerator {
         department: 'LLM応用プロダクトG',
         cost_center_override: 'Research-and-AI',
         notes: 'AIリサーチャー',
+        tags: ['正社員', 'AI推進', 'シニア', 'Python', 'AI・機械学習', 'リモート'],
       },
       {
         github_user: 'kenji-sato',
@@ -155,12 +162,14 @@ export class MockDataGenerator {
         department: 'SRE & クラウド基盤部',
         cost_center_override: 'Cloud-Platform',
         notes: 'インフラSRE',
+        tags: ['正社員', 'SRE', 'インフラ', 'エキスパート', 'Go', 'Kubernetes', 'ハイブリッド'],
       },
       {
         github_user: 'yuki-takahashi',
         display_name: '高橋 悠希',
         department: 'モバイルアプリ開発部',
         notes: 'iOS / Android Lead',
+        tags: ['正社員', 'モバイル', 'テックリード', 'iOS', 'TypeScript', 'オンサイト'],
       },
       {
         github_user: 'mika-ito',
@@ -168,6 +177,7 @@ export class MockDataGenerator {
         department: '業務システム改革推進室',
         cost_center_override: 'Enterprise-IT',
         notes: '社内DX担当',
+        tags: ['正社員', '社内DX', 'マネージャー', 'Python', 'ハイブリッド'],
       },
       {
         github_user: 'alex-partner',
@@ -175,6 +185,7 @@ export class MockDataGenerator {
         department: 'コア決済基盤チーム',
         cost_center_override: 'FinTech-Division',
         notes: '業務委託パートナー',
+        tags: ['業務委託', 'リモート', '決済', 'シニア', 'バックエンド', 'Go'],
       },
       {
         github_user: 'daiki-yamada',
@@ -182,6 +193,7 @@ export class MockDataGenerator {
         department: 'SRE & クラウド基盤部',
         cost_center_override: 'Cloud-Platform',
         notes: 'Kubernetes Platformer',
+        tags: ['正社員', 'SRE', 'Kubernetes', 'インフラ', 'Go', 'リモート'],
       },
     ];
   }
@@ -651,6 +663,7 @@ export class MockDataGenerator {
         total_cost_usd: totalCost,
         model_usage_totals: modelTotals,
         daily_history: dailyHistory,
+        tags: mapped?.tags,
         ai_credits_used_28d: aiCreditsUsed,
         ai_adoption_phase: adoptionPhase,
         total_agent_sessions: Math.floor(totalChats * 0.35),

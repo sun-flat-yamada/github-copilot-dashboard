@@ -73,6 +73,10 @@ The center of the header prominently displays the currently active dataset, allo
   - **UserPattern (Account/Pattern axis)**: **Cyan** (`bg-cyan-950/80 text-cyan-300 border-cyan-800` / icon: `User`)
 - **Responsive Ellipsis Truncation**: When screen real estate is limited, each badge truncates overflowing text with `truncate` (max-width constrained) to prevent header layout breakage.
 - **Comprehensive Tooltip & Keyboard Shortcut Tips**: The hover tooltip (`title` attribute) displays full information: active source, period, all applied filters without truncation, matching count, and total count. Keyboard shortcut tips (`/` or `Ctrl+K`) are preserved. Individual badges also provide full-text tooltips on hover.
+- **Persistence and Automatic Restoration of Last Data Selection State (`localStorage`)**:
+  - **Persisted State (`copilot_dashboard_data_selection`)**: Automatically saves the selected data source (`activeSource`: `live_metrics` / `monthly_report` / `user_upload`), auto-collected scope (`scopeType`: `monthly` / `daily` / `custom`, `selectedKey`), monthly report target month (`selectedReportMonth`), unified AND filter criteria (`filterCriteria`: Cost Center, Organization, User Defined Group, Tags, User Pattern / Regex flag), and DEMO / LIVE mode preference (`isDemoMode`) to `localStorage`, restoring them on subsequent visits or page reloads.
+  - **On-Demand CSV Aggregated Data & Quota Fallback (`copilot_dashboard_uploaded_data`)**: When `user_upload` is selected, the client-side aggregated `MonthlyReportAggregatedData` is stored in `localStorage`. If the aggregated payload cannot be stored or is absent on reload (e.g., due to browser `QuotaExceededError`), the dashboard gracefully falls back to `live_metrics` (latest month).
+  - **`index.json` Validation & Precedence**: On reload, if a persisted period key no longer exists in `index.json`, it falls back to `default_scopes` (latest month / latest report month), and any corrupted regex pattern is safely reset. Explicit URL query parameters (`?demo=true` / `?demo=false`, etc.) or environment variables (`VITE_MOCK_MODE`) always take precedence over the persisted `isDemoMode` in `localStorage`.
 
 ### 2.2 Multi-Tag AND Filtering (`DataSelectionModal` Consolidation)
 - Dynamically extracts unique tags from user group mapping `tags` attribute (e.g., `["Full-time", "Remote", "AI-Champion"]`) and allows multi-tag selection within the header's Data Selection & Filter Modal (`DataSelectionModal`).
@@ -85,10 +89,23 @@ The center of the header prominently displays the currently active dataset, allo
 - **Fluid Responsive Expansion on Window Maximization**: Narrow or fixed maximum widths (`max-w-7xl`, `max-w-[1600px]`, etc.) are eliminated. While maintaining appropriate side margins/padding (`px-4 sm:px-6 lg:px-8`), the content body (`<main>`) as well as header and navigation containers automatically expand to fill available space on large displays and maximized windows (`w-full mx-auto`).
 - **Exception Rule**: Side-by-side elements are permitted only when simultaneous comparative inspection is essential (e.g., budget vs. actuals) AND both elements have identical fixed heights.
 
-### 2.4 Progressive Disclosure via Accordions
-- **Block 0 (Summary Block)**: Always expanded at the top, presenting executive KPI summaries.
-- **Block 1..N (Feature Blocks)**: Collapsed by default, displaying title, icon, and summary chips (e.g., `12 Departments`, `$6,240.00`).
-- **Detailed Analysis Section Header & Batch Icon Controls**: A clean section divider bar positioned beneath the summary block featuring a "Detailed Analysis Sections" heading with section count pill badge (`5 Sections` / `2 Sections`). Rounded compact icon buttons (`[⤓]` / `[⤒]`, `ChevronsDown` / `ChevronsUp`) are placed on the right, providing high accessibility with hover tooltips (`title`) and `aria-label`. Negative margins are eliminated to structurally prevent visual overlap with neighboring blocks.
+### 2.4 Dedicated Initial `Dashboard` Tab (KPI & Section Widgets) Separated from `Cost Breakdown` (`overview`)
+- **Separation of `Dashboard` (`id: 'dashboard'`, `order: 5`) and `Cost Breakdown` (`id: 'overview'`, `order: 10`)**:
+  - The initial landing tab is the dedicated **`Dashboard`** tab (`label: 'Dashboard'`), while **`コスト内訳`** (`overview`) remains a dedicated fixed-layout Cost Breakdown view.
+- **Full KPI & Section Widgetization (`useOverviewWidgets` / `WidgetCardFrame` / `CollapsibleSection`)**:
+  - In Live Metrics mode, the default preset comprises 5 individual KPI card widgets (`kpi_total_spend`, `kpi_active_rate`, `kpi_idle_waste`, `kpi_budget_utilization`, `kpi_acceptance_rate`) and 6 analysis section widgets (11 widgets total).
+  - In Report / Upload mode, the default preset comprises 4 individual report KPI card widgets (`report_kpi_cost`, `report_kpi_requests`, `report_kpi_active_users`, `report_kpi_top_model`; `report_kpi_top_sku` is abolished) and 2 analysis section widgets (6 widgets total).
+  - **Add (`addWidget`), Visual Category Separation & 3x2 KPI Grid Layout**:
+    - Visitors can add any unplaced KPI card widget or extended section widget (Cost Center Budget Timeline, AI Credits, AI Agent & MCP Activity, Adoption Maturity, Audit & Data Quality) from the Widget Catalog panel (`widget-catalog-panel`).
+    - Both the `Dashboard` canvas (`overview-widget-list`) and the catalog KPI section (`widget-catalog-group-kpi`) arrange **KPI Summary Widgets** in a **3-column × 2-row (3x2) grid (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5`)**. Each KPI widget uses a smartphone-portrait single-column width (`w-full min-w-[min(100%,21rem)]`, ~336px–400px) as its baseline and expands further across its `1fr` grid cell when viewport space permits.
+    - Within the catalog panel, **KPI Summary Widgets** (`size: 'kpi'`, `widget-catalog-group-kpi`, emerald accent border/icon, `KPI カード (1/3幅)` badge, 3x2 grid metric cards) and **Detailed Analysis Section Widgets** (`size: 'full'`, `widget-catalog-group-section`, indigo accent border/icon, `分析セクション (全幅)` badge, full-width accordion sections) are visually separated into two dedicated category groups.
+    - Each category header displays an active placement counter (`X / Y 配置中`), and category filter tabs (`すべて` / `KPI カード` / `分析セクション`) at the top of the panel allow visitors to filter by widget type immediately.
+  - **Remove (`removeWidget`)**: Each KPI card widget and section widget includes a remove (`×`) button. Removing all widgets displays an empty state with actions to add widgets or restore the default preset.
+  - **Reorder (`moveWidget` / `reorderWidgets`) & Text Selection Compatibility**:
+    - Visitors can reorder both KPI widgets and section widgets using Move Up (`↑`) / Move Down (`↓`) buttons or Drag & Drop via the **dedicated drag handle (`widget-drag-handle-<id>`)**.
+    - The outer widget container (`overview-widget-<id>`) does not set `draggable="true"`; only the dedicated drag handle (`widget-drag-handle-<id>`) sets `draggable={true}` and `onDragStart`. This ensures visitors can freely select text (KPI numbers, labels, titles, subtitles, table cells, etc.) anywhere inside a widget (`select-text`), while moving the widget occurs exclusively when dragging its drag handle. Selecting text inside an accordion header suppresses accidental accordion toggling on mouse release. Widget action buttons are placed as siblings to interactive toggles to comply with WCAG 2.2 AA (`nested-interactive`).
+  - **Reset to Default Preset (`resetWidgets`)**: One-click reset restores the default preset widget set and ordering.
+  - **Persist Visitor Settings (`localStorage`)**: Active widget IDs and their display order are automatically persisted in `localStorage` (`copilot_dashboard_overview_widgets_v1`) and restored on subsequent visits.
 
 ### 2.5 Anomaly Detection & Error Handling (Error & Warning Detection)
 Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint disruptions):
@@ -113,7 +130,7 @@ Surfaces data fetching irregularities (API rate limits, 403 shortages, endpoint 
 - **Neutral Record List & Ranking Phasing-out**: In alignment with FinOps principles where raw volume does not inherently signify contribution, rankings and podium badges have been phased out in favor of neutral record IDs (`#`).
 - **Separated User and Display Name Columns with Tag Column Addition**: GitHub account handle (`User`) and employee real name (`Display Name`) are isolated into distinct sortable columns. Furthermore, a dedicated `Tags` column is positioned directly before the `Cost Center` column to surface organizational/employment attributes.
 - **Compact Style Padding & Non-Wrapping Horizontal Scroll**: Cell padding across headers and rows is refined to a compact design (`py-2 px-2.5`), preventing automatic line breaks (`whitespace-nowrap min-w-max`) when viewing on narrow viewports. Horizontal overflow scrolling (`overflow-x-auto`) preserves table geometry across any resolution.
-- **2-Column Frozen Display (# & User) with Draggable Width**: On horizontal scroll, only the first two primary columns (`#` record ID and `User` handle) remain pinned (sticky). A resizable drag handle is positioned at the right boundary of the pinned user column, allowing users to dynamically adjust the pinned width via click-and-drag (with double-click reset to default 180px, keyboard accessibility, and persistent storage via `localStorage`). Subsequent columns including Display Name scroll smoothly behind the sticky shadow separation.
+- **Column Ordering and 2-Column Frozen Display (# & Display Name) with Draggable Width**: Arranged in order: `#` record ID, `Display Name`, and `User` (@login) handle. On horizontal scroll, only the first two primary columns (`#` record ID and `Display Name`) remain pinned (sticky). A resizable drag handle is positioned at the right boundary of the pinned display name column, allowing users to dynamically adjust the pinned width via click-and-drag (with double-click reset to default 180px, keyboard accessibility, and persistent storage via `localStorage`). Subsequent columns including User handle scroll smoothly behind the sticky shadow separation.
 - **3-Axis & Group Integration**: Seamlessly sorts members across Cost Centers, Organizations, and User Defined Groups (`ユーザー定義Gr`).
 - **Metric Sorting**: One-click interactive sorting by user handle, display name, department/group, tags, cost center, organization, acceptances, suggestions, chat turns, Inline Completion Acceptance Rate, incurred cost, excess billing, or inactive days.
 - **User Selection & Inline Drill-down Analysis (`UserDrilldownPanel`)**: Clicking any user row or clicking the "Drilldown" button expands a comprehensive diagnostic panel directly beneath the row without navigating away. Allows instant 360-degree micro-analysis of FinOps costs (monthly/daily/excess billing), productivity KPIs, daily trends with AI model breakdown charts, overall AI health score (0-100), and 5 anti-pattern diagnostic evaluations with actionable prescriptions while preserving table context. Fully compatible with Auto-collected Data, Monthly Usage Report, and User Upload (CSV) data sources.
@@ -256,6 +273,22 @@ The overview cards (`KpiSummaryCards`, appendix A.5.2 of the improvement plan) a
 - The forecast block (`ForecastNote`) is rendered with `MetricLabel` + `MetricValue` and the 「推定」 badge, and shows the range, **confidence**, formula and window. When data is insufficient it shows "—（reason）" instead of a value; a closed month shows the actual instead of a forecast.
 - Forecast metrics are catalog entries (SDD-16 §6) and are covered by the same leak-prevention test.
 
+### 2.14d Monthly Usage Report KPI Cards (`MonthlyReportKpis`)
+
+The 4 KPI cards in the overview block of monthly usage reports (cost summary, total requests, active users, top AI model; the legacy primary SKU card is abolished) follow these specifications:
+
+- **Active Users in Report (`report_kpi_active_users`) Card**:
+  - Displays total unique active accounts alongside the breakdown of Copilot plans at the bottom of the card. The header reads `プラン内訳 (アクティブ / ノンアクティブ / 全数)`, and rows for `Enterprise` / `Business` display numbers only formatted as `124 / 26 / 150`.
+  - Only the active count is highlighted in bold (`font-bold`) and matches the header active color (`text-emerald-400`) for immediate visual comprehension.
+  - Plan breakdown is derived directly from user attributes (`plan_type` and activity signals/status in `user_details`), with proportional fallback to `sku_breakdown` seat quantities and overall active users when user details lack plan attributes.
+- **Most Used AI Model (`report_top_model`) Card**:
+  - Displays the top 3 AI models from the selected data's model breakdown (`model_breakdown`), each with its rank (1–3), model name, and request share percentage (%).
+  - When fewer than 3 models exist (1–2 models), displays only the existing ones; when empty, shows a graceful "データなし" fallback.
+  - Enables immediate visual comprehension of the AI model portfolio and adoption distribution within the selected dataset.
+- **Card Header Symmetry and Redundant Label Elimination**:
+  - Because the entire section is scoped to the selected monthly report, the `選択した月次レポートの月` window label is suppressed across all KPI cards (`hideWindow: true`).
+  - In the Total Requests card, since the title explicitly denotes requests, the duplicate `リクエスト` badge in the header is hidden, maintaining a clean and symmetric header layout across all 4 cards (metric title + info icon on the left, icon box on the right).
+
 ### 2.14b View Registry (P2-4 / C-01, D-06)
 
 The View Registry is the **only entry point for rendering a view**. `App.tsx` has no per-view branch: it builds one `ViewContext` and renders `<ViewHost>`; the navigation is built from the same registry.
@@ -329,3 +362,22 @@ The **「監査」** tab (`views/audit/manifest.ts` + `View.tsx`, registered thr
 - **Unavailable is stated, never zero**: a missing `index.json`, a legacy `index.json` without `source_status`, a missing or empty `history.json` each show **「—（reason）」** in place of the table. Demo data has no history (mock collection records none), so the demo shows 「—（デモデータには実行履歴がありません）」 rather than an invented history.
 - Status and level are told apart by text, not by colour alone; tables have captions and row headers.
 - **Monthly close and revisions (P4-2)**: below the run history, `AuditMonthClosePanel` (`dashboard/src/components/AuditMonthClosePanel.tsx`) lists closed months (newest first) from `closes/index.json` (`loadMonthCloseIndexDataset`): close day, confirmed time, checksum (first 16 characters, full value in the tooltip) and revision count. A revised month expands to each revision (reason, run id, actor, time) and the **diff table** (item, before, after, difference) from `closes/{month}.json` (`loadMonthCloseRecordDataset`, newest 12 revised months). Missing index, no closed month, or a missing history file each show 「—（reason）」. Numbers, dates and checksums only. SDD-17 §3.
+
+### 2.20 Monthly Report Requests vs AIC Disambiguation & Active Account Statistics
+1. **Explicit Metric Disambiguation (Requests vs AIC)**:
+   - Based on unit family (`unitFamily`) and positive usage records in the active dataset, the card title, unit badge, and value formatting adapt dynamically:
+   - **Requests Only**: Title "総リクエスト数", badge `リクエスト`, unit `req`.
+   - **AI Credits Only**: Title "総 AI クレジット (AIC)", badge `AIC (クレジット)`, unit `AIC`.
+   - **Both Present**: Title "総リクエスト & AI クレジット", badge `リクエスト & AIC`, dual-row display with requests (`req`) and AIC (`AIC`).
+   - **No Usage**: Title "総リクエスト / クレジット", badge `実績なし`, value `0`.
+2. **Active Account Statistics (Min, Median, Max)**:
+   - For accounts in the selected data (or filtered dataset) with positive usage (value > 0), computes and displays active account count alongside **Min**, **Median**, and **Max**.
+   - Accounts with zero or missing usage are excluded from the min/median calculation population. If active accounts count is 0, displays `—`.
+3. **Horizontal Mini Box Plot (Range Plot) & Axis-Aligned Layout (Min, Median, Max)**:
+   - For accounts in the selected data with positive usage (value > 0), computes Min, Q1 (25th percentile), Median (50th percentile), Q3 (75th percentile), and Max, rendering a compact horizontal mini box plot (`report-requests-distribution` / `report-requests-boxplot`) across full card width.
+   - Completely eliminates misinterpretation as continuous series or time-series sparklines. Renders the full range whisker line with end caps (Min to Max), an interquartile range (IQR) box spanning Q1 to Q3 representing the core 50% user population, and a prominent accent median line.
+   - An accessible hover tooltip details Min, Q1, Median, Q3, Max, and IQR with concrete unit values.
+   - An integrated X-axis baseline directly underneath physically maps summary statistics (left-aligned Min, highlighted center Median, right-aligned Max) to graphic scale endpoints with 100% geometric alignment.
+4. **Distinct Dimensions (Requests vs AIC) in Tooltip**:
+   - The metric definition tooltip (`report_requests`) clearly articulates that physical API invocations / prompts (Requests / req) and model-tier token compute consumption units (AI Credits / AIC) are fundamentally distinct dimensions via metric caveats.
+

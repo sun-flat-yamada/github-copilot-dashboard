@@ -32,9 +32,14 @@ describe('View Registry', () => {
   it('既存 9 ビューの ID・ラベル・並び順・バッジ・対応データソースを変えない', async () => {
     const registry = createViewRegistry(await discoverManifests());
     const all = registry.getAll();
-    // 既存 9 ビューは先頭に同じ順で並ぶ。以降は定義の追加だけで増えたビュー (audit: P4-1)
-    assert.deepEqual(all.slice(0, ANALYSIS_VIEW_REGISTRY.length).map((m) => m.id), ANALYSIS_VIEW_REGISTRY.map((v) => v.id));
-    assert.deepEqual(all.slice(ANALYSIS_VIEW_REGISTRY.length).map((m) => m.id), ['audit']);
+    // 先頭は初期表示用の Dashboard タブ (order: 5)、続いて既存 9 ビューが同じ順で並び、末尾に audit (order: 100)
+    assert.equal(all[0]?.id, 'dashboard');
+    assert.equal(all[0]?.label, 'Dashboard');
+    assert.deepEqual(
+      all.slice(1, 1 + ANALYSIS_VIEW_REGISTRY.length).map((m) => m.id),
+      ANALYSIS_VIEW_REGISTRY.map((v) => v.id)
+    );
+    assert.deepEqual(all.slice(1 + ANALYSIS_VIEW_REGISTRY.length).map((m) => m.id), ['audit']);
     for (const def of ANALYSIS_VIEW_REGISTRY) {
       const m = registry.get(def.id)!;
       assert.equal(m.label, def.shortTitle);

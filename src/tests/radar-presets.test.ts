@@ -36,7 +36,7 @@ test('AI Model Radar Comparison Presets Tests', async (t) => {
     assert.ok(flagshipPreset.modelIds.includes('claude-opus-5-5'), 'Must include claude-opus-5-5');
     assert.ok(flagshipPreset.modelIds.includes('claude-opus-5'), 'Must include claude-opus-5');
     assert.ok(flagshipPreset.modelIds.includes('gpt-6-astra'), 'Must include gpt-6-astra');
-    assert.ok(flagshipPreset.modelIds.includes('gemini-3-8-flash'), 'Must include gemini-3-8-flash');
+    assert.ok(flagshipPreset.modelIds.includes('gemini-4-argon'), 'Must include gemini-4-argon');
     assert.ok(flagshipPreset.modelIds.includes('kimi-k3'), 'Must include kimi-k3');
   });
 
@@ -64,14 +64,15 @@ test('AI Model Radar Comparison Presets Tests', async (t) => {
   });
 
   await t.test('verifies tier and vendor presets including lightweight GPT-6 Luna and OpenAI lineup updates', () => {
-    // tier-powerful: claude-opus-5-5, claude-opus-5, gpt-6-sol (gpt-5-5 removed)
+    // tier-powerful: claude-opus-5-5, claude-opus-5, gpt-6-sol, gemini-4-argon (gpt-5-5 removed)
     const powerfulPreset = PRESETS.find((p) => p.id === 'tier-powerful');
     assert.ok(powerfulPreset);
     assert.ok(powerfulPreset.modelIds.includes('claude-opus-5-5'), 'tier-powerful must include claude-opus-5-5');
     assert.ok(powerfulPreset.modelIds.includes('claude-opus-5'), 'tier-powerful must keep claude-opus-5');
     assert.ok(powerfulPreset.modelIds.includes('gpt-6-sol'), 'tier-powerful must include gpt-6-sol');
+    assert.ok(powerfulPreset.modelIds.includes('gemini-4-argon'), 'tier-powerful must include gemini-4-argon');
     assert.ok(!powerfulPreset.modelIds.includes('gpt-5-5'), 'tier-powerful must NOT include gpt-5-5');
-    assert.strictEqual(powerfulPreset.modelIds.length, 5, 'tier-powerful should contain 5 models');
+    assert.strictEqual(powerfulPreset.modelIds.length, 6, 'tier-powerful should contain 6 models');
 
     // tier-versatile: gpt-5-4 -> gpt-5-6-terra
     const versatilePreset = PRESETS.find((p) => p.id === 'tier-versatile');
@@ -105,6 +106,12 @@ test('AI Model Radar Comparison Presets Tests', async (t) => {
     assert.ok(anthropicPreset.modelIds.includes('claude-opus-5-5'));
     assert.ok(anthropicPreset.modelIds.includes('claude-opus-5'));
     assert.ok(anthropicPreset.modelIds.includes('claude-sonnet-5-5'));
+
+    // vendor-google: includes gemini-4-argon
+    const googlePreset = PRESETS.find((p) => p.id === 'vendor-google');
+    assert.ok(googlePreset);
+    assert.ok(googlePreset.modelIds.includes('gemini-4-argon'), 'vendor-google must include gemini-4-argon');
+    assert.strictEqual(googlePreset.modelIds.length, 5, 'vendor-google should contain 5 models');
   });
 
   await t.test('all presets have unique IDs and non-empty metadata', () => {

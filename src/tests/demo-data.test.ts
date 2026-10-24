@@ -670,6 +670,41 @@ describe('Live Metrics DEMO Data & Referencing Tests', () => {
       assert.ok(tags.size >= 6, 'several distinct tags for filtering');
     });
 
+    it('provides rich multi-axis tag variations supporting cross-department and multi-tag AND filtering (#378)', () => {
+      const monthly = readJson<ScopeAggregatedData>('processed/monthly/2026-09.json');
+      const users = monthly.users;
+      assert.ok(users.length > 0);
+
+      const allTags = new Set(users.flatMap((u) => u.tags ?? []));
+      // 15種類以上の多様なタグ（技術・勤務形態・役割・雇用形態・社内施策・部署）
+      assert.ok(allTags.size >= 15, `expected at least 15 distinct tags, found ${allTags.size}`);
+
+      // 主要カテゴリの存在確認
+      for (const expected of ['TypeScript', 'Python', 'Go', 'リモート', 'ハイブリッド', 'オンサイト', '正社員', '業務委託', 'テックリード', 'シニア', 'AI推進', '社内DX']) {
+        assert.ok(allTags.has(expected), `tag ${expected} must exist in demo dataset`);
+      }
+
+      // 部署横断タグの検証: TypeScript / Python / リモート は複数部署に分散
+      const tsDepts = new Set(users.filter((u) => u.tags?.includes('TypeScript')).map((u) => u.department));
+      assert.ok(tsDepts.size >= 3, `TypeScript must span at least 3 departments, found ${tsDepts.size}`);
+
+      const remoteDepts = new Set(users.filter((u) => u.tags?.includes('リモート')).map((u) => u.department));
+      assert.ok(remoteDepts.size >= 4, `リモート must span at least 4 departments, found ${remoteDepts.size}`);
+
+      // 複数タグ AND 掛け合わせ絞り込みの成立検証 (それぞれ 2名以上ヒット)
+      const tsAndEmp = users.filter((u) => u.tags?.includes('TypeScript') && u.tags?.includes('正社員'));
+      assert.ok(tsAndEmp.length >= 5, `TypeScript + 正社員 should match >= 5 users, found ${tsAndEmp.length}`);
+
+      const remoteAndPython = users.filter((u) => u.tags?.includes('リモート') && u.tags?.includes('Python'));
+      assert.ok(remoteAndPython.length >= 2, `リモート + Python should match >= 2 users, found ${remoteAndPython.length}`);
+
+      const goAndSre = users.filter((u) => u.tags?.includes('Go') && u.tags?.includes('SRE'));
+      assert.ok(goAndSre.length >= 2, `Go + SRE should match >= 2 users, found ${goAndSre.length}`);
+
+      const leadAndEmp = users.filter((u) => u.tags?.includes('テックリード') && u.tags?.includes('正社員'));
+      assert.ok(leadAndEmp.length >= 2, `テックリード + 正社員 should match >= 2 users, found ${leadAndEmp.length}`);
+    });
+
     it('usage examples use the latest models that resolve in the model catalog (#270)', () => {
       const monthly = readJson<ScopeAggregatedData>('processed/monthly/2026-09.json');
       const report = readJson<any>('processed/reports/2026-09.json');

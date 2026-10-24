@@ -87,6 +87,7 @@ export function getModelShortName(model: { id: string; name: string }): string {
   if (id === 'o3-mini') return 'gpt-o3-mini';
 
   // 3. Google Gemini ファミリ: gemini + バージョン番号 (+ エディション)
+  if (id === 'gemini-4-argon') return 'gemini-4-argon';
   if (id === 'gemini-3-8-flash') return 'gemini-3.8-flash';
   if (id === 'gemini-3-7-flash') return 'gemini-3.7-flash';
   if (id === 'gemini-3-6-flash') return 'gemini-3.6-flash';
@@ -204,7 +205,7 @@ export const ModelSelectorSidebar: React.FC<ModelSelectorSidebarProps> = ({
   // 1. 非表示モード (collapsed): アイコン表示のみにコンパクト化
   if (sidebarMode === 'collapsed') {
     return (
-      <div className="sticky top-20 z-30 flex-shrink-0 self-start">
+      <div className="sticky top-28 z-30 flex-shrink-0 self-start">
         <div className="bg-slate-900/95 border border-slate-800 hover:border-indigo-500/60 rounded-xl shadow-xl backdrop-blur p-2 flex flex-col items-center space-y-2 transition-all">
           <button
             onClick={() => onSidebarModeChange('expanded')}
@@ -495,7 +496,7 @@ Tier: ${(model.extended_capabilities?.tier || model.capabilities?.tier || '標�
 
   return (
     <aside
-      className={`sticky top-20 z-30 flex-shrink-0 self-start transition-all duration-300 max-h-[calc(100vh-5.5rem)] flex flex-col bg-slate-900/95 border border-slate-800 rounded-2xl shadow-2xl backdrop-blur overflow-hidden ${
+      className={`sticky top-28 z-30 flex-shrink-0 self-start transition-all duration-300 max-h-[calc(100vh-7.5rem)] flex flex-col bg-slate-900/95 border border-slate-800 rounded-2xl shadow-2xl backdrop-blur overflow-hidden ${
         isCompact ? 'w-52 sm:w-56' : 'w-72 sm:w-80 xl:w-84'
       }`}
     >

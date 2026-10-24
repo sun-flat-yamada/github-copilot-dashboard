@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   RadarChart,
   PolarGrid,
@@ -29,6 +29,8 @@ import {
   Gauge,
   Compass,
   ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
   FileCode2,
   Flame,
   Clock,
@@ -64,12 +66,20 @@ import {
   ModelUsageStat,
   computeModelUsage,
   getTopUsageModelIds,
+  isEstimatedMetric,
 } from './radar/radar-utils';
+import { EstimatedMarker } from './radar/EstimatedMarker';
 import { PRESETS } from './radar/radar-constants';
 import { RadarDocReferences } from './radar/RadarDocReferences';
 
 export { computeModelUsage, getTopUsageModelIds, PRESETS };
 export type { ModelUsageStat };
+
+/** 著名ベンチマーク実測テーブルの固定表示列 (モデル名列) の幅に関する定数 (ピクセル単位) */
+export const DEFAULT_RADAR_MODEL_COL_WIDTH = 220;
+export const MIN_RADAR_MODEL_COL_WIDTH = 120;
+export const MAX_RADAR_MODEL_COL_WIDTH = 500;
+export const RADAR_MODEL_PINNED_WIDTH_STORAGE_KEY = 'copilot-dashboard:radar-model-pinned-width';
 
 interface ModelRadarViewProps {
   initialSelectedModelId?: string;
@@ -94,9 +104,9 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   const [focusedModelId, setFocusedModelId] = useState<string>('');
   // 詳細カード上部プルダウンの開閉状態
   const [isDetailCardDropdownOpen, setIsDetailCardDropdownOpen] = useState<boolean>(false);
-  // 生データテーブルのソート列 (社内利用シェア 'usage'、コンテキスト長 'context'、モデル名 'model'、レーダー表示 'radar'、Arena Elo 'arena' も対応)
+  // 生データテーブルのソート列 (社内利用シェア 'usage'、コンテキスト長 'context'、モデル名 'model'、レーダー表示 'radar'、Arena Elo 'arena'、Task単価 'task_cost' も対応)
   const [sortKey, setSortKey] = useState<
-    'overall' | 'swe' | 'speed' | 'cost' | 'aime' | 'arena' | 'usage' | 'context' | 'model' | 'radar'
+    'overall' | 'terminal' | 'speed' | 'cost' | 'task_cost' | 'intelligence' | 'arena' | 'usage' | 'context' | 'model' | 'radar'
   >('overall');
   const [sortAsc, setSortAsc] = useState<boolean>(false);
   // モデル列用3種ループ状態 ('default' > 'asc' > 'desc')
@@ -321,9 +331,9 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       if (sortKey === 'overall') {
         valA = a.evaluation.overall_score;
         valB = b.evaluation.overall_score;
-      } else if (sortKey === 'swe') {
-        valA = a.raw_metrics.swe_bench_verified;
-        valB = b.raw_metrics.swe_bench_verified;
+      } else if (sortKey === 'terminal') {
+        valA = a.raw_metrics.terminal_bench_4;
+        valB = b.raw_metrics.terminal_bench_4;
       } else if (sortKey === 'speed') {
         valA = a.raw_metrics.output_speed_tps;
         valB = b.raw_metrics.output_speed_tps;
@@ -331,12 +341,19 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
         // コストは安い方が上位
         valA = a.radar_scores.cost_efficiency;
         valB = b.radar_scores.cost_efficiency;
-      } else if (sortKey === 'aime') {
-        valA = a.raw_metrics.aime_2024;
-        valB = b.raw_metrics.aime_2024;
+      } else if (sortKey === 'task_cost') {
+        const costA = a.raw_metrics.task_cost_usd;
+        const costB = b.raw_metrics.task_cost_usd;
+        if (costA === undefined && costB === undefined) return 0;
+        if (costA === undefined) return 1;
+        if (costB === undefined) return -1;
+        return sortAsc ? costA - costB : costB - costA;
+      } else if (sortKey === 'intelligence') {
+        valA = a.raw_metrics.aa_intelligence_index;
+        valB = b.raw_metrics.aa_intelligence_index;
       } else if (sortKey === 'arena') {
-        valA = a.raw_metrics.arena_coding_elo;
-        valB = b.raw_metrics.arena_coding_elo;
+        valA = a.raw_metrics.arena_webdev_elo;
+        valB = b.raw_metrics.arena_webdev_elo;
       } else if (sortKey === 'usage') {
         valA = usageStats[a.id]?.percentage || 0;
         valB = usageStats[b.id]?.percentage || 0;
@@ -359,14 +376,13 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
     const ms = dataset.models;
     return {
       overall:    Math.max(...ms.map((m) => m.evaluation.overall_score)),
-      swe:        Math.max(...ms.map((m) => m.raw_metrics.swe_bench_verified)),
-      humaneval:  Math.max(...ms.map((m) => m.raw_metrics.humaneval_plus)),
-      aime:       Math.max(...ms.map((m) => m.raw_metrics.aime_2024)),
-      gpqa:       Math.max(...ms.map((m) => m.raw_metrics.gpqa_diamond)),
-      arena_elo:  Math.max(...ms.map((m) => m.raw_metrics.arena_coding_elo)),
+      terminal:     Math.max(...ms.map((m) => m.raw_metrics.terminal_bench_4)),
+      intelligence: Math.max(...ms.map((m) => m.raw_metrics.aa_intelligence_index)),
+      arena_elo:    Math.max(...ms.map((m) => m.raw_metrics.arena_webdev_elo)),
       speed_tps:  Math.max(...ms.map((m) => m.raw_metrics.output_speed_tps)),
       // コスト効率: cost_efficiency レーダースコアが高いほど良い
       cost_eff:   Math.max(...ms.map((m) => m.radar_scores.cost_efficiency)),
+      max_task_cost: Math.max(...ms.map((m) => m.raw_metrics.task_cost_usd ?? 0)),
     };
   }, [dataset]);
 
@@ -427,7 +443,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   };
 
   const handleSort = (
-    key: 'overall' | 'swe' | 'speed' | 'cost' | 'aime' | 'arena' | 'usage' | 'context' | 'model' | 'radar'
+    key: 'overall' | 'terminal' | 'speed' | 'cost' | 'task_cost' | 'intelligence' | 'arena' | 'usage' | 'context' | 'model' | 'radar'
   ) => {
     if (key === 'model') {
       if (sortKey !== 'model') {
@@ -449,12 +465,207 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       setSortAsc(!sortAsc);
     } else {
       setSortKey(key);
-      setSortAsc(false);
+      setSortAsc(key === 'task_cost');
     }
   };
 
+  const renderSortIcon = (
+    key: 'overall' | 'terminal' | 'speed' | 'cost' | 'task_cost' | 'intelligence' | 'arena' | 'usage' | 'context' | 'model' | 'radar'
+  ) => {
+    if (sortKey !== key) {
+      return <ArrowUpDown className="w-3 h-3 text-slate-500 opacity-60 group-hover:opacity-100 transition-opacity" />;
+    }
+    return sortAsc ? (
+      <ArrowUp className="w-3 h-3 text-indigo-400" />
+    ) : (
+      <ArrowDown className="w-3 h-3 text-indigo-400" />
+    );
+  };
+
+  // 詳細テーブルの横スクロールおよびモデル列固定幅の状態管理
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollState, setScrollState] = useState({
+    canScrollLeft: false,
+    canScrollRight: false,
+    scrollLeft: 0,
+    scrollWidth: 0,
+    clientWidth: 0,
+    progress: 0,
+  });
+
+  const updateScrollState = useCallback(() => {
+    const el = tableContainerRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    const maxScroll = Math.max(0, scrollWidth - clientWidth);
+    setScrollState({
+      canScrollLeft: scrollLeft > 2,
+      canScrollRight: maxScroll > 2 && scrollLeft < maxScroll - 2,
+      scrollLeft,
+      scrollWidth,
+      clientWidth,
+      progress: maxScroll > 0 ? (scrollLeft / maxScroll) * 100 : 0,
+    });
+  }, []);
+
+  const [modelColWidth, setModelColWidth] = useState<number>(() => {
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem(RADAR_MODEL_PINNED_WIDTH_STORAGE_KEY) : null;
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (!isNaN(parsed) && parsed >= MIN_RADAR_MODEL_COL_WIDTH && parsed <= MAX_RADAR_MODEL_COL_WIDTH) {
+          return parsed;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return DEFAULT_RADAR_MODEL_COL_WIDTH;
+  });
+
+  const [isResizing, setIsResizing] = useState(false);
+
+  useEffect(() => {
+    const el = tableContainerRef.current;
+    if (!el) return;
+    updateScrollState();
+    el.addEventListener('scroll', updateScrollState, { passive: true });
+    window.addEventListener('resize', updateScrollState);
+    return () => {
+      el.removeEventListener('scroll', updateScrollState);
+      window.removeEventListener('resize', updateScrollState);
+    };
+  }, [updateScrollState, sortedModels.length]);
+
+  useEffect(() => {
+    updateScrollState();
+  }, [updateScrollState, modelColWidth]);
+
+  const handleResizeStart = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const startX = e.clientX;
+      const startWidth = modelColWidth;
+      setIsResizing(true);
+
+      const target = e.currentTarget;
+      try {
+        target.setPointerCapture(e.pointerId);
+      } catch {
+        // fallback
+      }
+
+      const prevUserSelect = document.body.style.userSelect;
+      const prevCursor = document.body.style.cursor;
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
+
+      const onPointerMove = (ev: PointerEvent) => {
+        const deltaX = ev.clientX - startX;
+        const nextWidth = Math.max(
+          MIN_RADAR_MODEL_COL_WIDTH,
+          Math.min(MAX_RADAR_MODEL_COL_WIDTH, Math.round(startWidth + deltaX))
+        );
+        setModelColWidth(nextWidth);
+      };
+
+      const onPointerUp = (ev: PointerEvent) => {
+        try {
+          target.releasePointerCapture(ev.pointerId);
+        } catch {
+          // ignore
+        }
+        setIsResizing(false);
+        document.body.style.userSelect = prevUserSelect;
+        document.body.style.cursor = prevCursor;
+
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+        window.removeEventListener('pointercancel', onPointerUp);
+
+        setModelColWidth((finalWidth) => {
+          try {
+            if (finalWidth === DEFAULT_RADAR_MODEL_COL_WIDTH) {
+              localStorage.removeItem(RADAR_MODEL_PINNED_WIDTH_STORAGE_KEY);
+            } else {
+              localStorage.setItem(RADAR_MODEL_PINNED_WIDTH_STORAGE_KEY, String(finalWidth));
+            }
+          } catch {
+            // ignore
+          }
+          return finalWidth;
+        });
+      };
+
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerUp);
+    },
+    [modelColWidth]
+  );
+
+  const handleResetWidth = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setModelColWidth(DEFAULT_RADAR_MODEL_COL_WIDTH);
+    try {
+      localStorage.removeItem(RADAR_MODEL_PINNED_WIDTH_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const handleResizeKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      let nextWidth: number | null = null;
+      if (e.key === 'ArrowLeft') {
+        nextWidth = Math.max(MIN_RADAR_MODEL_COL_WIDTH, modelColWidth - 10);
+      } else if (e.key === 'ArrowRight') {
+        nextWidth = Math.min(MAX_RADAR_MODEL_COL_WIDTH, modelColWidth + 10);
+      } else if (e.key === 'Home') {
+        nextWidth = MIN_RADAR_MODEL_COL_WIDTH;
+      } else if (e.key === 'End') {
+        nextWidth = MAX_RADAR_MODEL_COL_WIDTH;
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        nextWidth = DEFAULT_RADAR_MODEL_COL_WIDTH;
+      }
+
+      if (nextWidth !== null) {
+        e.preventDefault();
+        setModelColWidth(nextWidth);
+        try {
+          if (nextWidth === DEFAULT_RADAR_MODEL_COL_WIDTH) {
+            localStorage.removeItem(RADAR_MODEL_PINNED_WIDTH_STORAGE_KEY);
+          } else {
+            localStorage.setItem(RADAR_MODEL_PINNED_WIDTH_STORAGE_KEY, String(nextWidth));
+          }
+        } catch {
+          // ignore
+        }
+      }
+    },
+    [modelColWidth]
+  );
+
+  const scrollTable = (direction: 'left' | 'right') => {
+    const el = tableContainerRef.current;
+    if (!el) return;
+    const delta = direction === 'left' ? -280 : 280;
+    el.scrollBy({ left: delta, behavior: 'smooth' });
+  };
+
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const el = tableContainerRef.current;
+    if (!el) return;
+    const pct = parseFloat(e.target.value);
+    const maxScroll = Math.max(0, el.scrollWidth - el.clientWidth);
+    el.scrollLeft = (pct / 100) * maxScroll;
+  };
+
   // 6軸カードから生データ比較テーブルへジャンプ & ソート連動
-  const handleJumpToTable = (targetSortKey: 'swe' | 'aime' | 'arena' | 'speed' | 'cost' | 'context') => {
+  const handleJumpToTable = (targetSortKey: 'terminal' | 'intelligence' | 'arena' | 'speed' | 'cost' | 'context') => {
     setSortKey(targetSortKey);
     setSortAsc(false);
     const target = document.getElementById('radar-table');
@@ -481,7 +692,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   const AXIS_LINK_CONFIG: Record<
     string,
     {
-      sortKey: 'swe' | 'aime' | 'arena' | 'speed' | 'cost' | 'context';
+      sortKey: 'terminal' | 'intelligence' | 'arena' | 'speed' | 'cost' | 'context';
       sourceId: string;
       sourceName: string;
       icon: React.ComponentType<{ className?: string }>;
@@ -490,25 +701,25 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
     }
   > = {
     coding_swe: {
-      sortKey: 'swe',
-      sourceId: 'swe-bench',
-      sourceName: 'SWE-bench Verified',
+      sortKey: 'terminal',
+      sourceId: 'terminal-bench-4',
+      sourceName: 'Terminal-Bench 4.0',
       icon: Code2,
       colorClass: 'text-indigo-400',
       borderHoverClass: 'hover:border-indigo-500/80',
     },
     reasoning_logic: {
-      sortKey: 'aime',
-      sourceId: 'frontier-papers',
-      sourceName: 'Frontier Reports',
+      sortKey: 'intelligence',
+      sourceId: 'aa-intelligence-index',
+      sourceName: 'AA Intelligence Index',
       icon: Brain,
       colorClass: 'text-purple-400',
       borderHoverClass: 'hover:border-purple-500/80',
     },
     arena_elo: {
       sortKey: 'arena',
-      sourceId: 'lmsys-arena',
-      sourceName: 'LMSYS Arena',
+      sourceId: 'arena-webdev',
+      sourceName: 'Arena WebDev',
       icon: Trophy,
       colorClass: 'text-amber-400',
       borderHoverClass: 'hover:border-amber-500/80',
@@ -531,8 +742,8 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
     },
     architecture_design: {
       sortKey: 'context',
-      sourceId: 'frontier-papers',
-      sourceName: 'Frontier Reports',
+      sourceId: 'terminal-bench-4',
+      sourceName: 'Terminal-Bench 4.0',
       icon: Maximize2,
       colorClass: 'text-cyan-400',
       borderHoverClass: 'hover:border-cyan-500/80',
@@ -592,7 +803,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-1 max-w-3xl leading-relaxed">
-                SWE-bench Verified、AIME 2024、LMSYS Chatbot Arena、Artificial Analysis 等の著名ベンチマーク実測値をまとめて正規化したものです。各AIモデルの得意分野・推奨ユースケースの情報とセットで整理することで、エンジニアのモデル選択を助ける情報を提供します。
+                Terminal-Bench 4.0、Artificial Analysis Intelligence Index、Arena (Code Arena | WebDev)、Artificial Analysis (速度) 等の著名ベンチマーク実測値をまとめて正規化したものです。確認できなかった値は「推測値」と表示します。各AIモデルの得意分野・推奨ユースケースの情報とセットで整理することで、エンジニアのモデル選択を助ける情報を提供します。
               </p>
             </div>
           </div>
@@ -636,7 +847,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       </div>
 
       {/* 2カラム構成: 左側フレーム (AIモデル選択) & 右側メインエリア (各分析ウィジェット) */}
-      <div className="flex flex-col lg:flex-row items-start gap-6 relative w-full">
+      <div className="flex flex-row items-start gap-6 relative w-full">
         {/* 左側フレーム: AIモデル選択 (表示 / 省幅 / 非表示 切り替え & 画面追従 sticky) */}
         <ModelSelectorSidebar
           dataset={dataset}
@@ -658,8 +869,8 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
           onTierFilterChange={setSelectedTierFilter}
         />
 
-        {/* 右側メインエリア: 各分析ウィジェット */}
-        <div className="flex-1 min-w-0 flex flex-col space-y-6 w-full">
+        {/* 右側メインエリア: 各分析ウィジェット (isolate で内部の sticky/z-index をカプセル化) */}
+        <div className="flex-1 min-w-0 flex flex-col space-y-6 w-full isolate">
 
       {/* 2. レーダーチャート & フォーカスモデル判定カード (縦配置) */}
       <div className="flex flex-col gap-6">
@@ -921,7 +1132,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
               {dataset.axis_definitions.map((axis) => {
                 const config = AXIS_LINK_CONFIG[axis.key] || {
                   sortKey: 'overall' as const,
-                  sourceId: 'swe-bench',
+                  sourceId: 'terminal-bench-4',
                   sourceName: 'Benchmark',
                   icon: HelpCircle,
                   colorClass: 'text-slate-400',
@@ -1225,7 +1436,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                       {focusedModel.is_estimated && (
                         <span
                           className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-orange-950/80 text-orange-300 border-orange-700/60"
-                          title="公式・実測のベンチマーク値が未確認のため、同系統モデルを基準にした推測値です (要検証)"
+                          title="ベンチマーク指標 (Terminal-Bench 4.0 / AA Intelligence Index / Arena WebDev Elo) がすべて未確認のため、旧指標での順位から推定した推測値です (要検証)"
                         >
                           推測値
                         </span>
@@ -1248,7 +1459,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-xs">
                     {/* コンテキスト長 */}
                     <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80 flex flex-col justify-between">
                       <span className="text-[11px] text-slate-400 block">Context 窓容量</span>
@@ -1292,12 +1503,43 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                         <span className="text-[9px] text-cyan-500/80 mt-0.5">Prompt Caching</span>
                       )}
                     </div>
+
+                    {/* 実測 Task 単価 */}
+                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80 flex flex-col justify-between">
+                      <span className="text-[11px] text-slate-400 block">実測 Task 単価</span>
+                      <span className="text-sm font-mono font-bold text-teal-300 mt-1 flex items-center gap-1">
+                        ${focusedModel.raw_metrics.task_cost_usd !== undefined ? focusedModel.raw_metrics.task_cost_usd.toFixed(2) : '-'}
+                        <span className="text-[10px] text-slate-400 font-normal">/task</span>
+                        {isEstimatedMetric(focusedModel, 'task_cost_usd') && <EstimatedMarker />}
+                      </span>
+                      <span className="text-[9px] text-slate-500 mt-0.5">TB4 / AA実務タスク</span>
+                    </div>
+                  </div>
+
+                  {/* ベンチマーク指標の生データ (推測値はメトリクス単位で明示) */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs" data-testid="focused-benchmark-metrics">
+                    {(
+                      [
+                        { key: 'terminal_bench_4', label: 'Terminal-Bench 4.0', value: `${focusedModel.raw_metrics.terminal_bench_4}%`, color: 'text-violet-300' },
+                        { key: 'aa_intelligence_index', label: 'AA Intelligence v4.3', value: `${focusedModel.raw_metrics.aa_intelligence_index}`, color: 'text-amber-300' },
+                        { key: 'arena_webdev_elo', label: 'Arena WebDev Elo', value: `${focusedModel.raw_metrics.arena_webdev_elo}`, color: 'text-sky-300' },
+                        { key: 'output_speed_tps', label: '速度 (TPS)', value: `${focusedModel.raw_metrics.output_speed_tps} tps`, color: 'text-white' },
+                      ] as const
+                    ).map((metric) => (
+                      <div key={metric.key} className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80 flex flex-col justify-between">
+                        <span className="text-[11px] text-slate-400 block">{metric.label}</span>
+                        <span className={`text-sm font-mono font-bold mt-1 flex items-center gap-1.5 ${metric.color}`}>
+                          {metric.value}
+                          {isEstimatedMetric(focusedModel, metric.key) && <EstimatedMarker />}
+                        </span>
+                      </div>
+                    ))}
                   </div>
 
                   {/* Long Context 単価補足 (該当モデルのみ) */}
                   {focusedModel.raw_metrics.long_context_input_cost_per_m !== undefined && (
                     <div className="text-[11px] bg-indigo-950/30 border border-indigo-800/40 p-2 rounded-lg flex items-center justify-between text-indigo-200">
-                      <span>超長文 (Long Context &gt; 200K) 課金:</span>
+                      <span>超長文 (Long Context &gt; {focusedModel.raw_metrics.long_context_threshold_k ?? 200}K) 課金:</span>
                       <span className="font-mono">
                         In: <strong>${focusedModel.raw_metrics.long_context_input_cost_per_m}</strong> / Out: <strong>${focusedModel.raw_metrics.long_context_output_cost_per_m}</strong> (/1M Tok)
                       </span>
@@ -1558,7 +1800,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       </div>
 
       {/* 3. 著名ベンチマーク生データ詳細比較テーブル */}
-      <div id="radar-table" className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl scroll-mt-20">
+      <div id="radar-table" className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl scroll-mt-20 relative isolate">
         <div className="flex flex-col space-y-3 border-b border-slate-800 pb-4 mb-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -1567,15 +1809,37 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                 <h3 className="text-base font-bold text-white">著名ベンチマーク最新実測データ詳細テーブル</h3>
               </div>
               <p className="text-xs text-slate-400 mt-1">
-                SWE-bench Verified、AIME 2024、LMSYS Arena Elo、TPS、入出力コスト、コンテキスト長の実測値一覧
+                Terminal-Bench 4.0、AA Intelligence Index v4.3、Arena WebDev Elo、TPS、Token単価、Task単価、コンテキスト長の実測値一覧 (<EstimatedMarker inline /> は出典で確認できなかった推測値)
               </p>
             </div>
 
-            <div className="flex items-center space-x-2 text-xs">
-              <span className="text-slate-400">表示件数:</span>
-              <span className="font-mono font-bold text-indigo-300 bg-indigo-950/70 border border-indigo-700/60 px-2 py-0.5 rounded">
-                {sortedModels.length} / {dataset.models.length} モデル
-              </span>
+            <div className="flex items-center space-x-3 text-xs">
+              <div className="flex items-center space-x-2">
+                <span className="text-slate-400">表示件数:</span>
+                <span className="font-mono font-bold text-indigo-300 bg-indigo-950/70 border border-indigo-700/60 px-2 py-0.5 rounded">
+                  {sortedModels.length} / {dataset.models.length} モデル
+                </span>
+              </div>
+
+              {/* 左右スクロールナビゲーションボタン */}
+              <div className="flex items-center space-x-1 border border-slate-700 rounded-lg p-0.5 bg-slate-950" title="テーブルを左右にスクロール">
+                <button
+                  onClick={() => scrollTable('left')}
+                  disabled={!scrollState.canScrollLeft}
+                  aria-label="左にスクロール"
+                  className="p-1 rounded hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed text-slate-300 transition"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => scrollTable('right')}
+                  disabled={!scrollState.canScrollRight}
+                  aria-label="右にスクロール"
+                  className="p-1 rounded hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed text-slate-300 transition"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1646,73 +1910,123 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
             </span>
             <button
               onClick={() => handleSort('overall')}
-              className={`px-2.5 py-1 rounded-md font-medium border ${
+              className={`px-2.5 py-1 rounded-md font-medium border flex items-center space-x-1 ${
                 sortKey === 'overall'
                   ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
                   : 'bg-slate-800/60 border-slate-700 text-slate-400'
               }`}
             >
-              総合スコア
+              <span>総合スコア</span>
+              {sortKey === 'overall' && (
+                <span className="text-[10px] font-mono ml-0.5 px-1 py-0.2 rounded bg-indigo-900/80 text-indigo-200">
+                  {sortAsc ? '低順 ↑' : '高順 ↓'}
+                </span>
+              )}
             </button>
             <button
-              onClick={() => handleSort('swe')}
-              className={`px-2.5 py-1 rounded-md font-medium border ${
-                sortKey === 'swe'
+              onClick={() => handleSort('terminal')}
+              className={`px-2.5 py-1 rounded-md font-medium border flex items-center space-x-1 ${
+                sortKey === 'terminal'
                   ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
                   : 'bg-slate-800/60 border-slate-700 text-slate-400'
               }`}
             >
-              SWE-bench
+              <span>Terminal-Bench 4.0</span>
+              {sortKey === 'terminal' && (
+                <span className="text-[10px] font-mono ml-0.5 px-1 py-0.2 rounded bg-indigo-900/80 text-indigo-200">
+                  {sortAsc ? '低順 ↑' : '高順 ↓'}
+                </span>
+              )}
             </button>
             <button
-              onClick={() => handleSort('aime')}
-              className={`px-2.5 py-1 rounded-md font-medium border ${
-                sortKey === 'aime'
+              onClick={() => handleSort('intelligence')}
+              className={`px-2.5 py-1 rounded-md font-medium border flex items-center space-x-1 ${
+                sortKey === 'intelligence'
                   ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
                   : 'bg-slate-800/60 border-slate-700 text-slate-400'
               }`}
             >
-              AIME 2024
+              <span>AA Intelligence</span>
+              {sortKey === 'intelligence' && (
+                <span className="text-[10px] font-mono ml-0.5 px-1 py-0.2 rounded bg-indigo-900/80 text-indigo-200">
+                  {sortAsc ? '低順 ↑' : '高順 ↓'}
+                </span>
+              )}
             </button>
             <button
               onClick={() => handleSort('arena')}
-              className={`px-2.5 py-1 rounded-md font-medium border ${
+              className={`px-2.5 py-1 rounded-md font-medium border flex items-center space-x-1 ${
                 sortKey === 'arena'
                   ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
                   : 'bg-slate-800/60 border-slate-700 text-slate-400'
               }`}
             >
-              Arena Elo
+              <span>Arena WebDev Elo</span>
+              {sortKey === 'arena' && (
+                <span className="text-[10px] font-mono ml-0.5 px-1 py-0.2 rounded bg-indigo-900/80 text-indigo-200">
+                  {sortAsc ? '低順 ↑' : '高順 ↓'}
+                </span>
+              )}
             </button>
             <button
               onClick={() => handleSort('speed')}
-              className={`px-2.5 py-1 rounded-md font-medium border ${
+              className={`px-2.5 py-1 rounded-md font-medium border flex items-center space-x-1 ${
                 sortKey === 'speed'
                   ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
                   : 'bg-slate-800/60 border-slate-700 text-slate-400'
               }`}
             >
-              出力速度
+              <span>出力速度</span>
+              {sortKey === 'speed' && (
+                <span className="text-[10px] font-mono ml-0.5 px-1 py-0.2 rounded bg-indigo-900/80 text-indigo-200">
+                  {sortAsc ? '遅順 ↑' : '速順 ↓'}
+                </span>
+              )}
             </button>
             <button
               onClick={() => handleSort('cost')}
-              className={`px-2.5 py-1 rounded-md font-medium border ${
+              className={`px-2.5 py-1 rounded-md font-medium border flex items-center space-x-1 ${
                 sortKey === 'cost'
                   ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
                   : 'bg-slate-800/60 border-slate-700 text-slate-400'
               }`}
             >
-              コスト効率
+              <span>Token単価</span>
+              {sortKey === 'cost' && (
+                <span className="text-[10px] font-mono ml-0.5 px-1 py-0.2 rounded bg-indigo-900/80 text-indigo-200">
+                  {sortAsc ? '高い順' : '安い順'}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => handleSort('task_cost')}
+              className={`px-2.5 py-1 rounded-md font-medium border flex items-center space-x-1 ${
+                sortKey === 'task_cost'
+                  ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
+                  : 'bg-slate-800/60 border-slate-700 text-slate-400'
+              }`}
+            >
+              <span>Task単価</span>
+              {sortKey === 'task_cost' && (
+                <span className="text-[10px] font-mono ml-0.5 px-1 py-0.2 rounded bg-indigo-900/80 text-indigo-200">
+                  {sortAsc ? '安い順' : '高い順'}
+                </span>
+              )}
             </button>
             <button
               onClick={() => handleSort('context')}
-              className={`px-2.5 py-1 rounded-md font-medium border ${
+              className={`px-2.5 py-1 rounded-md font-medium border flex items-center space-x-1 ${
                 sortKey === 'context'
                   ? 'bg-indigo-950 border-indigo-600 text-indigo-300'
                   : 'bg-slate-800/60 border-slate-700 text-slate-400'
               }`}
             >
-              Context 窓
+              <span>Context 窓</span>
+              {sortKey === 'context' && (
+                <span className="text-[10px] font-mono ml-0.5 px-1 py-0.2 rounded bg-indigo-900/80 text-indigo-200">
+                  {sortAsc ? '小順 ↑' : '大順 ↓'}
+                </span>
+              )}
             </button>
             <button
               onClick={() => handleSort('usage')}
@@ -1724,16 +2038,25 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
             >
               <Building2 className="w-3 h-3 text-indigo-400" />
               <span>社内利用シェア</span>
+              {sortKey === 'usage' && (
+                <span className="text-[10px] font-mono ml-0.5 px-1 py-0.2 rounded bg-indigo-900/80 text-indigo-200">
+                  {sortAsc ? '低順 ↑' : '高順 ↓'}
+                </span>
+              )}
             </button>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-slate-800 text-slate-400 font-semibold uppercase tracking-wider bg-slate-950/40">
+        <div
+          ref={tableContainerRef}
+          className="overflow-auto max-h-[600px] rounded-lg border border-slate-800 relative scrollbar-thin scrollbar-thumb-slate-700"
+        >
+          <table className="w-full text-left border-collapse text-xs whitespace-nowrap min-w-max">
+            <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider font-semibold shadow-md">
+              <tr className="border-b border-slate-800">
                 <th
-                  className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors"
+                  style={{ width: `${modelColWidth}px`, minWidth: `${modelColWidth}px`, maxWidth: `${modelColWidth}px` }}
+                  className="sticky top-0 left-0 z-30 bg-slate-950 border-b border-slate-800 py-3 px-3.5 border-r border-slate-700/80 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.5)] cursor-pointer select-none hover:text-slate-200 transition-colors group relative"
                   onClick={() => handleSort('model')}
                   title="モデル順ソート (クリックで巡回: デフォルト並び順 → 昇順 → 降順)"
                 >
@@ -1752,104 +2075,184 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                       </span>
                     )}
                   </div>
-                </th>
-                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('overall')}>
-                  <div className="flex items-center space-x-1">
-                    <span>総合 Grade</span>
-                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'overall' ? 'text-indigo-400' : 'text-slate-500'}`} />
-                  </div>
-                </th>
-                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('usage')}>
-                  <div className="flex items-center space-x-1">
-                    <span>社内利用シェア</span>
-                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'usage' ? 'text-indigo-400' : 'text-slate-500'}`} />
-                  </div>
-                </th>
-                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('swe')}>
-                  <div className="flex items-center space-x-1">
-                    <span>SWE-bench Verified</span>
-                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'swe' ? 'text-indigo-400' : 'text-slate-500'}`} />
-                  </div>
-                </th>
-                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('aime')}>
-                  <div className="flex items-center space-x-1">
-                    <span>AIME 2024 / GPQA</span>
-                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'aime' ? 'text-indigo-400' : 'text-slate-500'}`} />
+                  {/* 固定表示幅ドラッグ変更ハンドル */}
+                  <div
+                    role="separator"
+                    aria-orientation="vertical"
+                    aria-label="固定表示幅の変更ハンドル"
+                    aria-valuenow={modelColWidth}
+                    aria-valuemin={MIN_RADAR_MODEL_COL_WIDTH}
+                    aria-valuemax={MAX_RADAR_MODEL_COL_WIDTH}
+                    tabIndex={0}
+                    title={`ドラッグして固定表示幅を変更 (${modelColWidth}px) / ダブルクリックで既定値に戻す`}
+                    className={`absolute top-0 right-0 bottom-0 w-3 translate-x-1.5 cursor-col-resize z-40 flex items-center justify-center select-none group/resizer ${
+                      isResizing ? 'bg-indigo-500/30' : 'hover:bg-indigo-500/20'
+                    }`}
+                    onPointerDown={handleResizeStart}
+                    onDoubleClick={handleResetWidth}
+                    onKeyDown={handleResizeKeyDown}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div
+                      className={`w-0.5 h-4 rounded-full transition-colors ${
+                        isResizing ? 'bg-indigo-400' : 'bg-slate-600 group-hover/resizer:bg-indigo-400'
+                      }`}
+                    />
+                    {isResizing && (
+                      <div className="absolute -top-7 right-0 px-1.5 py-0.5 bg-indigo-600 text-white text-[10px] font-mono rounded shadow pointer-events-none whitespace-nowrap">
+                        {modelColWidth}px
+                      </div>
+                    )}
                   </div>
                 </th>
                 <th
-                  className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors"
-                  onClick={() => handleSort('arena')}
-                  title="Arena Coding Elo 順ソート"
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[100px] group"
+                  onClick={() => handleSort('overall')}
+                  title={`総合Grade順ソート (${sortKey === 'overall' ? (sortAsc ? '昇順: 低スコア順' : '降順: 高スコア順') : 'クリックで高スコア順'})`}
                 >
                   <div className="flex items-center space-x-1">
-                    <span>Arena Coding Elo</span>
-                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'arena' ? 'text-indigo-400' : 'text-slate-500'}`} />
-                  </div>
-                </th>
-                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('speed')}>
-                  <div className="flex items-center space-x-1">
-                    <span>速度 (TPS)</span>
-                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'speed' ? 'text-indigo-400' : 'text-slate-500'}`} />
-                  </div>
-                </th>
-                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('cost')}>
-                  <div className="flex items-center space-x-1">
-                    <span>単価 ($/1M Tok)</span>
-                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'cost' ? 'text-indigo-400' : 'text-slate-500'}`} />
-                  </div>
-                </th>
-                <th className="py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors" onClick={() => handleSort('context')}>
-                  <div className="flex items-center space-x-1">
-                    <span>Context 窓</span>
-                    <ArrowUpDown className={`w-3 h-3 ${sortKey === 'context' ? 'text-indigo-400' : 'text-slate-500'}`} />
+                    <span>総合 Grade</span>
+                    {renderSortIcon('overall')}
                   </div>
                 </th>
                 <th
-                  className="py-3 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors"
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[130px] group"
+                  onClick={() => handleSort('usage')}
+                  title={`社内利用シェア順ソート (${sortKey === 'usage' ? (sortAsc ? '昇順: 低シェア順' : '降順: 高シェア順') : 'クリックで高シェア順'})`}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>社内利用シェア</span>
+                    {renderSortIcon('usage')}
+                  </div>
+                </th>
+                <th
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[140px] group"
+                  onClick={() => handleSort('terminal')}
+                  title={`Terminal-Bench 4.0 順ソート (${sortKey === 'terminal' ? (sortAsc ? '昇順: 低スコア順' : '降順: 高スコア順') : 'クリックで高スコア順'})`}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>Terminal-Bench 4.0</span>
+                    {renderSortIcon('terminal')}
+                  </div>
+                </th>
+                <th
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[140px] group"
+                  onClick={() => handleSort('intelligence')}
+                  title={`AA Intelligence Index 順ソート (${sortKey === 'intelligence' ? (sortAsc ? '昇順: 低スコア順' : '降順: 高スコア順') : 'クリックで高スコア順'})`}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>AA Intelligence Index</span>
+                    {renderSortIcon('intelligence')}
+                  </div>
+                </th>
+                <th
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[130px] group"
+                  onClick={() => handleSort('arena')}
+                  title={`Arena WebDev Elo 順ソート (${sortKey === 'arena' ? (sortAsc ? '昇順: 低Elo順' : '降順: 高Elo順') : 'クリックで高Elo順'})`}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>Arena WebDev Elo</span>
+                    {renderSortIcon('arena')}
+                  </div>
+                </th>
+                <th
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[110px] group"
+                  onClick={() => handleSort('speed')}
+                  title={`出力速度 (TPS) 順ソート (${sortKey === 'speed' ? (sortAsc ? '昇順: 低速順' : '降順: 高速順') : 'クリックで高速順'})`}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>速度 (TPS)</span>
+                    {renderSortIcon('speed')}
+                  </div>
+                </th>
+                <th
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[160px] group"
+                  onClick={() => handleSort('cost')}
+                  title={`Token単価順ソート (入出力トークン価格) (${sortKey === 'cost' ? (sortAsc ? '昇順: 高単価順' : '降順: 低単価/高効率順') : 'クリックで低単価順'})`}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>Token単価 ($/1M)</span>
+                    {renderSortIcon('cost')}
+                    {sortKey === 'cost' && (
+                      <span className="text-[10px] font-mono font-normal px-1 py-0.2 rounded bg-indigo-950/80 text-indigo-300 border border-indigo-700/60">
+                        {sortAsc ? '高い順' : '安い順'}
+                      </span>
+                    )}
+                  </div>
+                </th>
+                <th
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[130px] group"
+                  onClick={() => handleSort('task_cost')}
+                  title={`Task単価順ソート (1タスク解決・試行あたりの実測コスト) (${sortKey === 'task_cost' ? (sortAsc ? '昇順: 安い順' : '降順: 高い順') : 'クリックで安い順'})`}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>Task単価 ($/Task)</span>
+                    {renderSortIcon('task_cost')}
+                    {sortKey === 'task_cost' && (
+                      <span className="text-[10px] font-mono font-normal px-1 py-0.2 rounded bg-indigo-950/80 text-indigo-300 border border-indigo-700/60">
+                        {sortAsc ? '安い順' : '高い順'}
+                      </span>
+                    )}
+                  </div>
+                </th>
+                <th
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[110px] group"
+                  onClick={() => handleSort('context')}
+                  title={`Context窓 順ソート (${sortKey === 'context' ? (sortAsc ? '昇順: 小コンテキスト順' : '降順: 大コンテキスト順') : 'クリックで大コンテキスト順'})`}
+                >
+                  <div className="flex items-center space-x-1">
+                    <span>Context 窓</span>
+                    {renderSortIcon('context')}
+                  </div>
+                </th>
+                <th
+                  className="sticky top-0 z-20 bg-slate-950 border-b border-slate-800 py-3 px-3 text-right cursor-pointer select-none hover:text-slate-200 transition-colors min-w-[100px] group"
                   onClick={() => handleSort('radar')}
-                  title="レーダー表示中モデルでソート (選択中優先 ⇔ 非選択優先)"
+                  title={`レーダー表示中モデルでソート (${sortKey === 'radar' ? (sortAsc ? '非選択優先' : '選択中優先') : 'クリックで選択中優先'})`}
                 >
                   <div className="flex items-center justify-end space-x-1">
                     <span>レーダー表示</span>
-                    <ArrowUpDown
-                      className={`w-3 h-3 ${sortKey === 'radar' ? 'text-indigo-400' : 'text-slate-500'}`}
-                    />
+                    {renderSortIcon('radar')}
                   </div>
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-800/60 bg-slate-900/40">
               {sortedModels.map((m) => {
                 const isSelected = selectedModelIds.includes(m.id);
                 const isFocused = focusedModelId === m.id;
                 return (
                   <tr
                     key={m.id}
-                    className={`hover:bg-slate-800/40 transition-colors ${
-                      isFocused ? 'bg-indigo-950/20' : ''
+                    className={`group hover:bg-slate-800/40 transition-colors ${
+                      isFocused ? 'bg-indigo-950/40' : ''
                     }`}
                   >
-                    <td className="py-3 px-3">
+                    <td
+                      style={{ width: `${modelColWidth}px`, minWidth: `${modelColWidth}px`, maxWidth: `${modelColWidth}px` }}
+                      className={`sticky left-0 z-10 py-3 px-3.5 border-r border-slate-700/80 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.5)] transition-colors ${
+                        isFocused ? 'bg-indigo-950' : 'bg-slate-900 group-hover:bg-slate-800/90'
+                      }`}
+                    >
                       <div className="flex items-center space-x-2.5">
                         <span
                           className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                           style={{ backgroundColor: m.color }}
                         />
-                        <div>
+                        <div className="min-w-0 flex-1">
                           <div className="flex items-center space-x-1.5">
-                            <span className="font-bold text-white">{m.name}</span>
+                            <span className="font-bold text-white truncate" title={m.name}>{m.name}</span>
                             {m.is_copilot_native && (
-                              <span className="text-[9px] px-1 py-0.2 rounded bg-indigo-950 text-indigo-300 font-mono">
+                              <span className="text-[9px] px-1 py-0.2 rounded bg-indigo-950 text-indigo-300 font-mono shrink-0">
                                 Copilot
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center space-x-1.5 text-[10px] text-slate-500 mt-0.5">
+                          <div className="flex items-center space-x-1.5 text-[10px] text-slate-500 mt-0.5 truncate">
                             <span>{m.vendor}</span>
                             <span>•</span>
                             {m.extended_capabilities?.tier && (
-                              <span className={`px-1 py-0.2 rounded text-[9px] font-mono ${
+                              <span className={`px-1 py-0.2 rounded text-[9px] font-mono shrink-0 ${
                                 m.extended_capabilities.tier === 'powerful'
                                   ? 'bg-purple-950/80 text-purple-300'
                                   : m.extended_capabilities.tier === 'lightweight'
@@ -1861,14 +2264,14 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                             )}
                             {m.is_estimated && (
                               <span
-                                className="text-[9px] text-orange-300 font-mono"
-                                title="ベンチマーク値は推測値 (要検証)"
+                                className="text-[9px] text-orange-300 font-mono whitespace-nowrap shrink-0"
+                                title="ベンチマーク指標はすべて推測値 (要検証)"
                               >
                                 推測値
                               </span>
                             )}
                             {m.extended_capabilities?.release_status && (
-                              <span className="text-[9px] text-slate-400 font-mono">
+                              <span className="text-[9px] text-slate-400 font-mono shrink-0">
                                 {m.extended_capabilities.release_status.toUpperCase()}
                               </span>
                             )}
@@ -1919,52 +2322,49 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
 
                     <td className="py-3 px-3 font-mono">
                       <div className="flex flex-col min-w-[80px]">
-                        <span className="font-bold text-slate-200 text-xs">
-                          {m.raw_metrics.swe_bench_verified}%
+                        <span className="font-bold text-slate-200 text-xs flex items-center gap-1">
+                          {m.raw_metrics.terminal_bench_4}%
+                          {isEstimatedMetric(m, 'terminal_bench_4') && <EstimatedMarker />}
                         </span>
                         {maxMetrics && (
                           <div className="mt-1 h-[3px] rounded-full bg-slate-800 overflow-hidden">
                             <div
                               className="h-full rounded-full bg-violet-500"
-                              style={{ width: `${(m.raw_metrics.swe_bench_verified / maxMetrics.swe) * 100}%` }}
+                              style={{ width: `${(m.raw_metrics.terminal_bench_4 / maxMetrics.terminal) * 100}%` }}
                             />
                           </div>
                         )}
-                        <span className="text-[10px] text-slate-500 mt-0.5">
-                          HumanEval+: {m.raw_metrics.humaneval_plus}%
-                        </span>
                       </div>
                     </td>
 
                     <td className="py-3 px-3 font-mono">
                       <div className="flex flex-col min-w-[80px]">
-                        <span className="font-bold text-slate-200 text-xs">
-                          AIME: {m.raw_metrics.aime_2024}%
+                        <span className="font-bold text-slate-200 text-xs flex items-center gap-1">
+                          {m.raw_metrics.aa_intelligence_index}
+                          {isEstimatedMetric(m, 'aa_intelligence_index') && <EstimatedMarker />}
                         </span>
                         {maxMetrics && (
                           <div className="mt-1 h-[3px] rounded-full bg-slate-800 overflow-hidden">
                             <div
                               className="h-full rounded-full bg-amber-500"
-                              style={{ width: `${(m.raw_metrics.aime_2024 / maxMetrics.aime) * 100}%` }}
+                              style={{ width: `${(m.raw_metrics.aa_intelligence_index / maxMetrics.intelligence) * 100}%` }}
                             />
                           </div>
                         )}
-                        <span className="text-[10px] text-slate-500 mt-0.5">
-                          GPQA: {m.raw_metrics.gpqa_diamond}%
-                        </span>
                       </div>
                     </td>
 
                     <td className="py-3 px-3 font-mono">
                       <div className="flex flex-col min-w-[72px]">
-                        <span className="font-bold text-indigo-300 text-xs">
-                          {m.raw_metrics.arena_coding_elo}
+                        <span className="font-bold text-indigo-300 text-xs flex items-center gap-1">
+                          {m.raw_metrics.arena_webdev_elo}
+                          {isEstimatedMetric(m, 'arena_webdev_elo') && <EstimatedMarker />}
                         </span>
                         {maxMetrics && (
                           <div className="mt-1 h-[3px] rounded-full bg-slate-800 overflow-hidden">
                             <div
                               className="h-full rounded-full bg-sky-500"
-                              style={{ width: `${(m.raw_metrics.arena_coding_elo / maxMetrics.arena_elo) * 100}%` }}
+                              style={{ width: `${(m.raw_metrics.arena_webdev_elo / maxMetrics.arena_elo) * 100}%` }}
                             />
                           </div>
                         )}
@@ -1975,10 +2375,15 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                       <div className="flex flex-col min-w-[60px]">
                         <div className="flex items-center space-x-1">
                           <Gauge className="w-3 h-3 text-cyan-400" />
-                          <span className="font-bold text-white text-xs">
+                          <span className="font-bold text-white text-xs whitespace-nowrap">
                             {m.raw_metrics.output_speed_tps} tps
                           </span>
                         </div>
+                        {isEstimatedMetric(m, 'output_speed_tps') && (
+                          <span className="mt-0.5 self-start">
+                            <EstimatedMarker />
+                          </span>
+                        )}
                         {maxMetrics && (
                           <div className="mt-1 h-[3px] rounded-full bg-slate-800 overflow-hidden">
                             <div
@@ -2007,6 +2412,31 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                         )}
                         <span className="text-[10px] text-slate-500 mt-0.5">
                           Cache: ${m.raw_metrics.cached_input_cost_per_m ?? (m.raw_metrics.input_cost_per_m * 0.1).toFixed(2)}
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="py-3 px-3 font-mono text-slate-300">
+                      <div className="flex flex-col min-w-[100px]">
+                        <div className="flex items-center space-x-1 text-xs">
+                          <span className="font-bold text-teal-300">
+                            ${m.raw_metrics.task_cost_usd !== undefined ? m.raw_metrics.task_cost_usd.toFixed(2) : '-'}
+                          </span>
+                          <span className="text-[10px] text-slate-500">/task</span>
+                          {isEstimatedMetric(m, 'task_cost_usd') && <EstimatedMarker />}
+                        </div>
+                        {maxMetrics && m.raw_metrics.task_cost_usd !== undefined && (
+                          <div className="mt-1 h-[3px] rounded-full bg-slate-800 overflow-hidden" title="タスクコスト効率 (低いほど安い)">
+                            <div
+                              className="h-full rounded-full bg-teal-400"
+                              style={{
+                                width: `${Math.min(100, Math.max(5, (1 - m.raw_metrics.task_cost_usd / (maxMetrics.max_task_cost || 10)) * 100))}%`,
+                              }}
+                            />
+                          </div>
+                        )}
+                        <span className="text-[10px] text-slate-500 mt-0.5">
+                          実測試行コスト
                         </span>
                       </div>
                     </td>
@@ -2052,6 +2482,51 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
             </tbody>
           </table>
         </div>
+
+        {/* 画面下部追従型 水平スクロールコントローラー (Sticky Bottom Bar) */}
+        {scrollState.scrollWidth > scrollState.clientWidth && (
+          <div className="sticky bottom-0 z-20 -mx-6 -mb-6 mt-3 px-4 py-2 bg-slate-950/95 backdrop-blur-md border-t border-slate-800 rounded-b-2xl flex items-center justify-between gap-3 text-xs text-slate-300 shadow-[0_-4px_12px_rgba(0,0,0,0.5)]">
+            <div className="flex items-center space-x-2 shrink-0">
+              <span className="text-[11px] font-semibold text-slate-400">横スクロール</span>
+              <span className="text-[10px] text-indigo-400 font-mono font-bold">
+                {Math.round(scrollState.progress)}%
+              </span>
+            </div>
+
+            <div className="flex-1 max-w-md mx-2 flex items-center">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={scrollState.progress}
+                onChange={handleSliderChange}
+                aria-label="水平スクロール位置"
+                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:bg-slate-700 transition"
+              />
+            </div>
+
+            <div className="flex items-center space-x-1 shrink-0">
+              <button
+                onClick={() => scrollTable('left')}
+                disabled={!scrollState.canScrollLeft}
+                aria-label="下部バー左スクロール"
+                title="左にスクロール (280px)"
+                className="p-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-slate-200 transition border border-slate-700"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => scrollTable('right')}
+                disabled={!scrollState.canScrollRight}
+                aria-label="下部バー右スクロール"
+                title="右にスクロール (280px)"
+                className="p-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-slate-200 transition border border-slate-700"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 4. ベンチマークデータソース & 判定基準情報 (お題設計・性能の見え方・SNSの噂) */}
@@ -2065,6 +2540,13 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
             各ベンチマークの出題意図と実務開発での評価ポイント
           </span>
         </div>
+
+        {dataset.sources_note && (
+          <div className="mb-4 p-3 rounded-lg border border-slate-700/80 bg-slate-950/60 text-[11px] text-slate-400 leading-relaxed" data-testid="sources-note">
+            <span className="font-bold text-slate-300 mr-1">出典の変更履歴:</span>
+            {dataset.sources_note}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 text-xs">
           {dataset.sources.map((src) => (

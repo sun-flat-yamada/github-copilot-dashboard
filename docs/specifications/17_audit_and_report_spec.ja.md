@@ -46,6 +46,7 @@
 - **締め日** = **翌月の第 N 営業日**（N = `close_business_days`、既定は **5**）。営業日は、休業の曜日（既定は日・土）と設定した祝日を除く。当日から締め対象。日付は UTC。
 - **カレンダー設定** `COPILOT_BUSINESS_CALENDAR`（GitHub Actions の変数、JSON、任意）: `{ "close_business_days": 5, "weekend_days": [0, 6], "holidays": ["2026-11-03"] }`。祝日は設定で追加する（祝日表は内蔵しない）。不正な値は既定値で続行し、issue（`config:COPILOT_BUSINESS_CALENDAR`）として記録する。
 - **ジョブ**: パイプラインの実行ごとに、締め日を迎えスナップショットがまだ無い月を確定する（`MonthCloseService.closeDueMonths`）。`npm run month:close` は同じ処理を単独で実行する。保存済みの集計（`processed/monthly` または `processed/reports`）がある月だけを締める。
+- **判定時刻**: 締めは実行時刻で判定し、確定時刻 `closed.at` も実行時刻とする。`PipelineOrchestrator` は実行時刻を注入可能な時計（`clock`、既定は実時計）から取り、テストで締め日の前後を再現できるようにする。実データの実行（`pipeline:run` / `pipeline:reprocess`）は常に実時計を使う。DEMO（`MOCK_MODE`）は DEMO の基準日 `2026-09-10T00:00:00Z` で判定し、結果が実行日に依存しない（SDD-05 §2.1、#305）。
 
 ### 3.2 凍結するもの
 
@@ -215,7 +216,7 @@ sections:
 | データセット | 入力 | 指標（指標カタログの ID。SDD-16 §2, §6） | `group_by` |
 |:--|:--|:--|:--|
 | `monthly` | `processed/monthly/{month}.json` | `total_spend`、`active_rate`、`idle_waste`、`acceptance_rate`、`agent_sessions`、`agent_messages`、`agent_active_users`、`agent_adoption_rate` | `cost_center`、`organization`、`department`、`team` |
-| `reports` | `processed/reports/{month}.json`（取り込んだ利用レポート） | `report_gross_spend`、`report_net_spend`、`report_requests`、`report_active_users`、`report_top_model`、`report_top_sku` | `cost_center`、`organization`、`department`、`model`、`sku` |
+| `reports` | `processed/reports/{month}.json`（取り込んだ利用レポート） | `report_gross_spend`、`report_net_spend`、`report_requests`、`report_active_users`、`report_top_model` | `cost_center`、`organization`、`department`、`model`、`sku` |
 
 - 内訳の列: シート系のグループは `total_seats`、`active_seats`、`idle_seats`、`total_cost_usd`、`net_cost_usd`、`potential_savings_usd`、`active_ratio`、`acceptance_rate`、`total_chats`、`total_requests`。`model` は `total_requests`、`total_spend_usd`、`active_users`、`percentage`。`sku` は `total_quantity`、`total_spend_usd`、`percentage`。対応表はコード（`src/processor/report-engine.ts` の `METRIC_BINDINGS` / `GROUP_SOURCES`）にあり、指標や列の追加はそこへ 1 項目足すだけ。
 - 定義に組織・部署・Cost Center・個人の名前は書かない（フィルターは列と数値だけ）。利用者単位の行（`users`、`user_profiles`、`user_details`）は読まない。

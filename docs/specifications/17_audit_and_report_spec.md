@@ -46,6 +46,7 @@ A monthly number must not change silently after the fact (late API data, a re-ag
 - **Close day** = the **N-th business day of the following month** (N = `close_business_days`, default **5**). Business days exclude the weekend days (default Sunday and Saturday) and the configured holidays. The day itself is due. Dates are UTC.
 - **Calendar setting** `COPILOT_BUSINESS_CALENDAR` (GitHub Actions variable, JSON; optional): `{ "close_business_days": 5, "weekend_days": [0, 6], "holidays": ["2026-11-03"] }`. Holidays are added by configuration (no built-in holiday table). An invalid value falls back to the default and is recorded as an issue (`config:COPILOT_BUSINESS_CALENDAR`).
 - **Job**: every pipeline run closes the months whose close day has come and that have no snapshot yet (`MonthCloseService.closeDueMonths`); `npm run month:close` runs the same job on its own. A month is closed only if it has a stored aggregate (`processed/monthly` and/or `processed/reports`).
+- **Evaluation time**: the close is evaluated at the run time, which is also the confirmed time `closed.at`. `PipelineOrchestrator` takes it from an injectable clock (`clock`, default: the real clock) so tests can reproduce the days before and after a close day; real-data runs (`pipeline:run`, `pipeline:reprocess`) always use the real clock. The DEMO (`MOCK_MODE`) evaluates the close at the DEMO base date `2026-09-10T00:00:00Z` instead, so its result does not depend on the run date (SDD-05 §2.1, #305).
 
 ### 3.2 What is frozen
 
@@ -215,7 +216,7 @@ Two shipped samples: `reports/monthly-cost-summary.yaml` (monthly close, dataset
 | Dataset | Source | Metrics (ids of the metric catalog, SDD-16 §2, §6) | `group_by` |
 |:--|:--|:--|:--|
 | `monthly` | `processed/monthly/{month}.json` | `total_spend`, `active_rate`, `idle_waste`, `acceptance_rate`, `agent_sessions`, `agent_messages`, `agent_active_users`, `agent_adoption_rate` | `cost_center`, `organization`, `department`, `team` |
-| `reports` | `processed/reports/{month}.json` (imported usage report) | `report_gross_spend`, `report_net_spend`, `report_requests`, `report_active_users`, `report_top_model`, `report_top_sku` | `cost_center`, `organization`, `department`, `model`, `sku` |
+| `reports` | `processed/reports/{month}.json` (imported usage report) | `report_gross_spend`, `report_net_spend`, `report_requests`, `report_active_users`, `report_top_model` | `cost_center`, `organization`, `department`, `model`, `sku` |
 
 - Breakdown columns: for the seat-based groups `total_seats`, `active_seats`, `idle_seats`, `total_cost_usd`, `net_cost_usd`, `potential_savings_usd`, `active_ratio`, `acceptance_rate`, `total_chats`, `total_requests`; for `model` `total_requests`, `total_spend_usd`, `active_users`, `percentage`; for `sku` `total_quantity`, `total_spend_usd`, `percentage`. The tables live in code (`METRIC_BINDINGS`, `GROUP_SOURCES` in `src/processor/report-engine.ts`); a new metric or column is one entry there.
 - A definition never names an organization, department, cost center or person (filters are on columns and numbers only). Per-user rows (`users`, `user_profiles`, `user_details`) are never read.

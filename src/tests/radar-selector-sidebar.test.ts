@@ -76,6 +76,10 @@ test('AI Model Radar Selector Sidebar and Abbreviation Tests', async (t) => {
       'o3-mini must map to gpt-o3-mini'
     );
     assert.strictEqual(
+      getModelShortName({ id: 'gemini-4-argon', name: 'Gemini 4 Argon' }),
+      'gemini-4-argon'
+    );
+    assert.strictEqual(
       getModelShortName({ id: 'gemini-3-8-flash', name: 'Gemini 3.8 Flash' }),
       'gemini-3.8-flash'
     );
@@ -245,7 +249,7 @@ test('AI Model Radar Selector Sidebar and Abbreviation Tests', async (t) => {
     assert.ok(sidebarContent.includes("'collapsed'"), 'Must handle collapsed mode');
     assert.ok(sidebarContent.includes('PanelLeftOpen'), 'Must render reopen toggle for collapsed mode');
     assert.ok(sidebarContent.includes('title={tooltipText}'), 'Must render full details tooltip on hover');
-    assert.ok(sidebarContent.includes('sticky top-20'), 'Must be sticky for page scroll tracking');
+    assert.ok(sidebarContent.includes('sticky top-28'), 'Must be sticky for page scroll tracking');
     assert.ok(sidebarContent.includes('onBatchSelectModels'), 'Must support onBatchSelectModels prop');
 
     const viewPath = path.resolve(process.cwd(), 'dashboard/src/components/ModelRadarView.tsx');
@@ -253,7 +257,7 @@ test('AI Model Radar Selector Sidebar and Abbreviation Tests', async (t) => {
 
     assert.ok(viewContent.includes('<ModelSelectorSidebar'), 'Must render ModelSelectorSidebar in ModelRadarView');
     assert.ok(viewContent.includes("localStorage.getItem('copilot_radar_sidebar_mode')"), 'Must persist sidebar mode to localStorage');
-    assert.ok(viewContent.includes('flex flex-col lg:flex-row items-start gap-6 relative w-full'), 'Must use 2-column responsive layout');
+    assert.ok(viewContent.includes('flex flex-row items-start gap-6 relative w-full'), 'Must use 2-column layout without vertical stacking overlap');
     assert.ok(viewContent.includes('onBatchSelectModels={handleBatchSelectModels}'), 'Must pass handleBatchSelectModels to ModelSelectorSidebar');
     assert.ok(viewContent.includes('onClearSelection={handleClearSelection}'), 'Must pass handleClearSelection to ModelSelectorSidebar');
     assert.ok(viewContent.includes('getTopUsageModelIds'), 'Must call getTopUsageModelIds for initial selection');

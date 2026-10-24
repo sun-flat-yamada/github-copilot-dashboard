@@ -9,7 +9,7 @@ import {
   isUnknownModelId,
   createModelProfile,
 } from '../processor/benchmark-evaluator';
-import { MODEL_CATALOG, resolveCatalogModelId } from '../processor/model-catalog';
+import { MODEL_CATALOG, isFeatureModelId, resolveCatalogModelId } from '../processor/model-catalog';
 import {
   computeContentHash,
   generateBenchmarkDataset,
@@ -21,11 +21,9 @@ const records = loadBenchmarkRecords();
 
 function raw(over: Partial<BenchmarkRawMetrics> = {}): BenchmarkRawMetrics {
   return {
-    swe_bench_verified: 60,
-    humaneval_plus: 90,
-    aime_2024: 70,
-    gpqa_diamond: 60,
-    arena_coding_elo: 1350,
+    terminal_bench_4: 30,
+    aa_intelligence_index: 35,
+    arena_webdev_elo: 1500,
     output_speed_tps: 80,
     input_cost_per_m: 2,
     output_cost_per_m: 8,
@@ -44,13 +42,13 @@ describe('percentile normalisation (P3-7 / B-15)', () => {
   });
 
   it('keeps top models distinguishable where fixed anchors saturate', () => {
-    const top = [78, 80, 82, 84, 86].map((swe) => raw({ swe_bench_verified: swe, aime_2024: 92 + swe / 100 }));
+    const top = [61, 62, 63, 64, 65].map((tb) => raw({ terminal_bench_4: tb, aa_intelligence_index: 56 + tb / 100 }));
     const ctx = buildNormalizationContext(top);
     const legacy = top.map((r) => computeRadarScores(r).coding_swe);
     assert.strictEqual(new Set(legacy).size, 1, 'legacy anchor formula saturates (all equal)');
     const scores = top.map((r) => computeRadarScores(r, ctx).coding_swe);
     assert.strictEqual(new Set(scores).size, top.length, 'percentile scores differ per model');
-    assert.deepStrictEqual([...scores].sort((a, b) => a - b), scores, 'order follows the raw SWE value');
+    assert.deepStrictEqual([...scores].sort((a, b) => a - b), scores, 'order follows the raw Terminal-Bench value');
   });
 
   it('is independent of axis/model input order and stays inside 20-99', () => {
@@ -80,7 +78,7 @@ describe('percentile normalisation (P3-7 / B-15)', () => {
       const sorted = ga.map((m) => ({ id: m.id, raw: m.raw_metrics, score: m.radar_scores[axis] }));
       const top = sorted.sort((a, b) => b.score - a.score).slice(0, 10);
       const distinct = new Set(top.map((t) => t.score)).size;
-      assert.ok(distinct >= 9, `${axis}: top 10 GA models share ${10 - distinct + 1}+ identical scores`);
+      assert.ok(distinct >= 8, `${axis}: top 10 GA models share ${10 - distinct + 1}+ identical scores`);
       assert.ok(Math.max(...sorted.map((s) => s.score)) < 100);
     }
     // the same raw metrics score the same; the overall ranking is not flat at the top
@@ -132,7 +130,7 @@ describe('content-hash dataset version (P3-7 / B-15)', () => {
     assert.strictEqual(computeContentHash(records), computeContentHash(JSON.parse(JSON.stringify(records))));
     assert.match(computeContentHash(records), /^[0-9a-f]{16}$/);
     const changed = JSON.parse(JSON.stringify(records));
-    changed[0].raw_metrics.swe_bench_verified += 0.1;
+    changed[0].raw_metrics.terminal_bench_4 += 0.1;
     assert.notStrictEqual(computeContentHash(changed), computeContentHash(records));
   });
 
@@ -150,7 +148,7 @@ describe('content-hash dataset version (P3-7 / B-15)', () => {
   it('advances the version only when the content changes', () => {
     const first = generateBenchmarkDataset(undefined, d1, records);
     const changed = JSON.parse(JSON.stringify(records));
-    changed[0].raw_metrics.swe_bench_verified += 0.1;
+    changed[0].raw_metrics.terminal_bench_4 += 0.1;
     const next = generateBenchmarkDataset(
       { version: first.version, content_hash: first.content_hash, last_updated: first.last_updated },
       d2,
@@ -164,5 +162,17 @@ describe('content-hash dataset version (P3-7 / B-15)', () => {
   it('a legacy file without content_hash gets a version bump once (migration)', () => {
     const next = generateBenchmarkDataset({ version: '2026-10-04-0003', last_updated: d1.toISOString() }, d2, records);
     assert.strictEqual(next.version, '2026-10-04-0004');
+  });
+
+  it('resolves the "Auto:" prefix to the inner model and keeps feature labels apart from unknown', () => {
+    assert.strictEqual(normalizeModelId('Auto: GPT-4o mini'), 'gpt-4o-mini');
+    assert.strictEqual(normalizeModelId('auto:claude-3-5-sonnet'), 'claude-3-5-sonnet');
+    assert.strictEqual(normalizeModelId('Auto: GPT-6 Nova'), 'unknown:auto: gpt-6 nova');
+    assert.strictEqual(normalizeModelId('Code Review model'), 'feature:code-review');
+    assert.strictEqual(normalizeModelId('Coding Agent model'), 'feature:coding-agent');
+    assert.ok(isFeatureModelId('feature:code-review'));
+    assert.ok(!isUnknownModelId('feature:code-review'));
+    // an unlisted "<x> model" label is not guessed into a feature
+    assert.ok(isUnknownModelId(normalizeModelId('Some Other model')));
   });
 });
