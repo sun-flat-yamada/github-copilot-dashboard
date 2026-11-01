@@ -2,7 +2,7 @@
   "schema_version": 1,
   "source": "ECB euro foreign exchange reference rates (monthly averages, converted to USD base)",
   "source_url": "https://data.ecb.europa.eu/data/datasets/EXR",
-  "fetched_at": "2026-10-02T03:15:46.663Z",
+  "fetched_at": "2026-11-01T04:43:28.126Z",
   "base": "USD",
   "rates": {
     "2024-10": {
@@ -124,6 +124,11 @@
       "JPY": 156.380211,
       "EUR": 0.868566,
       "GBP": 0.745338
+    },
+    "2026-10": {
+      "JPY": 157.934141,
+      "EUR": 0.89273,
+      "GBP": 0.752412
     }
   }
 }
