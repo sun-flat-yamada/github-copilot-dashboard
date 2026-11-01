@@ -37,7 +37,7 @@ jobs:
           COPILOT_ORGS: ${{ vars.COPILOT_ORGS }}
 
       - name: Open an Issue when the schema drifted (no duplicates)
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
