@@ -71,31 +71,31 @@ export const RadarDocReferences: React.FC = () => {
           </div>
         </div>
 
-        {/* 引用3: 著名ベンチマーク実測タスクコスト (Task単価) */}
+        {/* 引用3: 著名ベンチマーク実測タスクコスト (Task per Cost / Cost per Task) */}
         <div className="p-4 bg-slate-950/70 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3 hover:border-indigo-500/40 transition-colors">
           <div>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <span className="w-2 h-2 rounded-full bg-teal-400" />
-                <h4 className="font-bold text-white text-sm">著名ベンチマーク実測タスクコスト (Task Cost / Cost per Task)</h4>
+                <h4 className="font-bold text-white text-sm">著名ベンチマーク実測タスクコスト (Task per Cost / Cost per Task)</h4>
               </div>
               <a
-                href="https://www.tbench.ai/leaderboard/terminal-bench/4.0"
+                href="https://artificialanalysis.ai/models"
                 target="_blank"
                 rel="noreferrer"
                 className="p-1.5 rounded-lg bg-slate-800 hover:bg-teal-600 text-teal-400 hover:text-white transition-colors flex items-center space-x-1"
-                title="公式リーダーボードを開く"
+                title="Artificial Analysis Models を開く"
               >
-                <span className="text-[11px] font-semibold">公式実測</span>
+                <span className="text-[11px] font-semibold">AA実測</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
             </div>
             <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">
-              Terminal-Bench 4.0 および Artificial Analysis 等による、エージェントハーネス（Claude Code、Codex等）や思考トークン消費を含む標準実務タスク1試行あたりの平均実測コスト（$/task）です。カタログ上のToken単価（Rate Card）だけでは測れない、実務タスク完遂における総合経済性を評価します。
+              Artificial Analysis (Cost per Task: Intelligence Index タスク1件あたりの加重平均コスト $/task) に基づく実測値です。本レーダーの「コスト効率」軸は、Token per Cost（トークン単価）ではなく <strong>Task per Cost（1 USD あたりに完遂できるタスク数 = 1 / Cost per Task）</strong>を採用し、思考トークン消費やキャッシュ読み書きを含めた実務タスク完遂ベースの経済性を評価します。
             </p>
           </div>
           <div className="pt-2 border-t border-slate-800/80 text-[11px] text-teal-300/80 font-mono truncate">
-            URL: https://www.tbench.ai/leaderboard/terminal-bench/4.0
+            URL: https://artificialanalysis.ai/models
           </div>
         </div>
       </div>

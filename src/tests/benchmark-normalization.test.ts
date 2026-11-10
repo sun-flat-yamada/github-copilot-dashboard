@@ -63,7 +63,18 @@ describe('percentile normalisation (P3-7 / B-15)', () => {
     }
   });
 
-  it('rewards cheaper models on cost efficiency and larger context on architecture', () => {
+  it('rewards higher Task per Cost (lower task_cost_usd) on cost efficiency, with token-price fallback when task_cost_usd is absent', () => {
+    // Task per Cost takes precedence over token prices (e.g. a low token-price model that burns many reasoning tokens per task)
+    const highTaskPerCost = raw({ input_cost_per_m: 10, output_cost_per_m: 40, task_cost_usd: 1.27 });
+    const lowTaskPerCost = raw({ input_cost_per_m: 0.75, output_cost_per_m: 3.75, task_cost_usd: 7.77 });
+    const taskCtx = buildNormalizationContext([highTaskPerCost, lowTaskPerCost]);
+    assert.ok(
+      computeRadarScores(highTaskPerCost, taskCtx).cost_efficiency >
+        computeRadarScores(lowTaskPerCost, taskCtx).cost_efficiency
+    );
+    assert.ok(computeRadarScores(highTaskPerCost).cost_efficiency > computeRadarScores(lowTaskPerCost).cost_efficiency);
+
+    // Fallback when task_cost_usd is undefined
     const ctx = buildNormalizationContext([raw({ input_cost_per_m: 1, output_cost_per_m: 2 }), raw({ input_cost_per_m: 10, output_cost_per_m: 40 })]);
     const cheap = computeRadarScores(raw({ input_cost_per_m: 1, output_cost_per_m: 2 }), ctx);
     const pricey = computeRadarScores(raw({ input_cost_per_m: 10, output_cost_per_m: 40 }), ctx);
@@ -72,7 +83,7 @@ describe('percentile normalisation (P3-7 / B-15)', () => {
 
   it('the shipped dataset no longer ties the top GA models on coding / reasoning / Elo', () => {
     const dataset = generateBenchmarkDataset(undefined, new Date('2026-10-04T00:00:00Z'), records);
-    assert.strictEqual(dataset.normalization_method, 'percentile-rank-v1');
+    assert.strictEqual(dataset.normalization_method, 'percentile-rank-v2');
     const ga = dataset.models.filter((m) => m.release_status === 'GA');
     for (const axis of ['coding_swe', 'reasoning_logic', 'arena_elo'] as const) {
       const sorted = ga.map((m) => ({ id: m.id, raw: m.raw_metrics, score: m.radar_scores[axis] }));

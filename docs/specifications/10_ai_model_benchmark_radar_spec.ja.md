@@ -192,9 +192,9 @@ flowchart TD
   - テーブルコンテナは `max-h-[600px] overflow-auto` とし、全ヘッダーセル（`th`）に `sticky top-0 bg-slate-950` を適用することで、行スクロール時もヘッダーが常時固定表示される。
 - **データ列構成 & 単価の分離 (Token単価とTask単価)**:
   - **Token単価 ($/1M)**: APIカタログ料金（Input / Output / Cache）に基づく 100 万トークンあたりの入出力単価およびコスト効率インジケーター。
-  - **Task単価 ($/Task)**: Terminal-Bench 4.0 および Artificial Analysis 等による、エージェントハーネスや思考トークン消費を含む標準実務タスク 1 試行あたりの平均実測コスト（USD）。ワンクリックで安い順（昇順）・高い順（降順）の双方向ソートに対応。
+  - **Task単価 ($/Task)**: Artificial Analysis (`https://artificialanalysis.ai/models`) の Cost per Task（思考トークン・キャッシュ読み書きを含む Intelligence Index タスク 1 件あたりの加重平均実測コスト USD）。レーダーの `cost_efficiency` 軸は Token per Cost ではなく **Task per Cost（`1 / task_cost_usd`）** で評価する。ワンクリックで安い順（昇順）・高い順（降順）の双方向ソートに対応。
   - **動的ソートアイコン & ソート状態バッジ**: テーブルヘッダーの各列にアクティブソート方向を示す `ArrowUp` (昇順) / `ArrowDown` (降順) を動的に描画。未選択列には `ArrowUpDown` を透過表示。Task単価およびToken単価列には現在「安い順」「高い順」を示すバッジをヘッダー内および上部ソートバーに常時明示。未定義値を含むデータ列では常に末尾に配置される安全な比較を保証。
-  - **引用リファレンスカードの整備**: 画面下部の公式ドキュメント・仕様リファレンス引用カードに、「GitHub Copilot サポートAIモデル一覧」「モデル別課金・単価表 (Models and Pricing)」に加えて「著名ベンチマーク実測タスクコスト (Task Cost / Cost per Task)」カードを既存同等に配置。
+  - **引用リファレンスカードの整備**: 画面下部の公式ドキュメント・仕様リファレンス引用カードに、「GitHub Copilot サポートAIモデル一覧」「モデル別課金・単価表 (Models and Pricing)」に加えて「著名ベンチマーク実測タスクコスト (Task per Cost / Cost per Task)」カードを既存同等に配置。
 
 ---
 
@@ -206,25 +206,25 @@ flowchart TD
 | `reasoning_logic` | Reasoning & Logic (論理推論力) | 25% | Artificial Analysis Intelligence Index v4.3 (`aa_intelligence_index`, 100%) | 第三者が同一条件で実行した推論・知識・コーディング評価の統合指数による総合推論力。 |
 | `arena_elo` | Community & Elo (総合・指示追従) | 15% | Arena Code Arena \| WebDev Elo (`arena_webdev_elo`) | 生成された Web アプリに対する実世界ユーザーのブラインド投票レーティング。データセット内のパーセンタイル順位。 |
 | `speed_latency` | Speed & Latency (応答即時性) | 10% | Tokens / sec (TPS), TTFT | 出力トークン生成速度。データセット内のパーセンタイル順位。 |
-| `cost_efficiency` | Cost Efficiency (費用対効果) | 10% | Pricing per 1M tokens (Input/Output) | 入力 40%・出力 60% の合算単価を逆順位で評価。安価なモデルほど高得点。 |
+| `cost_efficiency` | Cost Efficiency (費用対効果) | 10% | Task per Cost (`1 / task_cost_usd`, Artificial Analysis Cost per Task) | **Token per Cost（トークン単価）ではなく Task per Cost（1 USD あたりに完遂できるタスク数）** をパーセンタイル順位（`-task_cost_usd`）で評価。1タスクあたりの実費が安いモデルほど高得点。 |
 | `architecture_design` | Architecture & Context (設計・長文把握) | 15% | Context Window (128K〜2M) (45%), Terminal-Bench 4.0 (55%) | 大規模リポジトリの一括把握、長い手順のタスク遂行・リファクタリング適性。 |
 
 ---
 
 ### 3.1 正規化: パーセンタイル順位 (P3-7 / B-15)
 - **理由**: 従来の固定アンカー（SWE-bench 75 / AIME 90 / Elo 1460）を現行モデルが超え、43 モデル中 11 / 12 / 7 が 99 で頭打ちになり、上位 GA モデル 10 件が coding で同点だった。固定アンカーは、全体がアンカーを超えるたびに飽和する。
-- **方式（`percentile-rank-v1`）**: 各構成要素のスコアは、データセット内の全モデルの中でその生値が占めるパーセンタイル順位 `(below + 0.5 * equal) / n`（同値は中央順位）を 20〜99 に写し、小数 1 桁で保持する。軸スコアは上表の重みで構成要素を合成する（coding = Terminal-Bench 4.0、reasoning = AA Intelligence Index、Elo = Arena WebDev Elo、architecture = 0.45 コンテキスト + 0.55 Terminal-Bench 4.0）。総合スコアは 6 軸の加重平均（小数 1 桁）で、上位モデルを区別できる。
+- **方式（`percentile-rank-v2`）**: 各構成要素のスコアは、データセット内の全モデルの中でその生値が占めるパーセンタイル順位 `(below + 0.5 * equal) / n`（同値は中央順位）を 20〜99 に写し、小数 1 桁で保持する。軸スコアは上表の重みで構成要素を合成する（coding = Terminal-Bench 4.0、reasoning = AA Intelligence Index、Elo = Arena WebDev Elo、cost efficiency = Task per Cost `-task_cost_usd`、architecture = 0.45 コンテキスト + 0.55 Terminal-Bench 4.0）。総合スコアは 6 軸の加重平均（小数 1 桁）で、上位モデルを区別できる。
 - **相対評価であること**: スコアは現在のデータセット内の位置を表し、絶対的な能力ではない。モデルを追加すると動く。**スコアの隣に生値を常に表示する**（ツールチップ、ベンチマーク表）。
 - コンテキスト無し（単一モデル）の `computeRadarScores(raw)` は、後方互換のためアンカー式を使う。2026-10 以降のアンカーは Terminal-Bench 4.0 0% → 20 / 60% → 99、AA Intelligence Index 15 → 20 / 55 → 99、Arena WebDev Elo 1250 → 20 / 1800 → 99（architecture: コンテキスト点 × 0.45 + min(1, Terminal-Bench / 60) × 55）。定性評価（グレード・タグ・強み/弱み）は絶対しきい値のままで、アンカー式のスコアで判定する。
 - テスト: `src/tests/benchmark-normalization.test.ts`（上位モデルが同点にならない、順位の境界、入力順序への非依存）。
 
-### 3.1.1 ベンチマーク出典と raw metric (2026-10、Issue #321)
+### 3.1.1 ベンチマーク出典と raw metric (2026-10、Issue #321 / 2026-11、Issue #411)
 | raw metric | 出典 | 値の時点 | ルール |
 | :--- | :--- | :--- | :--- |
 | `terminal_bench_4` (%) | Terminal-Bench 4.0、https://www.tbench.ai/leaderboard/terminal-bench/4.0 | 2026-10-12 | tbench.ai はクライアント描画のため、公式リーダーボードの BenchLM スナップショット (https://benchlm.ai/benchmarks/terminal-bench-4) から読み取る |
 | `aa_intelligence_index` (ポイント) | Artificial Analysis Intelligence Index v4.3、https://artificialanalysis.ai/leaderboards/models (モデル別 `https://artificialanalysis.ai/models/<slug>`) | 2026-10-13 | AA が "Estimated" と表示する値、および非 reasoning 変種しかないモデルは確認済みとして扱わない |
 | `arena_webdev_elo` (Elo) | Arena (旧 LMArena / LMSYS) Code Arena \| WebDev、https://arena.ai/leaderboard/webdev | 2026-10-08 | - |
-| `task_cost_usd` ($/task) | Terminal-Bench 4.0 Mean Rollout Cost & Artificial Analysis Task Cost | 2026-10-12 | 実務タスク1試行あたりの実測平均コスト（USD）。エージェントハーネスや思考トークン消費を含む。確認済み実測値（20モデル）および同等Tier推測値（26モデル）で構成され、推測値には `<EstimatedMarker />` を付与 |
+| `task_cost_usd` ($/task) | Artificial Analysis Cost per Task (https://artificialanalysis.ai/models、モデル別 `https://artificialanalysis.ai/models/<slug>` の `intelligenceIndexCostPerTask.cost.total`) | 2026-11-10 | Intelligence Index タスク1件あたりの加重平均コスト（USD、思考トークン・キャッシュ読み書き込み）。`cost_efficiency` 軸に **Task per Cost（`1 / task_cost_usd`、Token per Cost ではない）** として供給。見出し変種（見出しに値が無く上位の Xhigh/Max 変種に値がある場合はそれを採用、下位変種しかない Kimi K3 Low は未確認扱い）の 14 モデルが確認済み、残り 32 モデルが分位写像による推測値（記録: `.devs/changes/2026-11-10_RadarTaskPerCost/aa-cost-per-task-2026-11.json`） |
 | `output_speed_tps`、Token単価、コンテキスト | Artificial Analysis (速度)、GitHub Copilot 公式価格 | 変更なし | - |
 
 - **変種**: 各モデルで掲載されている最上位の reasoning / harness 変種の値を採用する。
@@ -237,10 +237,10 @@ flowchart TD
 2. その順位を、新指標の確認済み値を昇順に並べた分布へ、分位点の線形補間（`p × (k − 1)`）で写す。
 3. 丸め: Terminal-Bench は小数 1 桁、AA Intelligence Index と Arena Elo は整数。
 
-一回限りのスクリプトはリポジトリ外で実行し、数値だけを `benchmark-records.json` に書き込む（モデルごとの順位と結果は `.devs/changes/2026-10-13_RadarBenchmarkSourcesRefresh/estimated-values-2026-10.json` に保存）。全 46 モデル中、Terminal-Bench 26 / 46、AA Intelligence Index 17 / 46、Arena WebDev Elo 13 / 46、Task単価 26 / 46 件が推測値として `estimated_metrics` に記録されている。
+一回限りのスクリプトはリポジトリ外で実行し、数値だけを `benchmark-records.json` に書き込む（モデルごとの順位と結果は `.devs/changes/2026-10-13_RadarBenchmarkSourcesRefresh/estimated-values-2026-10.json` および `.devs/changes/2026-11-10_RadarTaskPerCost/aa-cost-per-task-2026-11.json` に保存）。全 46 モデル中、Terminal-Bench 26 / 46、AA Intelligence Index 17 / 46、Arena WebDev Elo 13 / 46、Task単価 32 / 46 件が推測値として `estimated_metrics` に記録されている。
 
 - **モデル単位のフラグ**: `is_estimated` は「ベンチマーク指標（`BENCHMARK_SCORE_METRICS`: `terminal_bench_4`, `aa_intelligence_index`, `arena_webdev_elo`）がすべて推測値」として導出する。該当モデルはモデル名横の「推測値」バッジも表示する。旧形式の `is_estimated: true` だけを持つレコードは、ベンチマーク 3 指標すべてが推測値として扱う。
-- `output_speed_tps`（GPT-6.1 Sol, Claude Sonnet 5.5）や `task_cost_usd`（未掲載26モデル）も `estimated_metrics` に記録され、UI上で個別の推測値マーカーが付与される。
+- `output_speed_tps`（GPT-6.1 Sol, Claude Sonnet 5.5）や `task_cost_usd`（未掲載32モデル）も `estimated_metrics` に記録され、UI上で個別の推測値マーカーが付与される。
 - 出典にモデルが掲載されたら、推測値を確認済みの値に置き換えて `estimated_metrics` から外す。
 
 ### 3.2 モデルカタログ: 別名の完全一致 (P3-7 / A-13)
