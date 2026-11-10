@@ -1,0 +1,511 @@
+{
+  "fetched_at": "2026-11-10",
+  "source": "https://artificialanalysis.ai/models",
+  "metric": "Cost per Task (weighted average USD per Intelligence Index task)",
+  "verified_count": 14,
+  "sorted_verified": [
+    0.152,
+    0.331,
+    1.272,
+    2.466,
+    3.735,
+    4.679,
+    6.245,
+    7.766,
+    7.772,
+    9.947,
+    10.021,
+    10.036,
+    11.821,
+    12.994
+  ],
+  "models": [
+    {
+      "id": "gpt-6-astra",
+      "legacy": 6.8,
+      "task_cost_usd": 6.25,
+      "aa_raw": 6.245,
+      "aa_variant": "GPT-6 Astra (Max)",
+      "estimated": false,
+      "aa_url": "https://artificialanalysis.ai/models/gpt-6-astra",
+      "aa_variants": [
+        "GPT-6 Astra (Max)=6.245",
+        "GPT-6 Astra (Xhigh)=3.659",
+        "GPT-6 Astra (High)=3.239",
+        "GPT-6 Astra (Medium)=2.732",
+        "GPT-6 Astra (Low)=1.424"
+      ]
+    },
+    {
+      "id": "gpt-6-sol",
+      "legacy": 1.85,
+      "task_cost_usd": 2.47,
+      "aa_raw": 2.466,
+      "aa_variant": "GPT-6 Sol (Max)",
+      "estimated": false,
+      "aa_url": "https://artificialanalysis.ai/models/gpt-6-sol",
+      "aa_variants": [
+        "GPT-6 Sol (Max)=2.466"
+      ]
+    },
+    {
+      "id": "gpt-6-1-sol",
+      "legacy": 1.95,
+      "task_cost_usd": 1.27,
+      "aa_raw": 1.272,
+      "aa_variant": "GPT-6.1 Sol (Max)",
+      "estimated": false,
+      "aa_url": "https://artificialanalysis.ai/models/gpt-6-1-sol",
+      "aa_variants": [
+        "GPT-6.1 Sol (Max)=1.272",
+        "GPT-6.1 Sol (Xhigh)=0.764",
+        "GPT-6.1 Sol (High)=0.591",
+        "GPT-6.1 Sol (Medium)=0.359",
+        "GPT-6.1 Sol (Low)=0.161"
+      ]
+    },
+    {
+      "id": "gpt-6-luna",
+      "legacy": 0.12,
+      "task_cost_usd": 0.15,
+      "aa_raw": 0.152,
+      "aa_variant": "GPT-6 Luna (Max)",
+      "estimated": false,
+      "aa_url": "https://artificialanalysis.ai/models/gpt-6-luna",
+      "aa_variants": [
+        "GPT-6 Luna (Max)=0.152",
+        "GPT-6 Luna (Xhigh)=0.104",
+        "GPT-6 Luna (High)=0.073",
+        "GPT-6 Luna (Medium)=0.042",
+        "GPT-6 Luna (Low)=0.005",
+        "GPT-6 Luna (Non-reasoning)=0.071"
+      ]
+    },
+    {
+      "id": "gpt-5-6-sol",
+      "legacy": 2.1,
+      "legacy_rank": 0.6522,
+      "task_cost_usd": 8.81,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/gpt-5-6-sol",
+      "aa_variants": []
+    },
+    {
+      "id": "gpt-5-6-terra",
+      "legacy": 0.85,
+      "task_cost_usd": 3.74,
+      "aa_raw": 3.735,
+      "aa_variant": "GPT-5.6 Terra (Max)",
+      "estimated": false,
+      "aa_url": "https://artificialanalysis.ai/models/gpt-5-6-terra",
+      "aa_variants": [
+        "GPT-5.6 Terra (Max)=3.735"
+      ]
+    },
+    {
+      "id": "gpt-5-6-luna",
+      "legacy": 0.15,
+      "task_cost_usd": 0.33,
+      "aa_raw": 0.331,
+      "aa_variant": "GPT-5.6 Luna (Max)",
+      "estimated": false,
+      "aa_url": "https://artificialanalysis.ai/models/gpt-5-6-luna",
+      "aa_variants": [
+        "GPT-5.6 Luna (Max)=0.331"
+      ]
+    },
+    {
+      "id": "gpt-5-5",
+      "legacy": 4.2,
+      "legacy_rank": 0.7717,
+      "task_cost_usd": 10.02,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/gpt-5-5",
+      "aa_variants": []
+    },
+    {
+      "id": "gpt-5-4",
+      "legacy": 1.6,
+      "legacy_rank": 0.4565,
+      "task_cost_usd": 6.14,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/gpt-5-4",
+      "aa_variants": []
+    },
+    {
+      "id": "gpt-5-4-mini",
+      "legacy": 0.35,
+      "legacy_rank": 0.2174,
+      "task_cost_usd": 2.26,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/gpt-5-4-mini",
+      "aa_variants": []
+    },
+    {
+      "id": "gpt-5-4-nano",
+      "legacy": 0.1,
+      "legacy_rank": 0.0109,
+      "task_cost_usd": 0.18,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/gpt-5-4-nano",
+      "aa_variants": []
+    },
+    {
+      "id": "gpt-5-3-codex",
+      "legacy": 1.8,
+      "legacy_rank": 0.5326,
+      "task_cost_usd": 7.65,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/gpt-5-3-codex",
+      "aa_variants": []
+    },
+    {
+      "id": "gpt-5-mini",
+      "legacy": 0.3,
+      "legacy_rank": 0.163,
+      "task_cost_usd": 1.41,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/gpt-5-mini",
+      "aa_variants": []
+    },
+    {
+      "id": "claude-sonnet-5",
+      "legacy": 1.25,
+      "legacy_rank": 0.4022,
+      "task_cost_usd": 5.04,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/claude-sonnet-5",
+      "aa_variants": []
+    },
+    {
+      "id": "claude-sonnet-5-5",
+      "legacy": 2.4,
+      "task_cost_usd": 10.02,
+      "aa_raw": 10.021,
+      "aa_variant": "Claude Sonnet 5.5 (Max, Default Fallback)",
+      "estimated": false,
+      "aa_url": "https://artificialanalysis.ai/models/claude-sonnet-5-5",
+      "aa_variants": [
+        "Claude Sonnet 5.5 (Max, Default Fallback)=10.021",
+        "Claude Sonnet 5.5 (Xhigh, Default Fallback)=4.092",
+        "Claude Sonnet 5.5 (High, Default Fallback)=1.636",
+        "Claude Sonnet 5.5 (Medium, Default Fallback)=0.781",
+        "Claude Sonnet 5.5 (Low, Default Fallback)=0.511"
+      ]
+    },
+    {
+      "id": "claude-opus-5-5",
+      "legacy": 5.8,
+      "task_cost_usd": 10.04,
+      "aa_raw": 10.036,
+      "aa_variant": "Claude Opus 5.5 (Max, Default Fallback)",
+      "estimated": false,
+      "aa_url": "https://artificialanalysis.ai/models/claude-opus-5-5",
+      "aa_variants": [
+        "Claude Opus 5.5 (Max, Default Fallback)=10.036",
+        "Claude Opus 5.5 (Xhigh, Default Fallback)=6.047",
+        "Claude Opus 5.5 (High, Default Fallback)=3.465",
+        "Claude Opus 5.5 (Medium, Default Fallback)=2.451",
+        "Claude Opus 5.5 (Low, Default Fallback)=0.976"
+      ]
+    },
+    {
+      "id": "claude-opus-5",
+      "legacy": 6.2,
+      "task_cost_usd": 11.82,
+      "aa_raw": 11.821,
+      "aa_variant": "Claude Opus 5 (Max)",
+      "estimated": false,
+      "aa_url": "https://artificialanalysis.ai/models/claude-opus-5",
+      "aa_variants": [
+        "Claude Opus 5 (Max)=11.821"
+      ]
+    },
+    {
+      "id": "claude-fable-5-1",
+      "legacy": 4.8,
+      "task_cost_usd": 12.99,
+      "aa_raw": 12.994,
+      "aa_variant": "Claude Fable 5.1 (Max, Default Fallback)",
+      "estimated": false,
+      "aa_url": "https://artificialanalysis.ai/models/claude-fable-5-1",
+      "aa_variants": [
+        "Claude Fable 5.1 (Max, Default Fallback)=12.994",
+        "Claude Fable 5.1 (Xhigh, Default Fallback)=10.847",
+        "Claude Fable 5.1 (High, Default Fallback)=7.540",
+        "Claude Fable 5.1 (Medium, Default Fallback)=5.564",
+        "Claude Fable 5.1 (Low, Default Fallback)=4.471"
+      ]
+    },
+    {
+      "id": "claude-fable-5",
+      "legacy": 4.5,
+      "legacy_rank": 0.7935,
+      "task_cost_usd": 10.03,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/claude-fable-5",
+      "aa_variants": []
+    },
+    {
+      "id": "claude-opus-4-8",
+      "legacy": 6.5,
+      "legacy_rank": 0.8804,
+      "task_cost_usd": 10.83,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/claude-opus-4-8",
+      "aa_variants": []
+    },
+    {
+      "id": "claude-opus-4-8-fast",
+      "legacy": 7.2,
+      "legacy_rank": 0.9674,
+      "task_cost_usd": 12.5,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/claude-opus-4-8-fast",
+      "aa_variants": []
+    },
+    {
+      "id": "claude-opus-4-7",
+      "legacy": 6.8,
+      "legacy_rank": 0.913,
+      "task_cost_usd": 11.59,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/claude-opus-4-7",
+      "aa_variants": []
+    },
+    {
+      "id": "claude-opus-4-6",
+      "legacy": 7,
+      "legacy_rank": 0.9457,
+      "task_cost_usd": 12.17,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/claude-opus-4-6",
+      "aa_variants": []
+    },
+    {
+      "id": "claude-sonnet-4-6",
+      "legacy": 1.8,
+      "legacy_rank": 0.5326,
+      "task_cost_usd": 7.65,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/claude-sonnet-4-6",
+      "aa_variants": []
+    },
+    {
+      "id": "claude-sonnet-4",
+      "legacy": 1.9,
+      "legacy_rank": 0.5978,
+      "task_cost_usd": 7.77,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/claude-sonnet-4",
+      "aa_variants": []
+    },
+    {
+      "id": "claude-haiku-4-5",
+      "legacy": 0.25,
+      "legacy_rank": 0.1196,
+      "task_cost_usd": 0.85,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/claude-haiku-4-5",
+      "aa_variants": []
+    },
+    {
+      "id": "gemini-4-argon",
+      "legacy": 1.65,
+      "task_cost_usd": 9.95,
+      "aa_raw": 9.947,
+      "aa_variant": "Gemini 4 Argon (High)",
+      "estimated": false,
+      "aa_url": "https://artificialanalysis.ai/models/gemini-4-argon",
+      "aa_variants": [
+        "Gemini 4 Argon (High)=9.947"
+      ]
+    },
+    {
+      "id": "gemini-3-8-flash",
+      "legacy": 0.38,
+      "task_cost_usd": 7.77,
+      "aa_raw": 7.766,
+      "aa_variant": "Gemini 3.8 Flash (High)",
+      "estimated": false,
+      "aa_url": "https://artificialanalysis.ai/models/gemini-3-8-flash",
+      "aa_variants": [
+        "Gemini 3.8 Flash (High)=7.766",
+        "Gemini 3.8 Flash (Medium)=6.259"
+      ]
+    },
+    {
+      "id": "gemini-3-7-flash",
+      "legacy": 0.32,
+      "legacy_rank": 0.1848,
+      "task_cost_usd": 1.75,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/gemini-3-7-flash",
+      "aa_variants": []
+    },
+    {
+      "id": "gemini-3-6-flash",
+      "legacy": 0.28,
+      "legacy_rank": 0.1413,
+      "task_cost_usd": 1.12,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/gemini-3-6-flash",
+      "aa_variants": []
+    },
+    {
+      "id": "gemini-3-5-flash",
+      "legacy": 0.45,
+      "legacy_rank": 0.2935,
+      "task_cost_usd": 3.5,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/gemini-3-5-flash",
+      "aa_variants": []
+    },
+    {
+      "id": "mai-code-1-1-flash",
+      "legacy": 0.2,
+      "legacy_rank": 0.0761,
+      "task_cost_usd": 0.33,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/mai-code-1-1-flash",
+      "aa_variants": []
+    },
+    {
+      "id": "grok-4-7",
+      "legacy": 1.6,
+      "task_cost_usd": 7.77,
+      "aa_raw": 7.772,
+      "aa_variant": "Grok 4.7 (Xhigh)",
+      "estimated": false,
+      "aa_url": "https://artificialanalysis.ai/models/grok-4-7",
+      "aa_variants": [
+        "Grok 4.7 (Xhigh)=7.772",
+        "Grok 4.7 (High)=6.184",
+        "Grok 4.7 (Low)=2.922"
+      ]
+    },
+    {
+      "id": "grok-4-6",
+      "legacy": 1.4,
+      "task_cost_usd": 4.68,
+      "aa_raw": 4.679,
+      "aa_variant": "Grok 4.6 (Xhigh)",
+      "estimated": false,
+      "aa_url": "https://artificialanalysis.ai/models/grok-4-6",
+      "aa_variants": [
+        "Grok 4.6 (Xhigh)=4.679"
+      ]
+    },
+    {
+      "id": "grok-4-5",
+      "legacy": 1.1,
+      "legacy_rank": 0.3804,
+      "task_cost_usd": 4.63,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/grok-4-5",
+      "aa_variants": []
+    },
+    {
+      "id": "kimi-k3",
+      "legacy": 1.8,
+      "legacy_rank": 0.5326,
+      "task_cost_usd": 7.65,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/kimi-k3",
+      "aa_variants": [
+        "Kimi K3 (Low)=2.369"
+      ]
+    },
+    {
+      "id": "kimi-k2-7-code",
+      "legacy": 0.4,
+      "legacy_rank": 0.2717,
+      "task_cost_usd": 3.14,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/kimi-k2-7-code",
+      "aa_variants": []
+    },
+    {
+      "id": "claude-3-7-sonnet",
+      "legacy": 2.1,
+      "legacy_rank": 0.6522,
+      "task_cost_usd": 8.81,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/claude-3-7-sonnet",
+      "aa_variants": []
+    },
+    {
+      "id": "claude-3-5-sonnet",
+      "legacy": 2.2,
+      "legacy_rank": 0.6848,
+      "task_cost_usd": 9.73,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/claude-3-5-sonnet",
+      "aa_variants": []
+    },
+    {
+      "id": "gpt-4o",
+      "legacy": 2.5,
+      "legacy_rank": 0.7283,
+      "task_cost_usd": 9.98,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/gpt-4o",
+      "aa_variants": []
+    },
+    {
+      "id": "gpt-4o-mini",
+      "legacy": 0.35,
+      "legacy_rank": 0.2174,
+      "task_cost_usd": 2.26,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/gpt-4o-mini",
+      "aa_variants": []
+    },
+    {
+      "id": "o1",
+      "legacy": 8.5,
+      "legacy_rank": 0.9891,
+      "task_cost_usd": 12.83,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/o1",
+      "aa_variants": []
+    },
+    {
+      "id": "o3-mini",
+      "legacy": 0.9,
+      "legacy_rank": 0.3587,
+      "task_cost_usd": 4.36,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/o3-mini",
+      "aa_variants": []
+    },
+    {
+      "id": "gemini-2-0-flash",
+      "legacy": 0.22,
+      "legacy_rank": 0.0978,
+      "task_cost_usd": 0.59,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/gemini-2-0-flash",
+      "aa_variants": []
+    },
+    {
+      "id": "gemini-2-5-pro",
+      "legacy": 2.8,
+      "legacy_rank": 0.75,
+      "task_cost_usd": 10,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/gemini-2-5-pro",
+      "aa_variants": []
+    },
+    {
+      "id": "deepseek-r1",
+      "legacy": 0.65,
+      "legacy_rank": 0.3152,
+      "task_cost_usd": 3.83,
+      "estimated": true,
+      "aa_url": "https://artificialanalysis.ai/models/deepseek-r1",
+      "aa_variants": []
+    }
+  ],
+  "method": "Verified: AA headline variant (or a higher-effort Xhigh/Max variant when the headline has no value) from https://artificialanalysis.ai/models/<slug>, field intelligenceIndexCostPerTask.cost.total. Estimated: percentile rank of the previous task_cost_usd among all 46 models, mapped onto the sorted verified values by linear quantile interpolation (p x (k - 1)), rounded to 2 decimals."
+}

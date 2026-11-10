@@ -338,9 +338,9 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
         valA = a.raw_metrics.output_speed_tps;
         valB = b.raw_metrics.output_speed_tps;
       } else if (sortKey === 'cost') {
-        // コストは安い方が上位
-        valA = a.radar_scores.cost_efficiency;
-        valB = b.radar_scores.cost_efficiency;
+        // Token単価は合算単価 (In 40% + Out 60%) が安い方が上位
+        valA = -(a.raw_metrics.input_cost_per_m * 0.4 + a.raw_metrics.output_cost_per_m * 0.6);
+        valB = -(b.raw_metrics.input_cost_per_m * 0.4 + b.raw_metrics.output_cost_per_m * 0.6);
       } else if (sortKey === 'task_cost') {
         const costA = a.raw_metrics.task_cost_usd;
         const costB = b.raw_metrics.task_cost_usd;
@@ -665,9 +665,11 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   };
 
   // 6軸カードから生データ比較テーブルへジャンプ & ソート連動
-  const handleJumpToTable = (targetSortKey: 'terminal' | 'intelligence' | 'arena' | 'speed' | 'cost' | 'context') => {
+  const handleJumpToTable = (
+    targetSortKey: 'terminal' | 'intelligence' | 'arena' | 'speed' | 'cost' | 'task_cost' | 'context'
+  ) => {
     setSortKey(targetSortKey);
-    setSortAsc(false);
+    setSortAsc(targetSortKey === 'task_cost');
     const target = document.getElementById('radar-table');
     if (target) {
       target.scrollIntoView({ behavior: 'smooth' });
@@ -692,7 +694,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
   const AXIS_LINK_CONFIG: Record<
     string,
     {
-      sortKey: 'terminal' | 'intelligence' | 'arena' | 'speed' | 'cost' | 'context';
+      sortKey: 'terminal' | 'intelligence' | 'arena' | 'speed' | 'cost' | 'task_cost' | 'context';
       sourceId: string;
       sourceName: string;
       icon: React.ComponentType<{ className?: string }>;
@@ -733,7 +735,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
       borderHoverClass: 'hover:border-emerald-500/80',
     },
     cost_efficiency: {
-      sortKey: 'cost',
+      sortKey: 'task_cost',
       sourceId: 'artificial-analysis',
       sourceName: 'Artificial Analysis',
       icon: Coins,
@@ -1504,7 +1506,7 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                       )}
                     </div>
 
-                    {/* 実測 Task 単価 */}
+                    {/* 実測 Task 単価 / Task per Cost */}
                     <div className="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80 flex flex-col justify-between">
                       <span className="text-[11px] text-slate-400 block">実測 Task 単価</span>
                       <span className="text-sm font-mono font-bold text-teal-300 mt-1 flex items-center gap-1">
@@ -1512,7 +1514,9 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                         <span className="text-[10px] text-slate-400 font-normal">/task</span>
                         {isEstimatedMetric(focusedModel, 'task_cost_usd') && <EstimatedMarker />}
                       </span>
-                      <span className="text-[9px] text-slate-500 mt-0.5">TB4 / AA実務タスク</span>
+                      <span className="text-[9px] text-slate-500 mt-0.5">
+                        AA Task per Cost ({focusedModel.raw_metrics.task_cost_usd ? (1 / focusedModel.raw_metrics.task_cost_usd).toFixed(2) : '-'} task/$)
+                      </span>
                     </div>
                   </div>
 
@@ -2403,10 +2407,12 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                           <span className="text-indigo-300">Out: ${m.raw_metrics.output_cost_per_m}</span>
                         </div>
                         {maxMetrics && (
-                          <div className="mt-1 h-[3px] rounded-full bg-slate-800 overflow-hidden" title="コスト効率 (高いほど安い)">
+                          <div className="mt-1 h-[3px] rounded-full bg-slate-800 overflow-hidden" title="Token単価参考バー (※レーダーのコスト効率軸は Token per Cost ではなく Task per Cost を採用)">
                             <div
-                              className="h-full rounded-full bg-emerald-500"
-                              style={{ width: `${(m.radar_scores.cost_efficiency / maxMetrics.cost_eff) * 100}%` }}
+                              className="h-full rounded-full bg-emerald-500/60"
+                              style={{
+                                width: `${Math.min(100, Math.max(5, (1 - (m.raw_metrics.input_cost_per_m * 0.4 + m.raw_metrics.output_cost_per_m * 0.6) / 35) * 100))}%`,
+                              }}
                             />
                           </div>
                         )}
@@ -2426,17 +2432,20 @@ export const ModelRadarView: React.FC<ModelRadarViewProps> = ({
                           {isEstimatedMetric(m, 'task_cost_usd') && <EstimatedMarker />}
                         </div>
                         {maxMetrics && m.raw_metrics.task_cost_usd !== undefined && (
-                          <div className="mt-1 h-[3px] rounded-full bg-slate-800 overflow-hidden" title="タスクコスト効率 (低いほど安い)">
+                          <div
+                            className="mt-1 h-[3px] rounded-full bg-slate-800 overflow-hidden"
+                            title="コスト効率: Task per Cost (1 USD あたり完遂タスク数、Token per Cost ではない)"
+                          >
                             <div
                               className="h-full rounded-full bg-teal-400"
                               style={{
-                                width: `${Math.min(100, Math.max(5, (1 - m.raw_metrics.task_cost_usd / (maxMetrics.max_task_cost || 10)) * 100))}%`,
+                                width: `${(m.radar_scores.cost_efficiency / maxMetrics.cost_eff) * 100}%`,
                               }}
                             />
                           </div>
                         )}
                         <span className="text-[10px] text-slate-500 mt-0.5">
-                          実測試行コスト
+                          {m.raw_metrics.task_cost_usd ? `${(1 / m.raw_metrics.task_cost_usd).toFixed(2)} task/$ (AA)` : '実測試行コスト'}
                         </span>
                       </div>
                     </td>

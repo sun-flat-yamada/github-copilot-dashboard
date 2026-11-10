@@ -42,8 +42,9 @@ export const RADAR_AXIS_DEFINITIONS: RadarAxisMeta[] = [
     key: 'cost_efficiency',
     label: 'Cost Efficiency (費用対効果)',
     shortLabel: 'コスト効率',
-    description: '100万トークンあたりの入出力単価およびCopilotリクエスト効率に基づく経済性評価',
-    primaryMetric: 'Price / 1M tokens',
+    description:
+      'Token per Cost（トークン単価）ではなく Task per Cost（1 USD あたりに完遂できるタスク数 = Artificial Analysis Cost per Task の逆数）に基づく実務タスク経済性評価',
+    primaryMetric: 'Task per Cost (AA Cost per Task)',
     weight: 0.10,
   },
   {
@@ -116,15 +117,16 @@ export const DEFAULT_BENCHMARK_SOURCES: BenchmarkSourceMeta[] = [
   {
     id: 'artificial-analysis',
     name: 'Artificial Analysis AI Benchmark',
-    description: '独立系第三者機関による生成速度 (TPS)、初回応答遅延 (TTFT)、価格性能比、および標準タスク実測コスト (Task Cost) の実測データ',
-    url: 'https://artificialanalysis.ai/',
-    last_fetched_at: '2026-09-01T00:00:00Z',
+    description:
+      '独立系第三者機関による生成速度 (TPS)、初回応答遅延 (TTFT)、および標準タスク実測コスト Cost per Task / Task per Cost の実測データ (2026-11-10 取得: https://artificialanalysis.ai/models)',
+    url: 'https://artificialanalysis.ai/models',
+    last_fetched_at: '2026-11-10T00:00:00Z',
     target_problem:
-      '各AIプロバイダーの公式APIエンドポイントを24時間連続でベンチマークし、同一プロンプトに対する1秒あたりの出力トークン数（TPS）、最初の1文字が返ってくるまでの遅延時間（TTFT: Time To First Token）、および入力/出力トークン価格・実務タスク試行コスト（Task Cost）を計測。',
+      '各AIプロバイダーの公式APIエンドポイントを継続ベンチマークし、同一プロンプトに対する1秒あたりの出力トークン数（TPS）、初回応答遅延（TTFT）、および Intelligence Index の全評価タスクを実行した際の1タスクあたり加重平均コスト（Cost per Task、思考トークン・キャッシュ読み書き込み）を計測。',
     performance_view:
-      'いくら知能指数が高くても、1文字出るのに30秒待たされたりストリーミングが遅いモデルはIDEのインライン補完やペアプロで使い物になりません。「開発者の思考フローを止めない即時性（DX）」と「チーム導入時のAPI運用コスト・タスク実費」の現実的バランスがはっきり見えます。',
+      '本レーダーの「コスト効率」軸は、カタログ上の Token per Cost（トークン単価）ではなく Task per Cost（1 USD あたりに完遂できるタスク数 = Cost per Task の逆数）で評価します。トークン単価が安くても思考トークンやリトライで大量消費するモデルは1タスクあたりの実費が高くなるため、実務タスク完遂ベースの経済性と「開発者の思考フローを止めない即時性（TPS）」の両面を把握できます。',
     community_rumor:
-      '※ SNSの噂: 「公式発表の爆速アピールと実測値のギャップを暴いてくれる唯一の良心」「推論モデル（o1等）の思考待ちはベンチマーク数値以上に現場で体感フリーズに感じる」「Flash系モデルの異常な速さは一度慣れると通常モデルに戻れなくなる」という現場のリアルな実感で支持されています。',
+      '※ SNSの噂: 「公式発表の爆速アピールと実測値のギャップを暴いてくれる唯一の良心」「Token単価が安いFlash系でも推論を回すと1タスクあたりのコスト（Cost per Task）が意外と膨らむのが一目でわかる」という現場のリアルな実感で支持されています。',
   },
 ];
 

@@ -31,8 +31,11 @@ function clamp(val: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, val));
 }
 
-/** Normalisation method identifier (part of the dataset content hash). */
-export const NORMALIZATION_METHOD = 'percentile-rank-v1';
+/**
+ * Normalisation method identifier (part of the dataset content hash).
+ * v2: the cost component is Task per Cost (1 / task_cost_usd) instead of the blended token price (Issue #411).
+ */
+export const NORMALIZATION_METHOD = 'percentile-rank-v2';
 
 /** Score range onto which the percentile rank (0..1) is mapped. */
 const SCORE_MIN = 20;
@@ -53,14 +56,32 @@ function blendedCost(raw: BenchmarkRawMetrics): number {
   return raw.input_cost_per_m * 0.4 + raw.output_cost_per_m * 0.6;
 }
 
+/**
+ * Cost per task (USD) used by the cost efficiency axis: Artificial Analysis "Cost per Task" (`task_cost_usd`).
+ * Task per Cost = 1 / cost per task, so ranking by the negated cost per task equals ranking by Task per Cost.
+ * Returns undefined when the record has no positive task cost (callers fall back to the blended token price).
+ */
+export function costPerTask(raw: BenchmarkRawMetrics): number | undefined {
+  const v = raw.task_cost_usd;
+  return typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : undefined;
+}
+
+/** Tasks solved per USD (1 / cost per task), or undefined without a task cost. */
+export function tasksPerCost(raw: BenchmarkRawMetrics): number | undefined {
+  const c = costPerTask(raw);
+  return c === undefined ? undefined : 1 / c;
+}
+
 function componentValues(raw: BenchmarkRawMetrics): Record<ComponentKey, number> {
+  const taskCost = costPerTask(raw);
   return {
     terminal: raw.terminal_bench_4,
     intelligence: raw.aa_intelligence_index,
     elo: raw.arena_webdev_elo,
     speed: raw.output_speed_tps,
-    // cheaper is better: negate so that a higher value is always better
-    cost_inverse: -blendedCost(raw),
+    // Task per Cost = 1 / task_cost_usd: lower task_cost_usd means more tasks per USD.
+    // Falls back to blended token price only when task_cost_usd is absent.
+    cost_inverse: taskCost !== undefined ? -taskCost : -blendedCost(raw),
     context: raw.context_window_k,
   };
 }
@@ -150,25 +171,40 @@ export function computeRadarScores(raw: BenchmarkRawMetrics, context?: Normaliza
   }
   const speedLatency = clamp(Math.round(speedNorm), 20, 99);
 
-  // 5. Cost Efficiency: Inverted price score.
-  // Blended cost = input_cost * 0.4 + output_cost * 0.6
-  const blendedCost = raw.input_cost_per_m * 0.4 + raw.output_cost_per_m * 0.6;
+  // 5. Cost Efficiency: Task per Cost (1 / Artificial Analysis Cost per Task, USD/task).
+  // Falls back to blended token price only when task_cost_usd is not provided.
+  const taskCost = costPerTask(raw);
   let costNorm: number;
-  if (blendedCost <= 0.5) {
-    // Ultra cheap (e.g. Gemini Flash: ~$0.20-0.40) -> 95-99
-    costNorm = 95 + (0.5 - blendedCost) * 8;
-  } else if (blendedCost <= 3.0) {
-    // Affordable (e.g. GPT-4o-mini, o3-mini) -> 82-94
-    costNorm = 82 + ((3.0 - blendedCost) / 2.5) * 12;
-  } else if (blendedCost <= 10.0) {
-    // Standard frontier (e.g. GPT-4o, Claude 3.5 Sonnet) -> 65-81
-    costNorm = 65 + ((10.0 - blendedCost) / 7.0) * 16;
-  } else if (blendedCost <= 25.0) {
-    // Premium reasoning (e.g. o1, Claude 3.7) -> 45-64
-    costNorm = 45 + ((25.0 - blendedCost) / 15.0) * 19;
+  if (taskCost !== undefined) {
+    if (taskCost <= 0.35) {
+      // Ultra high Task per Cost (>= ~2.9 tasks/$; e.g. GPT-6 Luna $0.15, GPT-5.6 Luna $0.33) -> 95-99
+      costNorm = 95 + ((0.35 - taskCost) / 0.35) * 4;
+    } else if (taskCost <= 2.0) {
+      // High Task per Cost (0.5-2.9 tasks/$; e.g. GPT-6.1 Sol $1.27, Haiku $0.74) -> 82-94
+      costNorm = 82 + ((2.0 - taskCost) / 1.65) * 12;
+    } else if (taskCost <= 6.5) {
+      // Standard Task per Cost (0.15-0.5 tasks/$; e.g. GPT-6 Sol $2.47, GPT-6 Astra $6.25) -> 65-81
+      costNorm = 65 + ((6.5 - taskCost) / 4.5) * 16;
+    } else if (taskCost <= 11.0) {
+      // Heavy reasoning task cost (0.09-0.15 tasks/$; e.g. Gemini 4 Argon $9.95, Opus 5.5 $10.04) -> 45-64
+      costNorm = 45 + ((11.0 - taskCost) / 4.5) * 19;
+    } else {
+      // Very high cost per task (< 0.09 tasks/$; e.g. Opus 5 $11.82, Fable 5.1 $12.99) -> 20-44
+      costNorm = Math.max(20, 45 - ((taskCost - 11.0) / 10.0) * 25);
+    }
   } else {
-    // High cost premium -> 20-44
-    costNorm = Math.max(20, 45 - ((blendedCost - 25.0) / 40.0) * 25);
+    const blended = blendedCost(raw);
+    if (blended <= 0.5) {
+      costNorm = 95 + (0.5 - blended) * 8;
+    } else if (blended <= 3.0) {
+      costNorm = 82 + ((3.0 - blended) / 2.5) * 12;
+    } else if (blended <= 10.0) {
+      costNorm = 65 + ((10.0 - blended) / 7.0) * 16;
+    } else if (blended <= 25.0) {
+      costNorm = 45 + ((25.0 - blended) / 15.0) * 19;
+    } else {
+      costNorm = Math.max(20, 45 - ((blended - 25.0) / 40.0) * 25);
+    }
   }
   const costEfficiency = clamp(Math.round(costNorm), 20, 99);
 

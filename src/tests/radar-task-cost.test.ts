@@ -115,8 +115,13 @@ test('AI Model Radar Benchmark Table Task Cost & Citations Contract Tests', asyn
     );
     assert.match(
       content,
-      /https:\/\/www\.tbench\.ai\/leaderboard\/terminal-bench\/4\.0/,
-      'Must contain link to Terminal-Bench leaderboard'
+      /https:\/\/artificialanalysis\.ai\/models/,
+      'Must contain link to Artificial Analysis models page'
+    );
+    assert.match(
+      content,
+      /Token per Cost[\s\S]*?Task per Cost/,
+      'Must explicitly state Task per Cost instead of Token per Cost'
     );
     assert.match(
       content,
@@ -125,19 +130,19 @@ test('AI Model Radar Benchmark Table Task Cost & Citations Contract Tests', asyn
     );
   });
 
-  await t.test('verifies benchmark definitions describe task cost context', () => {
+  await t.test('verifies benchmark definitions describe Task per Cost (not Token per Cost)', () => {
     const defsPath = path.resolve(repoRoot, 'src/processor/benchmark-definitions.ts');
     assert.ok(fs.existsSync(defsPath), 'benchmark-definitions.ts must exist');
     const content = fs.readFileSync(defsPath, 'utf-8');
 
     assert.match(
       content,
-      /Task単価|\$\/task/,
-      'Benchmark definitions must mention Task cost / $/task'
+      /Token per Cost[\s\S]*?Task per Cost/,
+      'Benchmark definitions must explicitly state Task per Cost instead of Token per Cost'
     );
   });
 
-  await t.test('verifies task_cost_usd distinction between verified (20) and estimated (26) models', () => {
+  await t.test('verifies task_cost_usd matches Artificial Analysis Cost per Task (14 verified, 32 estimated)', () => {
     const recordsPath = path.resolve(repoRoot, 'scripts/benchmark-data/benchmark-records.json');
     const records = JSON.parse(fs.readFileSync(recordsPath, 'utf-8'));
 
@@ -148,8 +153,17 @@ test('AI Model Radar Benchmark Table Task Cost & Citations Contract Tests', asyn
       (m: any) => m.estimated_metrics?.includes('task_cost_usd') || m.is_estimated
     );
 
-    assert.strictEqual(verifiedModels.length, 20, 'Exactly 20 models should have verified task_cost_usd');
-    assert.strictEqual(estimatedModels.length, 26, 'Exactly 26 models should have estimated task_cost_usd');
+    assert.strictEqual(verifiedModels.length, 14, 'Exactly 14 models should have verified AA task_cost_usd');
+    assert.strictEqual(estimatedModels.length, 32, 'Exactly 32 models should have estimated task_cost_usd');
+
+    const byId = new Map<string, any>(records.map((m: any) => [m.id, m]));
+    assert.strictEqual(byId.get('gpt-6-astra')?.raw_metrics.task_cost_usd, 6.25);
+    assert.strictEqual(byId.get('gpt-6-sol')?.raw_metrics.task_cost_usd, 2.47);
+    assert.strictEqual(byId.get('gpt-6-1-sol')?.raw_metrics.task_cost_usd, 1.27);
+    assert.strictEqual(byId.get('gpt-6-luna')?.raw_metrics.task_cost_usd, 0.15);
+    assert.strictEqual(byId.get('claude-opus-5-5')?.raw_metrics.task_cost_usd, 10.04);
+    assert.strictEqual(byId.get('gemini-4-argon')?.raw_metrics.task_cost_usd, 9.95);
+    assert.strictEqual(byId.get('gemini-3-8-flash')?.raw_metrics.task_cost_usd, 7.77);
 
     // Generated model-benchmarks.json must also reflect these estimates
     const datasetPath = path.resolve(repoRoot, 'dashboard/public/data/model-benchmarks.json');
@@ -159,7 +173,7 @@ test('AI Model Radar Benchmark Table Task Cost & Citations Contract Tests', asyn
     const datasetEstCount = dataset.models.filter(
       (m: any) => m.estimated_metrics?.includes('task_cost_usd')
     ).length;
-    assert.strictEqual(datasetEstCount, 26, 'Dataset models should have 26 estimated task_cost_usd');
+    assert.strictEqual(datasetEstCount, 32, 'Dataset models should have 32 estimated task_cost_usd');
   });
 
   await t.test('verifies all cited benchmark sources in DEFAULT_BENCHMARK_SOURCES have full explanations and links', () => {
