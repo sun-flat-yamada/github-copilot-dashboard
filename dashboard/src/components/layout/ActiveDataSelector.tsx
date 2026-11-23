@@ -231,20 +231,26 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
 
   return (
     <div className="flex items-center space-x-1.5 h-11">
-      {/* 統合データバッジ & トリガーボタン (タイトル表示部と同等の高さを活用した2行レイアウト) */}
-      <button
-        type="button"
+      {/* 統合データバッジ & トリガーコンテナ (タイトル表示部と同等の高さを活用した2行レイアウト) */}
+      <div
+        data-testid="active-data-selector"
         onClick={() => setIsOpen(true)}
         className="flex items-center space-x-2.5 h-11 px-3 py-1 sm:py-1.5 rounded-xl bg-slate-900 border border-slate-700/80 hover:border-indigo-500/80 hover:bg-slate-850 transition-all cursor-pointer shadow-sm group select-none max-w-full"
         title={getTooltipText()}
-        aria-label="分析対象データ"
-        aria-haspopup="dialog"
-        aria-expanded={isOpen}
       >
-        {/* 分析対象データ 明示バッジ */}
-        <span className="text-[11px] font-bold text-indigo-300 px-2 py-0.5 rounded-lg bg-indigo-950/80 border border-indigo-700/70 whitespace-nowrap shrink-0 shadow-xs">
-          分析対象データ
-        </span>
+        {/* 分析対象データ 明示バッジ & トリガーボタン */}
+        <button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          className="cursor-pointer focus:outline-none flex items-center shrink-0"
+          aria-label="分析対象データ"
+          aria-haspopup="dialog"
+          aria-expanded={isOpen}
+        >
+          <span className="text-[11px] font-bold text-indigo-300 px-2 py-0.5 rounded-lg bg-indigo-950/80 border border-indigo-700/70 whitespace-nowrap shrink-0 shadow-xs">
+            分析対象データ
+          </span>
+        </button>
 
         {/* ディバイダー */}
         <div className="w-px h-7 bg-slate-700/80 shrink-0" />
@@ -367,7 +373,7 @@ export const ActiveDataSelector: React.FC<ActiveDataSelectorProps> = ({
             isOpen ? 'rotate-180' : ''
           }`}
         />
-      </button>
+      </div>
 
       {/* ワンクリック全解除ボタン */}
       {isFiltered && (

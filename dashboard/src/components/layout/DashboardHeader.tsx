@@ -394,8 +394,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               data-testid="header-error-modal-button"
               aria-label={
                 hasErrors
-                  ? `エラー検知 (${allIssuesCount}件)`
-                  : `警告あり (${allIssuesCount}件)`
+                  ? `${allIssuesCount} 件のエラー検知`
+                  : `${allIssuesCount} 件の警告あり`
               }
               title={
                 hasErrors
@@ -414,6 +414,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 <AlertTriangle className="w-4 h-4 shrink-0" />
               )}
               <span
+                aria-hidden="true"
                 className={`inline-flex items-center justify-center min-w-[20px] h-[20px] px-1.5 rounded-full text-[10px] font-extrabold leading-none ${
                   hasErrors ? 'bg-rose-600 text-white' : 'bg-amber-500 text-slate-950'
                 }`}
