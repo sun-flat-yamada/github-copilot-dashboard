@@ -56,7 +56,7 @@ test('a past month can be opened from the data selector', async ({ page }) => {
   await expect(dialog).toBeHidden();
 
   // 選択中のデータセレクターに過去月が表示され、画面は取得失敗にならない
-  await expect(page.getByRole('button', { name: '分析対象データ' })).toContainText(past);
+  await expect(page.getByTestId('active-data-selector')).toContainText(past);
   await expect(page.getByText('データの読み込みに失敗しました')).toHaveCount(0);
 });
 

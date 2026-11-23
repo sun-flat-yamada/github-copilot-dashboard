@@ -41,8 +41,8 @@ describe('Header Error Indicator & Action Icon Height Tests (#102)', () => {
     );
     assert.match(
       content,
-      /aria-label=\{\s*hasErrors\s*\?\s*`エラー検知 \(\$\{allIssuesCount\}件\)`\s*:\s*`警告あり \(\$\{allIssuesCount\}件\)`\s*\}/,
-      'Error button must have dynamic accessible aria-label'
+      /aria-label=\{\s*hasErrors\s*\?\s*`\$\{allIssuesCount\} 件のエラー検知`\s*:\s*`\$\{allIssuesCount\} 件の警告あり`\s*\}/,
+      'Error button must have dynamic accessible aria-label matching visible count for WCAG 2.5.3'
     );
     assert.match(
       content,
