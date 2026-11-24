@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "run_id": "20261124T084259Z-2b6d",
+  "started_at": "2026-11-24T08:42:59.786Z",
+  "finished_at": "2026-11-24T08:42:59.793Z",
+  "api_version": "2026-03-10",
+  "config": {
+    "orgs": [],
+    "report_days": []
+  },
+  "entries": []
+}
